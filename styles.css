@@ -192,20 +192,136 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+    gap: 15px;
+    flex-wrap: wrap;
 }
 
 .greeting {
-    font-size: 24px;
+    font-size: 22px;
     color: var(--dark-gray);
     font-weight: 600;
+    flex: 1;
+    min-width: 200px;
+    line-height: 1.3;
 }
 
-.profile-pic img {
+@media (max-width: 360px) {
+    .greeting {
+        font-size: 20px;
+    }
+    
+    .welcome-section {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .account-icon-btn {
+        align-self: flex-end;
+    }
+}
+
+.account-icon-btn {
     width: 50px;
     height: 50px;
     border-radius: 50%;
     border: 3px solid var(--primary-green);
-    object-fit: cover;
+    background: var(--white);
+    color: var(--primary-green);
+    font-size: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow);
+}
+
+.account-icon-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.account-icon-btn.logged-in {
+    background: var(--primary-green);
+    color: var(--white);
+}
+
+.account-icon-btn.logged-in:hover {
+    background: var(--dark-green);
+}
+
+.account-icon-btn .fas.fa-sign-in-alt {
+    font-size: 24px;
+}
+
+.account-modal {
+    max-width: 400px;
+    width: 90%;
+}
+
+.account-tabs {
+    display: flex;
+    border-bottom: 2px solid var(--light-gray);
+    margin-bottom: 20px;
+}
+
+.account-tab {
+    flex: 1;
+    padding: 12px 8px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--text-gray);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+@media (max-width: 360px) {
+    .account-tab {
+        font-size: 12px;
+        padding: 10px 6px;
+        gap: 4px;
+    }
+    
+    .account-tab i {
+        font-size: 14px;
+    }
+}
+
+.account-tab.active {
+    color: var(--primary-green);
+    border-bottom-color: var(--primary-green);
+}
+
+.account-tab:hover {
+    color: var(--primary-green);
+    background: rgba(76, 175, 80, 0.05);
+}
+
+.account-info-card {
+    text-align: center;
+    padding: 20px 0;
+}
+
+.account-avatar {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    color: var(--white);
+    box-shadow: var(--shadow);
 }
 
 /* Promo Card */

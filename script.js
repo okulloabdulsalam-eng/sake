@@ -97,10 +97,206 @@ function updatePrayerTimes() {
 // Update prayer times on load
 updatePrayerTimes();
 
-// Set user name from localStorage or default
-const userName = localStorage.getItem('userName') || 'Brother/Sister';
-if (document.getElementById('userName')) {
-    document.getElementById('userName').textContent = userName;
+// User Account System
+let currentUser = null;
+
+function loadUserData() {
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+        currentUser = JSON.parse(userData);
+        updateUserDisplay();
+        return true;
+    }
+    return false;
+}
+
+function updateUserDisplay() {
+    const userNameEl = document.getElementById('userName');
+    const accountIcon = document.getElementById('accountIcon');
+    const accountIconBtn = document.getElementById('accountIconBtn');
+    
+    if (currentUser) {
+        // Show user's name
+        if (userNameEl) {
+            userNameEl.textContent = currentUser.firstName || currentUser.name || 'Brother/Sister';
+        }
+        // Change icon to show logged in state
+        if (accountIcon) {
+            accountIcon.className = 'fas fa-user-circle logged-in';
+        }
+        if (accountIconBtn) {
+            accountIconBtn.classList.add('logged-in');
+            accountIconBtn.title = 'Account';
+        }
+    } else {
+        // Show default
+        if (userNameEl) {
+            userNameEl.textContent = 'Brother/Sister';
+        }
+        // Show login icon
+        if (accountIcon) {
+            accountIcon.className = 'fas fa-sign-in-alt';
+        }
+        if (accountIconBtn) {
+            accountIconBtn.classList.remove('logged-in');
+            accountIconBtn.title = 'Login / Create Account';
+        }
+    }
+}
+
+// Initialize user data on page load
+if (typeof window !== 'undefined') {
+    window.addEventListener('DOMContentLoaded', function() {
+        loadUserData();
+    });
+}
+
+function toggleAccountModal() {
+    const modal = document.getElementById('accountModal');
+    if (modal) {
+        if (currentUser) {
+            // Show account info/logout
+            showAccountInfo();
+        } else {
+            // Show login/create account
+            showLoginModal();
+        }
+    }
+}
+
+function showLoginModal() {
+    const modal = document.getElementById('accountModal');
+    if (modal) {
+        document.getElementById('loginTab').classList.add('active');
+        document.getElementById('signupTab').classList.remove('active');
+        document.getElementById('loginForm').style.display = 'block';
+        document.getElementById('signupForm').style.display = 'none';
+        document.getElementById('accountInfo').style.display = 'none';
+        modal.style.display = 'flex';
+    }
+}
+
+function showSignupTab() {
+    document.getElementById('loginTab').classList.remove('active');
+    document.getElementById('signupTab').classList.add('active');
+    document.getElementById('loginFormElement').style.display = 'none';
+    document.getElementById('signupFormElement').style.display = 'block';
+}
+
+function showLoginTab() {
+    document.getElementById('loginTab').classList.add('active');
+    document.getElementById('signupTab').classList.remove('active');
+    document.getElementById('loginFormElement').style.display = 'block';
+    document.getElementById('signupFormElement').style.display = 'none';
+}
+
+function closeAccountModal() {
+    const modal = document.getElementById('accountModal');
+    if (modal) {
+        modal.style.display = 'none';
+        // Reset forms
+        document.getElementById('loginFormElement')?.reset();
+        document.getElementById('signupFormElement')?.reset();
+    }
+}
+
+function handleLogin(e) {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    
+    // Get stored users
+    const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
+    const user = storedUsers.find(u => u.email === email && u.password === password);
+    
+    if (user) {
+        currentUser = user;
+        localStorage.setItem('userData', JSON.stringify(user));
+        updateUserDisplay();
+        closeAccountModal();
+        alert('Welcome back, ' + user.firstName + '!');
+    } else {
+        alert('Invalid email or password. Please try again.');
+    }
+}
+
+function handleSignup(e) {
+    e.preventDefault();
+    const firstName = document.getElementById('signupFirstName').value;
+    const lastName = document.getElementById('signupLastName').value;
+    const email = document.getElementById('signupEmail').value;
+    const password = document.getElementById('signupPassword').value;
+    const confirmPassword = document.getElementById('signupConfirmPassword').value;
+    const gender = document.getElementById('signupGender').value;
+    
+    if (password !== confirmPassword) {
+        alert('Passwords do not match!');
+        return;
+    }
+    
+    if (password.length < 6) {
+        alert('Password must be at least 6 characters long.');
+        return;
+    }
+    
+    // Get stored users
+    const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
+    
+    // Check if email already exists
+    if (storedUsers.find(u => u.email === email)) {
+        alert('This email is already registered. Please login instead.');
+        showLoginTab();
+        return;
+    }
+    
+    // Create new user
+    const newUser = {
+        id: Date.now().toString(),
+        firstName: firstName,
+        lastName: lastName,
+        name: firstName + ' ' + lastName,
+        email: email,
+        gender: gender,
+        createdAt: new Date().toISOString()
+    };
+    
+    storedUsers.push({...newUser, password: password});
+    localStorage.setItem('users', JSON.stringify(storedUsers));
+    
+    currentUser = newUser;
+    localStorage.setItem('userData', JSON.stringify(newUser));
+    updateUserDisplay();
+    closeAccountModal();
+    alert('Account created successfully! Welcome, ' + firstName + '!');
+}
+
+function showAccountInfo() {
+    const modal = document.getElementById('accountModal');
+    if (modal) {
+        document.getElementById('accountTabs').style.display = 'none';
+        document.getElementById('accountModalTitle').innerHTML = '<i class="fas fa-user-circle"></i> My Account';
+        document.getElementById('loginFormElement').style.display = 'none';
+        document.getElementById('signupFormElement').style.display = 'none';
+        document.getElementById('accountInfo').style.display = 'block';
+        
+        if (currentUser) {
+            document.getElementById('accountName').textContent = currentUser.name || (currentUser.firstName + ' ' + currentUser.lastName);
+            document.getElementById('accountEmail').textContent = currentUser.email;
+            document.getElementById('accountGender').textContent = currentUser.gender || 'Not specified';
+        }
+        
+        modal.style.display = 'flex';
+    }
+}
+
+function handleLogout() {
+    if (confirm('Are you sure you want to logout?')) {
+        currentUser = null;
+        localStorage.removeItem('userData');
+        updateUserDisplay();
+        closeAccountModal();
+        alert('You have been logged out.');
+    }
 }
 
 // Navigation function

@@ -85,9 +85,9 @@
             <!-- Welcome Section -->
             <section class="welcome-section">
                 <h2 class="greeting">Assalam Alaikum, <span id="userName">Brother/Sister</span></h2>
-                <div class="profile-pic">
-                    <img src="https://via.placeholder.com/50" alt="Profile" id="profileImg">
-                </div>
+                <button class="account-icon-btn" id="accountIconBtn" onclick="toggleAccountModal()">
+                    <i class="fas fa-user-circle" id="accountIcon"></i>
+                </button>
             </section>
 
             <!-- Prayer Times Card -->
@@ -338,29 +338,141 @@
         </div>
     </div>
 
+    <!-- Account Modal (Login/Create Account/Account Info) -->
+    <div class="modal-overlay" id="accountModal" style="display: none;">
+        <div class="modal-content account-modal">
+            <!-- Login/Signup Tabs -->
+            <div id="accountTabs" style="display: none;">
+                <div class="account-tabs">
+                    <button class="account-tab active" id="loginTab" onclick="showLoginTab()">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                    <button class="account-tab" id="signupTab" onclick="showSignupTab()">
+                        <i class="fas fa-user-plus"></i> Create Account
+                    </button>
+                </div>
+            </div>
+
+            <div class="modal-header">
+                <h3 id="accountModalTitle"><i class="fas fa-user-circle"></i> Account</h3>
+                <button class="modal-close" onclick="closeAccountModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Login Form -->
+                <form id="loginFormElement" onsubmit="handleLogin(event)" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="loginEmail" placeholder="your.email@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="loginPassword" placeholder="Enter your password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 15px;">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                    <p style="text-align: center; margin-top: 15px; font-size: 14px; color: var(--text-gray);">
+                        Don't have an account? <a href="#" onclick="showSignupTab(); return false;" style="color: var(--primary-green); font-weight: 600;">Create one</a>
+                    </p>
+                </form>
+
+                <!-- Signup Form -->
+                <form id="signupFormElement" onsubmit="handleSignup(event)" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">First Name</label>
+                        <input type="text" class="form-input" id="signupFirstName" placeholder="Enter your first name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" class="form-input" id="signupLastName" placeholder="Enter your last name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="signupEmail" placeholder="your.email@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Gender</label>
+                        <select class="form-input" id="signupGender" required>
+                            <option value="">Select gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="signupPassword" placeholder="At least 6 characters" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Confirm Password</label>
+                        <input type="password" class="form-input" id="signupConfirmPassword" placeholder="Confirm your password" required minlength="6">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 15px;">
+                        <i class="fas fa-user-plus"></i> Create Account
+                    </button>
+                    <p style="text-align: center; margin-top: 15px; font-size: 14px; color: var(--text-gray);">
+                        Already have an account? <a href="#" onclick="showLoginTab(); return false;" style="color: var(--primary-green); font-weight: 600;">Login</a>
+                    </p>
+                </form>
+
+                <!-- Account Info -->
+                <div id="accountInfo" style="display: none;">
+                    <div class="account-info-card">
+                        <div class="account-avatar">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <h3 id="accountName" style="text-align: center; margin: 15px 0 5px 0; color: var(--dark-gray);"></h3>
+                        <p style="text-align: center; color: var(--text-gray); margin-bottom: 20px;">
+                            <i class="fas fa-envelope"></i> <span id="accountEmail"></span>
+                        </p>
+                        <p style="text-align: center; color: var(--text-gray); margin-bottom: 20px;">
+                            <i class="fas fa-venus-mars"></i> <span id="accountGender"></span>
+                        </p>
+                        <button class="btn btn-secondary" onclick="handleLogout()" style="width: 100%;">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
     <script>
-        // Close modal on overlay click
-        document.getElementById('activitiesModal')?.addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeActivitiesModal();
+        // Initialize user display and modals
+        window.addEventListener('DOMContentLoaded', function() {
+            loadUserData();
+            
+            // Close modals on overlay click
+            document.getElementById('activitiesModal')?.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeActivitiesModal();
+                }
+            });
+            
+            document.getElementById('accountModal')?.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeAccountModal();
+                }
+            });
+
+            // Scroll to charity visit if URL has hash
+            if (window.location.hash === '#charity-visit') {
+                setTimeout(() => {
+                    document.querySelector('.charity-visit-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    if (document.getElementById('charityDetails')) {
+                        document.getElementById('charityDetails').style.display = 'block';
+                        const icon = document.getElementById('charityToggleIcon');
+                        if (icon) {
+                            icon.classList.remove('fa-chevron-down');
+                            icon.classList.add('fa-chevron-up');
+                        }
+                    }
+                }, 300);
             }
         });
-
-        // Scroll to charity visit if URL has hash
-        if (window.location.hash === '#charity-visit') {
-            setTimeout(() => {
-                document.querySelector('.charity-visit-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                if (document.getElementById('charityDetails')) {
-                    document.getElementById('charityDetails').style.display = 'block';
-                    const icon = document.getElementById('charityToggleIcon');
-                    if (icon) {
-                        icon.classList.remove('fa-chevron-down');
-                        icon.classList.add('fa-chevron-up');
-                    }
-                }
-            }, 300);
-        }
     </script>
 </body>
 </html>
