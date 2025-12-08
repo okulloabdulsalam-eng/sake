@@ -60,11 +60,36 @@ body {
     z-index: 1;
 }
 
-.logo {
-    color: var(--white);
-    font-size: 28px;
-    font-weight: bold;
-    margin: 0;
+.logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    height: 50px;
+    min-width: 50px;
+}
+
+.header-logo {
+    height: 45px;
+    width: 45px;
+    object-fit: contain;
+    border-radius: 50%;
+    background: var(--white);
+    padding: 3px;
+    display: block;
+}
+
+.header-logo-svg {
+    height: 45px;
+    width: 45px;
+    display: none;
+    border-radius: 50%;
+    background: var(--white);
+    padding: 3px;
+}
+
+.header-logo-svg.fallback {
+    display: block;
 }
 
 .menu-toggle, .notifications-btn {
