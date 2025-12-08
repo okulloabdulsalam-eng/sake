@@ -108,6 +108,12 @@ function navigateTo(url) {
     window.location.href = url;
 }
 
+// Navigate to Kizumu Visit
+function navigateToKizumuVisit() {
+    // Navigate to payment page with Kizumu visit pre-selected
+    window.location.href = 'pay.html?type=charity&donation=kizumu-tahfiz-visit';
+}
+
 // Search functionality
 const searchInput = document.getElementById('searchInput');
 if (searchInput) {

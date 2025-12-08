@@ -49,82 +49,110 @@
 
             <section class="page-content">
                 <div class="info-card">
-                    <h3><i class="fas fa-user-plus"></i> Register for Programs</h3>
-                    <p>Join our educational programs and activities. Fill out the form below to register for the programs you're interested in.</p>
+                    <h3><i class="fas fa-user-plus"></i> Course Enrollment</h3>
+                    <p>Enroll in any of the courses from our weekly teachings schedule. Fill out the form below to register.</p>
                 </div>
 
                 <form id="programForm" onsubmit="handleProgramRegistration(event)">
-                    <div class="form-group">
+                    <!-- Personal Information Section -->
+                    <div class="form-section-header">
+                        <h4><i class="fas fa-user"></i> Personal Information</h4>
+                    </div>
+
+                    <div class="form-group" id="nameGroup">
                         <label class="form-label">Full Name</label>
                         <input type="text" class="form-input" id="programName" required>
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Email Address</label>
-                        <input type="email" class="form-input" id="programEmail" required>
+                    <div class="form-group" id="regNoGroup">
+                        <label class="form-label">Registration Number</label>
+                        <input type="text" class="form-input" id="regNo" placeholder="Enter your registration number" required>
+                    </div>
+
+                    <div class="form-group" id="genderGroup">
+                        <label class="form-label">Gender</label>
+                        <select class="form-input" id="gender" required>
+                            <option value="">Select Gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="courseGroup">
+                        <label class="form-label">Course/Program</label>
+                        <input type="text" class="form-input" id="course" placeholder="Enter your course of study" required>
+                    </div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <div class="form-group" id="yearGroup" style="flex: 1;">
+                            <label class="form-label">Year</label>
+                            <select class="form-input" id="year" required>
+                                <option value="">Select</option>
+                                <option value="year1">Year 1</option>
+                                <option value="year2">Year 2</option>
+                                <option value="year3">Year 3</option>
+                                <option value="year4">Year 4</option>
+                                <option value="year5">Year 5</option>
+                                <option value="postgraduate">Postgraduate</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" id="semesterGroup" style="flex: 1;">
+                            <label class="form-label">Semester</label>
+                            <select class="form-input" id="semester" required>
+                                <option value="">Select</option>
+                                <option value="semester1">Semester 1</option>
+                                <option value="semester2">Semester 2</option>
+                                <option value="semester3">Semester 3</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Course Selection Section -->
+                    <div class="form-section-header" style="margin-top: 25px;">
+                        <h4><i class="fas fa-book"></i> Select Courses to Enroll</h4>
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Phone Number</label>
-                        <input type="tel" class="form-input" id="programPhone" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Age</label>
-                        <input type="number" class="form-input" id="programAge" min="5" max="100" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Select Program(s)</label>
+                        <label class="form-label">Choose the courses you want to enroll in:</label>
                         <div style="margin-top: 10px;">
-                            <label style="display: flex; align-items: center; padding: 10px; background: var(--gray); border-radius: 8px; margin-bottom: 8px; cursor: pointer;">
-                                <input type="checkbox" name="programs" value="quran-study" style="margin-right: 10px; width: auto;">
-                                <span>Quran Study Circle</span>
+                            <label class="course-checkbox">
+                                <input type="checkbox" name="courses" value="quran-yasaruna">
+                                <span><strong>Quran and Yasaruna</strong> - Mon-Thur (After Maghrib to Isha) - Iman Fahad</span>
                             </label>
-                            <label style="display: flex; align-items: center; padding: 10px; background: var(--gray); border-radius: 8px; margin-bottom: 8px; cursor: pointer;">
-                                <input type="checkbox" name="programs" value="islamic-studies" style="margin-right: 10px; width: auto;">
-                                <span>Islamic Studies Course</span>
+                            <label class="course-checkbox">
+                                <input type="checkbox" name="courses" value="hadith-memorisation">
+                                <span><strong>Hadith memorisation</strong> - Tuesday (After Maghrib to Isha) - Imam Abdurrahman</span>
                             </label>
-                            <label style="display: flex; align-items: center; padding: 10px; background: var(--gray); border-radius: 8px; margin-bottom: 8px; cursor: pointer;">
-                                <input type="checkbox" name="programs" value="children-education" style="margin-right: 10px; width: auto;">
-                                <span>Children's Islamic Education</span>
+                            <label class="course-checkbox">
+                                <input type="checkbox" name="courses" value="hadith-explanation">
+                                <span><strong>Hadith Explanation</strong> - Friday (After Maghrib to Isha) - Sheikh Abdulswabur</span>
                             </label>
-                            <label style="display: flex; align-items: center; padding: 10px; background: var(--gray); border-radius: 8px; margin-bottom: 8px; cursor: pointer;">
-                                <input type="checkbox" name="programs" value="arabic" style="margin-right: 10px; width: auto;">
-                                <span>Arabic Language Classes</span>
+                            <label class="course-checkbox">
+                                <input type="checkbox" name="courses" value="kitaabu-tawheed">
+                                <span><strong>Kitaabu Tawheed</strong> - Saturday (After Maghrib to Isha) - Imam Abdurrahman</span>
                             </label>
-                            <label style="display: flex; align-items: center; padding: 10px; background: var(--gray); border-radius: 8px; margin-bottom: 8px; cursor: pointer;">
-                                <input type="checkbox" name="programs" value="sisters-circle" style="margin-right: 10px; width: auto;">
-                                <span>Sisters Circle (Female only)</span>
+                            <label class="course-checkbox">
+                                <input type="checkbox" name="courses" value="fiqh-swalah">
+                                <span><strong>Fiqh Swalah</strong> - Sunday (After Dhuhr) - Prof. Twaib</span>
                             </label>
-                            <label style="display: flex; align-items: center; padding: 10px; background: var(--gray); border-radius: 8px; margin-bottom: 8px; cursor: pointer;">
-                                <input type="checkbox" name="programs" value="online" style="margin-right: 10px; width: auto;">
-                                <span>Online Learning Platform</span>
+                            <label class="course-checkbox">
+                                <input type="checkbox" name="courses" value="arbauna-nawawi">
+                                <span><strong>Arbauna Nawawi</strong> - Sunday (After Asr) - Dr. Jega</span>
+                            </label>
+                            <label class="course-checkbox">
+                                <input type="checkbox" name="courses" value="tafsir">
+                                <span><strong>Tafsir</strong> - Sunday (After Maghrib to Isha) - Imam Fahad</span>
+                            </label>
+                            <label class="course-checkbox">
+                                <input type="checkbox" name="courses" value="arabic-classes">
+                                <span><strong>Arabic classes</strong> - Sat & Sun (1 hour after Fajr) - Imam Fahad</span>
                             </label>
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Preferred Days</label>
-                        <select class="form-input" id="preferredDays" multiple style="height: 100px;">
-                            <option value="monday">Monday</option>
-                            <option value="tuesday">Tuesday</option>
-                            <option value="wednesday">Wednesday</option>
-                            <option value="thursday">Thursday</option>
-                            <option value="friday">Friday</option>
-                            <option value="saturday">Saturday</option>
-                            <option value="sunday">Sunday</option>
-                        </select>
-                        <small style="color: var(--text-gray); font-size: 12px;">Hold Ctrl (or Cmd on Mac) to select multiple days</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Additional Notes</label>
-                        <textarea class="form-input" id="programNotes" rows="4" placeholder="Any special requirements or questions..."></textarea>
-                    </div>
-
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-check-circle"></i> Register Now
+                        <i class="fas fa-check-circle"></i> Submit Enrollment
                     </button>
                 </form>
 
@@ -147,18 +175,77 @@
 
     <script src="script.js"></script>
     <script>
+        // Auto-fill form if user data exists in localStorage
+        document.addEventListener('DOMContentLoaded', function() {
+            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+            
+            // Check if fields are already present and auto-fill
+            if (userData.firstName && userData.lastName) {
+                const nameField = document.getElementById('programName');
+                if (nameField && !nameField.value) {
+                    nameField.value = userData.firstName + ' ' + userData.lastName;
+                    nameField.style.background = '#E8F5E9';
+                    setTimeout(() => nameField.style.background = '', 2000);
+                }
+            }
+            
+            if (userData.gender) {
+                const genderField = document.getElementById('gender');
+                if (genderField && !genderField.value) {
+                    genderField.value = userData.gender;
+                }
+            }
+            
+            if (userData.course) {
+                const courseField = document.getElementById('course');
+                if (courseField && !courseField.value) {
+                    courseField.value = userData.course;
+                    courseField.style.background = '#E8F5E9';
+                    setTimeout(() => courseField.style.background = '', 2000);
+                }
+            }
+            
+            if (userData.year) {
+                const yearField = document.getElementById('year');
+                if (yearField && !yearField.value) {
+                    yearField.value = userData.year;
+                }
+            }
+        });
+
         function handleProgramRegistration(e) {
             e.preventDefault();
+            
             const name = document.getElementById('programName').value;
-            const selectedPrograms = Array.from(document.querySelectorAll('input[name="programs"]:checked')).map(cb => cb.value);
+            const regNo = document.getElementById('regNo').value;
+            const gender = document.getElementById('gender').value;
+            const course = document.getElementById('course').value;
+            const year = document.getElementById('year').value;
+            const semester = document.getElementById('semester').value;
+            const selectedCourses = Array.from(document.querySelectorAll('input[name="courses"]:checked')).map(cb => cb.value);
 
-            if (selectedPrograms.length === 0) {
-                alert('Please select at least one program');
+            if (selectedCourses.length === 0) {
+                alert('Please select at least one course to enroll in');
                 return;
             }
 
-            alert('Thank you, ' + name + '! Registration successful for ' + selectedPrograms.length + ' program(s). You will receive a confirmation email shortly.');
+            // Save user data for future auto-fill
+            const userData = {
+                firstName: name.split(' ')[0],
+                lastName: name.split(' ').slice(1).join(' '),
+                regNo: regNo,
+                gender: gender,
+                course: course,
+                year: year,
+                semester: semester
+            };
+            localStorage.setItem('userData', JSON.stringify(userData));
+
+            alert('Thank you, ' + name + '!\n\nEnrollment successful for ' + selectedCourses.length + ' course(s).\n\nRegistration Number: ' + regNo + '\n\nYou will receive a confirmation email shortly.');
             document.getElementById('programForm').reset();
+            
+            // Reload to show auto-filled fields if any
+            setTimeout(() => window.location.reload(), 1500);
         }
     </script>
 </body>

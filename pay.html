@@ -127,6 +127,28 @@
                         <p><strong>Type:</strong> <span id="selectedType"></span></p>
                     </div>
 
+                    <!-- Donation Type Dropdown (for Charity and Donate) -->
+                    <div class="form-group" id="donationTypeGroup" style="display: none;">
+                        <label class="form-label">Donation Type</label>
+                        <select class="form-input" id="donationType">
+                            <option value="">Select donation type</option>
+                            <option value="general">General Donation</option>
+                            <option value="zakat">Zakat</option>
+                            <option value="sadaqah">Sadaqah</option>
+                            <option value="iftar">Iftar Sponsorship</option>
+                            <option value="education">Education Fund</option>
+                            <option value="mosque">Mosque Building Fund</option>
+                            <option value="kizumu-tahfiz-visit">Kizumu Tahfiz Charity Visit</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <!-- Reason Field (for Charity and Donate) -->
+                    <div class="form-group" id="reasonGroup" style="display: none;">
+                        <label class="form-label">Reason for Donation</label>
+                        <textarea class="form-input" id="donationReason" rows="3" placeholder="Please specify the reason for your donation..."></textarea>
+                    </div>
+
                     <!-- Amount Input (for Zakat, Charity, Donate) -->
                     <div class="form-group" id="customAmountGroup" style="display: none;">
                         <label class="form-label">Amount (UGX)</label>
@@ -294,6 +316,23 @@
         let selectedPlan = null;
         let selectedAmount = 0;
 
+        // Check URL parameters for Kizumu visit
+        window.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const type = urlParams.get('type');
+            const donation = urlParams.get('donation');
+            
+            if (type === 'charity' && donation === 'kizumu-tahfiz-visit') {
+                selectPaymentType('charity');
+                setTimeout(() => {
+                    const donationTypeEl = document.getElementById('donationType');
+                    if (donationTypeEl) {
+                        donationTypeEl.value = 'kizumu-tahfiz-visit';
+                    }
+                }, 300);
+            }
+        });
+
         function selectPaymentType(type) {
             selectedPaymentType = type;
             
@@ -318,6 +357,18 @@
                 paymentForm.style.display = 'block';
                 customAmountGroup.style.display = 'block';
                 selectedPlanInfo.style.display = 'none';
+                
+                // Show donation type and reason fields for Charity and Donate
+                const donationTypeGroup = document.getElementById('donationTypeGroup');
+                const reasonGroup = document.getElementById('reasonGroup');
+                
+                if (type === 'charity' || type === 'donate') {
+                    donationTypeGroup.style.display = 'block';
+                    reasonGroup.style.display = 'block';
+                } else {
+                    donationTypeGroup.style.display = 'none';
+                    reasonGroup.style.display = 'none';
+                }
                 
                 // Set payment type info
                 const typeNames = {
@@ -397,5 +448,11 @@
             });
         }
     </script>
+
+    <!-- Floating Kizumu Visit Button -->
+    <div class="floating-kizumu-btn" onclick="navigateToKizumuVisit()">
+        <i class="fas fa-heart"></i>
+        <span>Kizumu Visit</span>
+    </div>
 </body>
 </html>
