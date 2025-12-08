@@ -251,7 +251,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // Admin Password (in production, this should be stored securely on the backend)
 const ADMIN_PASSWORD = 'kiuma2024'; // Change this to your desired password
 
-let isAdminLoggedIn = false;
+// Check if admin is logged in from localStorage
+let isAdminLoggedIn = localStorage.getItem('isAdminLoggedIn') === 'true' || false;
 
 function showAdminLogin() {
     document.getElementById('adminLoginModal').style.display = 'flex';
@@ -269,13 +270,35 @@ function verifyAdminPassword() {
     const password = document.getElementById('adminPassword').value;
     if (password === ADMIN_PASSWORD) {
         isAdminLoggedIn = true;
+        localStorage.setItem('isAdminLoggedIn', 'true');
         closeAdminLogin();
         enableEditing();
-        alert('Admin mode enabled. You can now edit prayer times.');
+        checkAdminStatus(); // Update UI for notifications/media pages
+        alert('Admin mode enabled. You can now edit content.');
     } else {
         document.getElementById('passwordError').style.display = 'block';
         document.getElementById('adminPassword').value = '';
     }
+}
+
+function logoutAdmin() {
+    isAdminLoggedIn = false;
+    localStorage.removeItem('isAdminLoggedIn');
+    checkAdminStatus();
+    alert('Logged out of admin mode.');
+}
+
+function checkAdminStatus() {
+    // Update UI elements based on admin status
+    const adminButtons = document.querySelectorAll('.admin-only');
+    adminButtons.forEach(btn => {
+        btn.style.display = isAdminLoggedIn ? 'block' : 'none';
+    });
+    
+    const adminLogoutBtns = document.querySelectorAll('.admin-logout');
+    adminLogoutBtns.forEach(btn => {
+        btn.style.display = isAdminLoggedIn ? 'block' : 'none';
+    });
 }
 
 function enableEditing() {

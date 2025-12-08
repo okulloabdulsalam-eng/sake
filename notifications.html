@@ -66,8 +66,19 @@
         </header>
 
         <main class="main-content">
-            <section class="page-header">
+            <section class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <h2 class="page-title">Notifications</h2>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-secondary admin-only" onclick="showAdminLogin()" style="display: none; padding: 10px 15px;">
+                        <i class="fas fa-lock"></i> Admin Login
+                    </button>
+                    <button class="btn btn-primary admin-only" onclick="showAddNotificationModal()" style="display: none; padding: 10px 15px;">
+                        <i class="fas fa-plus"></i> Add Notification
+                    </button>
+                    <button class="btn btn-secondary admin-logout" onclick="logoutAdmin()" style="display: none; padding: 10px 15px;">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
             </section>
 
             <section class="page-content">
@@ -166,6 +177,41 @@
 
     <script src="script.js"></script>
     <script>
+        // Check admin status on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            checkAdminStatus();
+            
+            // Initialize admin login modal
+            const adminModal = document.getElementById('adminLoginModal');
+            if (adminModal) {
+                adminModal.addEventListener('click', function(e) {
+                    if (e.target === adminModal) {
+                        closeAdminLogin();
+                    }
+                });
+            }
+            
+            // Allow Enter key to submit password
+            const passwordInput = document.getElementById('adminPassword');
+            if (passwordInput) {
+                passwordInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        verifyAdminPassword();
+                    }
+                });
+            }
+
+            // Close add notification modal on overlay click
+            const addNotifModal = document.getElementById('addNotificationModal');
+            if (addNotifModal) {
+                addNotifModal.addEventListener('click', function(e) {
+                    if (e.target === addNotifModal) {
+                        closeAddNotificationModal();
+                    }
+                });
+            }
+        });
+
         function filterNotifications(status) {
             const items = document.querySelectorAll('.notification-item');
             items.forEach(item => {
@@ -186,7 +232,145 @@
                 }
             });
         });
+
+        function showAddNotificationModal() {
+            if (!isAdminLoggedIn) {
+                showAdminLogin();
+                return;
+            }
+            document.getElementById('addNotificationModal').style.display = 'flex';
+        }
+
+        function closeAddNotificationModal() {
+            document.getElementById('addNotificationModal').style.display = 'none';
+            document.getElementById('addNotificationForm').reset();
+        }
+
+        function addNotification(e) {
+            e.preventDefault();
+            if (!isAdminLoggedIn) {
+                alert('You must be logged in as admin to add notifications.');
+                return;
+            }
+
+            const title = document.getElementById('notifTitle').value;
+            const message = document.getElementById('notifMessage').value;
+            const icon = document.getElementById('notifIcon').value;
+            
+            if (!title || !message) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+
+            // Create notification element
+            const notificationsContainer = document.querySelector('.page-content');
+            const newNotification = document.createElement('div');
+            newNotification.className = 'notification-item';
+            newNotification.dataset.status = 'unread';
+            newNotification.innerHTML = `
+                <div class="notification-icon">
+                    <i class="${icon}"></i>
+                </div>
+                <div class="notification-content">
+                    <h4>${title}</h4>
+                    <p>${message}</p>
+                    <span class="notification-time">Just now</span>
+                </div>
+            `;
+
+            // Insert at the top
+            const firstNotification = notificationsContainer.querySelector('.notification-item');
+            if (firstNotification) {
+                notificationsContainer.insertBefore(newNotification, firstNotification);
+            } else {
+                notificationsContainer.appendChild(newNotification);
+            }
+
+            // Mark as read on click
+            newNotification.addEventListener('click', function() {
+                if (this.dataset.status === 'unread') {
+                    this.dataset.status = 'read';
+                    this.style.opacity = '0.7';
+                }
+            });
+
+            closeAddNotificationModal();
+            alert('Notification added successfully!');
+        }
     </script>
+
+    <!-- Admin Login Modal -->
+    <div class="modal-overlay" id="adminLoginModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-shield-alt"></i> Admin Login</h3>
+                <button class="modal-close" onclick="closeAdminLogin()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 15px;">Enter admin password to access admin features.</p>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="adminPassword" placeholder="Enter admin password">
+                    <p id="passwordError" style="color: #f44336; font-size: 14px; margin-top: 5px; display: none;">Incorrect password. Please try again.</p>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="verifyAdminPassword()" style="flex: 1;">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                    <button class="btn btn-secondary" onclick="closeAdminLogin()" style="flex: 1;">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Notification Modal -->
+    <div class="modal-overlay" id="addNotificationModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-bell"></i> Add New Notification</h3>
+                <button class="modal-close" onclick="closeAddNotificationModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="addNotificationForm" onsubmit="addNotification(event)">
+                    <div class="form-group">
+                        <label class="form-label">Title *</label>
+                        <input type="text" class="form-input" id="notifTitle" placeholder="Notification title" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Message *</label>
+                        <textarea class="form-input" id="notifMessage" rows="4" placeholder="Notification message" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Icon</label>
+                        <select class="form-input" id="notifIcon">
+                            <option value="fas fa-bell">Bell</option>
+                            <option value="fas fa-calendar-check">Calendar</option>
+                            <option value="fas fa-book">Book</option>
+                            <option value="fas fa-hand-holding-heart">Donation</option>
+                            <option value="fas fa-clock">Time</option>
+                            <option value="fas fa-users">Users</option>
+                            <option value="fas fa-graduation-cap">Education</option>
+                            <option value="fas fa-star-and-crescent">Star</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button type="submit" class="btn btn-primary" style="flex: 1;">
+                            <i class="fas fa-plus"></i> Add Notification
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="closeAddNotificationModal()" style="flex: 1;">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <!-- Floating Kizumu Visit Button -->
     <div class="floating-kizumu-btn" onclick="showActivitiesModal()">
