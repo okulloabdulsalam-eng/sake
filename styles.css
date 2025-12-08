@@ -189,40 +189,40 @@ body {
 /* Welcome Section */
 .welcome-section {
     display: flex;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
     margin-bottom: 20px;
-    gap: 15px;
     padding: 15px 20px;
     position: relative;
+    min-height: 70px;
 }
 
 .welcome-section > div {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-width: 0;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    width: calc(100% - 100px);
 }
 
 .greeting {
-    font-size: 22px;
-    color: var(--dark-gray);
-    font-weight: 600;
-    width: 100%;
-    text-align: center;
-    line-height: 1.4;
     margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-align: center;
+    width: 100%;
 }
 
 .greeting a {
-    color: var(--primary-green);
+    color: var(--dark-green);
     text-decoration: none;
     font-weight: 700;
     font-size: 24px;
     display: block;
-    margin-bottom: 8px;
-    letter-spacing: 1px;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+    line-height: 1.3;
+    text-align: center;
 }
 
 .greeting span {
@@ -230,7 +230,8 @@ body {
     font-size: 18px;
     font-weight: 600;
     color: var(--dark-gray);
-    margin-top: 5px;
+    line-height: 1.4;
+    text-align: center;
 }
 
 .account-icon-btn {
@@ -238,70 +239,25 @@ body {
     right: 20px;
     top: 50%;
     transform: translateY(-50%);
-    flex-shrink: 0;
-    width: 50px;
-    height: 50px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
-    border: 3px solid var(--primary-green);
-    background: var(--white);
-    color: var(--primary-green);
-    font-size: 28px;
+    border: none;
+    background: var(--primary-green);
+    color: var(--white);
+    font-size: 26px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: var(--shadow);
-}
-
-@media (max-width: 480px) {
-    .greeting a {
-        font-size: 22px;
-        margin-bottom: 6px;
-    }
-    
-    .greeting span {
-        font-size: 16px;
-    }
-    
-    .welcome-section {
-        padding: 12px 15px;
-        gap: 10px;
-    }
-    
-    .account-icon-btn {
-        width: 45px;
-        height: 45px;
-        font-size: 24px;
-        right: 15px;
-    }
-}
-
-@media (max-width: 360px) {
-    .greeting a {
-        font-size: 20px;
-        margin-bottom: 5px;
-    }
-    
-    .greeting span {
-        font-size: 15px;
-    }
-    
-    .welcome-section {
-        padding: 10px 12px;
-    }
-    
-    .account-icon-btn {
-        width: 40px;
-        height: 40px;
-        font-size: 22px;
-        right: 12px;
-    }
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
 }
 
 .account-icon-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    transform: translateY(-50%) scale(1.05);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
 }
 
 .account-icon-btn.logged-in {
@@ -311,11 +267,9 @@ body {
 
 .account-icon-btn.logged-in:hover {
     background: var(--dark-green);
+    transform: translateY(-50%) scale(1.05);
 }
 
-.account-icon-btn .fas.fa-sign-in-alt {
-    font-size: 24px;
-}
 
 .account-modal {
     max-width: 400px;
