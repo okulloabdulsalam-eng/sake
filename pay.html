@@ -48,109 +48,233 @@
             </section>
 
             <section class="page-content">
-                <div class="info-card">
-                    <h3><i class="fas fa-hand-holding-heart"></i> Support Our Community</h3>
-                    <p>Your contributions help us continue providing educational programs, community services, and support to Muslims across the UK.</p>
+                <!-- Payment Type Selection -->
+                <div class="payment-tabs-container">
+                    <div class="payment-tab-item" data-type="semester" onclick="selectPaymentType('semester')">
+                        Semester Subscription
+                    </div>
+                    <div class="payment-tab-item" data-type="monthly" onclick="selectPaymentType('monthly')">
+                        Monthly Subscription
+                    </div>
+                    <div class="payment-tab-item" data-type="zakat" onclick="selectPaymentType('zakat')">
+                        Zakat
+                    </div>
+                    <div class="payment-tab-item" data-type="charity" onclick="selectPaymentType('charity')">
+                        Charity
+                    </div>
+                    <div class="payment-tab-item" data-type="donate" onclick="selectPaymentType('donate')">
+                        Donate
+                    </div>
                 </div>
 
-                <!-- Payment Purpose Selection -->
-                <div class="form-group">
-                    <label class="form-label">Payment Purpose</label>
-                    <select class="form-input" id="paymentPurpose">
-                        <option value="">Select a purpose</option>
-                        <option value="donation">General Donation (Zakat/Sadaqah)</option>
-                        <option value="program">Program Registration</option>
-                        <option value="event">Event Registration</option>
-                        <option value="membership">Annual Membership</option>
-                        <option value="iftar">Iftar Sponsorship</option>
-                        <option value="education">Education Fund</option>
-                        <option value="mosque">Mosque Building Fund</option>
-                    </select>
-                </div>
+                <!-- Membership Plans Section (shown when Semester or Monthly Subscription is selected) -->
+                <div id="membershipPlans" style="display: none;">
+                    <h3 class="section-title">Membership Plans</h3>
+                    <div class="membership-plans-grid">
+                        <!-- Undergraduate Plan -->
+                        <div class="membership-plan-card">
+                            <h4 class="plan-title">Undergraduate</h4>
+                            <div class="plan-price">
+                                <span class="price-amount">10,000</span>
+                                <span class="price-currency">UGX</span>
+                            </div>
+                            <p class="plan-frequency">Per Semester (and above)</p>
+                            <button class="plan-button" onclick="selectPlan('undergraduate', 10000)">Pay Now</button>
+                        </div>
 
-                <!-- Amount Input -->
-                <div class="form-group">
-                    <label class="form-label">Amount (£)</label>
-                    <input type="number" class="form-input" id="amount" placeholder="Enter amount" min="1" step="0.01">
-                </div>
+                        <!-- Postgraduate Plan -->
+                        <div class="membership-plan-card">
+                            <h4 class="plan-title">Postgraduate</h4>
+                            <div class="plan-price">
+                                <span class="price-amount">20,000</span>
+                                <span class="price-currency">UGX</span>
+                            </div>
+                            <p class="plan-frequency">Per Semester (and above)</p>
+                            <button class="plan-button" onclick="selectPlan('postgraduate', 20000)">Pay Now</button>
+                        </div>
 
-                <!-- Quick Amount Buttons -->
-                <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
-                    <button class="btn btn-outline" style="flex: 1; min-width: calc(25% - 8px); padding: 10px;" onclick="setAmount(10)">£10</button>
-                    <button class="btn btn-outline" style="flex: 1; min-width: calc(25% - 8px); padding: 10px;" onclick="setAmount(25)">£25</button>
-                    <button class="btn btn-outline" style="flex: 1; min-width: calc(25% - 8px); padding: 10px;" onclick="setAmount(50)">£50</button>
-                    <button class="btn btn-outline" style="flex: 1; min-width: calc(25% - 8px); padding: 10px;" onclick="setAmount(100)">£100</button>
-                </div>
+                        <!-- University Staff Plan -->
+                        <div class="membership-plan-card">
+                            <h4 class="plan-title">University Staff</h4>
+                            <div class="plan-price">
+                                <span class="price-amount">50,000</span>
+                                <span class="price-currency">UGX</span>
+                            </div>
+                            <p class="plan-frequency">Per Semester (and above)</p>
+                            <button class="plan-button" onclick="selectPlan('university-staff', 50000)">Pay Now</button>
+                        </div>
 
-                <!-- Payment Methods -->
-                <div class="form-group">
-                    <label class="form-label">Payment Method</label>
-                    <div class="payment-methods">
-                        <div class="payment-method" data-method="card">
-                            <i class="fas fa-credit-card"></i>
-                            <span>Card</span>
-                        </div>
-                        <div class="payment-method" data-method="paypal">
-                            <i class="fab fa-paypal"></i>
-                            <span>PayPal</span>
-                        </div>
-                        <div class="payment-method" data-method="bank">
-                            <i class="fas fa-university"></i>
-                            <span>Bank Transfer</span>
-                        </div>
-                        <div class="payment-method" data-method="apple">
-                            <i class="fab fa-apple-pay"></i>
-                            <span>Apple Pay</span>
-                        </div>
-                        <div class="payment-method" data-method="google">
-                            <i class="fab fa-google-pay"></i>
-                            <span>Google Pay</span>
-                        </div>
-                        <div class="payment-method" data-method="zakat">
-                            <i class="fas fa-hand-holding-usd"></i>
-                            <span>Zakat</span>
+                        <!-- Elders Plan -->
+                        <div class="membership-plan-card">
+                            <h4 class="plan-title">Elders</h4>
+                            <div class="plan-price">
+                                <span class="price-amount">50,000</span>
+                                <span class="price-currency">UGX</span>
+                            </div>
+                            <p class="plan-frequency">Per Semester (and above)</p>
+                            <button class="plan-button" onclick="selectPlan('elders', 50000)">Pay Now</button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Card Details (shown when card is selected) -->
-                <div id="cardDetails" style="display: none;">
+                <!-- Payment Form (shown when a plan or other payment type is selected) -->
+                <div id="paymentForm" style="display: none;">
+                    <h3 class="section-title">Complete Payment</h3>
+                    
+                    <div class="info-card" id="selectedPlanInfo" style="margin-bottom: 20px; display: none;">
+                        <h4 id="selectedPlanName"></h4>
+                        <p><strong>Amount:</strong> <span id="selectedAmount"></span> UGX</p>
+                        <p><strong>Type:</strong> <span id="selectedType"></span></p>
+                    </div>
+
+                    <!-- Amount Input (for Zakat, Charity, Donate) -->
+                    <div class="form-group" id="customAmountGroup" style="display: none;">
+                        <label class="form-label">Amount (UGX)</label>
+                        <input type="number" class="form-input" id="amount" placeholder="Enter amount" min="1">
+                    </div>
+
+                    <!-- Payment Methods -->
                     <div class="form-group">
-                        <label class="form-label">Card Number</label>
-                        <input type="text" class="form-input" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19">
-                    </div>
-                    <div style="display: flex; gap: 10px;">
-                        <div class="form-group" style="flex: 1;">
-                            <label class="form-label">Expiry Date</label>
-                            <input type="text" class="form-input" id="expiryDate" placeholder="MM/YY" maxlength="5">
+                        <label class="form-label" style="margin-bottom: 15px; font-size: 18px; font-weight: 600;">Recommended Payment Methods</label>
+                        
+                        <!-- MTN Mobile Money -->
+                        <div class="payment-account-card">
+                            <div class="payment-account-header">
+                                <i class="fab fa-mobile-alt" style="color: #FFCC00;"></i>
+                                <h4>MTN Mobile Money</h4>
+                            </div>
+                            <div class="payment-account-details">
+                                <div class="account-detail-row">
+                                    <span class="account-label">Account Name:</span>
+                                    <span class="account-value">KIUMA Finance</span>
+                                    <button class="copy-btn" onclick="copyToClipboard('KIUMA Finance')" title="Copy">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <div class="account-detail-row">
+                                    <span class="account-label">Phone Number:</span>
+                                    <span class="account-value">+256 XXX XXX XXX</span>
+                                    <button class="copy-btn" onclick="copyToClipboard('+256 XXX XXX XXX')" title="Copy">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <div class="payment-reference-note">
+                                    <strong>Payment Reference:</strong> Use your name or student ID
+                                </div>
+                            </div>
                         </div>
-                        <div class="form-group" style="flex: 1;">
-                            <label class="form-label">CVV</label>
-                            <input type="text" class="form-input" id="cvv" placeholder="123" maxlength="4">
+
+                        <!-- Airtel Mobile Money -->
+                        <div class="payment-account-card">
+                            <div class="payment-account-header">
+                                <i class="fas fa-mobile-alt" style="color: #E60012;"></i>
+                                <h4>Airtel Money</h4>
+                            </div>
+                            <div class="payment-account-details">
+                                <div class="account-detail-row">
+                                    <span class="account-label">Account Name:</span>
+                                    <span class="account-value">KIUMA Finance</span>
+                                    <button class="copy-btn" onclick="copyToClipboard('KIUMA Finance')" title="Copy">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <div class="account-detail-row">
+                                    <span class="account-label">Phone Number:</span>
+                                    <span class="account-value">+256 XXX XXX XXX</span>
+                                    <button class="copy-btn" onclick="copyToClipboard('+256 XXX XXX XXX')" title="Copy">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <div class="payment-reference-note">
+                                    <strong>Payment Reference:</strong> Use your name or student ID
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bank Account -->
+                        <div class="payment-account-card">
+                            <div class="payment-account-header">
+                                <i class="fas fa-university" style="color: var(--primary-green);"></i>
+                                <h4>Bank Account</h4>
+                            </div>
+                            <div class="payment-account-details">
+                                <div class="account-detail-row">
+                                    <span class="account-label">Bank Name:</span>
+                                    <span class="account-value">[Bank Name]</span>
+                                    <button class="copy-btn" onclick="copyToClipboard('[Bank Name]')" title="Copy">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <div class="account-detail-row">
+                                    <span class="account-label">Account Name:</span>
+                                    <span class="account-value">KIUMA Finance</span>
+                                    <button class="copy-btn" onclick="copyToClipboard('KIUMA Finance')" title="Copy">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <div class="account-detail-row">
+                                    <span class="account-label">Account Number:</span>
+                                    <span class="account-value">XXXXXXXXXX</span>
+                                    <button class="copy-btn" onclick="copyToClipboard('XXXXXXXXXX')" title="Copy">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <div class="account-detail-row">
+                                    <span class="account-label">Branch:</span>
+                                    <span class="account-value">[Branch Name]</span>
+                                    <button class="copy-btn" onclick="copyToClipboard('[Branch Name]')" title="Copy">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <div class="payment-reference-note">
+                                    <strong>Payment Reference:</strong> Use your name or student ID
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Cardholder Name</label>
-                        <input type="text" class="form-input" id="cardName" placeholder="John Doe">
+
+                    <!-- WhatsApp Contact Section -->
+                    <div class="whatsapp-contact-card">
+                        <div class="whatsapp-icon-wrapper">
+                            <i class="fab fa-whatsapp"></i>
+                        </div>
+                        <div class="whatsapp-content">
+                            <h4>Contact Finance Minister</h4>
+                            <p>Have questions about payment? Contact our Finance Minister via WhatsApp before or after making your deposit.</p>
+                            <a href="https://wa.me/256XXXXXXXXX" target="_blank" class="whatsapp-button">
+                                <i class="fab fa-whatsapp"></i> Message Finance Minister
+                            </a>
+                            <p style="font-size: 12px; color: rgba(255, 255, 255, 0.8); margin: 8px 0 0 0;">
+                                <small>Note: Update WhatsApp number in code (256XXXXXXXXX)</small>
+                            </p>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Additional Info -->
-                <div class="form-group">
-                    <label class="form-label">Additional Notes (Optional)</label>
-                    <textarea class="form-input" id="notes" placeholder="Any special instructions or dedication..."></textarea>
-                </div>
+                    <!-- Payment Instructions -->
+                    <div class="info-card" style="background: #FFF3E0; margin-top: 20px;">
+                        <h4 style="color: #F57C00; margin-bottom: 10px;">
+                            <i class="fas fa-info-circle"></i> Payment Instructions
+                        </h4>
+                        <ol style="margin: 0; padding-left: 20px; color: var(--dark-gray); line-height: 1.8;">
+                            <li>Select your payment type and amount above</li>
+                            <li>Choose your preferred payment method (MTN, Airtel, or Bank)</li>
+                            <li>Copy the account details and make your payment</li>
+                            <li>Use your name or student ID as the payment reference</li>
+                            <li>Contact the Finance Minister via WhatsApp to confirm your payment</li>
+                        </ol>
+                    </div>
 
-                <!-- Make Payment Button -->
-                <button class="btn btn-primary" onclick="processPayment()">
-                    <i class="fas fa-lock"></i> Make Payment
-                </button>
+                    <!-- Make Payment Button -->
+                    <button class="btn btn-primary" onclick="processPayment()">
+                        <i class="fas fa-lock"></i> Make Payment
+                    </button>
 
-                <!-- Security Notice -->
-                <div class="info-card" style="margin-top: 20px; background: #E8F5E9;">
-                    <p style="font-size: 14px; color: var(--dark-green); margin: 0;">
-                        <i class="fas fa-shield-alt"></i> Your payment is secure and encrypted. We use industry-standard security measures to protect your information.
-                    </p>
+                    <!-- Security Notice -->
+                    <div class="info-card" style="margin-top: 20px; background: #E8F5E9;">
+                        <p style="font-size: 14px; color: var(--dark-green); margin: 0;">
+                            <i class="fas fa-shield-alt"></i> Your payment is secure and encrypted. We use industry-standard security measures to protect your information.
+                        </p>
+                    </div>
                 </div>
             </section>
         </main>
@@ -166,77 +290,112 @@
 
     <script src="script.js"></script>
     <script>
-        function setAmount(amount) {
-            document.getElementById('amount').value = amount;
+        let selectedPaymentType = '';
+        let selectedPlan = null;
+        let selectedAmount = 0;
+
+        function selectPaymentType(type) {
+            selectedPaymentType = type;
+            
+            // Update UI
+            document.querySelectorAll('.payment-tab-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`[data-type="${type}"]`).classList.add('active');
+
+            // Show/hide sections
+            const membershipPlans = document.getElementById('membershipPlans');
+            const paymentForm = document.getElementById('paymentForm');
+            const customAmountGroup = document.getElementById('customAmountGroup');
+            const selectedPlanInfo = document.getElementById('selectedPlanInfo');
+
+            if (type === 'semester' || type === 'monthly') {
+                membershipPlans.style.display = 'block';
+                paymentForm.style.display = 'none';
+                selectedPlan = null;
+            } else {
+                membershipPlans.style.display = 'none';
+                paymentForm.style.display = 'block';
+                customAmountGroup.style.display = 'block';
+                selectedPlanInfo.style.display = 'none';
+                
+                // Set payment type info
+                const typeNames = {
+                    'zakat': 'Zakat',
+                    'charity': 'Charity',
+                    'donate': 'Donation'
+                };
+                document.getElementById('selectedType').textContent = typeNames[type] || type;
+            }
         }
 
-        // Show card details when card payment is selected
-        document.querySelectorAll('.payment-method').forEach(method => {
-            method.addEventListener('click', function() {
-                const methodType = this.dataset.method;
-                const cardDetails = document.getElementById('cardDetails');
-                if (methodType === 'card') {
-                    cardDetails.style.display = 'block';
-                } else {
-                    cardDetails.style.display = 'none';
-                }
-            });
-        });
+        function selectPlan(planName, amount) {
+            selectedPlan = planName;
+            selectedAmount = amount;
+
+            // Show payment form
+            document.getElementById('membershipPlans').style.display = 'none';
+            document.getElementById('paymentForm').style.display = 'block';
+            document.getElementById('customAmountGroup').style.display = 'none';
+            document.getElementById('selectedPlanInfo').style.display = 'block';
+
+            // Update plan info
+            const planNames = {
+                'undergraduate': 'Undergraduate Plan',
+                'postgraduate': 'Postgraduate Plan',
+                'university-staff': 'University Staff Plan',
+                'elders': 'Elders Plan'
+            };
+            document.getElementById('selectedPlanName').textContent = planNames[planName];
+            document.getElementById('selectedAmount').textContent = amount.toLocaleString();
+            document.getElementById('selectedType').textContent = selectedPaymentType === 'semester' ? 'Semester Subscription' : 'Monthly Subscription';
+        }
 
         function processPayment() {
-            const purpose = document.getElementById('paymentPurpose').value;
-            const amount = document.getElementById('amount').value;
-            const selectedMethod = document.querySelector('.payment-method.active');
-
-            if (!purpose) {
-                alert('Please select a payment purpose');
+            if (!selectedPaymentType) {
+                alert('Please select a payment type first');
                 return;
             }
 
-            if (!amount || amount <= 0) {
-                alert('Please enter a valid amount');
-                return;
-            }
-
-            if (!selectedMethod) {
-                alert('Please select a payment method');
-                return;
-            }
-
-            const method = selectedMethod.dataset.method;
-
-            if (method === 'card') {
-                const cardNumber = document.getElementById('cardNumber').value;
-                const expiryDate = document.getElementById('expiryDate').value;
-                const cvv = document.getElementById('cvv').value;
-                const cardName = document.getElementById('cardName').value;
-
-                if (!cardNumber || !expiryDate || !cvv || !cardName) {
-                    alert('Please fill in all card details');
+            let amount = selectedAmount;
+            if (!amount) {
+                amount = document.getElementById('amount').value;
+                if (!amount || amount <= 0) {
+                    alert('Please enter a valid amount');
                     return;
                 }
             }
 
-            // Simulate payment processing
-            alert(`Payment of £${amount} for ${purpose} via ${method} is being processed...\n\n(In a real application, this would connect to a payment gateway)`);
+            // Payment confirmation
+            const paymentTypeNames = {
+                'semester': 'Semester Subscription',
+                'monthly': 'Monthly Subscription',
+                'zakat': 'Zakat',
+                'charity': 'Charity',
+                'donate': 'Donation'
+            };
+
+            alert(`Payment Instructions:\n\nAmount: ${amount.toLocaleString()} UGX\nType: ${paymentTypeNames[selectedPaymentType]}\n\nPlease make payment using one of the recommended methods above.\n\nAfter payment, contact the Finance Minister via WhatsApp to confirm your deposit.`);
         }
 
-        // Format card number
-        document.getElementById('cardNumber')?.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\s/g, '');
-            let formatted = value.match(/.{1,4}/g)?.join(' ') || value;
-            e.target.value = formatted;
-        });
-
-        // Format expiry date
-        document.getElementById('expiryDate')?.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.length >= 2) {
-                value = value.substring(0, 2) + '/' + value.substring(2, 4);
-            }
-            e.target.value = value;
-        });
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                // Show feedback
+                const btn = event.target.closest('.copy-btn');
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i>';
+                btn.style.background = 'var(--primary-green)';
+                btn.style.color = 'white';
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.style.background = '';
+                    btn.style.color = '';
+                }, 2000);
+            }).catch(function(err) {
+                alert('Failed to copy. Please copy manually: ' + text);
+            });
+        }
     </script>
 </body>
 </html>
-

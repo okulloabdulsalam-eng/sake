@@ -247,12 +247,62 @@ body {
     box-shadow: var(--shadow);
 }
 
-.prayer-item {
+.prayer-times-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--light-gray);
+}
+
+.admin-edit-btn {
+    background: var(--primary-green);
+    color: var(--white);
+    border: none;
+    padding: 8px 15px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.3s;
+}
+
+.admin-edit-btn:hover {
+    background: var(--dark-green);
+}
+
+.admin-edit-btn i {
+    font-size: 12px;
+}
+
+.prayer-table-header {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 2px solid var(--light-gray);
+    margin-bottom: 10px;
+}
+
+.header-cell {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--dark-gray);
+    text-align: center;
+}
+
+.prayer-item {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    align-items: center;
     padding: 12px 0;
     border-bottom: 1px solid var(--light-gray);
+    transition: background 0.3s;
 }
 
 .prayer-item:last-child {
@@ -279,13 +329,71 @@ body {
 }
 
 .prayer-time {
-    font-size: 18px;
+    font-size: 16px;
     color: var(--primary-green);
     font-weight: 600;
+    text-align: center;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background 0.3s;
 }
 
 .prayer-item.active .prayer-time {
+    font-size: 18px;
+}
+
+.prayer-time.editing {
+    background: #FFF9C4;
+    outline: 2px solid var(--primary-green);
+    cursor: text;
+}
+
+.prayer-time.editing:focus {
+    background: #FFF59D;
+    outline: 2px solid var(--dark-green);
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-content {
+    background: var(--white);
+    border-radius: 15px;
+    padding: 25px;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content h3 {
+    color: var(--dark-gray);
+    margin: 0 0 10px 0;
     font-size: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-content h3 i {
+    color: var(--primary-green);
+}
+
+.modal-content > p {
+    color: var(--text-gray);
+    margin: 0 0 20px 0;
+    font-size: 14px;
 }
 
 /* Search Bar */
@@ -861,6 +969,306 @@ textarea.form-input {
     display: block;
 }
 
+/* Payment Tabs */
+.payment-tabs-container {
+    background: var(--dark-green);
+    border-radius: 15px;
+    padding: 15px;
+    margin-bottom: 25px;
+}
+
+.payment-tab-item {
+    background: transparent;
+    color: var(--white);
+    padding: 15px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: 600;
+    font-size: 16px;
+    text-align: left;
+    margin-bottom: 8px;
+    border: 2px solid transparent;
+}
+
+.payment-tab-item:last-child {
+    margin-bottom: 0;
+}
+
+.payment-tab-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.payment-tab-item.active {
+    background: var(--primary-green);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Membership Plans */
+.membership-plans-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.membership-plan-card {
+    background: var(--white);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    text-align: center;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.membership-plan-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.plan-title {
+    color: var(--primary-green);
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.plan-price {
+    margin-bottom: 10px;
+}
+
+.price-amount {
+    font-size: 32px;
+    font-weight: bold;
+    color: #D4AF37;
+    display: block;
+}
+
+.price-currency {
+    font-size: 16px;
+    color: var(--text-gray);
+    font-weight: 500;
+}
+
+.plan-frequency {
+    font-size: 12px;
+    color: var(--text-gray);
+    margin-bottom: 20px;
+}
+
+.plan-benefits {
+    list-style: none;
+    text-align: left;
+    margin-bottom: 20px;
+    padding: 0;
+}
+
+.plan-benefits li {
+    padding: 8px 0;
+    font-size: 14px;
+    color: var(--dark-gray);
+    display: flex;
+    align-items: center;
+}
+
+.plan-benefits li i {
+    color: var(--primary-green);
+    margin-right: 10px;
+    font-size: 12px;
+}
+
+.plan-button {
+    width: 100%;
+    padding: 12px;
+    background: #D4AF37;
+    color: var(--dark-gray);
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.plan-button:hover {
+    background: #C9A227;
+}
+
+.plan-button:active {
+    transform: scale(0.98);
+}
+
+/* Payment Account Cards */
+.payment-account-card {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 15px;
+    box-shadow: var(--shadow);
+    border: 2px solid var(--light-gray);
+}
+
+.payment-account-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--light-gray);
+}
+
+.payment-account-header i {
+    font-size: 28px;
+    margin-right: 12px;
+}
+
+.payment-account-header h4 {
+    font-size: 18px;
+    color: var(--dark-gray);
+    margin: 0;
+    font-weight: 600;
+}
+
+.payment-account-details {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.account-detail-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #F5F5F5;
+}
+
+.account-detail-row:last-of-type {
+    border-bottom: none;
+}
+
+.account-label {
+    font-size: 14px;
+    color: var(--text-gray);
+    font-weight: 500;
+    flex: 1;
+}
+
+.account-value {
+    font-size: 15px;
+    color: var(--dark-gray);
+    font-weight: 600;
+    flex: 1;
+    text-align: right;
+    margin-right: 10px;
+    word-break: break-word;
+}
+
+.copy-btn {
+    background: var(--lighter-green);
+    border: 1px solid var(--primary-green);
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    color: var(--primary-green);
+    font-size: 12px;
+    transition: all 0.3s;
+    flex-shrink: 0;
+}
+
+.copy-btn:hover {
+    background: var(--primary-green);
+    color: var(--white);
+}
+
+.copy-btn i {
+    font-size: 12px;
+}
+
+.payment-reference-note {
+    background: #E8F5E9;
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--dark-green);
+    line-height: 1.5;
+}
+
+/* WhatsApp Contact Card */
+.whatsapp-contact-card {
+    background: linear-gradient(135deg, #25D366, #128C7E);
+    border-radius: 15px;
+    padding: 20px;
+    margin: 25px 0;
+    display: flex;
+    align-items: flex-start;
+    box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+}
+
+.whatsapp-icon-wrapper {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
+.whatsapp-icon-wrapper i {
+    font-size: 28px;
+    color: var(--white);
+}
+
+.whatsapp-content {
+    flex: 1;
+}
+
+.whatsapp-content h4 {
+    color: var(--white);
+    font-size: 18px;
+    margin: 0 0 8px 0;
+    font-weight: 600;
+}
+
+.whatsapp-content p {
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 14px;
+    margin: 0 0 12px 0;
+    line-height: 1.5;
+}
+
+.whatsapp-button {
+    display: inline-flex;
+    align-items: center;
+    background: var(--white);
+    color: #25D366;
+    padding: 10px 18px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.whatsapp-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.whatsapp-button:active {
+    transform: translateY(0);
+}
+
+.whatsapp-button i {
+    margin-right: 8px;
+    font-size: 18px;
+}
+
 /* Responsive */
 @media (max-width: 428px) {
     .container {
@@ -869,6 +1277,39 @@ textarea.form-input {
     
     .bottom-nav {
         max-width: 100%;
+    }
+
+    .membership-plans-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .payment-account-card {
+        padding: 15px;
+    }
+
+    .account-detail-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .account-value {
+        text-align: left;
+        margin-right: 0;
+    }
+
+    .copy-btn {
+        align-self: flex-end;
+    }
+
+    .whatsapp-contact-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .whatsapp-icon-wrapper {
+        margin-right: 0;
+        margin-bottom: 10px;
     }
 }
 

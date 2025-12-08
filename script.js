@@ -49,30 +49,33 @@ function updatePrayerTimes() {
         hijriDate.textContent = `${hijriMonth[now.getMonth()]} ${now.getDate()}, ${hijriYear} AH`;
     }
     
-    // Simplified prayer times (should use location-based calculation in production)
-    const prayers = {
-        fajr: '05:30',
-        dhuhr: '12:15',
-        asr: '15:45',
-        maghrib: '18:20',
-        isha: '19:45'
+    // Load prayer times from localStorage or use defaults
+    const defaultPrayers = {
+        fajr: { adhan: '05:30', iqaama: '05:40' },
+        dhuhr: { adhan: '12:15', iqaama: '12:25' },
+        asr: { adhan: '15:45', iqaama: '15:55' },
+        maghrib: { adhan: '18:20', iqaama: '18:25' },
+        isha: { adhan: '19:45', iqaama: '19:55' }
     };
     
-    // Update prayer times
-    if (document.getElementById('fajrTime')) document.getElementById('fajrTime').textContent = prayers.fajr;
-    if (document.getElementById('dhuhrTime')) document.getElementById('dhuhrTime').textContent = prayers.dhuhr;
-    if (document.getElementById('asrTime')) document.getElementById('asrTime').textContent = prayers.asr;
-    if (document.getElementById('maghribTime')) document.getElementById('maghribTime').textContent = prayers.maghrib;
-    if (document.getElementById('ishaTime')) document.getElementById('ishaTime').textContent = prayers.isha;
+    const storedPrayers = JSON.parse(localStorage.getItem('prayerTimes')) || defaultPrayers;
     
-    // Find next prayer
+    // Update prayer times display
+    Object.keys(storedPrayers).forEach(prayer => {
+        const adhanEl = document.getElementById(prayer + 'Adhan');
+        const iqaamaEl = document.getElementById(prayer + 'Iqaama');
+        if (adhanEl) adhanEl.textContent = storedPrayers[prayer].adhan;
+        if (iqaamaEl) iqaamaEl.textContent = storedPrayers[prayer].iqaama;
+    });
+    
+    // Find next prayer (using adhan time)
     const currentTime = now.getHours() * 60 + now.getMinutes();
     const prayerTimes = [
-        { name: 'Fajr', time: '05:30' },
-        { name: 'Dhuhr', time: '12:15' },
-        { name: 'Asr', time: '15:45' },
-        { name: 'Maghrib', time: '18:20' },
-        { name: 'Isha', time: '19:45' }
+        { name: 'Fajr', time: storedPrayers.fajr.adhan },
+        { name: 'Dhuhr', time: storedPrayers.dhuhr.adhan },
+        { name: 'Asr', time: storedPrayers.asr.adhan },
+        { name: 'Maghrib', time: storedPrayers.maghrib.adhan },
+        { name: 'Isha', time: storedPrayers.isha.adhan }
     ];
     
     let nextPrayer = prayerTimes[prayerTimes.length - 1];
@@ -195,5 +198,156 @@ document.addEventListener('DOMContentLoaded', () => {
             this.classList.add('active');
         });
     });
+
+    // Initialize prayer times editing
+    initializePrayerTimesEditing();
 });
+
+// Admin Password (in production, this should be stored securely on the backend)
+const ADMIN_PASSWORD = 'kiuma2024'; // Change this to your desired password
+
+let isAdminLoggedIn = false;
+
+function showAdminLogin() {
+    document.getElementById('adminLoginModal').style.display = 'flex';
+    document.getElementById('adminPassword').value = '';
+    document.getElementById('passwordError').style.display = 'none';
+}
+
+function closeAdminLogin() {
+    document.getElementById('adminLoginModal').style.display = 'none';
+    document.getElementById('adminPassword').value = '';
+    document.getElementById('passwordError').style.display = 'none';
+}
+
+function verifyAdminPassword() {
+    const password = document.getElementById('adminPassword').value;
+    if (password === ADMIN_PASSWORD) {
+        isAdminLoggedIn = true;
+        closeAdminLogin();
+        enableEditing();
+        alert('Admin mode enabled. You can now edit prayer times.');
+    } else {
+        document.getElementById('passwordError').style.display = 'block';
+        document.getElementById('adminPassword').value = '';
+    }
+}
+
+function enableEditing() {
+    const editableElements = document.querySelectorAll('.editable');
+    editableElements.forEach(el => {
+        el.contentEditable = 'true';
+        el.classList.add('editing');
+    });
+    
+    // Update edit button
+    const editBtn = document.getElementById('adminEditBtn');
+    editBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+    editBtn.onclick = savePrayerTimes;
+    
+    // Add save/cancel buttons
+    if (!document.getElementById('saveCancelBtns')) {
+        const btnContainer = document.createElement('div');
+        btnContainer.id = 'saveCancelBtns';
+        btnContainer.style.cssText = 'display: flex; gap: 10px; margin-top: 15px;';
+        btnContainer.innerHTML = `
+            <button class="btn btn-primary" onclick="savePrayerTimes()" style="flex: 1;">
+                <i class="fas fa-save"></i> Save
+            </button>
+            <button class="btn btn-secondary" onclick="cancelEditing()" style="flex: 1;">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+        `;
+        document.getElementById('prayerTimesList').appendChild(btnContainer);
+    }
+}
+
+function cancelEditing() {
+    isAdminLoggedIn = false;
+    const editableElements = document.querySelectorAll('.editable');
+    editableElements.forEach(el => {
+        el.contentEditable = 'false';
+        el.classList.remove('editing');
+    });
+    
+    // Reload prayer times
+    updatePrayerTimes();
+    
+    // Update edit button
+    const editBtn = document.getElementById('adminEditBtn');
+    editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Times';
+    editBtn.onclick = showAdminLogin;
+    
+    // Remove save/cancel buttons
+    const btnContainer = document.getElementById('saveCancelBtns');
+    if (btnContainer) btnContainer.remove();
+}
+
+function savePrayerTimes() {
+    const prayers = {};
+    const prayerNames = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+    
+    prayerNames.forEach(prayer => {
+        const adhanEl = document.getElementById(prayer + 'Adhan');
+        const iqaamaEl = document.getElementById(prayer + 'Iqaama');
+        
+        if (adhanEl && iqaamaEl) {
+            // Validate time format
+            const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+            const adhanTime = adhanEl.textContent.trim();
+            const iqaamaTime = iqaamaEl.textContent.trim();
+            
+            if (!timeRegex.test(adhanTime) || !timeRegex.test(iqaamaTime)) {
+                alert(`Invalid time format for ${prayer}. Please use HH:MM format (e.g., 05:30)`);
+                return;
+            }
+            
+            prayers[prayer] = {
+                adhan: adhanTime,
+                iqaama: iqaamaTime
+            };
+        }
+    });
+    
+    // Save to localStorage
+    localStorage.setItem('prayerTimes', JSON.stringify(prayers));
+    
+    // Disable editing
+    cancelEditing();
+    
+    alert('Prayer times saved successfully!');
+}
+
+function initializePrayerTimesEditing() {
+    // Close modal on overlay click
+    const modal = document.getElementById('adminLoginModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeAdminLogin();
+            }
+        });
+    }
+    
+    // Allow Enter key to submit password
+    const passwordInput = document.getElementById('adminPassword');
+    if (passwordInput) {
+        passwordInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                verifyAdminPassword();
+            }
+        });
+    }
+    
+    // Prevent accidental editing when not logged in
+    const editableElements = document.querySelectorAll('.editable');
+    editableElements.forEach(el => {
+        el.addEventListener('click', function(e) {
+            if (!isAdminLoggedIn) {
+                e.preventDefault();
+                showAdminLogin();
+            }
+        });
+    });
+}
 

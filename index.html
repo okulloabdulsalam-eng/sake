@@ -75,27 +75,61 @@
 
             <!-- Prayer Times List -->
             <section class="prayer-times-list" id="prayerTimesList">
+                <div class="prayer-times-header">
+                    <h3 style="margin: 0 0 15px 0; color: var(--dark-gray); font-size: 18px;">Prayer Times</h3>
+                    <button class="admin-edit-btn" onclick="showAdminLogin()" id="adminEditBtn">
+                        <i class="fas fa-edit"></i> Edit Times
+                    </button>
+                </div>
+                
+                <div class="prayer-table-header">
+                    <div class="header-cell">Prayer</div>
+                    <div class="header-cell">Adhan</div>
+                    <div class="header-cell">Iqaama</div>
+                </div>
+                
                 <div class="prayer-item">
                     <span class="prayer-name">Fajr</span>
-                    <span class="prayer-time" id="fajrTime">05:30</span>
+                    <span class="prayer-time adhan-time editable" data-prayer="fajr" data-type="adhan" id="fajrAdhan" contenteditable="false">05:30</span>
+                    <span class="prayer-time iqaama-time editable" data-prayer="fajr" data-type="iqaama" id="fajrIqaama" contenteditable="false">05:40</span>
                 </div>
                 <div class="prayer-item">
                     <span class="prayer-name">Dhuhr</span>
-                    <span class="prayer-time" id="dhuhrTime">12:15</span>
+                    <span class="prayer-time adhan-time editable" data-prayer="dhuhr" data-type="adhan" id="dhuhrAdhan" contenteditable="false">12:15</span>
+                    <span class="prayer-time iqaama-time editable" data-prayer="dhuhr" data-type="iqaama" id="dhuhrIqaama" contenteditable="false">12:25</span>
                 </div>
                 <div class="prayer-item active">
                     <span class="prayer-name">Asr</span>
-                    <span class="prayer-time" id="asrTime">15:45</span>
+                    <span class="prayer-time adhan-time editable" data-prayer="asr" data-type="adhan" id="asrAdhan" contenteditable="false">15:45</span>
+                    <span class="prayer-time iqaama-time editable" data-prayer="asr" data-type="iqaama" id="asrIqaama" contenteditable="false">15:55</span>
                 </div>
                 <div class="prayer-item">
                     <span class="prayer-name">Maghrib</span>
-                    <span class="prayer-time" id="maghribTime">18:20</span>
+                    <span class="prayer-time adhan-time editable" data-prayer="maghrib" data-type="adhan" id="maghribAdhan" contenteditable="false">18:20</span>
+                    <span class="prayer-time iqaama-time editable" data-prayer="maghrib" data-type="iqaama" id="maghribIqaama" contenteditable="false">18:25</span>
                 </div>
                 <div class="prayer-item">
                     <span class="prayer-name">Isha</span>
-                    <span class="prayer-time" id="ishaTime">19:45</span>
+                    <span class="prayer-time adhan-time editable" data-prayer="isha" data-type="adhan" id="ishaAdhan" contenteditable="false">19:45</span>
+                    <span class="prayer-time iqaama-time editable" data-prayer="isha" data-type="iqaama" id="ishaIqaama" contenteditable="false">19:55</span>
                 </div>
             </section>
+
+            <!-- Admin Login Modal -->
+            <div class="modal-overlay" id="adminLoginModal" style="display: none;">
+                <div class="modal-content">
+                    <h3><i class="fas fa-lock"></i> Admin Login</h3>
+                    <p>Enter password to edit prayer times</p>
+                    <div class="form-group">
+                        <input type="password" class="form-input" id="adminPassword" placeholder="Enter admin password">
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-primary" onclick="verifyAdminPassword()" style="flex: 1;">Login</button>
+                        <button class="btn btn-secondary" onclick="closeAdminLogin()" style="flex: 1;">Cancel</button>
+                    </div>
+                    <p id="passwordError" style="color: #F44336; font-size: 12px; margin: 10px 0 0 0; display: none;">Incorrect password. Please try again.</p>
+                </div>
+            </div>
 
             <!-- Search Bar -->
             <section class="search-section">
