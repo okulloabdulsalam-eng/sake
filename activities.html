@@ -35,8 +35,8 @@
             <div class="header-content">
                 <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
                 <div class="logo-container">
-                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; this.nextElementSibling.classList.add('fallback');">
-                    <svg class="header-logo-svg fallback" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
+                    <svg class="header-logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="display: none;">
                         <circle cx="100" cy="100" r="95" fill="none" stroke="#4CAF50" stroke-width="4"/>
                         <path id="topArc" d="M 20,100 A 80,80 0 0,1 180,100" fill="none"/>
                         <text fill="#4CAF50" font-size="9" font-weight="bold" font-family="Arial, sans-serif" letter-spacing="0.5">
@@ -71,6 +71,99 @@
             </section>
 
             <section class="page-content">
+                <!-- Donate to Kisilaahe -->
+                <div class="event-card kisilaahe-card" id="kisilaahe">
+                    <div class="event-image" style="background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);">
+                        <i class="fas fa-donate"></i>
+                    </div>
+                    <div class="event-content">
+                        <div class="event-date"><i class="fas fa-calendar"></i> Ongoing</div>
+                        <h3 class="event-title">Donate to Kisilaahe</h3>
+                        <p class="event-description">Support the Kisilaahe community by donating essential food items. Your contributions help provide basic necessities for those in need.</p>
+                        <button class="event-btn" onclick="toggleKisilaaheDetails()">
+                            <i class="fas fa-chevron-down" id="kisilaaheToggleIcon"></i> View Requirements
+                        </button>
+                        
+                        <!-- Dropdown Details -->
+                        <div class="charity-details-dropdown" id="kisilaaheDetails" style="display: none;">
+                            <div class="charity-requirements">
+                                <h4 style="margin: 15px 0 10px 0; color: var(--dark-green);">
+                                    <i class="fas fa-list-check"></i> Required Items:
+                                </h4>
+                                <ul class="requirement-list">
+                                    <li><i class="fas fa-check-circle"></i> Rice (all forms)</li>
+                                    <li><i class="fas fa-check-circle"></i> Sugar</li>
+                                    <li><i class="fas fa-check-circle"></i> Posho</li>
+                                    <li><i class="fas fa-check-circle"></i> Beans</li>
+                                </ul>
+                                <div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid var(--light-gray);">
+                                    <div style="background: #F3E5F5; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+                                        <p style="font-size: 14px; color: var(--dark-green); margin: 0 0 10px 0; font-weight: 600;">
+                                            <i class="fas fa-phone-alt"></i> Contact for Donations:
+                                        </p>
+                                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                                            <a href="tel:0787749111" style="display: inline-flex; align-items: center; gap: 8px; color: #9C27B0; font-size: 16px; font-weight: 600; text-decoration: none;">
+                                                <i class="fas fa-phone"></i> 0787749111
+                                            </a>
+                                            <a href="https://wa.me/256787749111" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; color: #25D366; font-size: 16px; font-weight: 600; text-decoration: none;">
+                                                <i class="fab fa-whatsapp"></i> WhatsApp: 0787749111
+                                            </a>
+                                        </div>
+                                        <p style="font-size: 12px; color: var(--text-gray); margin: 8px 0 0 0;">
+                                            Call or WhatsApp to arrange your donation
+                                        </p>
+                                    </div>
+                                    <p style="font-size: 14px; color: var(--text-gray); margin-bottom: 10px;">
+                                        You can also make a monetary donation through our payment page.
+                                    </p>
+                                    <button class="event-btn" onclick="window.location.href='pay.html?type=kisilaahe'" style="width: 100%;">
+                                        <i class="fas fa-hand-holding-heart"></i> Donate Now (1.5M UGX)
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kizumu Charity Visit -->
+                <div class="event-card charity-visit-card">
+                    <div class="event-image">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <div class="event-content">
+                        <div class="event-date"><i class="fas fa-calendar"></i> Upcoming</div>
+                        <h3 class="event-title">Kizumu Tahfiz Charity Visit</h3>
+                        <p class="event-description">Join us in supporting the Kizumu Tahfiz community through our charity visit. Your contributions help provide essential resources for Islamic education.</p>
+                        <button class="event-btn" onclick="toggleCharityDetails()">
+                            <i class="fas fa-chevron-down" id="charityToggleIcon"></i> View Requirements
+                        </button>
+                        
+                        <!-- Dropdown Details -->
+                        <div class="charity-details-dropdown" id="charityDetails" style="display: none;">
+                            <div class="charity-requirements">
+                                <h4 style="margin: 15px 0 10px 0; color: var(--dark-green);">
+                                    <i class="fas fa-list-check"></i> Required Items:
+                                </h4>
+                                <ul class="requirement-list">
+                                    <li><i class="fas fa-check-circle"></i> 900 kgs of Posho</li>
+                                    <li><i class="fas fa-check-circle"></i> 300 kgs of Rice</li>
+                                    <li><i class="fas fa-check-circle"></i> Yasarunas</li>
+                                    <li><i class="fas fa-check-circle"></i> Qurans</li>
+                                    <li><i class="fas fa-check-circle"></i> Quran Seats</li>
+                                </ul>
+                                <div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid var(--light-gray);">
+                                    <p style="font-size: 14px; color: var(--text-gray); margin-bottom: 10px;">
+                                        To contribute or volunteer, please contact us or make a donation through the payment page.
+                                    </p>
+                                    <button class="event-btn" onclick="window.location.href='pay.html?type=charity&donation=kizumu-tahfiz-visit'" style="width: 100%;">
+                                        <i class="fas fa-hand-holding-heart"></i> Donate Now
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="event-card">
                     <div class="event-image">
                         <i class="fas fa-futbol"></i>
@@ -154,7 +247,124 @@
         </nav>
     </div>
 
+    <!-- Floating Kizumu Visit Button -->
+    <div class="floating-kizumu-btn" onclick="showActivitiesModal()">
+        <i class="fas fa-heart"></i>
+        <span>Kizumu Visit</span>
+    </div>
+
+    <!-- Activities Modal -->
+    <div class="modal-overlay" id="activitiesModal" style="display: none;">
+        <div class="modal-content activities-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-heart"></i> Important Activities</h3>
+                <button class="modal-close" onclick="closeActivitiesModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="activities-modal-list">
+                <div class="activity-modal-item" onclick="navigateToActivity('kizumu-visit')">
+                    <div class="activity-modal-icon" style="background: #E91E63;">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Kizumu Tahfiz Charity Visit</h4>
+                        <p>Support Islamic education through charity visit</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="navigateToActivity('tuition-brothers')">
+                    <div class="activity-modal-icon" style="background: var(--primary-green);">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Tuition for Brothers</h4>
+                        <p>Support brothers' education and learning</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="navigateToActivity('kisilaahe')">
+                    <div class="activity-modal-icon" style="background: #9C27B0;">
+                        <i class="fas fa-donate"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Donate to Kisilaahe</h4>
+                        <p>Support Kisilaahe with essential items</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="navigateToActivity('activities')">
+                    <div class="activity-modal-icon" style="background: #FF9800;">
+                        <i class="fas fa-running"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>View All Activities</h4>
+                        <p>See all community activities and events</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
+    <script>
+        function toggleCharityDetails() {
+            const details = document.getElementById('charityDetails');
+            const icon = document.getElementById('charityToggleIcon');
+            
+            if (details.style.display === 'none') {
+                details.style.display = 'block';
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            } else {
+                details.style.display = 'none';
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            }
+        }
+
+        function toggleKisilaaheDetails() {
+            const details = document.getElementById('kisilaaheDetails');
+            const icon = document.getElementById('kisilaaheToggleIcon');
+            
+            if (details.style.display === 'none') {
+                details.style.display = 'block';
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            } else {
+                details.style.display = 'none';
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            }
+        }
+
+        // Close modal on overlay click
+        document.getElementById('activitiesModal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeActivitiesModal();
+            }
+        });
+
+        // Scroll to charity visit if URL has hash
+        if (window.location.hash === '#charity-visit') {
+            setTimeout(() => {
+                document.querySelector('.charity-visit-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                toggleCharityDetails();
+            }, 300);
+        }
+
+        // Scroll to kisilaahe if URL has hash
+        if (window.location.hash === '#kisilaahe') {
+            setTimeout(() => {
+                document.querySelector('.kisilaahe-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                toggleKisilaaheDetails();
+            }, 300);
+        }
+    </script>
 </body>
 </html>
 

@@ -35,8 +35,8 @@
             <div class="header-content">
                 <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
                 <div class="logo-container">
-                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; this.nextElementSibling.classList.add('fallback');">
-                    <svg class="header-logo-svg fallback" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
+                    <svg class="header-logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="display: none;">
                         <circle cx="100" cy="100" r="95" fill="none" stroke="#4CAF50" stroke-width="4"/>
                         <path id="topArc" d="M 20,100 A 80,80 0 0,1 180,100" fill="none"/>
                         <text fill="#4CAF50" font-size="9" font-weight="bold" font-family="Arial, sans-serif" letter-spacing="0.5">
@@ -162,6 +162,69 @@
             document.getElementById('questionForm').reset();
         }
     </script>
+
+    <!-- Floating Kizumu Visit Button -->
+    <div class="floating-kizumu-btn" onclick="showActivitiesModal()">
+        <i class="fas fa-heart"></i>
+        <span>Kizumu Visit</span>
+    </div>
+
+    <!-- Activities Modal -->
+    <div class="modal-overlay" id="activitiesModal" style="display: none;">
+        <div class="modal-content activities-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-heart"></i> Important Activities</h3>
+                <button class="modal-close" onclick="closeActivitiesModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="activities-modal-list">
+                <div class="activity-modal-item" onclick="navigateToActivity('kizumu-visit')">
+                    <div class="activity-modal-icon" style="background: #E91E63;">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Kizumu Tahfiz Charity Visit</h4>
+                        <p>Support Islamic education through charity visit</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="navigateToActivity('tuition-brothers')">
+                    <div class="activity-modal-icon" style="background: var(--primary-green);">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Tuition for Brothers</h4>
+                        <p>Support brothers' education and learning</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="navigateToActivity('kisilaahe')">
+                    <div class="activity-modal-icon" style="background: #9C27B0;">
+                        <i class="fas fa-donate"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Donate to Kisilaahe</h4>
+                        <p>Support Kisilaahe with essential items</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="navigateToActivity('activities')">
+                    <div class="activity-modal-icon" style="background: #FF9800;">
+                        <i class="fas fa-running"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>View All Activities</h4>
+                        <p>See all community activities and events</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
 

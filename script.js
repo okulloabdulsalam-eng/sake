@@ -108,11 +108,50 @@ function navigateTo(url) {
     window.location.href = url;
 }
 
-// Navigate to Kizumu Visit
+// Navigate to Kizumu Visit - Show Activities Modal
 function navigateToKizumuVisit() {
-    // Navigate to payment page with Kizumu visit pre-selected
-    window.location.href = 'pay.html?type=charity&donation=kizumu-tahfiz-visit';
+    showActivitiesModal();
 }
+
+function showActivitiesModal() {
+    const modal = document.getElementById('activitiesModal');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+function closeActivitiesModal() {
+    const modal = document.getElementById('activitiesModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function navigateToActivity(type) {
+    closeActivitiesModal();
+    
+    if (type === 'kizumu-visit') {
+        window.location.href = 'activities.html#charity-visit';
+    } else if (type === 'tuition-brothers') {
+        window.location.href = 'pay.html?type=charity&donation=tuition-brothers';
+    } else if (type === 'kisilaahe') {
+        window.location.href = 'activities.html#kisilaahe';
+    } else if (type === 'activities') {
+        window.location.href = 'activities.html';
+    }
+}
+
+// Initialize modal close on overlay click for all pages
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('activitiesModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeActivitiesModal();
+            }
+        });
+    }
+});
 
 // Search functionality
 const searchInput = document.getElementById('searchInput');
