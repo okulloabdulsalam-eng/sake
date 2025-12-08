@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Us - KIUMA</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link active"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <h1 class="logo">KIUMA</h1>
+                <button class="notifications-btn" id="notificationsBtn">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">3</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <section class="page-header">
+                <h2 class="page-title">Join Our Community</h2>
+            </section>
+
+            <section class="page-content">
+                <div class="info-card">
+                    <h3><i class="fas fa-users"></i> Welcome to KIUMA</h3>
+                    <p>Become part of a vibrant Islamic community dedicated to faith, knowledge, and service. Join Muslim students at Kampala International University who are making a difference.</p>
+                </div>
+
+                <form id="joinForm" onsubmit="handleJoinSubmit(event)">
+                    <div class="form-group">
+                        <label class="form-label">First Name</label>
+                        <input type="text" class="form-input" id="joinFirstName" placeholder="Your first name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" class="form-input" id="joinLastName" placeholder="Your last name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" class="form-input" id="joinEmail" placeholder="Enter your email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" class="form-input" id="joinPhone" placeholder="Enter your phone number" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Date of Birth</label>
+                        <input type="date" class="form-input" id="joinDOB" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Gender</label>
+                        <select class="form-input" id="joinGender" required>
+                            <option value="">Select</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="prefer-not-to-say">Prefer not to say</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Course/Program</label>
+                        <input type="text" class="form-input" id="joinCourse" placeholder="Your course of study" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Year of Study</label>
+                        <select class="form-input" id="joinYear" required>
+                            <option value="">Select</option>
+                            <option value="year1">Year 1</option>
+                            <option value="year2">Year 2</option>
+                            <option value="year3">Year 3</option>
+                            <option value="year4">Year 4</option>
+                            <option value="year5">Year 5</option>
+                            <option value="postgraduate">Postgraduate</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">How did you hear about us?</label>
+                        <select class="form-input" id="joinSource">
+                            <option value="">Select</option>
+                            <option value="friend">Friend/Family</option>
+                            <option value="social">Social Media</option>
+                            <option value="website">Website</option>
+                            <option value="event">Event</option>
+                            <option value="mosque">Mosque</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Interests (Select all that apply)</label>
+                        <div style="margin-top: 10px;">
+                            <label style="display: flex; align-items: center; padding: 10px; background: var(--gray); border-radius: 8px; margin-bottom: 8px; cursor: pointer;">
+                                <input type="checkbox" name="interests" value="education" style="margin-right: 10px; width: auto;">
+                                <span>Islamic Education</span>
+                            </label>
+                            <label style="display: flex; align-items: center; padding: 10px; background: var(--gray); border-radius: 8px; margin-bottom: 8px; cursor: pointer;">
+                                <input type="checkbox" name="interests" value="volunteer" style="margin-right: 10px; width: auto;">
+                                <span>Volunteering</span>
+                            </label>
+                            <label style="display: flex; align-items: center; padding: 10px; background: var(--gray); border-radius: 8px; margin-bottom: 8px; cursor: pointer;">
+                                <input type="checkbox" name="interests" value="events" style="margin-right: 10px; width: auto;">
+                                <span>Community Events</span>
+                            </label>
+                            <label style="display: flex; align-items: center; padding: 10px; background: var(--gray); border-radius: 8px; margin-bottom: 8px; cursor: pointer;">
+                                <input type="checkbox" name="interests" value="youth" style="margin-right: 10px; width: auto;">
+                                <span>Youth Programs</span>
+                            </label>
+                            <label style="display: flex; align-items: center; padding: 10px; background: var(--gray); border-radius: 8px; margin-bottom: 8px; cursor: pointer;">
+                                <input type="checkbox" name="interests" value="sisters" style="margin-right: 10px; width: auto;">
+                                <span>Sisters Programs</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display: flex; align-items: flex-start; cursor: pointer;">
+                            <input type="checkbox" id="joinTerms" style="margin-right: 10px; margin-top: 5px; width: auto;" required>
+                            <span>I agree to the <a href="#" style="color: var(--primary-green);">Terms & Conditions</a> and <a href="#" style="color: var(--primary-green);">Privacy Policy</a></span>
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display: flex; align-items: flex-start; cursor: pointer;">
+                            <input type="checkbox" id="joinNewsletter" style="margin-right: 10px; margin-top: 5px; width: auto;">
+                            <span>Subscribe to our newsletter for updates and announcements</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-user-plus"></i> Join Now
+                    </button>
+                </form>
+
+                <div class="info-card" style="margin-top: 20px; background: #E8F5E9;">
+                    <h3 style="color: var(--dark-green); margin-bottom: 10px;"><i class="fas fa-heart"></i> Why Join?</h3>
+                    <ul class="info-list" style="margin: 0;">
+                        <li><i class="fas fa-check-circle" style="color: var(--primary-green);"></i> Access to educational programs and resources</li>
+                        <li><i class="fas fa-check-circle" style="color: var(--primary-green);"></i> Connect with a supportive community</li>
+                        <li><i class="fas fa-check-circle" style="color: var(--primary-green);"></i> Participate in events and activities</li>
+                        <li><i class="fas fa-check-circle" style="color: var(--primary-green);"></i> Get Islamic guidance and support</li>
+                        <li><i class="fas fa-check-circle" style="color: var(--primary-green);"></i> Make a positive impact in society</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
+            <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
+            <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
+            <a href="join-us.html" class="nav-item active"><i class="fas fa-user-plus"></i><span>Join</span></a>
+        </nav>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        function handleJoinSubmit(e) {
+            e.preventDefault();
+            const firstName = document.getElementById('joinFirstName').value;
+            const email = document.getElementById('joinEmail').value;
+            const interests = Array.from(document.querySelectorAll('input[name="interests"]:checked')).map(cb => cb.value);
+
+            alert('Welcome to KIUMA, ' + firstName + '! Your registration is complete. Check your email (' + email + ') for confirmation and next steps.');
+            
+            // Store user name
+            localStorage.setItem('userName', firstName);
+            
+            // Redirect to home after a moment
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
+

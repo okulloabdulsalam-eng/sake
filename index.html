@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="KIUMA - Kampala International University Muslim Students Association - Your guide to Islamic values, programs, and activities">
+    <title>KIUMA - Kampala International University Muslim Students Association</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation Menu -->
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link active"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <h1 class="logo">KIUMA</h1>
+                <button class="notifications-btn" id="notificationsBtn">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">3</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Home Page Content -->
+        <main class="main-content">
+            <!-- Welcome Section -->
+            <section class="welcome-section">
+                <h2 class="greeting">Good morning, <span id="userName">Brother/Sister</span></h2>
+                <div class="profile-pic">
+                    <img src="https://via.placeholder.com/50" alt="Profile" id="profileImg">
+                </div>
+            </section>
+
+            <!-- Prayer Times Card -->
+            <section class="promo-card prayer-times-card">
+                <div class="card-badge">Prayer Times</div>
+                <div class="card-content">
+                    <div class="card-text">
+                        <div class="date-display" id="dateDisplay"></div>
+                        <div class="hijri-date" id="hijriDate"></div>
+                        <div class="next-prayer" id="nextPrayer">
+                            <i class="fas fa-clock"></i> Next: <span id="nextPrayerTime">Asr</span>
+                        </div>
+                    </div>
+                    <div class="card-illustration">
+                        <i class="fas fa-mosque" style="font-size: 60px; color: #4CAF50;"></i>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Prayer Times List -->
+            <section class="prayer-times-list" id="prayerTimesList">
+                <div class="prayer-item">
+                    <span class="prayer-name">Fajr</span>
+                    <span class="prayer-time" id="fajrTime">05:30</span>
+                </div>
+                <div class="prayer-item">
+                    <span class="prayer-name">Dhuhr</span>
+                    <span class="prayer-time" id="dhuhrTime">12:15</span>
+                </div>
+                <div class="prayer-item active">
+                    <span class="prayer-name">Asr</span>
+                    <span class="prayer-time" id="asrTime">15:45</span>
+                </div>
+                <div class="prayer-item">
+                    <span class="prayer-name">Maghrib</span>
+                    <span class="prayer-time" id="maghribTime">18:20</span>
+                </div>
+                <div class="prayer-item">
+                    <span class="prayer-name">Isha</span>
+                    <span class="prayer-time" id="ishaTime">19:45</span>
+                </div>
+            </section>
+
+            <!-- Search Bar -->
+            <section class="search-section">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search here..." id="searchInput">
+                </div>
+            </section>
+
+            <!-- Quick Access Grid -->
+            <section class="quick-access">
+                <h3 class="section-title">What do you need?</h3>
+                <div class="grid-container">
+                    <div class="grid-item" onclick="navigateTo('programs.html')">
+                        <div class="grid-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <span class="grid-label">Programs</span>
+                    </div>
+                    <div class="grid-item" onclick="navigateTo('quran.html')">
+                        <div class="grid-icon">
+                            <i class="fas fa-quran"></i>
+                        </div>
+                        <span class="grid-label">Quran</span>
+                    </div>
+                    <div class="grid-item" onclick="navigateTo('activities.html')">
+                        <div class="grid-icon">
+                            <i class="fas fa-running"></i>
+                        </div>
+                        <span class="grid-label">Activities</span>
+                    </div>
+                    <div class="grid-item" onclick="navigateTo('events.html')">
+                        <div class="grid-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <span class="grid-label">Events</span>
+                    </div>
+                    <div class="grid-item" onclick="navigateTo('leadership.html')">
+                        <div class="grid-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <span class="grid-label">Leadership</span>
+                    </div>
+                    <div class="grid-item" onclick="navigateTo('donations.html')">
+                        <div class="grid-icon">
+                            <i class="fas fa-hand-holding-heart"></i>
+                        </div>
+                        <span class="grid-label">Donations</span>
+                    </div>
+                    <div class="grid-item" onclick="navigateTo('ask-question.html')">
+                        <div class="grid-icon">
+                            <i class="fas fa-question-circle"></i>
+                        </div>
+                        <span class="grid-label">Ask Question</span>
+                    </div>
+                    <div class="grid-item" onclick="navigateTo('settings.html')">
+                        <div class="grid-icon">
+                            <i class="fas fa-cog"></i>
+                        </div>
+                        <span class="grid-label">Settings</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recent Activities -->
+            <section class="recent-section">
+                <h3 class="section-title">Recent Activities</h3>
+                <div class="activity-card">
+                    <div class="activity-icon"><i class="fas fa-book-open"></i></div>
+                    <div class="activity-content">
+                        <h4>Weekly Quran Study</h4>
+                        <p>Every Friday 6:00 PM</p>
+                        <span class="activity-badge">Upcoming</span>
+                    </div>
+                </div>
+                <div class="activity-card">
+                    <div class="activity-icon"><i class="fas fa-handshake"></i></div>
+                    <div class="activity-content">
+                        <h4>Community Iftar</h4>
+                        <p>Tomorrow 7:00 PM</p>
+                        <span class="activity-badge success">Confirmed</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item active">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a>
+            <a href="programs.html" class="nav-item">
+                <i class="fas fa-book"></i>
+                <span>Programs</span>
+            </a>
+            <a href="events.html" class="nav-item">
+                <i class="fas fa-calendar"></i>
+                <span>Events</span>
+            </a>
+            <a href="pay.html" class="nav-item">
+                <i class="fas fa-credit-card"></i>
+                <span>Pay</span>
+            </a>
+            <a href="join-us.html" class="nav-item">
+                <i class="fas fa-user-plus"></i>
+                <span>Join</span>
+            </a>
+        </nav>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ask Question - KIUMA</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="ask-question.html" class="nav-link active"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <h1 class="logo">KIUMA</h1>
+                <button class="notifications-btn" id="notificationsBtn">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">3</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <section class="page-header">
+                <h2 class="page-title">Ask a Question</h2>
+            </section>
+
+            <section class="page-content">
+                <div class="info-card">
+                    <h3><i class="fas fa-info-circle"></i> Get Islamic Guidance</h3>
+                    <p>Have a question about Islam, Islamic practices, or need religious guidance? Our qualified scholars and imams are here to help. Submit your question below and we'll respond as soon as possible.</p>
+                </div>
+
+                <form id="questionForm" onsubmit="handleQuestionSubmit(event)">
+                    <div class="form-group">
+                        <label class="form-label">Your Name</label>
+                        <input type="text" class="form-input" id="questionName" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Your Email</label>
+                        <input type="email" class="form-input" id="questionEmail" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Question Category</label>
+                        <select class="form-input" id="questionCategory" required>
+                            <option value="">Select a category</option>
+                            <option value="aqeedah">Aqeedah (Belief)</option>
+                            <option value="fiqh">Fiqh (Jurisprudence)</option>
+                            <option value="worship">Worship & Prayer</option>
+                            <option value="family">Family & Marriage</option>
+                            <option value="halal">Halal & Haram</option>
+                            <option value="ethics">Ethics & Character</option>
+                            <option value="quran">Quran & Hadith</option>
+                            <option value="society">Society & Community</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Your Question</label>
+                        <textarea class="form-input" id="questionText" rows="6" placeholder="Please describe your question in detail..." required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="anonymous" style="margin-right: 10px; width: auto;">
+                            <span>Submit anonymously (your name will not be shared)</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> Submit Question
+                    </button>
+                </form>
+
+                <div class="info-card" style="margin-top: 20px;">
+                    <h3><i class="fas fa-question-circle"></i> Frequently Asked Questions</h3>
+                    <div style="margin-top: 15px;">
+                        <details style="margin-bottom: 10px; padding: 10px; background: var(--gray); border-radius: 8px;">
+                            <summary style="cursor: pointer; font-weight: 600; color: var(--dark-green);">How do I calculate Zakat?</summary>
+                            <p style="margin-top: 10px; color: var(--text-gray);">Zakat is 2.5% of your total wealth that has been held for one lunar year, above the nisab threshold. This includes cash, gold, silver, and trade goods.</p>
+                        </details>
+                        <details style="margin-bottom: 10px; padding: 10px; background: var(--gray); border-radius: 8px;">
+                            <summary style="cursor: pointer; font-weight: 600; color: var(--dark-green);">What are the prayer times?</summary>
+                            <p style="margin-top: 10px; color: var(--text-gray);">Prayer times vary by location and change daily. Check the home page for current prayer times, or use our mobile app for accurate times based on your location.</p>
+                        </details>
+                        <details style="margin-bottom: 10px; padding: 10px; background: var(--gray); border-radius: 8px;">
+                            <summary style="cursor: pointer; font-weight: 600; color: var(--dark-green);">How can I join the community?</summary>
+                            <p style="margin-top: 10px; color: var(--text-gray);">You can register online through our "Join Us" page, attend our events, or visit our community center. All are welcome!</p>
+                        </details>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
+            <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
+            <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
+        </nav>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        function handleQuestionSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('questionName').value;
+            const category = document.getElementById('questionCategory').value;
+            const anonymous = document.getElementById('anonymous').checked;
+
+            const displayName = anonymous ? 'Anonymous' : name;
+            alert('Thank you, ' + displayName + '! Your question about ' + category + ' has been submitted. Our scholars will respond soon.');
+            document.getElementById('questionForm').reset();
+        }
+    </script>
+</body>
+</html>
+

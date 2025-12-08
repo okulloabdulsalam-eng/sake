@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media - KIUMA</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="media.html" class="nav-link active"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <h1 class="logo">KIUMA</h1>
+                <button class="notifications-btn" id="notificationsBtn">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">3</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <section class="page-header">
+                <h2 class="page-title">Media Gallery</h2>
+            </section>
+
+            <section class="page-content">
+                <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <button class="btn btn-primary" style="flex: 1; min-width: calc(50% - 5px); padding: 12px;" onclick="filterMedia('all')">All</button>
+                    <button class="btn btn-outline" style="flex: 1; min-width: calc(50% - 5px); padding: 12px;" onclick="filterMedia('photos')">Photos</button>
+                    <button class="btn btn-outline" style="flex: 1; min-width: calc(50% - 5px); padding: 12px;" onclick="filterMedia('videos')">Videos</button>
+                    <button class="btn btn-outline" style="flex: 1; min-width: calc(50% - 5px); padding: 12px;" onclick="filterMedia('audio')">Audio</button>
+                </div>
+
+                <div class="media-grid" id="mediaGrid">
+                    <div class="media-item" data-type="photos">
+                        <div style="background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;">
+                            <i class="fas fa-mosque"></i>
+                        </div>
+                    </div>
+                    <div class="media-item" data-type="photos">
+                        <div style="background: linear-gradient(135deg, #4CAF50, #388E3C); width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;">
+                            <i class="fas fa-quran"></i>
+                        </div>
+                    </div>
+                    <div class="media-item" data-type="photos">
+                        <div style="background: linear-gradient(135deg, #4CAF50, #388E3C); width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                    <div class="media-item" data-type="photos">
+                        <div style="background: linear-gradient(135deg, #4CAF50, #388E3C); width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;">
+                            <i class="fas fa-gift"></i>
+                        </div>
+                    </div>
+                    <div class="media-item" data-type="videos">
+                        <div style="background: linear-gradient(135deg, #FF5722, #D84315); width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;">
+                            <i class="fas fa-play-circle"></i>
+                        </div>
+                    </div>
+                    <div class="media-item" data-type="videos">
+                        <div style="background: linear-gradient(135deg, #FF5722, #D84315); width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;">
+                            <i class="fas fa-video"></i>
+                        </div>
+                    </div>
+                    <div class="media-item" data-type="photos">
+                        <div style="background: linear-gradient(135deg, #4CAF50, #388E3C); width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;">
+                            <i class="fas fa-child"></i>
+                        </div>
+                    </div>
+                    <div class="media-item" data-type="audio">
+                        <div style="background: linear-gradient(135deg, #2196F3, #1976D2); width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;">
+                            <i class="fas fa-headphones"></i>
+                        </div>
+                    </div>
+                    <div class="media-item" data-type="photos">
+                        <div style="background: linear-gradient(135deg, #4CAF50, #388E3C); width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;">
+                            <i class="fas fa-star-and-crescent"></i>
+                        </div>
+                    </div>
+                    <div class="media-item" data-type="videos">
+                        <div style="background: linear-gradient(135deg, #FF5722, #D84315); width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;">
+                            <i class="fas fa-film"></i>
+                        </div>
+                    </div>
+                    <div class="media-item" data-type="photos">
+                        <div style="background: linear-gradient(135deg, #4CAF50, #388E3C); width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;">
+                            <i class="fas fa-book-open"></i>
+                        </div>
+                    </div>
+                    <div class="media-item" data-type="audio">
+                        <div style="background: linear-gradient(135deg, #2196F3, #1976D2); width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;">
+                            <i class="fas fa-microphone"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-card" style="margin-top: 20px;">
+                    <h3><i class="fas fa-info-circle"></i> About Our Media</h3>
+                    <p>Browse through photos and videos from our events, programs, and community activities. All media content is shared with respect to Islamic values and community guidelines.</p>
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
+            <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
+            <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
+        </nav>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        function filterMedia(type) {
+            const items = document.querySelectorAll('.media-item');
+            const buttons = document.querySelectorAll('.page-content button');
+            
+            buttons.forEach(btn => {
+                if (btn.textContent.trim() === type.charAt(0).toUpperCase() + type.slice(1) || btn.textContent.trim() === 'All') {
+                    btn.className = 'btn btn-primary';
+                } else {
+                    btn.className = 'btn btn-outline';
+                }
+            });
+            
+            items.forEach(item => {
+                if (type === 'all' || item.dataset.type === type) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+

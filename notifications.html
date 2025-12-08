@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications - KIUMA</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link active"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <h1 class="logo">KIUMA</h1>
+                <button class="notifications-btn" id="notificationsBtn">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">3</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <section class="page-header">
+                <h2 class="page-title">Notifications</h2>
+            </section>
+
+            <section class="page-content">
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <button class="btn btn-primary" style="flex: 1; padding: 12px;" onclick="filterNotifications('all')">All</button>
+                    <button class="btn btn-outline" style="flex: 1; padding: 12px;" onclick="filterNotifications('unread')">Unread</button>
+                </div>
+
+                <div class="notification-item" data-status="unread">
+                    <div class="notification-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="notification-content">
+                        <h4>New Event: Ramadan Welcome</h4>
+                        <p>Join us this Friday for a special Ramadan welcome event. Dinner and spiritual talks included.</p>
+                        <span class="notification-time">2 hours ago</span>
+                    </div>
+                </div>
+
+                <div class="notification-item" data-status="unread">
+                    <div class="notification-icon">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="notification-content">
+                        <h4>Quran Study Registration Open</h4>
+                        <p>Registration for the weekly Quran Study Circle is now open. Limited spots available.</p>
+                        <span class="notification-time">5 hours ago</span>
+                    </div>
+                </div>
+
+                <div class="notification-item" data-status="read">
+                    <div class="notification-icon">
+                        <i class="fas fa-hand-holding-heart"></i>
+                    </div>
+                    <div class="notification-content">
+                        <h4>Thank You for Your Donation</h4>
+                        <p>Your Zakat contribution has been received. May Allah accept it from you.</p>
+                        <span class="notification-time">1 day ago</span>
+                    </div>
+                </div>
+
+                <div class="notification-item" data-status="read">
+                    <div class="notification-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="notification-content">
+                        <h4>Prayer Time Reminder</h4>
+                        <p>Asr prayer begins in 15 minutes. Don't forget to pray!</p>
+                        <span class="notification-time">2 days ago</span>
+                    </div>
+                </div>
+
+                <div class="notification-item" data-status="read">
+                    <div class="notification-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="notification-content">
+                        <h4>Community Iftar Tomorrow</h4>
+                        <p>Join us tomorrow evening for community Iftar at 7:00 PM. All welcome!</p>
+                        <span class="notification-time">3 days ago</span>
+                    </div>
+                </div>
+
+                <div class="notification-item" data-status="read">
+                    <div class="notification-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="notification-content">
+                        <h4>New Online Course Available</h4>
+                        <p>Check out our new Islamic Studies course available on the online platform.</p>
+                        <span class="notification-time">1 week ago</span>
+                    </div>
+                </div>
+
+                <div class="notification-item" data-status="read">
+                    <div class="notification-icon">
+                        <i class="fas fa-star-and-crescent"></i>
+                    </div>
+                    <div class="notification-content">
+                        <h4>Ramadan Mubarak!</h4>
+                        <p>The blessed month of Ramadan has begun. May this month bring you peace and blessings.</p>
+                        <span class="notification-time">2 weeks ago</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
+            <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
+            <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
+        </nav>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        function filterNotifications(status) {
+            const items = document.querySelectorAll('.notification-item');
+            items.forEach(item => {
+                if (status === 'all' || item.dataset.status === status) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        // Mark as read on click
+        document.querySelectorAll('.notification-item').forEach(item => {
+            item.addEventListener('click', function() {
+                if (this.dataset.status === 'unread') {
+                    this.dataset.status = 'read';
+                    this.style.opacity = '0.7';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Programs - KIUMA</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link active"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <h1 class="logo">KIUMA</h1>
+                <button class="notifications-btn" id="notificationsBtn">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">3</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <section class="page-header">
+                <h2 class="page-title">Join Programs</h2>
+            </section>
+
+            <section class="page-content">
+                <div class="info-card">
+                    <h3><i class="fas fa-user-plus"></i> Register for Programs</h3>
+                    <p>Join our educational programs and activities. Fill out the form below to register for the programs you're interested in.</p>
+                </div>
+
+                <form id="programForm" onsubmit="handleProgramRegistration(event)">
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" class="form-input" id="programName" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" class="form-input" id="programEmail" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" class="form-input" id="programPhone" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Age</label>
+                        <input type="number" class="form-input" id="programAge" min="5" max="100" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Select Program(s)</label>
+                        <div style="margin-top: 10px;">
+                            <label style="display: flex; align-items: center; padding: 10px; background: var(--gray); border-radius: 8px; margin-bottom: 8px; cursor: pointer;">
+                                <input type="checkbox" name="programs" value="quran-study" style="margin-right: 10px; width: auto;">
+                                <span>Quran Study Circle</span>
+                            </label>
+                            <label style="display: flex; align-items: center; padding: 10px; background: var(--gray); border-radius: 8px; margin-bottom: 8px; cursor: pointer;">
+                                <input type="checkbox" name="programs" value="islamic-studies" style="margin-right: 10px; width: auto;">
+                                <span>Islamic Studies Course</span>
+                            </label>
+                            <label style="display: flex; align-items: center; padding: 10px; background: var(--gray); border-radius: 8px; margin-bottom: 8px; cursor: pointer;">
+                                <input type="checkbox" name="programs" value="children-education" style="margin-right: 10px; width: auto;">
+                                <span>Children's Islamic Education</span>
+                            </label>
+                            <label style="display: flex; align-items: center; padding: 10px; background: var(--gray); border-radius: 8px; margin-bottom: 8px; cursor: pointer;">
+                                <input type="checkbox" name="programs" value="arabic" style="margin-right: 10px; width: auto;">
+                                <span>Arabic Language Classes</span>
+                            </label>
+                            <label style="display: flex; align-items: center; padding: 10px; background: var(--gray); border-radius: 8px; margin-bottom: 8px; cursor: pointer;">
+                                <input type="checkbox" name="programs" value="sisters-circle" style="margin-right: 10px; width: auto;">
+                                <span>Sisters Circle (Female only)</span>
+                            </label>
+                            <label style="display: flex; align-items: center; padding: 10px; background: var(--gray); border-radius: 8px; margin-bottom: 8px; cursor: pointer;">
+                                <input type="checkbox" name="programs" value="online" style="margin-right: 10px; width: auto;">
+                                <span>Online Learning Platform</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Preferred Days</label>
+                        <select class="form-input" id="preferredDays" multiple style="height: 100px;">
+                            <option value="monday">Monday</option>
+                            <option value="tuesday">Tuesday</option>
+                            <option value="wednesday">Wednesday</option>
+                            <option value="thursday">Thursday</option>
+                            <option value="friday">Friday</option>
+                            <option value="saturday">Saturday</option>
+                            <option value="sunday">Sunday</option>
+                        </select>
+                        <small style="color: var(--text-gray); font-size: 12px;">Hold Ctrl (or Cmd on Mac) to select multiple days</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Additional Notes</label>
+                        <textarea class="form-input" id="programNotes" rows="4" placeholder="Any special requirements or questions..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-check-circle"></i> Register Now
+                    </button>
+                </form>
+
+                <div class="info-card" style="margin-top: 20px; background: #E8F5E9;">
+                    <p style="color: var(--dark-green); margin: 0;">
+                        <i class="fas fa-info-circle"></i> After registration, you'll receive a confirmation email with program details and schedule. Some programs may have fees - check the Programs page for details.
+                    </p>
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
+            <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
+            <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
+        </nav>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        function handleProgramRegistration(e) {
+            e.preventDefault();
+            const name = document.getElementById('programName').value;
+            const selectedPrograms = Array.from(document.querySelectorAll('input[name="programs"]:checked')).map(cb => cb.value);
+
+            if (selectedPrograms.length === 0) {
+                alert('Please select at least one program');
+                return;
+            }
+
+            alert('Thank you, ' + name + '! Registration successful for ' + selectedPrograms.length + ' program(s). You will receive a confirmation email shortly.');
+            document.getElementById('programForm').reset();
+        }
+    </script>
+</body>
+</html>
+

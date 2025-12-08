@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment - KIUMA</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link active"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <h1 class="logo">KIUMA</h1>
+                <button class="notifications-btn" id="notificationsBtn">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">3</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <section class="page-header">
+                <h2 class="page-title">Payment</h2>
+            </section>
+
+            <section class="page-content">
+                <div class="info-card">
+                    <h3><i class="fas fa-hand-holding-heart"></i> Support Our Community</h3>
+                    <p>Your contributions help us continue providing educational programs, community services, and support to Muslims across the UK.</p>
+                </div>
+
+                <!-- Payment Purpose Selection -->
+                <div class="form-group">
+                    <label class="form-label">Payment Purpose</label>
+                    <select class="form-input" id="paymentPurpose">
+                        <option value="">Select a purpose</option>
+                        <option value="donation">General Donation (Zakat/Sadaqah)</option>
+                        <option value="program">Program Registration</option>
+                        <option value="event">Event Registration</option>
+                        <option value="membership">Annual Membership</option>
+                        <option value="iftar">Iftar Sponsorship</option>
+                        <option value="education">Education Fund</option>
+                        <option value="mosque">Mosque Building Fund</option>
+                    </select>
+                </div>
+
+                <!-- Amount Input -->
+                <div class="form-group">
+                    <label class="form-label">Amount (£)</label>
+                    <input type="number" class="form-input" id="amount" placeholder="Enter amount" min="1" step="0.01">
+                </div>
+
+                <!-- Quick Amount Buttons -->
+                <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <button class="btn btn-outline" style="flex: 1; min-width: calc(25% - 8px); padding: 10px;" onclick="setAmount(10)">£10</button>
+                    <button class="btn btn-outline" style="flex: 1; min-width: calc(25% - 8px); padding: 10px;" onclick="setAmount(25)">£25</button>
+                    <button class="btn btn-outline" style="flex: 1; min-width: calc(25% - 8px); padding: 10px;" onclick="setAmount(50)">£50</button>
+                    <button class="btn btn-outline" style="flex: 1; min-width: calc(25% - 8px); padding: 10px;" onclick="setAmount(100)">£100</button>
+                </div>
+
+                <!-- Payment Methods -->
+                <div class="form-group">
+                    <label class="form-label">Payment Method</label>
+                    <div class="payment-methods">
+                        <div class="payment-method" data-method="card">
+                            <i class="fas fa-credit-card"></i>
+                            <span>Card</span>
+                        </div>
+                        <div class="payment-method" data-method="paypal">
+                            <i class="fab fa-paypal"></i>
+                            <span>PayPal</span>
+                        </div>
+                        <div class="payment-method" data-method="bank">
+                            <i class="fas fa-university"></i>
+                            <span>Bank Transfer</span>
+                        </div>
+                        <div class="payment-method" data-method="apple">
+                            <i class="fab fa-apple-pay"></i>
+                            <span>Apple Pay</span>
+                        </div>
+                        <div class="payment-method" data-method="google">
+                            <i class="fab fa-google-pay"></i>
+                            <span>Google Pay</span>
+                        </div>
+                        <div class="payment-method" data-method="zakat">
+                            <i class="fas fa-hand-holding-usd"></i>
+                            <span>Zakat</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Details (shown when card is selected) -->
+                <div id="cardDetails" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">Card Number</label>
+                        <input type="text" class="form-input" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19">
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">Expiry Date</label>
+                            <input type="text" class="form-input" id="expiryDate" placeholder="MM/YY" maxlength="5">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">CVV</label>
+                            <input type="text" class="form-input" id="cvv" placeholder="123" maxlength="4">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Cardholder Name</label>
+                        <input type="text" class="form-input" id="cardName" placeholder="John Doe">
+                    </div>
+                </div>
+
+                <!-- Additional Info -->
+                <div class="form-group">
+                    <label class="form-label">Additional Notes (Optional)</label>
+                    <textarea class="form-input" id="notes" placeholder="Any special instructions or dedication..."></textarea>
+                </div>
+
+                <!-- Make Payment Button -->
+                <button class="btn btn-primary" onclick="processPayment()">
+                    <i class="fas fa-lock"></i> Make Payment
+                </button>
+
+                <!-- Security Notice -->
+                <div class="info-card" style="margin-top: 20px; background: #E8F5E9;">
+                    <p style="font-size: 14px; color: var(--dark-green); margin: 0;">
+                        <i class="fas fa-shield-alt"></i> Your payment is secure and encrypted. We use industry-standard security measures to protect your information.
+                    </p>
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
+            <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
+            <a href="pay.html" class="nav-item active"><i class="fas fa-credit-card"></i><span>Pay</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
+        </nav>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        function setAmount(amount) {
+            document.getElementById('amount').value = amount;
+        }
+
+        // Show card details when card payment is selected
+        document.querySelectorAll('.payment-method').forEach(method => {
+            method.addEventListener('click', function() {
+                const methodType = this.dataset.method;
+                const cardDetails = document.getElementById('cardDetails');
+                if (methodType === 'card') {
+                    cardDetails.style.display = 'block';
+                } else {
+                    cardDetails.style.display = 'none';
+                }
+            });
+        });
+
+        function processPayment() {
+            const purpose = document.getElementById('paymentPurpose').value;
+            const amount = document.getElementById('amount').value;
+            const selectedMethod = document.querySelector('.payment-method.active');
+
+            if (!purpose) {
+                alert('Please select a payment purpose');
+                return;
+            }
+
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid amount');
+                return;
+            }
+
+            if (!selectedMethod) {
+                alert('Please select a payment method');
+                return;
+            }
+
+            const method = selectedMethod.dataset.method;
+
+            if (method === 'card') {
+                const cardNumber = document.getElementById('cardNumber').value;
+                const expiryDate = document.getElementById('expiryDate').value;
+                const cvv = document.getElementById('cvv').value;
+                const cardName = document.getElementById('cardName').value;
+
+                if (!cardNumber || !expiryDate || !cvv || !cardName) {
+                    alert('Please fill in all card details');
+                    return;
+                }
+            }
+
+            // Simulate payment processing
+            alert(`Payment of £${amount} for ${purpose} via ${method} is being processed...\n\n(In a real application, this would connect to a payment gateway)`);
+        }
+
+        // Format card number
+        document.getElementById('cardNumber')?.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\s/g, '');
+            let formatted = value.match(/.{1,4}/g)?.join(' ') || value;
+            e.target.value = formatted;
+        });
+
+        // Format expiry date
+        document.getElementById('expiryDate')?.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            }
+            e.target.value = value;
+        });
+    </script>
+</body>
+</html>
+
