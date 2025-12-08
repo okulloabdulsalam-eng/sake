@@ -66,6 +66,19 @@
         </header>
 
         <main class="main-content">
+            <!-- Welcome Section -->
+            <section class="welcome-section">
+                <div>
+                    <h2 class="greeting">
+                        <a href="about.html">KIUMA</a>
+                        <span>Assalam Alaikum, <span id="userName">Brother/Sister</span></span>
+                    </h2>
+                </div>
+                <button class="account-icon-btn" id="accountIconBtn" onclick="toggleAccountModal()">
+                    <i class="fas fa-user-circle" id="accountIcon"></i>
+                </button>
+            </section>
+
             <section class="page-header">
                 <h2 class="page-title">Join Programs</h2>
             </section>
@@ -245,12 +258,55 @@
             const course = document.getElementById('course').value;
             const year = document.getElementById('year').value;
             const semester = document.getElementById('semester').value;
-            const selectedCourses = Array.from(document.querySelectorAll('input[name="courses"]:checked')).map(cb => cb.value);
+            const selectedCourses = Array.from(document.querySelectorAll('input[name="courses"]:checked')).map(cb => {
+                const label = cb.parentElement.querySelector('span').textContent;
+                return label;
+            });
 
             if (selectedCourses.length === 0) {
                 alert('Please select at least one course to enroll in');
                 return;
             }
+
+            // Course name mappings
+            const courseNames = {
+                'quran-yasaruna': 'Quran and Yasaruna',
+                'hadith-memorisation': 'Hadith memorisation',
+                'hadith-explanation': 'Hadith Explanation',
+                'kitaabu-tawheed': 'Kitaabu Tawheed',
+                'fiqh-swalah': 'Fiqh Swalah',
+                'arbauna-nawawi': 'Arbauna Nawawi',
+                'tafsir': 'Tafsir',
+                'arabic-classes': 'Arabic classes'
+            };
+
+            // Prepare email content
+            const subject = encodeURIComponent('New Course Enrollment - Weekly Teachings');
+            const body = encodeURIComponent(`Assalam Alaikum,
+
+A new student has enrolled in the Weekly Teachings program:
+
+*Student Information:*
+- Full Name: ${name}
+- Registration Number: ${regNo}
+- Gender: ${gender}
+- Course/Program: ${course}
+- Year: ${year}
+- Semester: ${semester}
+
+*Selected Courses:*
+${selectedCourses.map((course, index) => `${index + 1}. ${course}`).join('\n')}
+
+Please process this enrollment and send a confirmation email to the student.
+
+Jazakallahu Khairan
+KIUMA Website`);
+
+            // Create mailto link
+            const mailtoLink = `mailto:aworshibah2006@gmail.com?subject=${subject}&body=${body}`;
+            
+            // Open email client
+            window.location.href = mailtoLink;
 
             // Save user data for future auto-fill
             const userData = {
@@ -264,11 +320,11 @@
             };
             localStorage.setItem('userData', JSON.stringify(userData));
 
-            alert('Thank you, ' + name + '!\n\nEnrollment successful for ' + selectedCourses.length + ' course(s).\n\nRegistration Number: ' + regNo + '\n\nYou will receive a confirmation email shortly.');
-            document.getElementById('programForm').reset();
-            
-            // Reload to show auto-filled fields if any
-            setTimeout(() => window.location.reload(), 1500);
+            // Show confirmation
+            setTimeout(() => {
+                alert('Thank you, ' + name + '!\n\nAn email has been prepared with your enrollment details for ' + selectedCourses.length + ' course(s).\n\nRegistration Number: ' + regNo + '\n\nPlease send the email to complete your enrollment. You will receive a confirmation email shortly.');
+                document.getElementById('programForm').reset();
+            }, 500);
         }
     </script>
 

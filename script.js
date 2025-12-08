@@ -111,15 +111,19 @@ function loadUserData() {
 }
 
 function updateUserDisplay() {
-    const userNameEl = document.getElementById('userName');
+    // Update all userName elements across all pages
+    const userNameEls = document.querySelectorAll('#userName');
     const accountIcon = document.getElementById('accountIcon');
     const accountIconBtn = document.getElementById('accountIconBtn');
     
+    const userName = currentUser ? (currentUser.firstName || currentUser.name || 'Brother/Sister') : 'Brother/Sister';
+    
+    // Update all userName spans on the page
+    userNameEls.forEach(el => {
+        el.textContent = userName;
+    });
+    
     if (currentUser) {
-        // Show user's name
-        if (userNameEl) {
-            userNameEl.textContent = currentUser.firstName || currentUser.name || 'Brother/Sister';
-        }
         // Change icon to show logged in state
         if (accountIcon) {
             accountIcon.className = 'fas fa-user-circle logged-in';
@@ -129,13 +133,9 @@ function updateUserDisplay() {
             accountIconBtn.title = 'Account';
         }
     } else {
-        // Show default
-        if (userNameEl) {
-            userNameEl.textContent = 'Brother/Sister';
-        }
         // Show login icon
         if (accountIcon) {
-            accountIcon.className = 'fas fa-sign-in-alt';
+            accountIcon.className = 'fas fa-user-circle';
         }
         if (accountIconBtn) {
             accountIconBtn.classList.remove('logged-in');

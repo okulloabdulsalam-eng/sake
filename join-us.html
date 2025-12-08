@@ -66,6 +66,19 @@
         </header>
 
         <main class="main-content">
+            <!-- Welcome Section -->
+            <section class="welcome-section">
+                <div>
+                    <h2 class="greeting">
+                        <a href="about.html">KIUMA</a>
+                        <span>Assalam Alaikum, <span id="userName">Brother/Sister</span></span>
+                    </h2>
+                </div>
+                <button class="account-icon-btn" id="accountIconBtn" onclick="toggleAccountModal()">
+                    <i class="fas fa-user-circle" id="accountIcon"></i>
+                </button>
+            </section>
+
             <section class="page-header">
                 <h2 class="page-title">Join Our Community</h2>
             </section>
@@ -210,18 +223,54 @@
         function handleJoinSubmit(e) {
             e.preventDefault();
             const firstName = document.getElementById('joinFirstName').value;
+            const lastName = document.getElementById('joinLastName').value;
             const email = document.getElementById('joinEmail').value;
+            const phone = document.getElementById('joinPhone').value;
+            const gender = document.getElementById('joinGender').value;
+            const course = document.getElementById('joinCourse').value;
+            const year = document.getElementById('joinYear').value;
+            const source = document.getElementById('joinSource').value;
             const interests = Array.from(document.querySelectorAll('input[name="interests"]:checked')).map(cb => cb.value);
+            const newsletter = document.getElementById('joinNewsletter').checked ? 'Yes' : 'No';
 
-            alert('Welcome to KIUMA, ' + firstName + '! Your registration is complete. Check your email (' + email + ') for confirmation and next steps.');
+            // Prepare email content
+            const subject = encodeURIComponent('New KIUMA Membership Registration');
+            const body = encodeURIComponent(`Assalam Alaikum,
+
+A new member has registered to join KIUMA:
+
+*Personal Information:*
+- Name: ${firstName} ${lastName}
+- Email: ${email}
+- Phone: ${phone}
+- Gender: ${gender}
+- Course/Program: ${course}
+- Year of Study: ${year}
+- How did they hear about us: ${source || 'Not specified'}
+
+*Interests:*
+${interests.length > 0 ? interests.join(', ') : 'None selected'}
+
+*Newsletter Subscription:* ${newsletter}
+
+Please review and process this registration.
+
+Jazakallahu Khairan
+KIUMA Website`);
+
+            // Create mailto link
+            const mailtoLink = `mailto:aworshibah2006@gmail.com?subject=${subject}&body=${body}`;
+            
+            // Open email client
+            window.location.href = mailtoLink;
             
             // Store user name
             localStorage.setItem('userName', firstName);
             
-            // Redirect to home after a moment
+            // Show confirmation
             setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 2000);
+                alert('Thank you, ' + firstName + '! An email has been prepared with your registration details. Please send the email to complete your registration. You will receive a confirmation email shortly.');
+            }, 500);
         }
     </script>
 

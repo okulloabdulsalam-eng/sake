@@ -66,6 +66,19 @@
         </header>
 
         <main class="main-content">
+            <!-- Welcome Section -->
+            <section class="welcome-section">
+                <div>
+                    <h2 class="greeting">
+                        <a href="about.html">KIUMA</a>
+                        <span>Assalam Alaikum, <span id="userName">Brother/Sister</span></span>
+                    </h2>
+                </div>
+                <button class="account-icon-btn" id="accountIconBtn" onclick="toggleAccountModal()">
+                    <i class="fas fa-user-circle" id="accountIcon"></i>
+                </button>
+            </section>
+
             <section class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <h2 class="page-title">Media Gallery</h2>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -173,6 +186,7 @@
         // Check admin status on page load
         window.addEventListener('DOMContentLoaded', function() {
             checkAdminStatus();
+            loadMediaFromStorage();
             
             // Initialize admin login modal
             const adminModal = document.getElementById('adminLoginModal');
@@ -226,20 +240,75 @@
             });
         }
 
-        function showAddMediaModal() {
+        window.showAddMediaModal = function() {
             if (!isAdminLoggedIn) {
                 showAdminLogin();
                 return;
             }
             document.getElementById('addMediaModal').style.display = 'flex';
-        }
+        };
 
-        function closeAddMediaModal() {
+        window.closeAddMediaModal = function() {
             document.getElementById('addMediaModal').style.display = 'none';
             document.getElementById('addMediaForm').reset();
+            // Clear preview
+            document.getElementById('filePreview').style.display = 'none';
+            document.getElementById('previewImage').style.display = 'none';
+            document.getElementById('previewVideo').style.display = 'none';
+            document.getElementById('previewAudio').style.display = 'none';
+        };
+
+        window.handleMediaTypeChange = function() {
+            const type = document.getElementById('mediaType').value;
+            const fileInput = document.getElementById('mediaFile');
+            if (fileInput) {
+                if (type === 'photos') {
+                    fileInput.accept = 'image/*';
+                } else if (type === 'videos') {
+                    fileInput.accept = 'video/*';
+                } else if (type === 'audio') {
+                    fileInput.accept = 'audio/*';
+                } else {
+                    fileInput.accept = 'image/*,video/*,audio/*';
+                }
+            }
+        };
+
+        window.handleFileSelect = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const preview = document.getElementById('filePreview');
+            const previewImage = document.getElementById('previewImage');
+            const previewVideo = document.getElementById('previewVideo');
+            const previewAudio = document.getElementById('previewAudio');
+
+            // Hide all previews first
+            previewImage.style.display = 'none';
+            previewVideo.style.display = 'none';
+            previewAudio.style.display = 'none';
+            preview.style.display = 'none';
+
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    previewImage.style.display = 'block';
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else if (file.type.startsWith('video/')) {
+                previewVideo.src = URL.createObjectURL(file);
+                previewVideo.style.display = 'block';
+                preview.style.display = 'block';
+            } else if (file.type.startsWith('audio/')) {
+                previewAudio.src = URL.createObjectURL(file);
+                previewAudio.style.display = 'block';
+                preview.style.display = 'block';
+            }
         }
 
-        function addMedia(e) {
+        window.addMedia = function(e) {
             e.preventDefault();
             if (!isAdminLoggedIn) {
                 alert('You must be logged in as admin to add media.');
@@ -248,45 +317,141 @@
 
             const title = document.getElementById('mediaTitle').value;
             const type = document.getElementById('mediaType').value;
+            const fileInput = document.getElementById('mediaFile');
             const url = document.getElementById('mediaUrl').value;
             
-            if (!title || !type || !url) {
+            if (!title || !type) {
                 alert('Please fill in all required fields.');
                 return;
             }
 
-            // Create media item element
+            if (!fileInput.files[0] && !url) {
+                alert('Please either upload a file or provide a URL.');
+                return;
+            }
+
+            // Get or create media data from localStorage
+            let mediaData = JSON.parse(localStorage.getItem('mediaData') || '[]');
+
+            // Handle file upload
+            let mediaUrl = url;
+            if (fileInput.files[0]) {
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    mediaUrl = e.target.result; // Base64 data URL
+                    createMediaItem(title, type, mediaUrl, mediaData);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                createMediaItem(title, type, mediaUrl, mediaData);
+            }
+        };
+
+        function createMediaItem(title, type, mediaUrl, mediaData) {
+            const mediaItem = {
+                id: Date.now().toString(),
+                title: title,
+                type: type,
+                url: mediaUrl,
+                date: new Date().toISOString()
+            };
+
+            mediaData.unshift(mediaItem); // Add to beginning
+            localStorage.setItem('mediaData', JSON.stringify(mediaData));
+
+            // Create and display media item
             const mediaGrid = document.getElementById('mediaGrid');
             const newMediaItem = document.createElement('div');
             newMediaItem.className = 'media-item';
             newMediaItem.dataset.type = type;
-            
-            const colors = {
-                'photos': 'linear-gradient(135deg, #4CAF50, #388E3C)',
-                'videos': 'linear-gradient(135deg, #FF5722, #D84315)',
-                'audio': 'linear-gradient(135deg, #2196F3, #1976D2)'
-            };
-            
-            const icons = {
-                'photos': 'fas fa-image',
-                'videos': 'fas fa-video',
-                'audio': 'fas fa-headphones'
-            };
-            
-            newMediaItem.innerHTML = `
-                <div style="background: ${colors[type]}; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-size: 48px; position: relative;">
-                    <i class="${icons[type]}"></i>
-                    <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.7); color: white; padding: 8px; font-size: 12px; text-align: center;">
-                        ${title}
+            newMediaItem.dataset.id = mediaItem.id;
+
+            if (type === 'photos') {
+                newMediaItem.innerHTML = `
+                    <div style="width: 100%; height: 100%; position: relative; border-radius: 8px; overflow: hidden;">
+                        <img src="${mediaUrl}" alt="${title}" style="width: 100%; height: 100%; object-fit: cover;">
+                        <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); color: white; padding: 12px 8px 8px 8px; font-size: 12px; text-align: center;">
+                            ${title}
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
+            } else if (type === 'videos') {
+                newMediaItem.innerHTML = `
+                    <div style="width: 100%; height: 100%; position: relative; border-radius: 8px; overflow: hidden; background: #000;">
+                        <video src="${mediaUrl}" controls style="width: 100%; height: 100%; object-fit: contain;"></video>
+                        <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); color: white; padding: 12px 8px 8px 8px; font-size: 12px; text-align: center; pointer-events: none;">
+                            ${title}
+                        </div>
+                    </div>
+                `;
+            } else {
+                newMediaItem.innerHTML = `
+                    <div style="width: 100%; height: 100%; position: relative; border-radius: 8px; overflow: hidden; background: linear-gradient(135deg, #2196F3, #1976D2); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px;">
+                        <i class="fas fa-headphones" style="font-size: 48px; color: white; margin-bottom: 10px;"></i>
+                        <audio src="${mediaUrl}" controls style="width: 100%;"></audio>
+                        <div style="color: white; font-size: 12px; text-align: center; margin-top: 10px;">
+                            ${title}
+                        </div>
+                    </div>
+                `;
+            }
 
             // Insert at the beginning
             mediaGrid.insertBefore(newMediaItem, mediaGrid.firstChild);
 
             closeAddMediaModal();
-            alert('Media added successfully!');
+            alert('Media uploaded successfully!');
+        }
+
+        // Load media from localStorage on page load
+        function loadMediaFromStorage() {
+            const mediaData = JSON.parse(localStorage.getItem('mediaData') || '[]');
+            const mediaGrid = document.getElementById('mediaGrid');
+            
+            // Clear existing items first (except default ones)
+            const existingItems = Array.from(mediaGrid.querySelectorAll('.media-item[data-id]'));
+            existingItems.forEach(item => item.remove());
+            
+            // Add stored media items
+            mediaData.forEach(item => {
+                const newMediaItem = document.createElement('div');
+                newMediaItem.className = 'media-item';
+                newMediaItem.dataset.type = item.type;
+                newMediaItem.dataset.id = item.id;
+
+                if (item.type === 'photos') {
+                    newMediaItem.innerHTML = `
+                        <div style="width: 100%; height: 100%; position: relative; border-radius: 8px; overflow: hidden;">
+                            <img src="${item.url}" alt="${item.title}" style="width: 100%; height: 100%; object-fit: cover;">
+                            <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); color: white; padding: 12px 8px 8px 8px; font-size: 12px; text-align: center;">
+                                ${item.title}
+                            </div>
+                        </div>
+                    `;
+                } else if (item.type === 'videos') {
+                    newMediaItem.innerHTML = `
+                        <div style="width: 100%; height: 100%; position: relative; border-radius: 8px; overflow: hidden; background: #000;">
+                            <video src="${item.url}" controls style="width: 100%; height: 100%; object-fit: contain;"></video>
+                            <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); color: white; padding: 12px 8px 8px 8px; font-size: 12px; text-align: center; pointer-events: none;">
+                                ${item.title}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    newMediaItem.innerHTML = `
+                        <div style="width: 100%; height: 100%; position: relative; border-radius: 8px; overflow: hidden; background: linear-gradient(135deg, #2196F3, #1976D2); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px;">
+                            <i class="fas fa-headphones" style="font-size: 48px; color: white; margin-bottom: 10px;"></i>
+                            <audio src="${item.url}" controls style="width: 100%;"></audio>
+                            <div style="color: white; font-size: 12px; text-align: center; margin-top: 10px;">
+                                ${item.title}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                mediaGrid.insertBefore(newMediaItem, mediaGrid.firstChild);
+            });
         }
     </script>
 
@@ -328,14 +493,14 @@
                 </button>
             </div>
             <div class="modal-body">
-                <form id="addMediaForm" onsubmit="addMedia(event)">
+                <form id="addMediaForm" onsubmit="addMedia(event)" enctype="multipart/form-data">
                     <div class="form-group">
                         <label class="form-label">Title *</label>
                         <input type="text" class="form-input" id="mediaTitle" placeholder="Media title" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Type *</label>
-                        <select class="form-input" id="mediaType" required>
+                        <select class="form-input" id="mediaType" required onchange="handleMediaTypeChange()">
                             <option value="">Select type</option>
                             <option value="photos">Photo</option>
                             <option value="videos">Video</option>
@@ -343,13 +508,23 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Media URL *</label>
-                        <input type="url" class="form-input" id="mediaUrl" placeholder="https://example.com/media.jpg" required>
-                        <p style="font-size: 12px; color: var(--text-gray); margin-top: 5px;">Enter the URL or path to your media file</p>
+                        <label class="form-label">Upload Media File *</label>
+                        <input type="file" class="form-input" id="mediaFile" accept="image/*,video/*,audio/*" onchange="handleFileSelect(event)" required>
+                        <p style="font-size: 12px; color: var(--text-gray); margin-top: 5px;">Select an image, video, or audio file to upload</p>
+                        <div id="filePreview" style="margin-top: 10px; display: none;">
+                            <img id="previewImage" src="" alt="Preview" style="max-width: 100%; max-height: 200px; border-radius: 8px; display: none;">
+                            <video id="previewVideo" controls style="max-width: 100%; max-height: 200px; border-radius: 8px; display: none;"></video>
+                            <audio id="previewAudio" controls style="width: 100%; display: none;"></audio>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Or Enter Media URL (Optional)</label>
+                        <input type="url" class="form-input" id="mediaUrl" placeholder="https://example.com/media.jpg">
+                        <p style="font-size: 12px; color: var(--text-gray); margin-top: 5px;">Alternative: Enter a URL if you prefer not to upload a file</p>
                     </div>
                     <div style="display: flex; gap: 10px; margin-top: 20px;">
                         <button type="submit" class="btn btn-primary" style="flex: 1;">
-                            <i class="fas fa-plus"></i> Add Media
+                            <i class="fas fa-upload"></i> Upload Media
                         </button>
                         <button type="button" class="btn btn-secondary" onclick="closeAddMediaModal()" style="flex: 1;">
                             Cancel

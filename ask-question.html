@@ -66,6 +66,19 @@
         </header>
 
         <main class="main-content">
+            <!-- Welcome Section -->
+            <section class="welcome-section">
+                <div>
+                    <h2 class="greeting">
+                        <a href="about.html">KIUMA</a>
+                        <span>Assalam Alaikum, <span id="userName">Brother/Sister</span></span>
+                    </h2>
+                </div>
+                <button class="account-icon-btn" id="accountIconBtn" onclick="toggleAccountModal()">
+                    <i class="fas fa-user-circle" id="accountIcon"></i>
+                </button>
+            </section>
+
             <section class="page-header">
                 <h2 class="page-title">Ask a Question</h2>
             </section>
@@ -115,9 +128,17 @@
                         </label>
                     </div>
 
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-paper-plane"></i> Submit Question
+                    <button type="submit" class="btn btn-primary" style="background: var(--primary-green); width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 12px;">
+                        <i class="fas fa-envelope"></i> Send Question via Email
                     </button>
+                    
+                    <button type="button" class="btn" onclick="sendViaWhatsApp()" style="background: #25D366; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; color: white; border: none;">
+                        <i class="fab fa-whatsapp"></i> Send via WhatsApp
+                    </button>
+                    
+                    <p style="text-align: center; font-size: 12px; color: var(--text-gray); margin-top: 10px;">
+                        Your question will be sent via email. You can also use WhatsApp as an alternative.
+                    </p>
                 </form>
 
                 <div class="info-card" style="margin-top: 20px;">
@@ -154,12 +175,97 @@
         function handleQuestionSubmit(e) {
             e.preventDefault();
             const name = document.getElementById('questionName').value;
+            const email = document.getElementById('questionEmail').value;
             const category = document.getElementById('questionCategory').value;
+            const questionText = document.getElementById('questionText').value;
             const anonymous = document.getElementById('anonymous').checked;
 
             const displayName = anonymous ? 'Anonymous' : name;
-            alert('Thank you, ' + displayName + '! Your question about ' + category + ' has been submitted. Our scholars will respond soon.');
+            
+            // Format the message for Email
+            const categoryLabels = {
+                'aqeedah': 'Aqeedah (Belief)',
+                'fiqh': 'Fiqh (Jurisprudence)',
+                'worship': 'Worship & Prayer',
+                'family': 'Family & Marriage',
+                'halal': 'Halal & Haram',
+                'ethics': 'Ethics & Character',
+                'quran': 'Quran & Hadith',
+                'society': 'Society & Community',
+                'other': 'Other'
+            };
+            
+            const subject = encodeURIComponent("New Question from KIUMA Website");
+            const body = encodeURIComponent(
+                `Assalam Alaikum,\n\n` +
+                `New Question from KIUMA Website\n\n` +
+                `Name: ${displayName}\n` +
+                `Email: ${email}\n` +
+                `Category: ${categoryLabels[category] || category}\n\n` +
+                `Question:\n${questionText}\n\n` +
+                `Jazakallahu Khairan`
+            );
+            
+            // Send via email
+            window.location.href = `mailto:aworshibah2006@gmail.com?subject=${subject}&body=${body}`;
+            
+            // Show confirmation
+            alert('Opening your email client to send the question. Please confirm to send.');
             document.getElementById('questionForm').reset();
+        }
+        
+        function sendViaWhatsApp() {
+            const name = document.getElementById('questionName').value;
+            const email = document.getElementById('questionEmail').value;
+            const category = document.getElementById('questionCategory').value;
+            const questionText = document.getElementById('questionText').value;
+            const anonymous = document.getElementById('anonymous').checked;
+
+            if (!name || !email || !category || !questionText) {
+                alert('Please fill in all required fields before sending via WhatsApp.');
+                return;
+            }
+
+            const displayName = anonymous ? 'Anonymous' : name;
+            
+            // Format the message for WhatsApp
+            const categoryLabels = {
+                'aqeedah': 'Aqeedah (Belief)',
+                'fiqh': 'Fiqh (Jurisprudence)',
+                'worship': 'Worship & Prayer',
+                'family': 'Family & Marriage',
+                'halal': 'Halal & Haram',
+                'ethics': 'Ethics & Character',
+                'quran': 'Quran & Hadith',
+                'society': 'Society & Community',
+                'other': 'Other'
+            };
+            
+            const message = `Assalam Alaikum,
+
+*Question from KIUMA Website*
+
+*Name:* ${displayName}
+*Email:* ${email}
+*Category:* ${categoryLabels[category] || category}
+
+*Question:*
+${questionText}
+
+Jazakallahu Khairan`;
+
+            // Encode message for URL
+            const encodedMessage = encodeURIComponent(message);
+            
+            // WhatsApp number: 0768829144 (Uganda format, add country code 256)
+            const whatsappNumber = '256768829144';
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+            
+            // Open WhatsApp
+            window.open(whatsappUrl, '_blank');
+            
+            // Show confirmation
+            alert('Opening WhatsApp to send your question. Please click send in WhatsApp to complete the submission.');
         }
     </script>
 

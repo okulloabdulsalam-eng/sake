@@ -66,6 +66,19 @@
         </header>
 
         <main class="main-content">
+            <!-- Welcome Section -->
+            <section class="welcome-section">
+                <div>
+                    <h2 class="greeting">
+                        <a href="about.html">KIUMA</a>
+                        <span>Assalam Alaikum, <span id="userName">Brother/Sister</span></span>
+                    </h2>
+                </div>
+                <button class="account-icon-btn" id="accountIconBtn" onclick="toggleAccountModal()">
+                    <i class="fas fa-user-circle" id="accountIcon"></i>
+                </button>
+            </section>
+
             <section class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <h2 class="page-title">Notifications</h2>
                 <div style="display: flex; gap: 10px;">
@@ -180,6 +193,7 @@
         // Check admin status on page load
         window.addEventListener('DOMContentLoaded', function() {
             checkAdminStatus();
+            loadNotificationsFromStorage();
             
             // Initialize admin login modal
             const adminModal = document.getElementById('adminLoginModal');
@@ -206,7 +220,7 @@
             if (addNotifModal) {
                 addNotifModal.addEventListener('click', function(e) {
                     if (e.target === addNotifModal) {
-                        closeAddNotificationModal();
+                        window.closeAddNotificationModal();
                     }
                 });
             }
@@ -233,20 +247,20 @@
             });
         });
 
-        function showAddNotificationModal() {
+        window.showAddNotificationModal = function() {
             if (!isAdminLoggedIn) {
                 showAdminLogin();
                 return;
             }
             document.getElementById('addNotificationModal').style.display = 'flex';
-        }
+        };
 
-        function closeAddNotificationModal() {
+        window.closeAddNotificationModal = function() {
             document.getElementById('addNotificationModal').style.display = 'none';
             document.getElementById('addNotificationForm').reset();
-        }
+        };
 
-        function addNotification(e) {
+        window.addNotification = function(e) {
             e.preventDefault();
             if (!isAdminLoggedIn) {
                 alert('You must be logged in as admin to add notifications.');
@@ -255,18 +269,36 @@
 
             const title = document.getElementById('notifTitle').value;
             const message = document.getElementById('notifMessage').value;
-            const icon = document.getElementById('notifIcon').value;
+            const icon = document.getElementById('notifIcon').value || 'fas fa-bell';
             
             if (!title || !message) {
                 alert('Please fill in all required fields.');
                 return;
             }
 
-            // Create notification element
+            // Get or create notifications data from localStorage
+            let notificationsData = JSON.parse(localStorage.getItem('notificationsData') || '[]');
+
+            const notification = {
+                id: Date.now().toString(),
+                title: title,
+                message: message,
+                icon: icon,
+                status: 'unread',
+                date: new Date().toISOString(),
+                timeDisplay: 'Just now'
+            };
+
+            notificationsData.unshift(notification); // Add to beginning
+            localStorage.setItem('notificationsData', JSON.stringify(notificationsData));
+
+            // Create and display notification element
             const notificationsContainer = document.querySelector('.page-content');
+            const firstNotification = notificationsContainer.querySelector('.notification-item');
             const newNotification = document.createElement('div');
             newNotification.className = 'notification-item';
             newNotification.dataset.status = 'unread';
+            newNotification.dataset.id = notification.id;
             newNotification.innerHTML = `
                 <div class="notification-icon">
                     <i class="${icon}"></i>
@@ -279,7 +311,6 @@
             `;
 
             // Insert at the top
-            const firstNotification = notificationsContainer.querySelector('.notification-item');
             if (firstNotification) {
                 notificationsContainer.insertBefore(newNotification, firstNotification);
             } else {
@@ -291,11 +322,79 @@
                 if (this.dataset.status === 'unread') {
                     this.dataset.status = 'read';
                     this.style.opacity = '0.7';
+                    // Update in localStorage
+                    updateNotificationStatus(notification.id, 'read');
                 }
             });
 
-            closeAddNotificationModal();
+            window.closeAddNotificationModal();
             alert('Notification added successfully!');
+        };
+
+        function updateNotificationStatus(id, status) {
+            let notificationsData = JSON.parse(localStorage.getItem('notificationsData') || '[]');
+            const notif = notificationsData.find(n => n.id === id);
+            if (notif) {
+                notif.status = status;
+                localStorage.setItem('notificationsData', JSON.stringify(notificationsData));
+            }
+        }
+
+        function formatTimeAgo(dateString) {
+            const now = new Date();
+            const date = new Date(dateString);
+            const diffInSeconds = Math.floor((now - date) / 1000);
+            
+            if (diffInSeconds < 60) return 'Just now';
+            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+            if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+            return date.toLocaleDateString();
+        }
+
+        // Load notifications from localStorage on page load
+        function loadNotificationsFromStorage() {
+            const notificationsData = JSON.parse(localStorage.getItem('notificationsData') || '[]');
+            const notificationsContainer = document.querySelector('.page-content');
+            
+            // Clear existing stored notifications (keep only hardcoded ones)
+            const existingStored = Array.from(notificationsContainer.querySelectorAll('.notification-item[data-id]'));
+            existingStored.forEach(item => item.remove());
+            
+            // Add stored notifications
+            notificationsData.forEach(notif => {
+                const newNotification = document.createElement('div');
+                newNotification.className = 'notification-item';
+                newNotification.dataset.status = notif.status || 'read';
+                newNotification.dataset.id = notif.id;
+                newNotification.innerHTML = `
+                    <div class="notification-icon">
+                        <i class="${notif.icon || 'fas fa-bell'}"></i>
+                    </div>
+                    <div class="notification-content">
+                        <h4>${notif.title}</h4>
+                        <p>${notif.message}</p>
+                        <span class="notification-time">${formatTimeAgo(notif.date)}</span>
+                    </div>
+                `;
+
+                // Insert at the top
+                const firstNotification = notificationsContainer.querySelector('.notification-item');
+                if (firstNotification) {
+                    notificationsContainer.insertBefore(newNotification, firstNotification);
+                } else {
+                    notificationsContainer.appendChild(newNotification);
+                }
+
+                // Mark as read on click
+                newNotification.addEventListener('click', function() {
+                    if (this.dataset.status === 'unread') {
+                        this.dataset.status = 'read';
+                        this.style.opacity = '0.7';
+                        updateNotificationStatus(notif.id, 'read');
+                    }
+                });
+            });
         }
     </script>
 
