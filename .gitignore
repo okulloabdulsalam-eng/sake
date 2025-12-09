@@ -11,6 +11,9 @@ kiuma_users.db
 .env
 .env.local
 
+# Configuration files with sensitive data
+config/database.php
+
 # Logs
 logs/
 *.log

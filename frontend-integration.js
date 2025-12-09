@@ -11,10 +11,11 @@ window.handleSignup = async function(e) {
     const firstName = document.getElementById('signupFirstName').value.trim();
     const lastName = document.getElementById('signupLastName').value.trim();
     const email = document.getElementById('signupEmail').value.trim();
+    const whatsapp = document.getElementById('signupWhatsApp').value.trim();
     const password = document.getElementById('signupPassword').value;
     const gender = document.getElementById('signupGender').value;
 
-    if (!firstName || !lastName || !email || !password || !gender) {
+    if (!firstName || !lastName || !email || !whatsapp || !password || !gender) {
         alert('Please fill in all fields.');
         return;
     }
@@ -35,6 +36,7 @@ window.handleSignup = async function(e) {
                 password: password,
                 firstName: firstName,
                 lastName: lastName,
+                whatsapp: whatsapp,
                 gender: gender
             })
         });
@@ -49,6 +51,7 @@ window.handleSignup = async function(e) {
                 lastName: data.user.lastName,
                 name: data.user.name,
                 email: data.user.email,
+                whatsapp: data.user.whatsapp,
                 gender: data.user.gender,
                 createdAt: data.user.createdAt
             };
@@ -103,6 +106,7 @@ window.handleLogin = async function(e) {
                 lastName: data.user.lastName,
                 name: data.user.name,
                 email: data.user.email,
+                whatsapp: data.user.whatsapp,
                 gender: data.user.gender,
                 createdAt: data.user.createdAt
             };

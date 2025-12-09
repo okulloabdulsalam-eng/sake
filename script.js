@@ -135,6 +135,148 @@ async function updateDates() {
     }
 }
 
+// Get all registered users (excluding passwords)
+function getAllRegisteredUsers() {
+    const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
+    // Return users without passwords for security
+    return storedUsers.map(user => {
+        const { password, ...userWithoutPassword } = user;
+        return userWithoutPassword;
+    });
+}
+
+// Send WhatsApp notification to a user
+async function sendWhatsAppNotification(whatsappNumber, message) {
+    if (!whatsappNumber) return false;
+    
+    try {
+        // Clean the WhatsApp number (remove +, spaces, etc.)
+        const cleanNumber = whatsappNumber.replace(/[^\d]/g, '');
+        
+        // Try to use backend API if available
+        const API_BASE_URL = window.API_BASE_URL || 'http://localhost:3000';
+        
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/send-whatsapp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ number: cleanNumber, message: message })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log('WhatsApp notification sent via API:', data);
+                return true;
+            }
+        } catch (apiError) {
+            // Backend not available, fall back to localStorage method
+            console.log('Backend API not available, using localStorage method');
+        }
+        
+        // Fallback: Store notification for manual sending or use wa.me link
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
+        console.log('WhatsApp notification prepared (fallback):', whatsappUrl);
+        
+        // Store notification in a queue for later processing
+        let notificationQueue = JSON.parse(localStorage.getItem('whatsappNotificationQueue') || '[]');
+        notificationQueue.push({
+            number: cleanNumber,
+            message: message,
+            url: whatsappUrl,
+            timestamp: new Date().toISOString()
+        });
+        localStorage.setItem('whatsappNotificationQueue', JSON.stringify(notificationQueue));
+        
+        return true;
+    } catch (error) {
+        console.error('Error sending WhatsApp notification:', error);
+        return false;
+    }
+}
+
+// Send email notification to a user
+async function sendEmailNotification(email, subject, message) {
+    if (!email) return false;
+    
+    try {
+        // Try to use backend API if available
+        const API_BASE_URL = window.API_BASE_URL || 'http://localhost:3000';
+        
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/send-email`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, subject, message })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Email notification sent via API:', data);
+                return true;
+            }
+        } catch (apiError) {
+            // Backend not available, fall back to localStorage method
+            console.log('Backend API not available, using localStorage method');
+        }
+        
+        // Fallback: Store notification for manual sending
+        console.log('Email notification prepared (fallback):', { email, subject, message });
+        
+        // Store notification in a queue for later processing
+        let notificationQueue = JSON.parse(localStorage.getItem('emailNotificationQueue') || '[]');
+        notificationQueue.push({
+            email: email,
+            subject: subject,
+            message: message,
+            timestamp: new Date().toISOString()
+        });
+        localStorage.setItem('emailNotificationQueue', JSON.stringify(notificationQueue));
+        
+        return true;
+    } catch (error) {
+        console.error('Error sending email notification:', error);
+        return false;
+    }
+}
+
+// Send notifications to all registered users
+async function sendNotificationsToAllUsers(subject, message) {
+    const users = getAllRegisteredUsers();
+    let successCount = 0;
+    let failCount = 0;
+    
+    console.log(`Sending notifications to ${users.length} users...`);
+    
+    for (const user of users) {
+        // Send WhatsApp notification
+        if (user.whatsapp) {
+            const whatsappSuccess = await sendWhatsAppNotification(user.whatsapp, message);
+            if (whatsappSuccess) {
+                successCount++;
+            } else {
+                failCount++;
+            }
+        }
+        
+        // Send email notification
+        if (user.email) {
+            const emailSuccess = await sendEmailNotification(user.email, subject, message);
+            if (emailSuccess) {
+                successCount++;
+            } else {
+                failCount++;
+            }
+        }
+        
+        // Small delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    console.log(`Notifications sent: ${successCount} successful, ${failCount} failed`);
+    return { successCount, failCount, total: users.length };
+}
+
 // Check and create white days (ayyam al-beed) notification
 function checkAndCreateWhiteDaysNotification(hijriDay, hijriMonth, hijriYear, hijriMonths) {
     // Create unique key for today's notification
@@ -177,6 +319,16 @@ function checkAndCreateWhiteDaysNotification(hijriDay, hijriMonth, hijriYear, hi
     
     // Mark today's notification as created
     localStorage.setItem('lastWhiteDaysNotification', todayKey);
+    
+    // Send notifications to all registered users via WhatsApp and Email
+    const notificationSubject = 'Reminder: White Days Fasting (Ayyam al-Beed)';
+    sendNotificationsToAllUsers(notificationSubject, notification.message)
+        .then(result => {
+            console.log('White days notifications sent to all users:', result);
+        })
+        .catch(error => {
+            console.error('Error sending white days notifications:', error);
+        });
     
     // If on notifications page, reload notifications
     if (window.location.pathname.includes('notifications.html') || window.location.href.includes('notifications.html')) {
@@ -275,6 +427,16 @@ function checkAndCreateFastingReminder() {
     
     // Mark this reminder as created
     localStorage.setItem('lastFastingReminder', reminderKey);
+    
+    // Send notifications to all registered users via WhatsApp and Email
+    const notificationSubject = 'Reminder: Fasting Tomorrow';
+    sendNotificationsToAllUsers(notificationSubject, notification.message)
+        .then(result => {
+            console.log('Fasting reminder notifications sent to all users:', result);
+        })
+        .catch(error => {
+            console.error('Error sending fasting reminder notifications:', error);
+        });
     
     // If on notifications page, reload notifications
     if (window.location.pathname.includes('notifications.html') || window.location.href.includes('notifications.html')) {
@@ -500,6 +662,7 @@ window.handleSignup = function(e) {
     const firstName = document.getElementById('signupFirstName').value;
     const lastName = document.getElementById('signupLastName').value;
     const email = document.getElementById('signupEmail').value;
+    const whatsapp = document.getElementById('signupWhatsApp').value;
     const password = document.getElementById('signupPassword').value;
     const confirmPassword = document.getElementById('signupConfirmPassword').value;
     const gender = document.getElementById('signupGender').value;
@@ -531,6 +694,7 @@ window.handleSignup = function(e) {
         lastName: lastName,
         name: firstName + ' ' + lastName,
         email: email,
+        whatsapp: whatsapp,
         gender: gender,
         createdAt: new Date().toISOString()
     };
