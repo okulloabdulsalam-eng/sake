@@ -10,7 +10,7 @@
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
 define('DB_PASS', '');
-define('DB_NAME', 'kiuma_library_media');
+define('DB_NAME', 'kiuma_main');
 
 // ============================================
 // GOOGLE DRIVE API CONFIGURATION

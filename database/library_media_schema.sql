@@ -1,8 +1,8 @@
 -- Library and Media Storage Database Schema
 -- For Google Drive file storage system
 
-CREATE DATABASE IF NOT EXISTS kiuma_library_media CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE kiuma_library_media;
+CREATE DATABASE IF NOT EXISTS kiuma_main CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE kiuma_main;
 
 -- Library Table (Books)
 CREATE TABLE IF NOT EXISTS library_books (

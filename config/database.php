@@ -12,7 +12,7 @@
 define('DB_HOST', 'localhost');        // XAMPP default MySQL host
 define('DB_USER', 'root');             // XAMPP default MySQL username
 define('DB_PASS', '');                 // XAMPP default password (usually empty)
-define('DB_NAME', 'kiuma_recruitment'); // Your database name
+define('DB_NAME', 'kiuma_main'); // Your database name
 
 // ============================================
 // EMAIL CONFIGURATION
