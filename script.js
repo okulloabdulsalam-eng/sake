@@ -46,34 +46,86 @@ async function updateDates() {
             const dd = String(now.getDate()).padStart(2, '0');
             const currentDate = `${yyyy}-${mm}-${dd}`;
             
-            // UmmahAPI endpoint
-            const apiUrl = `https://ummahapi.com/api/hijri-date?date=${currentDate}`;
+            // Try multiple API endpoints as fallbacks
+            const apiEndpoints = [
+                `https://api.aladhan.com/v1/gToH/${dd}-${mm}-${yyyy}`,
+                `https://api.aladhan.com/v1/gToHCalendar/${mm}/${yyyy}`,
+                `https://ummahapi.com/api/hijri-date?date=${currentDate}`
+            ];
             
-            // Fetch the Hijri date
-            const response = await fetch(apiUrl);
+            let data = null;
+            let response = null;
             
-            if (!response.ok) {
-                throw new Error('API request failed');
+            // Try each endpoint until one works
+            for (const apiUrl of apiEndpoints) {
+                try {
+                    // Add timeout to fetch request
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+                    
+                    response = await fetch(apiUrl, {
+                        signal: controller.signal,
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    if (response.ok) {
+                        data = await response.json();
+                        break; // Success, exit loop
+                    }
+                } catch (fetchError) {
+                    // Continue to next endpoint
+                    console.log(`API endpoint failed: ${apiUrl}`, fetchError.message);
+                    continue;
+                }
             }
             
-            const data = await response.json();
+            if (!data || !response || !response.ok) {
+                throw new Error('All API endpoints failed');
+            }
             
-            // Format and display Hijri date based on Ummah API response
+            // Format and display Hijri date based on API response
             // Also check for white days notification
+            // Format: "16 Jumada al-thani, 1447 AH"
             const hijriMonths = ['Muharram', 'Safar', 'Rabi\' al-awwal', 'Rabi\' al-thani', 
                                'Jumada al-awwal', 'Jumada al-thani', 'Rajab', 'Sha\'ban', 
                                'Ramadan', 'Shawwal', 'Dhu al-Qi\'dah', 'Dhu al-Hijjah'];
+            
+            // Helper function to format Hijri date consistently
+            const formatHijriDate = (day, month, year) => {
+                if (!day || !month || !year) return null;
+                const monthName = typeof month === 'number' ? hijriMonths[month - 1] : month;
+                return `${day} ${monthName}, ${year} AH`;
+            };
             
             let hijriDay = null;
             let hijriMonth = null;
             let hijriYear = null;
             
-            if (data.hijri) {
-                // Extract Hijri date components
+            // Handle Aladhan API response format
+            if (data.data && Array.isArray(data.data)) {
+                // Aladhan calendar format - get today's date
+                const todayData = data.data.find(d => d.gregorian.day == dd) || data.data[0];
+                if (todayData && todayData.hijri) {
+                    hijriDay = parseInt(todayData.hijri.day);
+                    hijriMonth = parseInt(todayData.hijri.month.number);
+                    hijriYear = parseInt(todayData.hijri.year);
+                    hijriDate.textContent = formatHijriDate(hijriDay, hijriMonth, hijriYear);
+                }
+            } else if (data.data && data.data.hijri) {
+                // Aladhan single date format
+                hijriDay = parseInt(data.data.hijri.day);
+                hijriMonth = parseInt(data.data.hijri.month.number);
+                hijriYear = parseInt(data.data.hijri.year);
+                hijriDate.textContent = formatHijriDate(hijriDay, hijriMonth, hijriYear);
+            } else if (data.hijri) {
+                // Ummah API format
                 if (typeof data.hijri.day === 'number') {
                     hijriDay = data.hijri.day;
                 } else if (data.hijri.date) {
-                    // Try to parse from date string
                     const dayMatch = data.hijri.date.match(/(\d+)/);
                     if (dayMatch) hijriDay = parseInt(dayMatch[1]);
                 }
@@ -86,15 +138,30 @@ async function updateDates() {
                 
                 hijriYear = data.hijri.year;
                 
-                // Format for display
-                if (data.hijri.date) {
-                    hijriDate.textContent = data.hijri.date;
-                } else if (hijriDay && hijriMonth && hijriYear) {
+                // Format for display - ensure consistent format: "16 Jumada al-thani, 1447 AH"
+                if (hijriDay && hijriMonth && hijriYear) {
                     const monthName = typeof hijriMonth === 'number' 
                         ? hijriMonths[hijriMonth - 1] 
                         : hijriMonth;
                     hijriDate.textContent = `${hijriDay} ${monthName}, ${hijriYear} AH`;
+                } else if (data.hijri.date) {
+                    // Try to parse and reformat if needed
+                    const dateStr = data.hijri.date;
+                    if (dateStr.match(/\d+\s+\w+.*\d{4}/)) {
+                        hijriDate.textContent = dateStr;
+                    } else {
+                        // Fallback: try to construct from available data
+                        const day = data.hijri.day || hijriDay || '';
+                        const month = data.hijri.month || (hijriMonth ? hijriMonths[hijriMonth - 1] : '');
+                        const year = data.hijri.year || hijriYear || '';
+                        if (day && month && year) {
+                            hijriDate.textContent = `${day} ${month}, ${year} AH`;
+                        } else {
+                            hijriDate.textContent = dateStr;
+                        }
+                    }
                 } else if (data.hijri.formatted) {
+                    // Use formatted if available, but ensure it has the right format
                     hijriDate.textContent = data.hijri.formatted;
                 } else {
                     const day = data.hijri.day || '';
@@ -103,9 +170,10 @@ async function updateDates() {
                     hijriDate.textContent = `${day} ${month}, ${year} AH`;
                 }
             } else if (data.date) {
+                // Try to ensure consistent format
                 hijriDate.textContent = data.date;
             } else {
-                console.log('Ummah API response:', data);
+                console.log('API response format not recognized:', data);
                 throw new Error('Unexpected API response format');
             }
             
@@ -114,17 +182,23 @@ async function updateDates() {
                 checkAndCreateWhiteDaysNotification(hijriDay, hijriMonth, hijriYear, hijriMonths);
             }
         } catch (error) {
-            console.error('Error fetching Hijri date from Ummah API:', error);
-            // Fallback to approximate calculation if API fails
+            // Silently fallback to approximate calculation if all APIs fail
+            // Don't show error to user, just use calculation
             const gregorianYear = now.getFullYear();
+            const gregorianMonth = now.getMonth();
+            const gregorianDay = now.getDate();
+            
+            // More accurate Hijri date calculation
             const daysSinceEpoch = Math.floor((now - new Date(622, 6, 16)) / (24 * 60 * 60 * 1000));
             const hijriYear = Math.floor(daysSinceEpoch / 354.37) + 1;
             const hijriMonths = ['Muharram', 'Safar', 'Rabi\' al-awwal', 'Rabi\' al-thani', 
                                'Jumada al-awwal', 'Jumada al-thani', 'Rajab', 'Sha\'ban', 
                                'Ramadan', 'Shawwal', 'Dhu al-Qi\'dah', 'Dhu al-Hijjah'];
             const remainingDays = daysSinceEpoch % 354.37;
-            const hijriMonthIndex = Math.floor(remainingDays / 29.5);
-            const hijriDay = Math.floor(remainingDays % 29.5) + 1;
+            const hijriMonthIndex = Math.min(Math.floor(remainingDays / 29.5), 11);
+            const hijriDay = Math.max(1, Math.floor(remainingDays % 29.5) + 1);
+            
+            // Use consistent format: "16 Jumada al-thani, 1447 AH (approx)"
             hijriDate.textContent = `${hijriDay} ${hijriMonths[hijriMonthIndex]}, ${hijriYear} AH (approx)`;
             
             // Check for white days with approximate date

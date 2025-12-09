@@ -274,7 +274,8 @@
                             
                             const safeName = (media.file_name || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
                             const safeDesc = (media.description || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
-                            const downloadLink = media.direct_download_link || '';
+                            // Use proxy download endpoint for direct download
+                            const downloadLink = media.id ? (API_BASE_URL + '/download_media.php?id=' + media.id) : '';
                             const thumbnail = media.thumbnail_url || '';
                             
                             let preview = '';
@@ -294,7 +295,7 @@
                                     <div style="padding: 12px; flex: 1; display: flex; flex-direction: column;">
                                         <h4 style="margin: 0 0 5px 0; font-size: 14px; font-weight: 600; color: var(--dark-gray); line-height: 1.3;">${safeName}</h4>
                                         ${safeDesc ? `<p style="margin: 5px 0 0 0; font-size: 11px; color: var(--text-gray); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${safeDesc}</p>` : ''}
-                                        ${downloadLink ? `<a href="${downloadLink}" target="_blank" style="margin-top: 10px; padding: 8px 12px; background: var(--primary-green); color: white; text-decoration: none; border-radius: 5px; text-align: center; font-size: 12px; display: inline-block;"><i class="fas fa-download"></i> Download</a>` : ''}
+                                        ${downloadLink ? `<a href="${downloadLink}" download="${safeName}" style="margin-top: 10px; padding: 8px 12px; background: var(--primary-green); color: white; text-decoration: none; border-radius: 5px; text-align: center; font-size: 12px; display: inline-block;"><i class="fas fa-download"></i> Download</a>` : ''}
                                     </div>
                                     ${adminStatus ? `<button onclick="deleteMedia('${media.id}')" style="position: absolute; top: 8px; right: 8px; background: #f44336; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); font-size: 14px; z-index: 10;"><i class="fas fa-trash"></i></button>` : ''}
                                 </div>
