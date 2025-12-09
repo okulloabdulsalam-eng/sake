@@ -184,7 +184,13 @@
     <script>
         // Check admin status on page load
         window.addEventListener('DOMContentLoaded', function() {
-            checkAdminStatus();
+            // Ensure checkAdminStatus is available
+            if (typeof window.checkAdminStatus === 'function') {
+                window.checkAdminStatus();
+            } else if (typeof checkAdminStatus === 'function') {
+                checkAdminStatus();
+            }
+            
             loadMediaFromStorage();
             
             // Initialize admin login modal
@@ -264,13 +270,19 @@
                 if (typeof window.showAdminLogin === 'function') {
                     window.showAdminLogin();
                 } else {
-                    alert('Please login as admin first.');
+                    alert('Please login as admin first. Click the "Admin Login" button.');
                 }
                 return;
             }
             const modal = document.getElementById('addMediaModal');
             if (modal) {
                 modal.style.display = 'flex';
+                modal.style.visibility = 'visible';
+                modal.style.zIndex = '9999';
+                console.log('Add Media modal opened');
+            } else {
+                console.error('Add Media modal not found');
+                alert('Error: Add Media form not found. Please refresh the page.');
             }
         };
 

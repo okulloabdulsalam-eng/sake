@@ -966,7 +966,11 @@ window.verifyAdminPassword = function() {
         }
         
         // Update UI for notifications/media pages immediately
-        checkAdminStatus();
+        if (typeof window.checkAdminStatus === 'function') {
+            window.checkAdminStatus();
+        } else if (typeof checkAdminStatus === 'function') {
+            checkAdminStatus();
+        }
         
         alert('Admin mode enabled. You can now edit content.');
     } else {
@@ -987,7 +991,8 @@ window.logoutAdmin = function() {
     alert('Logged out of admin mode.');
 }
 
-function checkAdminStatus() {
+// Make checkAdminStatus globally accessible
+window.checkAdminStatus = function() {
     // Get current admin status from localStorage (in case variable is not set)
     isAdminLoggedIn = localStorage.getItem('isAdminLoggedIn') === 'true';
     
@@ -1013,6 +1018,11 @@ function checkAdminStatus() {
             btn.style.display = isAdminLoggedIn ? 'none' : 'block';
         }
     });
+};
+
+// Also keep the non-window version for backward compatibility
+function checkAdminStatus() {
+    window.checkAdminStatus();
 }
 
 function enableEditing() {
