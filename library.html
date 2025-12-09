@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library - KIUMA</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="library.html" class="nav-link active"><i class="fas fa-book-open"></i> Library</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <div class="logo-container">
+                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
+                    <svg class="header-logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+                        <circle cx="100" cy="100" r="95" fill="none" stroke="#4CAF50" stroke-width="4"/>
+                        <path id="topArc" d="M 20,100 A 80,80 0 0,1 180,100" fill="none"/>
+                        <text fill="#4CAF50" font-size="9" font-weight="bold" font-family="Arial, sans-serif" letter-spacing="0.5">
+                            <textPath href="#topArc" startOffset="50%" text-anchor="middle">KAMPALA INTERNATIONAL UNIVERSITY</textPath>
+                        </text>
+                        <path id="bottomArc" d="M 180,100 A 80,80 0 0,1 20,100" fill="none"/>
+                        <text fill="#4CAF50" font-size="9" font-weight="bold" font-family="Arial, sans-serif" letter-spacing="0.5">
+                            <textPath href="#bottomArc" startOffset="50%" text-anchor="middle">MUSLIM ASSOCIATION</textPath>
+                        </text>
+                        <path d="M 50,75 L 50,115 L 58,115 L 58,105 L 63,100 L 58,95 L 58,85 Z" fill="none" stroke="#4CAF50" stroke-width="2"/>
+                        <circle cx="56.5" cy="100" r="2" fill="#4CAF50"/>
+                        <rect x="88" y="65" width="10" height="45" fill="none" stroke="#4CAF50" stroke-width="2"/>
+                        <rect x="90" y="75" width="6" height="2" fill="#4CAF50"/>
+                        <rect x="90" y="85" width="6" height="2" fill="#4CAF50"/>
+                        <rect x="90" y="95" width="6" height="2" fill="#4CAF50"/>
+                        <polygon points="93,60 90,65 96,65" fill="#4CAF50"/>
+                        <path d="M 140,92 A 12,12 0 0,1 128,92 A 10,10 0 0,0 140,92 Z" fill="#4CAF50"/>
+                        <path d="M 130,88 L 131.5,92 L 136,92 L 132.5,94.5 L 134,99 L 130,96.5 L 126,99 L 127.5,94.5 L 124,92 L 128.5,92 Z" fill="#4CAF50"/>
+                        <text x="100" y="145" font-size="22" font-weight="bold" fill="#4CAF50" text-anchor="middle" font-family="Arial, sans-serif" letter-spacing="2">KIUMA</text>
+                    </svg>
+                </div>
+                <button class="notifications-btn" id="notificationsBtn">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">3</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Welcome Section -->
+            <section class="welcome-section">
+                <div>
+                    <h2 class="greeting">
+                        <a href="about.html">KIUMA</a>
+                    </h2>
+                </div>
+                <button class="account-icon-btn" id="accountIconBtn" onclick="toggleAccountModal()">
+                    <i class="fas fa-user-circle" id="accountIcon"></i>
+                </button>
+            </section>
+
+            <section class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <h2 class="page-title">Library</h2>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-secondary" id="adminLoginBtn" onclick="showAdminLogin()" style="padding: 10px 15px;">
+                        <i class="fas fa-lock"></i> Admin Login
+                    </button>
+                    <button class="btn btn-primary admin-only" onclick="showAddBookModal()" style="display: none; padding: 10px 15px;">
+                        <i class="fas fa-plus"></i> Add Book
+                    </button>
+                    <button class="btn btn-secondary admin-logout" onclick="if(typeof window.logoutAdmin==='function')window.logoutAdmin()" style="display: none; padding: 10px 15px;">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </section>
+
+            <section class="page-content">
+                <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <button class="btn btn-primary" style="flex: 1; min-width: calc(50% - 5px); padding: 12px;" onclick="if(typeof window.filterBooks==='function')window.filterBooks('all')">All</button>
+                    <button class="btn btn-outline" style="flex: 1; min-width: calc(50% - 5px); padding: 12px;" onclick="if(typeof window.filterBooks==='function')window.filterBooks('islamic')">Islamic</button>
+                    <button class="btn btn-outline" style="flex: 1; min-width: calc(50% - 5px); padding: 12px;" onclick="if(typeof window.filterBooks==='function')window.filterBooks('educational')">Educational</button>
+                    <button class="btn btn-outline" style="flex: 1; min-width: calc(50% - 5px); padding: 12px;" onclick="if(typeof window.filterBooks==='function')window.filterBooks('quran')">Quran</button>
+                </div>
+
+                <div class="media-grid" id="libraryGrid">
+                    <!-- Default book placeholders -->
+                    <div class="media-item" data-category="islamic">
+                        <div style="background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 15px;">
+                            <i class="fas fa-quran" style="font-size: 48px; margin-bottom: 10px;"></i>
+                            <div style="font-size: 12px; text-align: center;">Quran & Tafsir</div>
+                        </div>
+                    </div>
+                    <div class="media-item" data-category="islamic">
+                        <div style="background: linear-gradient(135deg, #4CAF50, #388E3C); width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 15px;">
+                            <i class="fas fa-book" style="font-size: 48px; margin-bottom: 10px;"></i>
+                            <div style="font-size: 12px; text-align: center;">Islamic Studies</div>
+                        </div>
+                    </div>
+                    <div class="media-item" data-category="educational">
+                        <div style="background: linear-gradient(135deg, #2196F3, #1976D2); width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 15px;">
+                            <i class="fas fa-graduation-cap" style="font-size: 48px; margin-bottom: 10px;"></i>
+                            <div style="font-size: 12px; text-align: center;">Educational</div>
+                        </div>
+                    </div>
+                    <div class="media-item" data-category="quran">
+                        <div style="background: linear-gradient(135deg, #9C27B0, #7B1FA2); width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 15px;">
+                            <i class="fas fa-book-open" style="font-size: 48px; margin-bottom: 10px;"></i>
+                            <div style="font-size: 12px; text-align: center;">Quran Study</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-card" style="margin-top: 20px;">
+                    <h3><i class="fas fa-info-circle"></i> About Our Library</h3>
+                    <p>Browse through our collection of Islamic books, educational resources, and Quranic studies materials. All books are carefully selected to support Islamic learning and community education.</p>
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
+            <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
+            <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
+        </nav>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Define showAddBookModal immediately so it's available for onclick handlers
+        window.showAddBookModal = function() {
+            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+            if (!adminStatus) {
+                if (typeof window.showAdminLogin === 'function') {
+                    window.showAdminLogin();
+                } else {
+                    alert('Please login as admin first. Click the "Admin Login" button.');
+                }
+                return;
+            }
+            const modal = document.getElementById('addBookModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                modal.style.visibility = 'visible';
+                modal.style.zIndex = '9999';
+                console.log('Add Book modal opened');
+            } else {
+                console.error('Add Book modal not found');
+                alert('Error: Add Book form not found. Please refresh the page.');
+            }
+        };
+
+        // Check admin status on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            // Ensure checkAdminStatus is available
+            if (typeof window.checkAdminStatus === 'function') {
+                window.checkAdminStatus();
+            } else if (typeof checkAdminStatus === 'function') {
+                checkAdminStatus();
+            }
+            
+            loadBooksFromStorage();
+            
+            // Initialize admin login modal
+            const adminModal = document.getElementById('adminLoginModal');
+            if (adminModal) {
+                adminModal.addEventListener('click', function(e) {
+                    if (e.target === adminModal) {
+                        closeAdminLogin();
+                    }
+                });
+            }
+            
+            // Allow Enter key to submit password
+            const passwordInput = document.getElementById('adminPassword');
+            if (passwordInput) {
+                passwordInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        if (typeof window.verifyAdminPassword === 'function') {
+                            window.verifyAdminPassword();
+                        }
+                    }
+                });
+            }
+
+            // Close add book modal on overlay click
+            const addBookModal = document.getElementById('addBookModal');
+            if (addBookModal) {
+                addBookModal.addEventListener('click', function(e) {
+                    if (e.target === addBookModal) {
+                        if (typeof window.closeAddBookModal === 'function') {
+                            window.closeAddBookModal();
+                        }
+                    }
+                });
+            }
+        });
+
+        // Filter books function - globally accessible
+        window.filterBooks = function(category) {
+            const filterButtons = document.querySelectorAll('.page-content > div:first-child button');
+            
+            // Update button styles based on selected filter
+            filterButtons.forEach(btn => {
+                const btnText = btn.textContent.trim().toLowerCase();
+                const isActive = (category === 'all' && btnText === 'all') ||
+                                (category === 'islamic' && btnText === 'islamic') ||
+                                (category === 'educational' && btnText === 'educational') ||
+                                (category === 'quran' && btnText === 'quran');
+                
+                if (isActive) {
+                    btn.className = 'btn btn-primary';
+                    btn.style.flex = '1';
+                    btn.style.minWidth = 'calc(50% - 5px)';
+                    btn.style.padding = '12px';
+                } else {
+                    btn.className = 'btn btn-outline';
+                    btn.style.flex = '1';
+                    btn.style.minWidth = 'calc(50% - 5px)';
+                    btn.style.padding = '12px';
+                }
+            });
+            
+            // Reload books with filter
+            loadBooksFromStorage(category);
+        };
+
+        window.closeAddBookModal = function() {
+            const modal = document.getElementById('addBookModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+            const form = document.getElementById('addBookForm');
+            if (form) {
+                form.reset();
+            }
+            // Clear preview
+            const coverPreview = document.getElementById('coverPreview');
+            const previewImage = document.getElementById('previewCoverImage');
+            if (coverPreview) coverPreview.style.display = 'none';
+            if (previewImage) previewImage.style.display = 'none';
+        };
+
+        window.handleBookCoverSelect = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const coverPreview = document.getElementById('coverPreview');
+            const previewImage = document.getElementById('previewCoverImage');
+
+            // Hide preview first
+            if (previewImage) previewImage.style.display = 'none';
+            if (coverPreview) coverPreview.style.display = 'none';
+
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    if (previewImage) {
+                        previewImage.src = e.target.result;
+                        previewImage.style.display = 'block';
+                    }
+                    if (coverPreview) coverPreview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+
+        window.addBook = function(e) {
+            if (e) {
+                e.preventDefault();
+            }
+            
+            // Check admin login status
+            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+            if (!adminStatus) {
+                alert('You must be logged in as admin to add books.');
+                if (typeof window.showAdminLogin === 'function') {
+                    window.showAdminLogin();
+                }
+                return false;
+            }
+
+            const titleInput = document.getElementById('bookTitle');
+            const authorInput = document.getElementById('bookAuthor');
+            const isbnInput = document.getElementById('bookISBN');
+            const categoryInput = document.getElementById('bookCategory');
+            const descriptionInput = document.getElementById('bookDescription');
+            const coverInput = document.getElementById('bookCover');
+            const coverUrlInput = document.getElementById('bookCoverUrl');
+            
+            const title = titleInput ? titleInput.value.trim() : '';
+            const author = authorInput ? authorInput.value.trim() : '';
+            const isbn = isbnInput ? isbnInput.value.trim() : '';
+            const category = categoryInput ? categoryInput.value : '';
+            const description = descriptionInput ? descriptionInput.value.trim() : '';
+            const coverUrl = coverUrlInput ? coverUrlInput.value.trim() : '';
+            
+            if (!title || !author || !category) {
+                alert('Please fill in title, author, and category.');
+                return false;
+            }
+
+            // Create FormData for upload
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('author', author);
+            formData.append('isbn', isbn);
+            formData.append('category', category);
+            formData.append('description', description);
+            formData.append('coverImageUrl', coverUrl);
+            
+            // Add book file if provided
+            const bookFileInput = document.getElementById('bookFile');
+            if (bookFileInput && bookFileInput.files && bookFileInput.files[0]) {
+                formData.append('bookFile', bookFileInput.files[0]);
+            }
+
+            // Show loading
+            const submitBtn = document.querySelector('#addBookForm button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+
+            // Upload to server
+            fetch('api/upload_book.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+                
+                if (data.success) {
+                    alert('Book added successfully!');
+                    window.closeAddBookModal();
+                    loadBooksFromStorage(); // Reload books
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to add book'));
+                }
+            })
+            .catch(error => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+                console.error('Error:', error);
+                alert('Error uploading book. Please try again.');
+            });
+        };
+
+        // Helper function to create and add book item
+        function createBookItem(title, author, isbn, category, description, coverImageUrl, libraryData) {
+            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+            const bookItem = {
+                id: Date.now().toString(),
+                title: title,
+                author: author,
+                isbn: isbn,
+                category: category,
+                description: description,
+                coverImage: coverImageUrl || '',
+                date: new Date().toISOString()
+            };
+
+            libraryData.unshift(bookItem); // Add to beginning
+            
+            // Try to save to localStorage with error handling
+            try {
+                const dataString = JSON.stringify(libraryData);
+                localStorage.setItem('libraryData', dataString);
+            } catch (e) {
+                if (e.name === 'QuotaExceededError') {
+                    // Remove the item we just added since we can't save it
+                    libraryData.shift();
+                    
+                    // Try to free up space by removing oldest items
+                    if (libraryData.length > 0) {
+                        const removed = libraryData.pop(); // Remove oldest
+                        try {
+                            localStorage.setItem('libraryData', JSON.stringify(libraryData));
+                            alert('Storage is full! The oldest book was removed to make space. Please try adding your book again, or delete more items manually.');
+                        } catch (e2) {
+                            // Still can't save, need to remove more or clear
+                            alert('Storage is completely full! Please delete some books manually or clear your browser storage, then try again.');
+                        }
+                    } else {
+                        alert('Storage is full and cannot be cleared automatically. Please clear your browser storage or delete books manually.');
+                    }
+                    return false;
+                } else {
+                    alert('Error saving book: ' + e.message);
+                    return false;
+                }
+            }
+
+            // Create and display book item
+            const libraryGrid = document.getElementById('libraryGrid');
+            const newBookItem = document.createElement('div');
+            newBookItem.className = 'media-item';
+            newBookItem.dataset.category = category;
+            newBookItem.dataset.id = bookItem.id;
+
+            const safeTitle = title.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+            const safeAuthor = author.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+            const safeDescription = (description || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+            const safeCover = coverImageUrl ? coverImageUrl.replace(/'/g, "&#39;") : '';
+            
+            // Default cover if no image provided
+            const coverDisplay = safeCover ? 
+                `<img src="${safeCover}" alt="${safeTitle}" style="width: 100%; height: 200px; object-fit: cover;">` :
+                `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-book"></i></div>`;
+            
+            newBookItem.innerHTML = `
+                <div style="width: 100%; height: 100%; position: relative; border-radius: 8px; overflow: hidden; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column;">
+                    ${coverDisplay}
+                    <div style="padding: 12px; flex: 1; display: flex; flex-direction: column;">
+                        <h4 style="margin: 0 0 5px 0; font-size: 14px; font-weight: 600; color: var(--dark-gray); line-height: 1.3;">${safeTitle}</h4>
+                        <p style="margin: 0 0 5px 0; font-size: 12px; color: var(--text-gray);">by ${safeAuthor}</p>
+                        ${isbn ? `<p style="margin: 0 0 5px 0; font-size: 11px; color: var(--text-gray);">ISBN: ${isbn}</p>` : ''}
+                        ${safeDescription ? `<p style="margin: 5px 0 0 0; font-size: 11px; color: var(--text-gray); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${safeDescription}</p>` : ''}
+                    </div>
+                    ${adminStatus ? `<button onclick="deleteBook('${bookItem.id}')" style="position: absolute; top: 8px; right: 8px; background: #f44336; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); font-size: 14px; z-index: 10;">
+                        <i class="fas fa-trash"></i>
+                    </button>` : ''}
+                </div>
+            `;
+
+            // Insert at the beginning
+            if (libraryGrid) {
+                libraryGrid.insertBefore(newBookItem, libraryGrid.firstChild);
+                window.closeAddBookModal();
+                alert('Book added successfully!');
+                // Reload books to ensure consistency
+                setTimeout(function() {
+                    loadBooksFromStorage();
+                }, 100);
+            } else {
+                alert('Error: Could not find library grid container.');
+            }
+        }
+
+        // Delete book function - admin only
+        window.deleteBook = function(bookId) {
+            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+            if (!adminStatus) {
+                alert('You must be logged in as admin to delete books.');
+                return;
+            }
+            
+            if (!confirm('Are you sure you want to delete this book? This will remove it from Google Drive and the database.')) {
+                return;
+            }
+            
+            const adminPassword = prompt('Enter admin password to confirm deletion:');
+            if (!adminPassword) {
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('id', bookId);
+            formData.append('password', adminPassword);
+            
+            fetch('api/delete_book.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Book deleted successfully!');
+                    loadBooksFromStorage(); // Reload books
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to delete book'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error deleting book. Please try again.');
+            });
+        };
+
+        // Helper function to clear old books (keeps last N items)
+        window.clearOldBooks = function(keepCount = 10) {
+            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+            if (!adminStatus) {
+                alert('You must be logged in as admin to clear books.');
+                return;
+            }
+            
+            if (!confirm(`This will keep only the ${keepCount} most recent books. Continue?`)) {
+                return;
+            }
+            
+            try {
+                let libraryData = JSON.parse(localStorage.getItem('libraryData') || '[]');
+                if (libraryData.length <= keepCount) {
+                    alert('No old books to clear. You have ' + libraryData.length + ' books.');
+                    return;
+                }
+                
+                const removed = libraryData.length - keepCount;
+                libraryData = libraryData.slice(0, keepCount); // Keep only the first N (most recent)
+                localStorage.setItem('libraryData', JSON.stringify(libraryData));
+                
+                // Reload books display
+                loadBooksFromStorage();
+                alert(`Cleared ${removed} old books. Kept ${keepCount} most recent books.`);
+            } catch (e) {
+                console.error('Error clearing old books:', e);
+                alert('Error clearing books. Please try again.');
+            }
+        };
+
+        // Load books from server
+        function loadBooksFromStorage(category = 'all') {
+            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+            const libraryGrid = document.getElementById('libraryGrid');
+            
+            if (!libraryGrid) {
+                console.error('Library grid not found');
+                return;
+            }
+            
+            // Clear existing items first (except default placeholders)
+            const existingItems = Array.from(libraryGrid.querySelectorAll('.media-item[data-id]'));
+            existingItems.forEach(item => item.remove());
+            
+            // Fetch books from server
+            const url = category === 'all' ? 'api/get_books.php' : `api/get_books.php?category=${category}`;
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.books) {
+                        data.books.forEach(book => {
+                            const newBookItem = document.createElement('div');
+                            newBookItem.className = 'media-item';
+                            newBookItem.dataset.category = book.category || 'other';
+                            newBookItem.dataset.id = book.id;
+                            
+                            const safeTitle = (book.title || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+                            const safeAuthor = (book.author || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+                            const safeDescription = (book.description || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+                            const safeCover = (book.cover_image_url || '').replace(/'/g, "&#39;");
+                            const safeISBN = (book.isbn || '').replace(/'/g, "&#39;");
+                            const downloadLink = book.direct_download_link || '';
+                            
+                            // Default cover if no image provided
+                            const coverDisplay = safeCover ? 
+                                `<img src="${safeCover}" alt="${safeTitle}" style="width: 100%; height: 200px; object-fit: cover;">` :
+                                `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-book"></i></div>`;
+                            
+                            newBookItem.innerHTML = `
+                                <div style="width: 100%; height: 100%; position: relative; border-radius: 8px; overflow: hidden; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column;">
+                                    ${coverDisplay}
+                                    <div style="padding: 12px; flex: 1; display: flex; flex-direction: column;">
+                                        <h4 style="margin: 0 0 5px 0; font-size: 14px; font-weight: 600; color: var(--dark-gray); line-height: 1.3;">${safeTitle}</h4>
+                                        <p style="margin: 0 0 5px 0; font-size: 12px; color: var(--text-gray);">by ${safeAuthor}</p>
+                                        ${safeISBN ? `<p style="margin: 0 0 5px 0; font-size: 11px; color: var(--text-gray);">ISBN: ${safeISBN}</p>` : ''}
+                                        ${safeDescription ? `<p style="margin: 5px 0 0 0; font-size: 11px; color: var(--text-gray); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${safeDescription}</p>` : ''}
+                                        ${downloadLink ? `<a href="${downloadLink}" target="_blank" style="margin-top: 10px; padding: 8px 12px; background: var(--primary-green); color: white; text-decoration: none; border-radius: 5px; text-align: center; font-size: 12px; display: inline-block;"><i class="fas fa-download"></i> Download</a>` : ''}
+                                    </div>
+                                    ${adminStatus ? `<button onclick="deleteBook('${book.id}')" style="position: absolute; top: 8px; right: 8px; background: #f44336; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); font-size: 14px; z-index: 10;">
+                                        <i class="fas fa-trash"></i>
+                                    </button>` : ''}
+                                </div>
+                            `;
+
+                            libraryGrid.insertBefore(newBookItem, libraryGrid.firstChild);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading books:', error);
+                });
+        }
+        
+        // Re-render books when admin status changes
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'isAdminLoggedIn') {
+                loadBooksFromStorage();
+            }
+        });
+    </script>
+
+    <!-- Admin Login Modal -->
+    <div class="modal-overlay" id="adminLoginModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-shield-alt"></i> Admin Login</h3>
+                <button class="modal-close" onclick="closeAdminLogin()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 15px;">Enter admin password to access admin features.</p>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="adminPassword" placeholder="Enter admin password">
+                    <p id="passwordError" style="color: #f44336; font-size: 14px; margin-top: 5px; display: none;">Incorrect password. Please try again.</p>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="if(typeof window.verifyAdminPassword==='function')window.verifyAdminPassword()" style="flex: 1;">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                    <button class="btn btn-secondary" onclick="if(typeof window.closeAdminLogin==='function')window.closeAdminLogin()" style="flex: 1;">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Book Modal -->
+    <div class="modal-overlay" id="addBookModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-book"></i> Add New Book</h3>
+                <button class="modal-close" onclick="if(typeof window.closeAddBookModal==='function')window.closeAddBookModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="addBookForm" onsubmit="event.preventDefault(); if(typeof window.addBook==='function'){window.addBook(event);} return false;" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label class="form-label">Book Title *</label>
+                        <input type="text" class="form-input" id="bookTitle" placeholder="Enter book title" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Author *</label>
+                        <input type="text" class="form-input" id="bookAuthor" placeholder="Enter author name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">ISBN (Optional)</label>
+                        <input type="text" class="form-input" id="bookISBN" placeholder="Enter ISBN number">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Category *</label>
+                        <select class="form-input" id="bookCategory" required>
+                            <option value="">Select category</option>
+                            <option value="islamic">Islamic</option>
+                            <option value="quran">Quran</option>
+                            <option value="educational">Educational</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-input" id="bookDescription" rows="3" placeholder="Enter book description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Cover Image</label>
+                        <input type="file" class="form-input" id="bookCover" accept="image/*" onchange="if(typeof window.handleBookCoverSelect==='function')window.handleBookCoverSelect(event)">
+                        <p style="font-size: 12px; color: var(--text-gray); margin-top: 5px;">Upload book cover image (max 2MB)</p>
+                        <div id="coverPreview" style="margin-top: 10px; display: none;">
+                            <img id="previewCoverImage" src="" alt="Cover Preview" style="max-width: 100%; max-height: 200px; border-radius: 8px; display: none; border: 2px solid var(--light-gray);">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Or Enter Cover Image URL (Optional)</label>
+                        <input type="url" class="form-input" id="bookCoverUrl" placeholder="https://example.com/book-cover.jpg">
+                        <p style="font-size: 12px; color: var(--text-gray); margin-top: 5px;">Alternative: Enter a URL for the book cover image</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Book File (PDF, DOC, DOCX, EPUB, TXT) - Optional</label>
+                        <input type="file" class="form-input" id="bookFile" accept=".pdf,.doc,.docx,.epub,.txt">
+                        <p style="font-size: 12px; color: var(--text-gray); margin-top: 5px;">Upload the book file to Google Drive (Max 500MB)</p>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button type="submit" class="btn btn-primary" style="flex: 1;">
+                            <i class="fas fa-plus"></i> Add Book
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="if(typeof window.closeAddBookModal==='function')window.closeAddBookModal()" style="flex: 1;">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Kizumu Visit Button -->
+    <div class="floating-kizumu-btn" onclick="showActivitiesModal()">
+        <i class="fas fa-heart"></i>
+        <span>Kizumu Visit</span>
+    </div>
+
+    <!-- Activities Modal -->
+    <div class="modal-overlay" id="activitiesModal" style="display: none;">
+        <div class="modal-content activities-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-heart"></i> Important Activities</h3>
+                <button class="modal-close" onclick="closeActivitiesModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="activities-modal-list">
+                <div class="activity-modal-item" onclick="navigateToActivity('kizumu-visit')">
+                    <div class="activity-modal-icon" style="background: #E91E63;">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Kizumu Tahfiz Charity Visit</h4>
+                        <p>Support Islamic education through charity visit</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="navigateToActivity('tuition-brothers')">
+                    <div class="activity-modal-icon" style="background: var(--primary-green);">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Tuition for Brothers</h4>
+                        <p>Support brothers' education and learning</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="navigateToActivity('kisilaahe')">
+                    <div class="activity-modal-icon" style="background: #9C27B0;">
+                        <i class="fas fa-donate"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Donate to Kisilaahe</h4>
+                        <p>Support Kisilaahe with essential items</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="navigateToActivity('activities')">
+                    <div class="activity-modal-icon" style="background: #FF9800;">
+                        <i class="fas fa-running"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>View All Activities</h4>
+                        <p>See all community activities and events</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

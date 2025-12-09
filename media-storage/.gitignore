@@ -1,0 +1,24 @@
+# Google Drive Credentials
+credentials.json
+token.json
+
+# Configuration
+config.php
+
+# Composer
+vendor/
+composer.lock
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
