@@ -112,6 +112,7 @@
         </nav>
     </div>
 
+    <script src="api-config.js"></script>
     <script src="script.js"></script>
     <script>
         window.showAddMediaModal = function() {
@@ -184,7 +185,7 @@
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
 
-            fetch('api/upload_media.php', {
+            fetch(API_BASE_URL + '/upload_media.php', {
                 method: 'POST',
                 body: formData
             })
@@ -229,7 +230,7 @@
             formData.append('id', mediaId);
             formData.append('password', adminPassword);
             
-            fetch('api/delete_media.php', {
+            fetch(API_BASE_URL + '/delete_media.php', {
                 method: 'POST',
                 body: formData
             })
@@ -256,7 +257,7 @@
             
             mediaGrid.innerHTML = '';
             
-            const url = type === 'all' ? 'api/get_media.php' : `api/get_media.php?type=${type}`;
+            const url = type === 'all' ? (API_BASE_URL + '/get_media.php') : (API_BASE_URL + `/get_media.php?type=${type}`);
             fetch(url)
                 .then(response => response.json())
                 .then(data => {

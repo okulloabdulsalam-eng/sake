@@ -146,6 +146,7 @@
         </nav>
     </div>
 
+    <script src="api-config.js"></script>
     <script src="script.js"></script>
     <script>
         // Define showAddBookModal immediately so it's available for onclick handlers
@@ -344,7 +345,7 @@
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
 
             // Upload to server
-            fetch('api/upload_book.php', {
+            fetch(API_BASE_URL + '/upload_book.php', {
                 method: 'POST',
                 body: formData
             })
@@ -481,7 +482,7 @@
             formData.append('id', bookId);
             formData.append('password', adminPassword);
             
-            fetch('api/delete_book.php', {
+            fetch(API_BASE_URL + '/delete_book.php', {
                 method: 'POST',
                 body: formData
             })
@@ -547,7 +548,7 @@
             existingItems.forEach(item => item.remove());
             
             // Fetch books from server
-            const url = category === 'all' ? 'api/get_books.php' : `api/get_books.php?category=${category}`;
+            const url = category === 'all' ? (API_BASE_URL + '/get_books.php') : (API_BASE_URL + `/get_books.php?category=${category}`);
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
