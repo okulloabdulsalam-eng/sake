@@ -46,11 +46,13 @@ async function updateDates() {
             const dd = String(now.getDate()).padStart(2, '0');
             const currentDate = `${yyyy}-${mm}-${dd}`;
             
-            // Try multiple API endpoints as fallbacks
+            // Use Aladhan API with Umm al-Qura (Makkah/Madina) method for accurate Hijri dates
+            // This is the official Saudi calendar used in Makkah and Madina
+            // Method 4 = Umm al-Qura, Makkah
             const apiEndpoints = [
-                `https://api.aladhan.com/v1/gToH/${dd}-${mm}-${yyyy}`,
-                `https://api.aladhan.com/v1/gToHCalendar/${mm}/${yyyy}`,
-                `https://ummahapi.com/api/hijri-date?date=${currentDate}`
+                `https://api.aladhan.com/v1/gToH/${dd}-${mm}-${yyyy}?method=4`, // Umm al-Qura (Makkah/Madina)
+                `https://api.aladhan.com/v1/gToH/${dd}-${mm}-${yyyy}?method=2`, // Islamic Society of North America (fallback)
+                `https://api.aladhan.com/v1/gToH/${dd}-${mm}-${yyyy}` // Default method
             ];
             
             let data = null;
@@ -105,22 +107,35 @@ async function updateDates() {
             let hijriMonth = null;
             let hijriYear = null;
             
-            // Handle Aladhan API response format
+            // Handle Aladhan API response format (Umm al-Qura / Makkah method)
             if (data.data && Array.isArray(data.data)) {
-                // Aladhan calendar format - get today's date
-                const todayData = data.data.find(d => d.gregorian.day == dd) || data.data[0];
+                // Aladhan calendar format - get today's date (exact match)
+                const todayData = data.data.find(d => {
+                    const gregDay = parseInt(d.gregorian.day);
+                    const gregMonth = parseInt(d.gregorian.month.number);
+                    return gregDay === parseInt(dd) && gregMonth === parseInt(mm);
+                }) || data.data[0];
                 if (todayData && todayData.hijri) {
                     hijriDay = parseInt(todayData.hijri.day);
                     hijriMonth = parseInt(todayData.hijri.month.number);
                     hijriYear = parseInt(todayData.hijri.year);
-                    hijriDate.textContent = formatHijriDate(hijriDay, hijriMonth, hijriYear);
+                    if (hijriDay && hijriMonth && hijriYear) {
+                        hijriDate.textContent = formatHijriDate(hijriDay, hijriMonth, hijriYear);
+                    }
                 }
             } else if (data.data && data.data.hijri) {
-                // Aladhan single date format
+                // Aladhan single date format (Umm al-Qura method) - This is the primary format
                 hijriDay = parseInt(data.data.hijri.day);
                 hijriMonth = parseInt(data.data.hijri.month.number);
                 hijriYear = parseInt(data.data.hijri.year);
-                hijriDate.textContent = formatHijriDate(hijriDay, hijriMonth, hijriYear);
+                
+                // Verify we got valid data from Makkah/Madina calculation
+                if (hijriDay && hijriMonth && hijriYear) {
+                    hijriDate.textContent = formatHijriDate(hijriDay, hijriMonth, hijriYear);
+                } else {
+                    console.error('Invalid Hijri date from API:', data.data.hijri);
+                    throw new Error('Invalid date data from API');
+                }
             } else if (data.hijri) {
                 // Ummah API format
                 if (typeof data.hijri.day === 'number') {
