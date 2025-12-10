@@ -237,7 +237,30 @@
         });
 
         function filterNotifications(status) {
-            const items = document.querySelectorAll('.notification-item');
+            const items = Array.from(document.querySelectorAll('.notification-item'));
+            
+            // Sort items before filtering:
+            // 1. Unread first
+            // 2. Then by date (newest first)
+            items.sort((a, b) => {
+                const statusA = a.dataset.status;
+                const statusB = b.dataset.status;
+                
+                // Unread comes first
+                if (statusA === 'unread' && statusB !== 'unread') return -1;
+                if (statusA !== 'unread' && statusB === 'unread') return 1;
+                
+                // If same status, maintain DOM order (newest first)
+                return 0;
+            });
+            
+            // Re-append sorted items to maintain order
+            const container = document.querySelector('.page-content');
+            items.forEach(item => {
+                container.appendChild(item);
+            });
+            
+            // Now filter
             items.forEach(item => {
                 if (status === 'all' || item.dataset.status === status) {
                     item.style.display = 'flex';
@@ -270,7 +293,7 @@
             document.getElementById('addNotificationForm').reset();
         };
 
-        window.addNotification = function(e) {
+        window.addNotification = async function(e) {
             e.preventDefault();
             if (!isAdminLoggedIn) {
                 alert('You must be logged in as admin to add notifications.');
@@ -286,59 +309,97 @@
                 return;
             }
 
-            // Get or create notifications data from localStorage
-            let notificationsData = JSON.parse(localStorage.getItem('notificationsData') || '[]');
-
-            const notification = {
-                id: Date.now().toString(),
-                title: title,
-                message: message,
-                icon: icon,
-                status: 'unread',
-                date: new Date().toISOString(),
-                timeDisplay: 'Just now'
-            };
-
-            notificationsData.unshift(notification); // Add to beginning
-            localStorage.setItem('notificationsData', JSON.stringify(notificationsData));
-
-            // Create and display notification element
-            const notificationsContainer = document.querySelector('.page-content');
-            const firstNotification = notificationsContainer.querySelector('.notification-item');
-            const newNotification = document.createElement('div');
-            newNotification.className = 'notification-item';
-            newNotification.dataset.status = 'unread';
-            newNotification.dataset.id = notification.id;
-            newNotification.innerHTML = `
-                <div class="notification-icon">
-                    <i class="${icon}"></i>
-                </div>
-                <div class="notification-content">
-                    <h4>${title}</h4>
-                    <p>${message}</p>
-                    <span class="notification-time">Just now</span>
-                </div>
-            `;
-
-            // Insert at the top
-            if (firstNotification) {
-                notificationsContainer.insertBefore(newNotification, firstNotification);
-            } else {
-                notificationsContainer.appendChild(newNotification);
+            // Get admin password from localStorage or prompt
+            const adminPassword = localStorage.getItem('adminPassword') || prompt('Enter admin password to save notification:');
+            if (!adminPassword) {
+                alert('Admin password required to save notification.');
+                return;
             }
 
-            // Mark as read on click
-            newNotification.addEventListener('click', function() {
-                if (this.dataset.status === 'unread') {
-                    this.dataset.status = 'read';
-                    this.style.opacity = '0.7';
-                    // Update in localStorage
-                    updateNotificationStatus(notification.id, 'read');
-                }
-            });
+            // Save to database via API
+            try {
+                const formData = new FormData();
+                formData.append('title', title);
+                formData.append('message', message);
+                formData.append('type', 'announcement');
+                formData.append('target_audience', 'all');
+                formData.append('icon', icon);
+                formData.append('admin_password', adminPassword);
 
-            window.closeAddNotificationModal();
-            alert('Notification added successfully!');
+                const API_BASE_URL = window.API_BASE_URL || '/api';
+                const response = await fetch(API_BASE_URL + '/save_notification.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to save notification');
+                }
+
+                // Also save to localStorage for immediate display (fallback)
+                let notificationsData = JSON.parse(localStorage.getItem('notificationsData') || '[]');
+                const notification = {
+                    id: data.notification.id.toString(),
+                    title: title,
+                    message: message,
+                    icon: icon,
+                    status: 'unread',
+                    date: data.notification.created_date || new Date().toISOString(),
+                    timeDisplay: 'Just now'
+                };
+
+                notificationsData.unshift(notification);
+                localStorage.setItem('notificationsData', JSON.stringify(notificationsData));
+
+                // Create and display notification element
+                const notificationsContainer = document.querySelector('.page-content');
+                const firstNotification = notificationsContainer.querySelector('.notification-item');
+                const newNotification = document.createElement('div');
+                newNotification.className = 'notification-item';
+                newNotification.dataset.status = 'unread';
+                newNotification.dataset.id = notification.id;
+                newNotification.innerHTML = `
+                    <div class="notification-icon">
+                        <i class="${icon}"></i>
+                    </div>
+                    <div class="notification-content">
+                        <h4>${title}</h4>
+                        <p>${message}</p>
+                        <span class="notification-time">Just now</span>
+                    </div>
+                `;
+
+                // Insert at the top
+                if (firstNotification) {
+                    notificationsContainer.insertBefore(newNotification, firstNotification);
+                } else {
+                    notificationsContainer.appendChild(newNotification);
+                }
+
+                // Mark as read on click
+                newNotification.addEventListener('click', function() {
+                    if (this.dataset.status === 'unread') {
+                        this.dataset.status = 'read';
+                        this.style.opacity = '0.7';
+                        // Update in localStorage
+                        updateNotificationStatus(notification.id, 'read');
+                    }
+                });
+
+                window.closeAddNotificationModal();
+                alert('Notification saved successfully!');
+                
+                // Optionally send to all users
+                if (confirm('Do you want to send this notification to all users via WhatsApp and Email?')) {
+                    sendNotificationToAllUsers(title, message, data.notification.id);
+                }
+                
+            } catch (error) {
+                console.error('Error saving notification:', error);
+                alert('Error saving notification: ' + error.message);
+            }
         };
 
         function updateNotificationStatus(id, status) {
@@ -362,17 +423,87 @@
             return date.toLocaleDateString();
         }
 
-        // Load notifications from localStorage on page load
-        function loadNotificationsFromStorage() {
-            const notificationsData = JSON.parse(localStorage.getItem('notificationsData') || '[]');
+        // Load notifications from database and localStorage on page load
+        async function loadNotificationsFromStorage() {
             const notificationsContainer = document.querySelector('.page-content');
             
             // Clear existing stored notifications (keep only hardcoded ones)
             const existingStored = Array.from(notificationsContainer.querySelectorAll('.notification-item[data-id]'));
             existingStored.forEach(item => item.remove());
             
-            // Add stored notifications
-            notificationsData.forEach(notif => {
+            // Try to load from database first
+            try {
+                const API_BASE_URL = window.API_BASE_URL || '/api';
+                const response = await fetch(API_BASE_URL + '/get_notifications.php');
+                const data = await response.json();
+                
+                if (data.success && data.notifications) {
+                    // Load from database
+                    const sortedNotifications = data.notifications.sort((a, b) => {
+                        // Unread first
+                        if (a.is_read === 0 && b.is_read !== 0) return -1;
+                        if (a.is_read !== 0 && b.is_read === 0) return 1;
+                        // Then by date (newest first)
+                        return new Date(b.created_date) - new Date(a.created_date);
+                    });
+                    
+                    sortedNotifications.forEach(notif => {
+                        const newNotification = document.createElement('div');
+                        newNotification.className = 'notification-item';
+                        newNotification.dataset.status = notif.is_read ? 'read' : 'unread';
+                        newNotification.dataset.id = notif.id;
+                        newNotification.innerHTML = `
+                            <div class="notification-icon">
+                                <i class="fas fa-bell"></i>
+                            </div>
+                            <div class="notification-content">
+                                <h4>${notif.title}</h4>
+                                <p>${notif.message}</p>
+                                <span class="notification-time">${formatTimeAgo(notif.created_date)}</span>
+                            </div>
+                        `;
+                        
+                        const firstNotification = notificationsContainer.querySelector('.notification-item');
+                        if (firstNotification) {
+                            notificationsContainer.insertBefore(newNotification, firstNotification);
+                        } else {
+                            notificationsContainer.appendChild(newNotification);
+                        }
+                        
+                        // Mark as read on click
+                        newNotification.addEventListener('click', function() {
+                            if (this.dataset.status === 'unread') {
+                                this.dataset.status = 'read';
+                                this.style.opacity = '0.7';
+                            }
+                        });
+                    });
+                    
+                    return; // Successfully loaded from database
+                }
+            } catch (error) {
+                console.log('Database not available, loading from localStorage:', error);
+            }
+            
+            // Fallback to localStorage
+            const notificationsData = JSON.parse(localStorage.getItem('notificationsData') || '[]');
+            
+            // Sort notifications: 
+            // 1. Unread first (status = 'unread')
+            // 2. Then by date (newest first)
+            const sortedNotifications = notificationsData.sort((a, b) => {
+                // First, sort by status (unread comes before read)
+                if (a.status === 'unread' && b.status !== 'unread') return -1;
+                if (a.status !== 'unread' && b.status === 'unread') return 1;
+                
+                // If same status, sort by date (newest first)
+                const dateA = new Date(a.date || 0);
+                const dateB = new Date(b.date || 0);
+                return dateB - dateA; // Newest first
+            });
+            
+            // Add stored notifications (now sorted)
+            sortedNotifications.forEach(notif => {
                 const newNotification = document.createElement('div');
                 newNotification.className = 'notification-item';
                 newNotification.dataset.status = notif.status || 'read';
@@ -405,6 +536,42 @@
                     }
                 });
             });
+        }
+        
+        // Send notification to all users via WhatsApp and Email
+        async function sendNotificationToAllUsers(subject, message, notificationId = null) {
+            try {
+                const adminPassword = localStorage.getItem('adminPassword') || prompt('Enter admin password to send notifications:');
+                if (!adminPassword) {
+                    alert('Admin password required to send notifications.');
+                    return;
+                }
+                
+                const formData = new FormData();
+                formData.append('subject', subject);
+                formData.append('message', message);
+                if (notificationId) {
+                    formData.append('notification_id', notificationId);
+                }
+                formData.append('admin_password', adminPassword);
+                
+                const API_BASE_URL = window.API_BASE_URL || '/api';
+                const response = await fetch(API_BASE_URL + '/send_notifications_to_all.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(`Notifications sent to ${data.totalUsers} users!\nWhatsApp: ${data.whatsappSent}\nEmail: ${data.emailSent}`);
+                } else {
+                    throw new Error(data.message || 'Failed to send notifications');
+                }
+            } catch (error) {
+                console.error('Error sending notifications:', error);
+                alert('Error sending notifications: ' + error.message);
+            }
         }
     </script>
 

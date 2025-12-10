@@ -13,6 +13,7 @@ kiuma_users.db
 
 # Configuration files with sensitive data
 config/database.php
+api/whatsapp_integration.php
 
 # Logs
 logs/

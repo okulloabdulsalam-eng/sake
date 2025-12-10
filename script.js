@@ -225,7 +225,22 @@ async function updateDates() {
 }
 
 // Get all registered users (excluding passwords)
-function getAllRegisteredUsers() {
+// Get all registered users from database or localStorage (fallback)
+async function getAllRegisteredUsers() {
+    // Try to get from database first
+    try {
+        const API_BASE_URL = window.API_BASE_URL || '/api';
+        const response = await fetch(API_BASE_URL + '/get_all_users.php');
+        const data = await response.json();
+        
+        if (data.success && data.users) {
+            return data.users;
+        }
+    } catch (error) {
+        console.log('Database not available, using localStorage:', error);
+    }
+    
+    // Fallback to localStorage
     const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
     // Return users without passwords for security
     return storedUsers.map(user => {
@@ -330,8 +345,41 @@ async function sendEmailNotification(email, subject, message) {
 }
 
 // Send notifications to all registered users
-async function sendNotificationsToAllUsers(subject, message) {
-    const users = getAllRegisteredUsers();
+async function sendNotificationsToAllUsers(subject, message, notificationId = null) {
+    // Try to use backend API first (more efficient)
+    try {
+        const adminPassword = localStorage.getItem('adminPassword') || '';
+        const API_BASE_URL = window.API_BASE_URL || '/api';
+        
+        const formData = new FormData();
+        formData.append('subject', subject);
+        formData.append('message', message);
+        if (notificationId) {
+            formData.append('notification_id', notificationId);
+        }
+        formData.append('admin_password', adminPassword);
+        
+        const response = await fetch(API_BASE_URL + '/send_notifications_to_all.php', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            console.log(`Notifications sent via API: ${data.totalUsers} users, WhatsApp: ${data.whatsappSent}, Email: ${data.emailSent}`);
+            return { 
+                successCount: data.whatsappSent + data.emailSent, 
+                failCount: data.whatsappFailed + data.emailFailed, 
+                total: data.totalUsers 
+            };
+        }
+    } catch (error) {
+        console.log('Backend API not available, using fallback method:', error);
+    }
+    
+    // Fallback: Get users and send individually
+    const users = await getAllRegisteredUsers();
     let successCount = 0;
     let failCount = 0;
     
