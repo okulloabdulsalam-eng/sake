@@ -85,10 +85,10 @@
                     <button class="btn btn-secondary" id="adminLoginBtn" onclick="showAdminLogin()" style="padding: 10px 15px;">
                         <i class="fas fa-lock"></i> Admin Login
                     </button>
-                    <button class="btn btn-primary admin-only" onclick="showAddNotificationModal()" style="display: none; padding: 10px 15px;">
+                    <button class="btn btn-primary admin-only" onclick="window.showAddNotificationModal()" style="padding: 10px 15px; display: none;">
                         <i class="fas fa-plus"></i> Add Notification
                     </button>
-                    <button class="btn btn-secondary admin-logout" onclick="logoutAdmin()" style="display: none; padding: 10px 15px;">
+                    <button class="btn btn-secondary admin-logout" onclick="logoutAdmin()" style="padding: 10px 15px; display: none;">
                         <i class="fas fa-sign-out-alt"></i> Logout
                     </button>
                 </div>
@@ -188,11 +188,20 @@
         </nav>
     </div>
 
+    <script src="api-config.js"></script>
     <script src="script.js"></script>
     <script>
         // Check admin status on page load
         window.addEventListener('DOMContentLoaded', function() {
-            checkAdminStatus();
+            // Ensure checkAdminStatus is available and call it
+            setTimeout(function() {
+                if (typeof window.checkAdminStatus === 'function') {
+                    window.checkAdminStatus();
+                } else if (typeof checkAdminStatus === 'function') {
+                    checkAdminStatus();
+                }
+            }, 100);
+            
             loadNotificationsFromStorage();
             
             // Check for white days notification after a short delay to ensure dates are updated
@@ -281,16 +290,37 @@
         });
 
         window.showAddNotificationModal = function() {
-            if (!isAdminLoggedIn) {
-                showAdminLogin();
+            // Check admin status from localStorage
+            const isAdmin = localStorage.getItem('isAdminLoggedIn') === 'true';
+            console.log('showAddNotificationModal called, isAdmin:', isAdmin);
+            if (!isAdmin) {
+                console.log('Not admin, showing login');
+                if (typeof showAdminLogin === 'function') {
+                    showAdminLogin();
+                } else if (typeof window.showAdminLogin === 'function') {
+                    window.showAdminLogin();
+                }
                 return;
             }
-            document.getElementById('addNotificationModal').style.display = 'flex';
+            const modal = document.getElementById('addNotificationModal');
+            if (modal) {
+                console.log('Showing modal');
+                modal.style.display = 'flex';
+            } else {
+                console.error('Add notification modal not found');
+                alert('Error: Notification modal not found. Please refresh the page.');
+            }
         };
 
         window.closeAddNotificationModal = function() {
-            document.getElementById('addNotificationModal').style.display = 'none';
-            document.getElementById('addNotificationForm').reset();
+            const modal = document.getElementById('addNotificationModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+            const form = document.getElementById('addNotificationForm');
+            if (form) {
+                form.reset();
+            }
         };
 
         window.addNotification = async function(e) {
@@ -608,7 +638,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3><i class="fas fa-bell"></i> Add New Notification</h3>
-                <button class="modal-close" onclick="closeAddNotificationModal()">
+                <button class="modal-close" onclick="window.closeAddNotificationModal()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -639,7 +669,7 @@
                         <button type="submit" class="btn btn-primary" style="flex: 1;">
                             <i class="fas fa-plus"></i> Add Notification
                         </button>
-                        <button type="button" class="btn btn-secondary" onclick="closeAddNotificationModal()" style="flex: 1;">
+                        <button type="button" class="btn btn-secondary" onclick="window.closeAddNotificationModal()" style="flex: 1;">
                             Cancel
                         </button>
                     </div>

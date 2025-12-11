@@ -53,13 +53,55 @@ try {
         exit;
     }
     
-    // Get all users from database
+    // Get all users from database (MySQL)
+    // Note: To include SQLite users too, use get_all_users_combined.php endpoint
     $stmt = $pdo->query("
         SELECT id, email, whatsapp, firstName, lastName, name 
         FROM users 
         WHERE (email IS NOT NULL AND email != '') OR (whatsapp IS NOT NULL AND whatsapp != '')
     ");
     $users = $stmt->fetchAll();
+    
+    // Also try to get users from SQLite database (Node.js registration)
+    $sqlitePath = __DIR__ . '/../kiuma_users.db';
+    if (file_exists($sqlitePath)) {
+        try {
+            $sqlite = new PDO('sqlite:' . $sqlitePath);
+            $sqlite->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            
+            // Check if whatsapp column exists
+            $pragmaStmt = $sqlite->query("PRAGMA table_info(users)");
+            $columns = $pragmaStmt->fetchAll(PDO::FETCH_COLUMN, 1);
+            $hasWhatsApp = in_array('whatsapp', $columns);
+            
+            $selectCols = ['id', 'email', 'firstName', 'lastName', 'name'];
+            if ($hasWhatsApp) {
+                $selectCols[] = 'whatsapp';
+            }
+            
+            $sqliteStmt = $sqlite->query("
+                SELECT " . implode(', ', $selectCols) . "
+                FROM users 
+                WHERE (email IS NOT NULL AND email != '') OR " . ($hasWhatsApp ? "(whatsapp IS NOT NULL AND whatsapp != '')" : "1=0") . "
+            ");
+            $sqliteUsers = $sqliteStmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Merge SQLite users, avoiding duplicates by email
+            $existingEmails = array_column($users, 'email');
+            foreach ($sqliteUsers as $sqliteUser) {
+                if (!in_array($sqliteUser['email'] ?? '', $existingEmails)) {
+                    // Ensure whatsapp is set
+                    if (!isset($sqliteUser['whatsapp'])) {
+                        $sqliteUser['whatsapp'] = null;
+                    }
+                    $users[] = $sqliteUser;
+                }
+            }
+        } catch (Exception $e) {
+            // SQLite not available, continue with MySQL only
+            error_log("SQLite users not accessible: " . $e->getMessage());
+        }
+    }
     
     $whatsappSent = 0;
     $whatsappFailed = 0;
