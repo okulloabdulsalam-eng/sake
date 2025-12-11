@@ -37,7 +37,13 @@ body {
 .header {
     background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
     padding: 15px 20px;
-    position: relative;
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 428px;
+    z-index: 999;
     overflow: hidden;
 }
 
@@ -184,6 +190,7 @@ body {
 /* Main Content */
 .main-content {
     padding: 20px;
+    padding-top: 90px; /* Add padding to account for fixed header */
 }
 
 /* Welcome Section */
