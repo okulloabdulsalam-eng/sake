@@ -39,17 +39,22 @@ body {
 .header {
     background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
     padding: 15px 20px;
-    position: -webkit-sticky; /* Safari/iOS support */
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 50%;
+    transform: translateX(-50%) translateZ(0); /* Center and hardware acceleration */
+    -webkit-transform: translateX(-50%) translateZ(0);
     width: 100%;
+    max-width: 428px;
     z-index: 999;
     overflow: hidden;
-    -webkit-transform: translateZ(0); /* Hardware acceleration for mobile */
-    transform: translateZ(0);
     will-change: transform;
     -webkit-backface-visibility: hidden; /* Prevent flickering on mobile */
     backface-visibility: hidden;
+    -webkit-overflow-scrolling: touch;
+    /* Force GPU acceleration for mobile */
+    -webkit-perspective: 1000;
+    perspective: 1000;
 }
 
 .header::after {
@@ -195,7 +200,7 @@ body {
 /* Main Content */
 .main-content {
     padding: 20px;
-    /* No extra padding-top needed with sticky positioning as it stays in flow */
+    padding-top: 90px; /* Add padding to account for fixed header */
 }
 
 /* Welcome Section */
@@ -1613,15 +1618,17 @@ textarea.form-input {
     }
     
     .header {
-        position: sticky;
-        position: -webkit-sticky;
+        position: fixed;
         top: 0;
-        left: 0;
-        right: 0;
+        left: 50%;
+        transform: translateX(-50%) translateZ(0);
+        -webkit-transform: translateX(-50%) translateZ(0);
         width: 100%;
         max-width: 100%;
-        -webkit-transform: translateZ(0);
-        transform: translateZ(0);
+    }
+    
+    .main-content {
+        padding-top: 90px; /* Ensure content doesn't hide behind fixed header */
     }
     
     .bottom-nav {
