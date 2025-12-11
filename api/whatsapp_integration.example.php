@@ -19,7 +19,7 @@ define('WHATSAPP_SERVICE', 'twilio'); // Change to 'meta' for Meta Business API
 // Twilio Configuration (if using Twilio)
 define('TWILIO_ACCOUNT_SID', ''); // Your Twilio Account SID
 define('TWILIO_AUTH_TOKEN', '');  // Your Twilio Auth Token
-define('TWILIO_WHATSAPP_NUMBER', '+14155238886'); // Twilio WhatsApp number (default sandbox)
+define('TWILIO_WHATSAPP_NUMBER', '+14155238886'); // Twilio WhatsApp number (default sandbox) - Use join code: planning-job
 
 // Meta WhatsApp Business API Configuration (if using Meta)
 define('META_PHONE_NUMBER_ID', ''); // Your Meta Phone Number ID

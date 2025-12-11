@@ -61,7 +61,14 @@ window.handleSignup = async function(e) {
             
             updateUserDisplay();
             window.closeAccountModal();
-            alert('Account created successfully! Welcome, ' + firstName + '!');
+            
+            // Show success modal with WhatsApp join option
+            if (typeof showRegistrationSuccessModal === 'function') {
+                showRegistrationSuccessModal(firstName, whatsapp);
+            } else {
+                alert('Account created successfully! Welcome, ' + firstName + '!\n\nTo receive WhatsApp notifications, join our WhatsApp sandbox by sending "join planning-job" to +14155238886');
+            }
+            
             document.getElementById('signupFormElement')?.reset();
         } else {
             alert(data.message || 'Registration failed. Please try again.');

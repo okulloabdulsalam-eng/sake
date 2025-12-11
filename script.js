@@ -843,8 +843,74 @@ window.handleSignup = function(e) {
     localStorage.setItem('userData', JSON.stringify(newUser));
     updateUserDisplay();
     window.closeAccountModal();
-    alert('Account created successfully! Welcome, ' + firstName + '!');
+    
+    // Show success message with WhatsApp join option
+    showRegistrationSuccessModal(firstName, whatsapp);
 };
+
+// Show registration success modal with WhatsApp join option
+function showRegistrationSuccessModal(firstName, whatsappNumber) {
+    // Get Twilio sandbox join code (UPDATE THIS with your actual code from Twilio Console)
+    // Get it from: https://console.twilio.com/us1/develop/sms/try-it-out/whatsapp-learn
+    const SANDBOX_JOIN_CODE = localStorage.getItem('twilioSandboxCode') || 'planning-job'; // Twilio sandbox join code
+    
+    if (SANDBOX_JOIN_CODE === 'YOUR_CODE_HERE') {
+        // No join code set, just show success
+        alert('Account created successfully! Welcome, ' + firstName + '!\n\nTo receive WhatsApp notifications, you\'ll need to join our WhatsApp sandbox. Instructions will be sent via email.');
+        return;
+    }
+    
+    const joinMessage = `join ${SANDBOX_JOIN_CODE}`;
+    const whatsappUrl = `https://wa.me/14155238886?text=${encodeURIComponent(joinMessage)}`;
+    
+    // Create and show modal
+    const modal = document.createElement('div');
+    modal.id = 'registrationSuccessModal';
+    modal.style.cssText = 'display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; justify-content: center; align-items: center;';
+    
+    modal.innerHTML = `
+        <div style="background: white; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+            <div style="font-size: 64px; margin-bottom: 20px;">✅</div>
+            <h2 style="color: #2c3e50; margin-bottom: 15px;">Welcome, ${firstName}!</h2>
+            <p style="color: #7f8c8d; margin-bottom: 25px; line-height: 1.6;">
+                Your account has been created successfully!<br><br>
+                <strong>📱 Join WhatsApp Notifications (10 seconds)</strong><br>
+                Click below to receive all KIUMA updates via WhatsApp
+            </p>
+            
+            <div style="background: #E8F5E9; padding: 15px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #4CAF50;">
+                <p style="margin: 0; color: #2E7D32; font-size: 14px;">
+                    <strong>Step 1:</strong> Click "Join WhatsApp" below<br>
+                    <strong>Step 2:</strong> Tap "Send" in WhatsApp<br>
+                    <strong>Done!</strong> ✅ You'll receive all notifications
+                </p>
+            </div>
+            
+            <a href="${whatsappUrl}" target="_blank"
+               style="display: inline-block; background: #25D366; color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-size: 18px; font-weight: bold; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3); margin-right: 10px;">
+                <i class="fab fa-whatsapp"></i> Join WhatsApp
+            </a>
+            
+            <button onclick="this.closest('#registrationSuccessModal').remove()" 
+                    style="padding: 15px 30px; background: #95a5a6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold;">
+                Skip for now
+            </button>
+            
+            <p style="font-size: 12px; color: #95a5a6; margin-top: 20px;">
+                You can join later from your account settings
+            </p>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Auto-close after 60 seconds if not interacted
+    setTimeout(function() {
+        if (document.getElementById('registrationSuccessModal')) {
+            modal.remove();
+        }
+    }, 60000);
+}
 
 window.showAccountInfo = function() {
     const modal = document.getElementById('accountModal');

@@ -1,0 +1,103 @@
+<!-- WhatsApp Join Modal - Add this to your HTML after registration success -->
+<div id="whatsappJoinModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; justify-content: center; align-items: center;">
+    <div style="background: white; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+        <div style="font-size: 64px; margin-bottom: 20px;">📱</div>
+        <h2 style="color: #2c3e50; margin-bottom: 15px;">Join WhatsApp Notifications</h2>
+        <p style="color: #7f8c8d; margin-bottom: 25px; line-height: 1.6;">
+            To receive KIUMA notifications via WhatsApp, please join our WhatsApp sandbox.<br>
+            <strong>It only takes 10 seconds!</strong>
+        </p>
+        
+        <div style="background: #E8F5E9; padding: 15px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #4CAF50;">
+            <p style="margin: 0; color: #2E7D32; font-size: 14px;">
+                <strong>Step 1:</strong> Click the button below<br>
+                <strong>Step 2:</strong> Tap "Send" in WhatsApp<br>
+                <strong>Done!</strong> ✅
+            </p>
+        </div>
+        
+        <a id="whatsappJoinLink" href="#" 
+           style="display: inline-block; background: #25D366; color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-size: 18px; font-weight: bold; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);">
+            <i class="fab fa-whatsapp" style="margin-right: 8px;"></i> Open WhatsApp & Join
+        </a>
+        
+        <p style="font-size: 12px; color: #95a5a6; margin-top: 20px;">
+            Need help? <a href="#" onclick="showJoinInstructions(); return false;" style="color: #3498db;">View instructions</a>
+        </p>
+        
+        <button onclick="closeWhatsAppJoinModal()" 
+                style="margin-top: 20px; padding: 10px 20px; background: #95a5a6; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
+            I'll do this later
+        </button>
+    </div>
+</div>
+
+<script>
+// Get Twilio sandbox join code (you need to get this from Twilio Console)
+// Default join code - UPDATE THIS with your actual code from Twilio Console
+const TWILIO_SANDBOX_JOIN_CODE = 'join planning-job'; // Twilio sandbox join code
+
+function showWhatsAppJoinModal(whatsappNumber) {
+    const modal = document.getElementById('whatsappJoinModal');
+    if (!modal) return;
+    
+    // Create WhatsApp link with pre-filled join message
+    const joinMessage = TWILIO_SANDBOX_JOIN_CODE.replace('YOUR_CODE_HERE', getSandboxJoinCode());
+    const whatsappUrl = `https://wa.me/14155238886?text=${encodeURIComponent(joinMessage)}`;
+    
+    // Set the link
+    const link = document.getElementById('whatsappJoinLink');
+    if (link) {
+        link.href = whatsappUrl;
+        link.onclick = function() {
+            // Track that user clicked join link
+            localStorage.setItem('whatsappJoinClicked', 'true');
+            localStorage.setItem('whatsappJoinTime', new Date().toISOString());
+        };
+    }
+    
+    // Show modal
+    modal.style.display = 'flex';
+    
+    // Auto-close after 30 seconds if not clicked
+    setTimeout(function() {
+        if (modal.style.display === 'flex') {
+            closeWhatsAppJoinModal();
+        }
+    }, 30000);
+}
+
+function closeWhatsAppJoinModal() {
+    const modal = document.getElementById('whatsappJoinModal');
+    if (modal) {
+        modal.style.display = 'none';
+        localStorage.setItem('whatsappJoinDismissed', 'true');
+    }
+}
+
+function getSandboxJoinCode() {
+    // Try to get from localStorage (if admin set it)
+    let code = localStorage.getItem('twilioSandboxCode');
+    
+    // If not set, use default or prompt admin
+    if (!code || code === 'YOUR_CODE_HERE') {
+        // Use default join code
+        code = 'planning-job';
+        code = 'YOUR_CODE_HERE'; // Admin needs to set this
+    }
+    
+    return code;
+}
+
+function showJoinInstructions() {
+    alert('To join WhatsApp notifications:\n\n' +
+          '1. Click "Open WhatsApp & Join" button\n' +
+          '2. WhatsApp will open with a pre-filled message\n' +
+          '3. Tap "Send" to send the message\n' +
+          '4. You\'ll receive a confirmation\n' +
+          '5. You\'re done! You\'ll now receive all KIUMA notifications\n\n' +
+          'Manual method:\n' +
+          'Send "join [CODE]" to +14155238886 from your WhatsApp');
+}
+</script>
+
