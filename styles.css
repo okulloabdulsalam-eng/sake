@@ -23,6 +23,7 @@ body {
     color: var(--dark-gray);
     overflow-x: hidden;
     padding-bottom: 80px;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 .container {
@@ -31,20 +32,24 @@ body {
     background: var(--white);
     min-height: 100vh;
     position: relative;
+    overflow-x: hidden; /* Prevent horizontal scroll issues on mobile */
 }
 
 /* Header Styles */
 .header {
     background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
     padding: 15px 20px;
-    position: fixed;
+    position: -webkit-sticky; /* Safari/iOS support */
+    position: sticky;
     top: 0;
-    left: 50%;
-    transform: translateX(-50%);
     width: 100%;
-    max-width: 428px;
     z-index: 999;
     overflow: hidden;
+    -webkit-transform: translateZ(0); /* Hardware acceleration for mobile */
+    transform: translateZ(0);
+    will-change: transform;
+    -webkit-backface-visibility: hidden; /* Prevent flickering on mobile */
+    backface-visibility: hidden;
 }
 
 .header::after {
@@ -190,7 +195,7 @@ body {
 /* Main Content */
 .main-content {
     padding: 20px;
-    padding-top: 90px; /* Add padding to account for fixed header */
+    /* No extra padding-top needed with sticky positioning as it stays in flow */
 }
 
 /* Welcome Section */
@@ -1605,6 +1610,18 @@ textarea.form-input {
 @media (max-width: 428px) {
     .container {
         max-width: 100%;
+    }
+    
+    .header {
+        position: sticky;
+        position: -webkit-sticky;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        max-width: 100%;
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
     }
     
     .bottom-nav {
