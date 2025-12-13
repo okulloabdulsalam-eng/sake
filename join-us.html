@@ -475,7 +475,8 @@
         // Developer WhatsApp number - UPDATE THIS WITH YOUR ACTUAL NUMBER
         const DEVELOPER_WHATSAPP = '+256700000000'; // Format: +[country code][number] without spaces or dashes
 
-        let currentUser = null;
+        // Use pageUser to avoid conflict with firebase-auth.js's currentUser
+        var pageUser = null;
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', async () => {
@@ -486,8 +487,8 @@
         // Check authentication state
         async function checkAuthState() {
             if (typeof getCurrentUser === 'function') {
-                currentUser = getCurrentUser();
-                if (currentUser) {
+                pageUser = getCurrentUser();
+                if (pageUser) {
                     showAccountSection();
                     updateUserInfo();
                 } else {
@@ -498,7 +499,7 @@
                 const userData = localStorage.getItem('userData');
                 if (userData) {
                     try {
-                        currentUser = JSON.parse(userData);
+                        pageUser = JSON.parse(userData);
                         showAccountSection();
                         updateUserInfo();
                     } catch (e) {
@@ -559,9 +560,9 @@
 
         // Update user info display
         function updateUserInfo() {
-            if (currentUser) {
-                const displayName = currentUser.displayName || currentUser.email?.split('@')[0] || 'User';
-                const email = currentUser.email || 'No email';
+            if (pageUser) {
+                const displayName = pageUser.displayName || pageUser.email?.split('@')[0] || 'User';
+                const email = pageUser.email || 'No email';
                 
                 // Main user card
                 document.getElementById('userDisplayName').textContent = displayName;
@@ -578,12 +579,12 @@
                 // Member since date
                 if (memberSince) {
                     let joinDate = '--';
-                    if (currentUser.metadata?.creationTime) {
-                        joinDate = new Date(currentUser.metadata.creationTime).toLocaleDateString('en-US', {
+                    if (pageUser.metadata?.creationTime) {
+                        joinDate = new Date(pageUser.metadata.creationTime).toLocaleDateString('en-US', {
                             year: 'numeric', month: 'short', day: 'numeric'
                         });
-                    } else if (currentUser.createdAt) {
-                        joinDate = new Date(currentUser.createdAt).toLocaleDateString('en-US', {
+                    } else if (pageUser.createdAt) {
+                        joinDate = new Date(pageUser.createdAt).toLocaleDateString('en-US', {
                             year: 'numeric', month: 'short', day: 'numeric'
                         });
                     }
@@ -608,7 +609,7 @@
                 if (typeof signInWithEmail === 'function') {
                     const result = await signInWithEmail(email, password);
                     if (result.success) {
-                        currentUser = result.user;
+                        pageUser = result.user;
                         showAccountSection();
                         updateUserInfo();
                         updateNavigation();
@@ -655,7 +656,7 @@
                 if (typeof signUpWithEmail === 'function') {
                     const result = await signUpWithEmail(email, password, name);
                     if (result.success) {
-                        currentUser = result.user;
+                        pageUser = result.user;
                         showAccountSection();
                         updateUserInfo();
                         updateNavigation();
@@ -694,7 +695,7 @@
                 } else {
                     localStorage.removeItem('userData');
                 }
-                currentUser = null;
+                pageUser = null;
                 showLoginSection();
                 updateNavigation();
             } catch (error) {
@@ -707,8 +708,8 @@
         function showEditNameModal() {
             const modal = document.getElementById('editNameModal');
             const input = document.getElementById('editNameInput');
-            if (currentUser) {
-                input.value = currentUser.displayName || currentUser.email?.split('@')[0] || '';
+            if (pageUser) {
+                input.value = pageUser.displayName || pageUser.email?.split('@')[0] || '';
             }
             modal.style.display = 'flex';
         }
@@ -727,17 +728,17 @@
             }
 
             try {
-                if (currentUser && typeof currentUser.updateProfile === 'function') {
-                    await currentUser.updateProfile({ displayName: newName });
-                    currentUser.displayName = newName;
+                if (pageUser && typeof pageUser.updateProfile === 'function') {
+                    await pageUser.updateProfile({ displayName: newName });
+                    pageUser.displayName = newName;
                     updateUserInfo();
                     closeEditNameModal();
                     alert('Name updated successfully!');
                 } else {
                     // Fallback: save to localStorage
-                    if (currentUser) {
-                        currentUser.displayName = newName;
-                        localStorage.setItem('userData', JSON.stringify(currentUser));
+                    if (pageUser) {
+                        pageUser.displayName = newName;
+                        localStorage.setItem('userData', JSON.stringify(pageUser));
                         updateUserInfo();
                         closeEditNameModal();
                         alert('Name updated successfully!');
@@ -805,7 +806,7 @@
                 return;
             }
 
-            const userInfo = currentUser ? `${currentUser.email || 'Unknown'}` : 'Not logged in';
+            const userInfo = pageUser ? `${pageUser.email || 'Unknown'}` : 'Not logged in';
             const issueMessage = encodeURIComponent(
                 `*KIUMA App Issue Report*\n\n` +
                 `Type: ${type}\n` +
@@ -825,7 +826,7 @@
             const navItem = document.getElementById('accountNavItem');
             const navText = document.getElementById('accountNavText');
             
-            if (currentUser) {
+            if (pageUser) {
                 if (navText) navText.textContent = 'Account';
                 // Update all navigation links
                 document.querySelectorAll('a[href="join-us.html"]').forEach(link => {
