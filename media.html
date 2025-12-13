@@ -544,6 +544,35 @@
             mediaGrid.appendChild(mediaItem);
         }
 
+        // Update upload button visibility based on Firebase Auth
+        function updateUploadButtonVisibility() {
+            const addMediaBtn = document.getElementById('addMediaBtn');
+            const adminLoginBtn = document.getElementById('adminLoginBtn');
+            
+            if (typeof getCurrentUser === 'function') {
+                const user = getCurrentUser();
+                if (user) {
+                    // User is logged in - show upload button
+                    if (addMediaBtn) addMediaBtn.style.display = 'block';
+                    if (adminLoginBtn) adminLoginBtn.style.display = 'none';
+                } else {
+                    // User not logged in - hide upload button
+                    if (addMediaBtn) addMediaBtn.style.display = 'none';
+                    if (adminLoginBtn) adminLoginBtn.style.display = 'block';
+                }
+            } else {
+                // Fallback: check localStorage
+                const userData = localStorage.getItem('userData');
+                if (userData) {
+                    if (addMediaBtn) addMediaBtn.style.display = 'block';
+                    if (adminLoginBtn) adminLoginBtn.style.display = 'none';
+                } else {
+                    if (addMediaBtn) addMediaBtn.style.display = 'none';
+                    if (adminLoginBtn) adminLoginBtn.style.display = 'block';
+                }
+            }
+        }
+
         window.addEventListener('DOMContentLoaded', function() {
             // Show loading state immediately
             const mediaGrid = document.getElementById('mediaGrid');
@@ -551,9 +580,18 @@
                 mediaGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;"><i class="fas fa-spinner fa-spin" style="font-size: 48px; margin-bottom: 10px;"></i><p>Loading media...</p></div>';
             }
             
+            // Update upload button visibility
+            updateUploadButtonVisibility();
+            
+            // Listen to auth state changes
+            if (typeof firebase !== 'undefined' && firebase.auth) {
+                firebase.auth().onAuthStateChanged(() => {
+                    updateUploadButtonVisibility();
+                });
+            }
+            
             // Check admin status in background (non-blocking)
             if (typeof window.checkAdminStatus === 'function') {
-                // Don't wait for this
                 setTimeout(() => {
                     window.checkAdminStatus();
                 }, 0);
