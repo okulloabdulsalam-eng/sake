@@ -13,10 +13,10 @@
 // Supabase Configuration
 window.supabaseConfig = {
     // Your Supabase Project URL
-    supabaseUrl: 'YOUR_SUPABASE_URL', // e.g., 'https://xxxxx.supabase.co'
+    supabaseUrl: 'https://msojoykzcgpkikbxjgxs.supabase.co',
     
     // Your Supabase Anon/Public Key (safe to expose in client-side code)
-    supabaseAnonKey: 'YOUR_SUPABASE_ANON_KEY', // e.g., 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+    supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zb2pveWt6Y2dwa2lrYnhqZ3hzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2NDQ3NDcsImV4cCI6MjA4MTIyMDc0N30.3DEREUsVS_gojRl_OIWo4K8bu2H_XHjjQ_F5v2JZz1Y',
     
     // Storage bucket name
     storageBucket: 'media', // Default bucket name for media files
