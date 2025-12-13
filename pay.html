@@ -166,33 +166,58 @@
                         <p><strong>Type:</strong> <span id="selectedType"></span></p>
                     </div>
 
-                    <!-- Donation Type Dropdown (for Charity and Donate) -->
+                    <!-- Notice for Amir Communication -->
+                    <div class="info-card" id="amirNotice" style="display: none; background: #E3F2FD; border-left: 4px solid #2196F3; margin-bottom: 20px;">
+                        <h4 style="color: #1976D2; margin-bottom: 10px;">
+                            <i class="fas fa-info-circle"></i> Important Notice
+                        </h4>
+                        <p style="color: #1565C0; margin: 0; font-weight: 500;">
+                            These payment types require direct communication with the Amir (Finance Minister). Please fill in the details below and send a WhatsApp message to the Amir.
+                        </p>
+                    </div>
+
+                    <!-- Payment Reason Dropdown (for Zakat, Charity, Donate, Kisilaahe) -->
                     <div class="form-group" id="donationTypeGroup" style="display: none;">
-                        <label class="form-label">Donation Type</label>
-                        <select class="form-input" id="donationType">
-                            <option value="">Select donation type</option>
-                            <option value="general">General Donation</option>
-                            <option value="zakat">Zakat</option>
-                            <option value="sadaqah">Sadaqah</option>
-                            <option value="iftar">Iftar Sponsorship</option>
-                            <option value="education">Education Fund</option>
-                            <option value="mosque">Mosque Building Fund</option>
-                            <option value="kizumu-tahfiz-visit">Kizumu Tahfiz Charity Visit</option>
-                            <option value="tuition-brothers">Tuition for Brothers</option>
+                        <label class="form-label">Payment Reason <span style="color: #F44336;">*</span></label>
+                        <select class="form-input" id="donationType" required>
+                            <option value="">Select payment reason</option>
+                            <option value="general-donation">General Donation</option>
+                            <option value="iftar">Iftar</option>
+                            <option value="bananas">Bananas</option>
+                            <option value="mosque-building-fund">Mosque Building Fund</option>
+                            <option value="kizumu-tahfiz-charity-visit">Kizumu Tahfiz Charity Visit</option>
+                            <option value="tuition-for-brothers">Tuition for Brothers</option>
                             <option value="other">Other</option>
                         </select>
                     </div>
 
-                    <!-- Reason Field (for Charity and Donate) -->
+                    <!-- Reason Description Field -->
                     <div class="form-group" id="reasonGroup" style="display: none;">
-                        <label class="form-label">Reason for Donation</label>
-                        <textarea class="form-input" id="donationReason" rows="3" placeholder="Please specify the reason for your donation..."></textarea>
+                        <label class="form-label">Reason for Payment <span style="color: #F44336;">*</span></label>
+                        <textarea class="form-input" id="donationReason" rows="3" placeholder="Please provide additional details about your payment..." required></textarea>
                     </div>
 
-                    <!-- Amount Input (for Zakat, Charity, Donate) -->
+                    <!-- Amount Input (for Zakat, Charity, Donate, Kisilaahe) -->
                     <div class="form-group" id="customAmountGroup" style="display: none;">
-                        <label class="form-label">Amount (UGX)</label>
-                        <input type="number" class="form-input" id="amount" placeholder="Enter amount" min="1">
+                        <label class="form-label">Amount (UGX) <span style="color: #F44336;">*</span></label>
+                        <input type="number" class="form-input" id="amount" placeholder="Enter amount" min="1" required>
+                    </div>
+
+                    <!-- WhatsApp Link to Amir -->
+                    <div class="form-group" id="amirWhatsAppGroup" style="display: none;">
+                        <button type="button" class="btn btn-primary" id="contactAmirBtn" onclick="contactAmir()" style="width: 100%; background: #25D366; border: none; padding: 15px; font-size: 16px; font-weight: 600;">
+                            <i class="fab fa-whatsapp"></i> Send Payment Details to Amir
+                        </button>
+                    </div>
+
+                    <!-- Notice about Amir Daawa Communication -->
+                    <div class="info-card" id="amirDaawaNotice" style="display: none; background: #E8F5E9; border-left: 4px solid #4CAF50; margin-top: 20px;">
+                        <h4 style="color: #2E7D32; margin-bottom: 10px;">
+                            <i class="fas fa-check-circle"></i> Message Sent Successfully
+                        </h4>
+                        <p style="color: #1B5E20; margin: 0; font-weight: 500;">
+                            The Amir Daawa will communicate with you soon regarding your payment. Please wait for their response.
+                        </p>
                     </div>
 
                     <!-- Payment Methods -->
@@ -409,37 +434,34 @@
             } else if (type === 'kisilaahe') {
                 membershipPlans.style.display = 'none';
                 paymentForm.style.display = 'block';
-                customAmountGroup.style.display = 'none';
-                selectedPlanInfo.style.display = 'block';
-                document.getElementById('selectedPlanName').textContent = 'Kisilaahe Subscription';
-                document.getElementById('selectedAmount').textContent = '1,500,000';
-                document.getElementById('selectedType').textContent = 'Kisilaahe Subscription';
+                customAmountGroup.style.display = 'block';
+                selectedPlanInfo.style.display = 'none';
+                document.getElementById('amirNotice').style.display = 'block';
+                document.getElementById('donationTypeGroup').style.display = 'block';
+                document.getElementById('reasonGroup').style.display = 'block';
+                document.getElementById('amirWhatsAppGroup').style.display = 'block';
+                document.getElementById('amirDaawaNotice').style.display = 'none';
+                
+                // Set default amount for Kisilaahe
+                document.getElementById('amount').value = '1500000';
                 selectedAmount = 1500000;
                 selectedPlan = 'kisilaahe';
-                document.getElementById('donationTypeGroup').style.display = 'none';
-                document.getElementById('reasonGroup').style.display = 'none';
                 
                 // Scroll to payment form
                 setTimeout(() => {
                     paymentForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }, 100);
             } else {
+                // Zakat, Charity, Donate - all need Amir communication
                 membershipPlans.style.display = 'none';
                 paymentForm.style.display = 'block';
                 customAmountGroup.style.display = 'block';
                 selectedPlanInfo.style.display = 'none';
-                
-                // Show donation type and reason fields for Charity and Donate
-                const donationTypeGroup = document.getElementById('donationTypeGroup');
-                const reasonGroup = document.getElementById('reasonGroup');
-                
-                if (type === 'charity' || type === 'donate') {
-                    donationTypeGroup.style.display = 'block';
-                    reasonGroup.style.display = 'block';
-                } else {
-                    donationTypeGroup.style.display = 'none';
-                    reasonGroup.style.display = 'none';
-                }
+                document.getElementById('amirNotice').style.display = 'block';
+                document.getElementById('donationTypeGroup').style.display = 'block';
+                document.getElementById('reasonGroup').style.display = 'block';
+                document.getElementById('amirWhatsAppGroup').style.display = 'block';
+                document.getElementById('amirDaawaNotice').style.display = 'none';
                 
                 // Set payment type info
                 const typeNames = {
