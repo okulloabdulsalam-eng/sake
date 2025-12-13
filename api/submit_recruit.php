@@ -1,7 +1,7 @@
 <?php
 /**
  * KIUMA Recruitment Form Submission Handler
- * Handles form submission, database insertion, and email notifications
+ * Handles form submission, database insertion, email and WhatsApp notifications
  */
 
 require_once __DIR__ . '/../config/database.php';
@@ -75,6 +75,9 @@ try {
     // Send email notification
     $emailSent = sendEmailNotification($recruit);
     
+    // Send WhatsApp notification
+    $whatsappSent = sendWhatsAppNotification($recruit);
+    
     // Return success response
     http_response_code(201);
     echo json_encode([
@@ -89,7 +92,8 @@ try {
             'date_joined' => $recruit['date_joined']
         ],
         'notifications' => [
-            'email' => $emailSent
+            'email' => $emailSent,
+            'whatsapp' => $whatsappSent
         ]
     ]);
     
@@ -185,5 +189,68 @@ function sendEmailViaSMTP($to, $subject, $message) {
     }
 }
 
+/**
+ * Send WhatsApp notification via Twilio
+ */
+function sendWhatsAppNotification($recruit) {
+    try {
+        // Check if Twilio credentials are configured
+        if (empty(TWILIO_ACCOUNT_SID) || empty(TWILIO_AUTH_TOKEN) || empty(WHATSAPP_FROM)) {
+            error_log("Twilio credentials not configured");
+            return false;
+        }
+        
+        $whatsappTo = WHATSAPP_TO;
+        // Ensure country code format
+        if (!str_starts_with($whatsappTo, '+')) {
+            $whatsappTo = '+256' . ltrim($whatsappTo, '0'); // Add Uganda country code if missing
+        }
+        if (!str_starts_with($whatsappTo, 'whatsapp:')) {
+            $whatsappTo = 'whatsapp:' . $whatsappTo;
+        }
+        
+        // Format message
+        $message = "New Recruit Alert:\n\n";
+        $message .= "Name: " . $recruit['fullname'] . "\n";
+        $message .= "Phone: " . $recruit['phone'] . "\n";
+        $message .= "Email: " . $recruit['email'] . "\n";
+        $message .= "Role: " . ($recruit['role'] ?: 'Not specified') . "\n";
+        $message .= "Date: " . $recruit['date_joined'];
+        
+        // Twilio API endpoint
+        $url = "https://api.twilio.com/2010-04-01/Accounts/" . TWILIO_ACCOUNT_SID . "/Messages.json";
+        
+        $data = [
+            'From' => WHATSAPP_FROM,
+            'To' => $whatsappTo,
+            'Body' => $message
+        ];
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_USERPWD, TWILIO_ACCOUNT_SID . ':' . TWILIO_AUTH_TOKEN);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/x-www-form-urlencoded'
+        ]);
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        if ($httpCode === 201) {
+            return true;
+        } else {
+            error_log("Twilio API error: HTTP $httpCode - $response");
+            return false;
+        }
+        
+    } catch (Exception $e) {
+        error_log("WhatsApp send error: " . $e->getMessage());
+        return false;
+    }
+}
 ?>
 

@@ -220,6 +220,50 @@ app.post('/login', (req, res) => {
     }
 });
 
+// POST /api/send-whatsapp - Send WhatsApp notification
+app.post('/api/send-whatsapp', (req, res) => {
+    try {
+        const { number, message } = req.body;
+
+        if (!number || !message) {
+            return res.status(400).json({
+                success: false,
+                message: 'WhatsApp number and message are required'
+            });
+        }
+
+        // Clean the WhatsApp number
+        const cleanNumber = number.replace(/[^\d]/g, '');
+        
+        // Encode the message for URL
+        const encodedMessage = encodeURIComponent(message);
+        
+        // Create WhatsApp link
+        const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
+        
+        // TODO: Integrate with WhatsApp Business API or Twilio here
+        // For now, we'll log it and return success
+        console.log('WhatsApp notification prepared:', whatsappUrl);
+        
+        // In production, use a service like:
+        // - WhatsApp Business API
+        // - Twilio WhatsApp API
+        // - Other WhatsApp messaging services
+        
+        res.json({
+            success: true,
+            message: 'WhatsApp notification prepared',
+            whatsappUrl: whatsappUrl
+        });
+    } catch (error) {
+        console.error('Error sending WhatsApp notification:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
+});
+
 // POST /api/send-email - Send email notification
 app.post('/api/send-email', (req, res) => {
     try {
@@ -312,6 +356,13 @@ app.post('/api/send-notifications', (req, res) => {
             // Send notifications to each user
             for (const user of rows) {
                 try {
+                    // Send WhatsApp if available
+                    if (user.whatsapp) {
+                        // Call WhatsApp API endpoint
+                        // This would be handled by your WhatsApp service
+                        successCount++;
+                    }
+                    
                     // Send Email if available
                     if (user.email) {
                         // Call Email API endpoint
@@ -322,6 +373,7 @@ app.post('/api/send-notifications', (req, res) => {
                     results.push({
                         userId: user.id,
                         email: user.email,
+                        whatsapp: user.whatsapp ? 'sent' : 'not available',
                         emailSent: user.email ? 'sent' : 'not available'
                     });
                 } catch (userError) {

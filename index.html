@@ -7,13 +7,8 @@
     <title>KIUMA - Kampala International University Muslim Students Association</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Firebase Cloud Messaging (FCM) -->
-    <!-- Using compat version for compatibility with service worker -->
-    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-messaging-compat.js"></script>
-    <script src="fcm-config.js"></script>
-    <script src="fcm-init.js"></script>
+    <script src="offline-db.js"></script>
+    <script src="network-sync.js"></script>
 </head>
 <body class="home-page">
     <!-- Navigation Menu -->
@@ -36,7 +31,7 @@
             <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
             <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
             <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
-            <li><a href="join-us.html" class="nav-link"><i class="fas fa-user-circle"></i> My Account</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
         </ul>
     </nav>
 
@@ -285,9 +280,9 @@
                 <i class="fas fa-credit-card"></i>
                 <span>Pay</span>
             </a>
-            <a href="join-us.html" class="nav-item" id="accountNavItem">
-                <i class="fas fa-user-circle"></i>
-                <span id="accountNavText">Account</span>
+            <a href="join-us.html" class="nav-item">
+                <i class="fas fa-user-plus"></i>
+                <span>Join</span>
             </a>
         </nav>
     </div>
@@ -452,6 +447,9 @@
                         <p style="text-align: center; color: var(--text-gray); margin-bottom: 20px;">
                             <i class="fas fa-venus-mars"></i> <span id="accountGender"></span>
                         </p>
+                        <button class="btn btn-primary" onclick="showWhatsAppJoinFromAccount()" style="width: 100%; margin-bottom: 10px; background: #25D366; border-color: #25D366;">
+                            <i class="fab fa-whatsapp"></i> Join WhatsApp Notifications
+                        </button>
                         <button class="btn btn-secondary" onclick="handleLogout()" style="width: 100%;">
                             <i class="fas fa-sign-out-alt"></i> Logout
                         </button>
@@ -495,53 +493,6 @@
                 }, 300);
             }
         });
-    </script>
-    
-    <!-- Update Navigation Based on Auth State -->
-    <script>
-        // Update navigation based on auth state
-        function updateAccountNavigation() {
-            let isLoggedIn = false;
-            
-            // Check Firebase Auth
-            if (typeof getCurrentUser === 'function') {
-                const user = getCurrentUser();
-                isLoggedIn = user !== null;
-            } else {
-                // Check localStorage
-                const userData = localStorage.getItem('userData');
-                isLoggedIn = userData !== null;
-            }
-            
-            const navIcon = document.getElementById('accountNavIcon');
-            const navText = document.getElementById('accountNavText');
-            
-            if (navIcon && navText) {
-                if (isLoggedIn) {
-                    navIcon.className = 'fas fa-user-circle';
-                    navText.textContent = 'Account';
-                } else {
-                    navIcon.className = 'fas fa-user-plus';
-                    navText.textContent = 'Join';
-                }
-            }
-        }
-        
-        // Update on page load
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                setTimeout(updateAccountNavigation, 1000);
-            });
-        } else {
-            setTimeout(updateAccountNavigation, 1000);
-        }
-        
-        // Update when auth state changes
-        if (typeof firebase !== 'undefined' && firebase.auth) {
-            firebase.auth().onAuthStateChanged(() => {
-                updateAccountNavigation();
-            });
-        }
     </script>
 </body>
 </html>
