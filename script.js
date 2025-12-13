@@ -1348,3 +1348,64 @@ function initializePrayerTimesEditing() {
     });
 }
 
+// Global function to update notification badge on all pages
+window.updateNotificationBadge = async function() {
+    try {
+        let unreadCount = 0;
+        
+        // Try to get from Firestore
+        if (typeof firebase !== 'undefined' && firebase.firestore) {
+            try {
+                const firestore = firebase.firestore();
+                const readNotifications = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+                const snapshot = await firestore.collection('notifications')
+                    .orderBy('createdAt', 'desc')
+                    .limit(100)
+                    .get();
+                
+                snapshot.forEach(doc => {
+                    if (!readNotifications.includes(doc.id)) {
+                        unreadCount++;
+                    }
+                });
+            } catch (e) {
+                console.log('Firestore not available for badge:', e.message);
+            }
+        }
+        
+        // Fallback to localStorage
+        if (unreadCount === 0) {
+            const notificationsData = JSON.parse(localStorage.getItem('notificationsData') || '[]');
+            const readNotifications = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+            unreadCount = notificationsData.filter(n => {
+                const id = n.id || n.notificationId;
+                return !readNotifications.includes(id) && (n.status !== 'read');
+            }).length;
+        }
+        
+        // Update all badge elements on the page
+        document.querySelectorAll('.notifications-btn .badge').forEach(badge => {
+            badge.textContent = unreadCount;
+            badge.style.display = unreadCount > 0 ? 'inline' : 'none';
+        });
+        
+        return unreadCount;
+    } catch (error) {
+        console.error('Error updating notification badge:', error);
+        // Hide badge on error
+        document.querySelectorAll('.notifications-btn .badge').forEach(badge => {
+            badge.style.display = 'none';
+        });
+        return 0;
+    }
+};
+
+// Update badge on page load
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => window.updateNotificationBadge(), 500);
+    });
+} else {
+    setTimeout(() => window.updateNotificationBadge(), 500);
+}
+

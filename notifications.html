@@ -71,7 +71,7 @@
                 </div>
                 <button class="notifications-btn" id="notificationsBtn">
                     <i class="fas fa-bell"></i>
-                    <span class="badge">3</span>
+                    <span class="badge" style="display: none;">0</span>
                 </button>
             </div>
         </header>
@@ -217,8 +217,16 @@
             loadNotificationsFromStorage().then(() => {
                 initNotificationStatus();
                 setupNotificationClickHandlers();
+                updateUnreadBadge();
+                if (typeof window.updateNotificationBadge === 'function') {
+                    window.updateNotificationBadge();
+                }
             }).catch(err => {
                 console.error('Error loading notifications:', err);
+                updateUnreadBadge();
+                if (typeof window.updateNotificationBadge === 'function') {
+                    window.updateNotificationBadge();
+                }
             });
             
             // Check for white days notification in background (non-blocking)
@@ -268,6 +276,10 @@
             if (!readNotifications.includes(id)) {
                 readNotifications.push(id);
                 localStorage.setItem('readNotifications', JSON.stringify(readNotifications));
+                // Update global badge on all pages
+                if (typeof window.updateNotificationBadge === 'function') {
+                    window.updateNotificationBadge();
+                }
             }
         }
 
@@ -357,6 +369,10 @@
                         const id = this.dataset.id || `notif-${index}`;
                         markNotificationAsRead(id);
                         updateUnreadBadge();
+                        // Update global badge on all pages
+                        if (typeof window.updateNotificationBadge === 'function') {
+                            window.updateNotificationBadge();
+                        }
                     }
                 });
             });
@@ -567,6 +583,10 @@
                         });
                         
                         console.log('Loaded notifications from Firestore');
+                        updateUnreadBadge();
+                        if (typeof window.updateNotificationBadge === 'function') {
+                            window.updateNotificationBadge();
+                        }
                         return;
                     }
                 }
@@ -622,6 +642,10 @@
                         this.dataset.status = 'read';
                         this.style.opacity = '0.7';
                         updateNotificationStatus(notif.id, 'read');
+                        updateUnreadBadge();
+                        if (typeof window.updateNotificationBadge === 'function') {
+                            window.updateNotificationBadge();
+                        }
                     }
                 });
             });
