@@ -98,7 +98,7 @@
 
                 <div class="info-card" style="margin-top: 20px;">
                     <h3><i class="fas fa-info-circle"></i> About Media Gallery</h3>
-                    <p>Browse through our collection of videos, audio files, and images. All media files are stored securely on Firebase Storage and available for download.</p>
+                    <p>Browse through our collection of videos, audio files, and images. All media files are stored securely on Supabase Storage and available for download.</p>
                 </div>
             </section>
         </main>
@@ -112,16 +112,22 @@
         </nav>
     </div>
 
-    <!-- Firebase SDK -->
+    <!-- Firebase SDK (Auth, Firestore, FCM only - NO Storage) -->
     <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-messaging-compat.js"></script>
     
-    <!-- Firebase Configuration and Helpers -->
+    <!-- Supabase SDK (Storage ONLY) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Firebase Configuration (Auth, Firestore, FCM) -->
     <script src="fcm-config.js"></script>
     <script src="firebase-auth.js"></script>
-    <script src="firebase-storage.js"></script>
+    
+    <!-- Supabase Configuration (Storage ONLY) -->
+    <script src="supabase-config.js"></script>
+    <script src="supabase-storage.js"></script>
     
     <!-- API Config and Scripts -->
     <script src="api-config.js"></script>
@@ -215,8 +221,8 @@
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
 
             try {
-                // Upload to Firebase Storage
-                const uploadResult = await uploadToFirebaseStorage(file, folder, (progress) => {
+                // Upload to Supabase Storage
+                const uploadResult = await uploadToSupabaseStorage(file, folder, (progress) => {
                     submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Uploading... ${Math.round(progress)}%`;
                 });
 
@@ -229,7 +235,7 @@
                 if (fileType === 'image' && typeof generateThumbnail === 'function') {
                     try {
                         const thumbnailFile = await generateThumbnail(file);
-                        const thumbnailResult = await uploadToFirebaseStorage(thumbnailFile, `media/thumbnails`);
+                        const thumbnailResult = await uploadToSupabaseStorage(thumbnailFile, `media/thumbnails`);
                         if (thumbnailResult.success) {
                             thumbnailUrl = thumbnailResult.downloadURL;
                         }
@@ -276,8 +282,8 @@
                     loadMediaFromStorage();
                 } else {
                     // If database save failed, try to delete from storage
-                    if (uploadResult.storagePath && typeof deleteFromFirebaseStorage === 'function') {
-                        await deleteFromFirebaseStorage(uploadResult.storagePath);
+                    if (uploadResult.storagePath && typeof deleteFromSupabaseStorage === 'function') {
+                        await deleteFromSupabaseStorage(uploadResult.storagePath);
                     }
                     alert('Error: ' + (data.message || 'Failed to save media metadata'));
                 }
@@ -322,12 +328,12 @@
                 
                 const storagePath = media.drive_file_id; // Storage path is stored in drive_file_id column
                 
-                // Delete from Firebase Storage if path exists
-                if (storagePath && typeof deleteFromFirebaseStorage === 'function') {
+                // Delete from Supabase Storage if path exists
+                if (storagePath && typeof deleteFromSupabaseStorage === 'function') {
                     try {
-                        await deleteFromFirebaseStorage(storagePath);
+                        await deleteFromSupabaseStorage(storagePath);
                     } catch (storageError) {
-                        console.warn('Error deleting from Firebase Storage:', storageError);
+                        console.warn('Error deleting from Supabase Storage:', storageError);
                         // Continue with database deletion even if storage deletion fails
                     }
                 }

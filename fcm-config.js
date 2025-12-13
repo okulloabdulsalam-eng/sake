@@ -22,7 +22,8 @@ const firebaseConfig = {
     // Your Firebase project ID
     projectId: "kiuma-mob-app",
     
-    // Your Firebase Storage Bucket
+    // Your Firebase Storage Bucket (NOTE: Not used for storage - we use Supabase for storage)
+    // Kept for Firebase initialization compatibility
     storageBucket: "kiuma-mob-app.firebasestorage.app",
     
     // Your Firebase Messaging Sender ID

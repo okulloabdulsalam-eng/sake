@@ -29,7 +29,7 @@ const firebaseConfig = {
     apiKey: "AIzaSyDOZ1UzDPXuxmGMZTxKcB7CzeWi7esB08c",
     authDomain: "kiuma-mob-app.firebaseapp.com",
     projectId: "kiuma-mob-app",
-    storageBucket: "kiuma-mob-app.firebasestorage.app",
+    storageBucket: "kiuma-mob-app.firebasestorage.app", // NOTE: Not used for storage - we use Supabase for storage
     messagingSenderId: "69327390212",
     appId: "1:69327390212:web:10a7f8b52d5ea93d549751"
 };
