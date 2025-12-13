@@ -6,6 +6,12 @@
     <title>Join Programs - KIUMA</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-auth-compat.js"></script>
+    <script src="fcm-config.js"></script>
+    <script src="firebase-auth.js"></script>
 </head>
 <body>
     <nav class="nav-menu" id="navMenu">
@@ -27,7 +33,7 @@
             <li><a href="join-programs.html" class="nav-link active"><i class="fas fa-user-plus"></i> Join Programs</a></li>
             <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
             <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
-            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-user-circle"></i> My Account</a></li>
         </ul>
     </nav>
 
@@ -96,8 +102,13 @@
                     </div>
 
                     <div class="form-group" id="nameGroup">
-                        <label class="form-label">Full Name</label>
-                        <input type="text" class="form-input" id="programName" required>
+                        <label class="form-label">Full Name *</label>
+                        <input type="text" class="form-input" id="programName" placeholder="Enter your full name" required>
+                    </div>
+
+                    <div class="form-group" id="emailGroup">
+                        <label class="form-label">Email Address *</label>
+                        <input type="email" class="form-input" id="programEmail" placeholder="Enter your email for confirmation" required>
                     </div>
 
                     <div class="form-group" id="regNoGroup">
@@ -205,23 +216,63 @@
             <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
             <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
             <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
-            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
+            <a href="join-us.html" class="nav-item" id="accountNavItem"><i class="fas fa-user-circle"></i><span id="accountNavText">Account</span></a>
         </nav>
     </div>
 
     <script src="script.js"></script>
     <script>
-        // Auto-fill form if user data exists in localStorage
-        document.addEventListener('DOMContentLoaded', function() {
+        // Auto-fill form from Firebase Auth or localStorage
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Wait for Firebase Auth to initialize
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            // Try to get user from Firebase Auth first
+            let user = null;
+            if (typeof getCurrentUser === 'function') {
+                user = getCurrentUser();
+            }
+            
+            // Also check localStorage for additional data
             const userData = JSON.parse(localStorage.getItem('userData') || '{}');
             
-            // Check if fields are already present and auto-fill
-            if (userData.firstName && userData.lastName) {
-                const nameField = document.getElementById('programName');
-                if (nameField && !nameField.value) {
+            // Auto-fill name from Firebase user or localStorage
+            const nameField = document.getElementById('programName');
+            if (nameField && !nameField.value) {
+                if (user && user.displayName) {
+                    nameField.value = user.displayName;
+                    nameField.style.background = '#E8F5E9';
+                    setTimeout(() => nameField.style.background = '', 2000);
+                } else if (userData.firstName && userData.lastName) {
                     nameField.value = userData.firstName + ' ' + userData.lastName;
                     nameField.style.background = '#E8F5E9';
                     setTimeout(() => nameField.style.background = '', 2000);
+                } else if (userData.displayName) {
+                    nameField.value = userData.displayName;
+                    nameField.style.background = '#E8F5E9';
+                    setTimeout(() => nameField.style.background = '', 2000);
+                }
+            }
+            
+            // Auto-fill email from Firebase user or localStorage
+            const emailField = document.getElementById('programEmail');
+            if (emailField && !emailField.value) {
+                if (user && user.email) {
+                    emailField.value = user.email;
+                    emailField.style.background = '#E8F5E9';
+                    setTimeout(() => emailField.style.background = '', 2000);
+                } else if (userData.email) {
+                    emailField.value = userData.email;
+                    emailField.style.background = '#E8F5E9';
+                    setTimeout(() => emailField.style.background = '', 2000);
+                }
+            }
+            
+            // Auto-fill other fields from localStorage
+            if (userData.regNo) {
+                const regNoField = document.getElementById('regNo');
+                if (regNoField && !regNoField.value) {
+                    regNoField.value = userData.regNo;
                 }
             }
             
@@ -247,15 +298,23 @@
                     yearField.value = userData.year;
                 }
             }
+            
+            if (userData.semester) {
+                const semesterField = document.getElementById('semester');
+                if (semesterField && !semesterField.value) {
+                    semesterField.value = userData.semester;
+                }
+            }
         });
 
         function handleProgramRegistration(e) {
             e.preventDefault();
             
-            const name = document.getElementById('programName').value;
-            const regNo = document.getElementById('regNo').value;
+            const name = document.getElementById('programName').value.trim();
+            const email = document.getElementById('programEmail').value.trim();
+            const regNo = document.getElementById('regNo').value.trim();
             const gender = document.getElementById('gender').value;
-            const course = document.getElementById('course').value;
+            const course = document.getElementById('course').value.trim();
             const year = document.getElementById('year').value;
             const semester = document.getElementById('semester').value;
             const selectedCourses = Array.from(document.querySelectorAll('input[name="courses"]:checked')).map(cb => {
@@ -268,18 +327,6 @@
                 return;
             }
 
-            // Course name mappings
-            const courseNames = {
-                'quran-yasaruna': 'Quran and Yasaruna',
-                'hadith-memorisation': 'Hadith memorisation',
-                'hadith-explanation': 'Hadith Explanation',
-                'kitaabu-tawheed': 'Kitaabu Tawheed',
-                'fiqh-swalah': 'Fiqh Swalah',
-                'arbauna-nawawi': 'Arbauna Nawawi',
-                'tafsir': 'Tafsir',
-                'arabic-classes': 'Arabic classes'
-            };
-
             // Prepare email content
             const subject = encodeURIComponent('New Course Enrollment - Weekly Teachings');
             const body = encodeURIComponent(`Assalam Alaikum,
@@ -288,6 +335,7 @@ A new student has enrolled in the Weekly Teachings program:
 
 *Student Information:*
 - Full Name: ${name}
+- Email: ${email}
 - Registration Number: ${regNo}
 - Gender: ${gender}
 - Course/Program: ${course}
@@ -295,9 +343,9 @@ A new student has enrolled in the Weekly Teachings program:
 - Semester: ${semester}
 
 *Selected Courses:*
-${selectedCourses.map((course, index) => `${index + 1}. ${course}`).join('\n')}
+${selectedCourses.map((c, index) => `${index + 1}. ${c}`).join('\n')}
 
-Please process this enrollment and send a confirmation email to the student.
+Please process this enrollment and send a confirmation email to the student at ${email}.
 
 Jazakallahu Khairan
 KIUMA Website`);
@@ -308,10 +356,14 @@ KIUMA Website`);
             // Open email client
             window.location.href = mailtoLink;
 
-            // Save user data for future auto-fill
+            // Save user data for future auto-fill (preserve existing data)
+            const existingData = JSON.parse(localStorage.getItem('userData') || '{}');
             const userData = {
+                ...existingData,
+                displayName: name,
                 firstName: name.split(' ')[0],
                 lastName: name.split(' ').slice(1).join(' '),
+                email: email,
                 regNo: regNo,
                 gender: gender,
                 course: course,
@@ -326,6 +378,38 @@ KIUMA Website`);
                 document.getElementById('programForm').reset();
             }, 500);
         }
+
+        // Activities Modal Functions
+        function showActivitiesModal() {
+            document.getElementById('activitiesModal').style.display = 'flex';
+        }
+
+        function closeActivitiesModal() {
+            document.getElementById('activitiesModal').style.display = 'none';
+        }
+
+        function navigateToActivity(activity) {
+            closeActivitiesModal();
+            switch(activity) {
+                case 'kizumu-visit':
+                case 'tuition-brothers':
+                case 'kisilaahe':
+                    window.location.href = 'activities.html#' + activity;
+                    break;
+                case 'activities':
+                    window.location.href = 'activities.html';
+                    break;
+                default:
+                    window.location.href = 'activities.html';
+            }
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('activitiesModal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeActivitiesModal();
+            }
+        });
     </script>
 
     <!-- Floating Kizumu Visit Button -->

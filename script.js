@@ -607,12 +607,13 @@ initFastingReminderChecker();
 setInterval(updateDates, 3600000); // 1 hour = 3600000ms
 
 // User Account System
-let currentUser = null;
+// Use localUserData to avoid conflict with firebase-auth.js's currentUser
+var localUserData = null;
 
 function loadUserData() {
     const userData = localStorage.getItem('userData');
     if (userData) {
-        currentUser = JSON.parse(userData);
+        localUserData = JSON.parse(userData);
         updateUserDisplay();
         return true;
     }
@@ -625,14 +626,14 @@ function updateUserDisplay() {
     const accountIcon = document.getElementById('accountIcon');
     const accountIconBtn = document.getElementById('accountIconBtn');
     
-    const userName = currentUser ? (currentUser.firstName || currentUser.name || 'Brother/Sister') : 'Brother/Sister';
+    const userName = localUserData ? (localUserData.firstName || localUserData.name || 'Brother/Sister') : 'Brother/Sister';
     
     // Update all userName spans on the page
     userNameEls.forEach(el => {
         el.textContent = userName;
     });
     
-    if (currentUser) {
+    if (localUserData) {
         // Change icon to show logged in state
         if (accountIcon) {
             accountIcon.className = 'fas fa-user-circle logged-in';
@@ -678,7 +679,7 @@ window.showLoginModal = function() {
 window.toggleAccountModal = function() {
     const modal = document.getElementById('accountModal');
     if (modal) {
-        if (currentUser) {
+        if (localUserData) {
             // Show account info/logout
             window.showAccountInfo();
         } else {
@@ -724,7 +725,7 @@ window.handleLogin = function(e) {
     const user = storedUsers.find(u => u.email === email && u.password === password);
     
     if (user) {
-        currentUser = user;
+        localUserData = user;
         localStorage.setItem('userData', JSON.stringify(user));
         updateUserDisplay();
         window.closeAccountModal();
@@ -779,7 +780,7 @@ window.handleSignup = function(e) {
     storedUsers.push({...newUser, password: password});
     localStorage.setItem('users', JSON.stringify(storedUsers));
     
-    currentUser = newUser;
+    localUserData = newUser;
     localStorage.setItem('userData', JSON.stringify(newUser));
     updateUserDisplay();
     window.closeAccountModal();
@@ -861,10 +862,10 @@ window.showAccountInfo = function() {
         document.getElementById('signupFormElement').style.display = 'none';
         document.getElementById('accountInfo').style.display = 'block';
         
-        if (currentUser) {
-            document.getElementById('accountName').textContent = currentUser.name || (currentUser.firstName + ' ' + currentUser.lastName);
-            document.getElementById('accountEmail').textContent = currentUser.email;
-            document.getElementById('accountGender').textContent = currentUser.gender || 'Not specified';
+        if (localUserData) {
+            document.getElementById('accountName').textContent = localUserData.name || (localUserData.firstName + ' ' + localUserData.lastName);
+            document.getElementById('accountEmail').textContent = localUserData.email;
+            document.getElementById('accountGender').textContent = localUserData.gender || 'Not specified';
         }
         
         modal.style.display = 'flex';
@@ -873,7 +874,7 @@ window.showAccountInfo = function() {
 
 window.handleLogout = function() {
     if (confirm('Are you sure you want to logout?')) {
-        currentUser = null;
+        localUserData = null;
         localStorage.removeItem('userData');
         updateUserDisplay();
         window.closeAccountModal();

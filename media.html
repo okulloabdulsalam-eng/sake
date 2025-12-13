@@ -27,7 +27,7 @@
             <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
             <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
             <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
-            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-user-circle"></i> My Account</a></li>
         </ul>
     </nav>
 
@@ -108,7 +108,7 @@
             <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
             <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
             <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
-            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
+            <a href="join-us.html" class="nav-item" id="accountNavItem"><i class="fas fa-user-circle"></i><span id="accountNavText">Account</span></a>
         </nav>
     </div>
 
@@ -368,6 +368,11 @@
             }
         };
 
+        // Check if we're on GitHub Pages (no PHP backend)
+        function isGitHubPages() {
+            return window.location.hostname.includes('github.io');
+        }
+
         function loadMediaFromStorage(type = 'all') {
             const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
             const mediaGrid = document.getElementById('mediaGrid');
@@ -375,24 +380,27 @@
             if (!mediaGrid) return;
             
             mediaGrid.innerHTML = '';
+
+            // If on GitHub Pages, show sample/placeholder content
+            if (isGitHubPages()) {
+                showGitHubPagesMedia(mediaGrid, type);
+                return;
+            }
             
             const url = type === 'all' ? (API_BASE_URL + '/get_media.php') : (API_BASE_URL + `/get_media.php?type=${type}`);
             fetch(url)
                 .then(response => {
-                    // Check if response is OK
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     
-                    // Check content type to ensure we're getting JSON
                     const contentType = response.headers.get('content-type');
                     if (!contentType || !contentType.includes('application/json')) {
-                        // If we got HTML/PHP instead of JSON, PHP isn't running
                         return response.text().then(text => {
                             if (text.trim().startsWith('<?php') || text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
-                                throw new Error('PHP is not running. The server returned raw PHP/HTML instead of JSON. Please ensure PHP is enabled and the API endpoint is accessible.');
+                                throw new Error('PHP backend not available. Media gallery requires a PHP server.');
                             }
-                            throw new Error(`Expected JSON but got ${contentType || 'unknown content type'}. Response: ${text.substring(0, 100)}...`);
+                            throw new Error(`Expected JSON but got ${contentType || 'unknown content type'}.`);
                         });
                     }
                     
@@ -406,40 +414,7 @@
                         }
                         
                         data.media.forEach(media => {
-                            const mediaItem = document.createElement('div');
-                            mediaItem.className = 'media-item';
-                            mediaItem.dataset.type = media.file_type;
-                            
-                            const safeName = (media.file_name || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
-                            const safeDesc = (media.description || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
-                            // Use proxy download endpoint for direct download
-                            const downloadLink = media.id ? (API_BASE_URL + '/download_media.php?id=' + media.id) : '';
-                            const thumbnail = media.thumbnail_url || '';
-                            
-                            let preview = '';
-                            if (media.file_type === 'video') {
-                                preview = `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, #f44336, #d32f2f); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-video"></i></div>`;
-                            } else if (media.file_type === 'audio') {
-                                preview = `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, #9C27B0, #7B1FA2); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-music"></i></div>`;
-                            } else if (media.file_type === 'image' && thumbnail) {
-                                preview = `<img src="${thumbnail}" alt="${safeName}" style="width: 100%; height: 200px; object-fit: cover;">`;
-                            } else {
-                                preview = `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, #2196F3, #1976D2); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-image"></i></div>`;
-                            }
-                            
-                            mediaItem.innerHTML = `
-                                <div style="width: 100%; height: 100%; position: relative; border-radius: 8px; overflow: hidden; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column;">
-                                    ${preview}
-                                    <div style="padding: 12px; flex: 1; display: flex; flex-direction: column;">
-                                        <h4 style="margin: 0 0 5px 0; font-size: 14px; font-weight: 600; color: var(--dark-gray); line-height: 1.3;">${safeName}</h4>
-                                        ${safeDesc ? `<p style="margin: 5px 0 0 0; font-size: 11px; color: var(--text-gray); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${safeDesc}</p>` : ''}
-                                        ${downloadLink ? `<a href="${downloadLink}" download="${safeName}" style="margin-top: 10px; padding: 8px 12px; background: var(--primary-green); color: white; text-decoration: none; border-radius: 5px; text-align: center; font-size: 12px; display: inline-block;"><i class="fas fa-download"></i> Download</a>` : ''}
-                                    </div>
-                                    ${adminStatus ? `<button onclick="deleteMedia('${media.id}')" style="position: absolute; top: 8px; right: 8px; background: #f44336; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); font-size: 14px; z-index: 10;"><i class="fas fa-trash"></i></button>` : ''}
-                                </div>
-                            `;
-                            
-                            mediaGrid.appendChild(mediaItem);
+                            renderMediaItem(mediaGrid, media, adminStatus);
                         });
                     } else {
                         mediaGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;"><i class="fas fa-folder-open" style="font-size: 48px; margin-bottom: 10px; opacity: 0.5;"></i><p>No media files found</p></div>';
@@ -447,9 +422,74 @@
                 })
                 .catch(error => {
                     console.error('Error loading media:', error);
-                    const errorMessage = error.message || 'Unknown error occurred';
-                    mediaGrid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #f44336;"><i class="fas fa-exclamation-triangle"></i><p style="margin: 10px 0;">Error loading media files</p><p style="font-size: 12px; color: #999; margin-top: 10px;">${errorMessage}</p><p style="font-size: 11px; color: #999; margin-top: 5px;">API URL: ${url}</p></div>`;
+                    showGitHubPagesMedia(mediaGrid, type);
                 });
+        }
+
+        function showGitHubPagesMedia(mediaGrid, type) {
+            // Sample media for demo/GitHub Pages
+            const sampleMedia = [
+                { id: 1, file_name: 'Quran Recitation', file_type: 'audio', description: 'Beautiful Quran recitation by KIUMA members', thumbnail_url: '' },
+                { id: 2, file_name: 'Jummah Khutbah', file_type: 'video', description: 'Weekly Friday sermon recording', thumbnail_url: '' },
+                { id: 3, file_name: 'Ramadan Event 2025', file_type: 'image', description: 'Photos from our Ramadan iftar gathering', thumbnail_url: 'https://images.unsplash.com/photo-1564769625905-50e93615e769?w=400' },
+                { id: 4, file_name: 'Islamic Lecture Series', file_type: 'audio', description: 'Weekly lecture on Islamic jurisprudence', thumbnail_url: '' },
+                { id: 5, file_name: 'Campus Mosque Photos', file_type: 'image', description: 'Beautiful photos of our campus mosque', thumbnail_url: 'https://images.unsplash.com/photo-1519817650390-64a93db51149?w=400' }
+            ];
+
+            const filtered = type === 'all' ? sampleMedia : sampleMedia.filter(m => m.file_type === type);
+            
+            if (filtered.length === 0) {
+                mediaGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;"><i class="fas fa-folder-open" style="font-size: 48px; margin-bottom: 10px; opacity: 0.5;"></i><p>No media files in this category</p></div>';
+                return;
+            }
+
+            mediaGrid.innerHTML = `
+                <div style="grid-column: 1/-1; background: #E3F2FD; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
+                    <i class="fas fa-info-circle" style="color: #1976D2;"></i>
+                    <span style="color: #1976D2; font-size: 14px;"> Demo Mode - Sample media shown. Full media requires PHP backend.</span>
+                </div>
+            `;
+
+            filtered.forEach(media => {
+                renderMediaItem(mediaGrid, media, false, true);
+            });
+        }
+
+        function renderMediaItem(mediaGrid, media, adminStatus, isDemo = false) {
+            const mediaItem = document.createElement('div');
+            mediaItem.className = 'media-item';
+            mediaItem.dataset.type = media.file_type;
+            
+            const safeName = (media.file_name || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+            const safeDesc = (media.description || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+            const downloadLink = !isDemo && media.id ? (API_BASE_URL + '/download_media.php?id=' + media.id) : '';
+            const thumbnail = media.thumbnail_url || '';
+            
+            let preview = '';
+            if (media.file_type === 'video') {
+                preview = `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, #f44336, #d32f2f); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-video"></i></div>`;
+            } else if (media.file_type === 'audio') {
+                preview = `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, #9C27B0, #7B1FA2); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-music"></i></div>`;
+            } else if (media.file_type === 'image' && thumbnail) {
+                preview = `<img src="${thumbnail}" alt="${safeName}" style="width: 100%; height: 200px; object-fit: cover;" onerror="this.parentElement.innerHTML='<div style=\\'width: 100%; height: 200px; background: linear-gradient(135deg, #2196F3, #1976D2); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;\\'><i class=\\'fas fa-image\\'></i></div>'">`;
+            } else {
+                preview = `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, #2196F3, #1976D2); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-image"></i></div>`;
+            }
+            
+            mediaItem.innerHTML = `
+                <div style="width: 100%; height: 100%; position: relative; border-radius: 8px; overflow: hidden; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column;">
+                    ${preview}
+                    <div style="padding: 12px; flex: 1; display: flex; flex-direction: column;">
+                        <h4 style="margin: 0 0 5px 0; font-size: 14px; font-weight: 600; color: var(--dark-gray); line-height: 1.3;">${safeName}</h4>
+                        ${safeDesc ? `<p style="margin: 5px 0 0 0; font-size: 11px; color: var(--text-gray); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${safeDesc}</p>` : ''}
+                        ${downloadLink ? `<a href="${downloadLink}" download="${safeName}" style="margin-top: 10px; padding: 8px 12px; background: var(--primary-green); color: white; text-decoration: none; border-radius: 5px; text-align: center; font-size: 12px; display: inline-block;"><i class="fas fa-download"></i> Download</a>` : ''}
+                        ${isDemo ? `<span style="margin-top: 10px; padding: 8px 12px; background: #E0E0E0; color: #666; border-radius: 5px; text-align: center; font-size: 12px; display: inline-block;"><i class="fas fa-eye"></i> Preview Only</span>` : ''}
+                    </div>
+                    ${adminStatus && !isDemo ? `<button onclick="deleteMedia('${media.id}')" style="position: absolute; top: 8px; right: 8px; background: #f44336; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); font-size: 14px; z-index: 10;"><i class="fas fa-trash"></i></button>` : ''}
+                </div>
+            `;
+            
+            mediaGrid.appendChild(mediaItem);
         }
 
         window.addEventListener('DOMContentLoaded', function() {

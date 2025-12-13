@@ -77,8 +77,11 @@ async function initializeFCM() {
         if ('serviceWorker' in navigator) {
             // Register service worker first
             try {
-                const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-                    scope: '/'
+                // Use relative path for GitHub Pages compatibility
+                const swPath = './firebase-messaging-sw.js';
+                const swScope = './';
+                const registration = await navigator.serviceWorker.register(swPath, {
+                    scope: swScope
                 });
                 console.log('Service Worker registered:', registration.scope);
             } catch (swError) {

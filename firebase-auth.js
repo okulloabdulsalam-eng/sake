@@ -8,9 +8,9 @@
  * - User session persistence
  */
 
-// Global variables
-let currentUser = null;
-let authInitialized = false;
+// Global variables - use var to avoid redeclaration issues with other scripts
+var currentUser = null;
+var authInitialized = false;
 
 /**
  * Initialize Firebase Authentication
