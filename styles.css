@@ -23,6 +23,7 @@ body {
     color: var(--dark-gray);
     overflow-x: hidden;
     padding-bottom: 80px;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 .container {
@@ -31,14 +32,29 @@ body {
     background: var(--white);
     min-height: 100vh;
     position: relative;
+    overflow-x: hidden; /* Prevent horizontal scroll issues on mobile */
 }
 
 /* Header Styles */
 .header {
     background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
     padding: 15px 20px;
-    position: relative;
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%) translateZ(0); /* Center and hardware acceleration */
+    -webkit-transform: translateX(-50%) translateZ(0);
+    width: 100%;
+    max-width: 428px;
+    z-index: 999;
     overflow: hidden;
+    will-change: transform;
+    -webkit-backface-visibility: hidden; /* Prevent flickering on mobile */
+    backface-visibility: hidden;
+    -webkit-overflow-scrolling: touch;
+    /* Force GPU acceleration for mobile */
+    -webkit-perspective: 1000;
+    perspective: 1000;
 }
 
 .header::after {
@@ -184,6 +200,7 @@ body {
 /* Main Content */
 .main-content {
     padding: 20px;
+    padding-top: 90px; /* Add padding to account for fixed header */
 }
 
 /* Welcome Section */
@@ -1598,6 +1615,20 @@ textarea.form-input {
 @media (max-width: 428px) {
     .container {
         max-width: 100%;
+    }
+    
+    .header {
+        position: fixed;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%) translateZ(0);
+        -webkit-transform: translateX(-50%) translateZ(0);
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    .main-content {
+        padding-top: 90px; /* Ensure content doesn't hide behind fixed header */
     }
     
     .bottom-nav {

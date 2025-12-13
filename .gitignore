@@ -17,6 +17,7 @@ api/whatsapp_integration.php
 
 # Firebase service account key (contains sensitive credentials)
 server/serviceAccountKey.json
+serverserviceAccountKey.json
 
 # Firebase config (optional - if you want to keep it private)
 # fcm-config.js
