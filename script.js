@@ -567,31 +567,135 @@ function loadPrayerTimes() {
         if (iqaamaEl) iqaamaEl.textContent = prayers[prayer].iqaama;
     });
     
-    // Find next prayer (using stored adhan times only)
+    // Find next prayer and highlight it
+    updateNextPrayerAndHighlight(prayers);
+}
+
+// Update next prayer display and highlight the next/current prayer
+function updateNextPrayerAndHighlight(prayers) {
     const now = new Date();
-    const currentTime = now.getHours() * 60 + now.getMinutes();
+    const currentHours = now.getHours();
+    const currentMinutes = now.getMinutes();
+    const currentTime = currentHours * 60 + currentMinutes;
+    
     const prayerTimes = [
-        { name: 'Fajr', time: prayers.fajr.adhan },
-        { name: 'Dhuhr', time: prayers.dhuhr.adhan },
-        { name: 'Asr', time: prayers.asr.adhan },
-        { name: 'Maghrib', time: prayers.maghrib.adhan },
-        { name: 'Isha', time: prayers.isha.adhan }
+        { name: 'Fajr', key: 'fajr', adhan: prayers.fajr.adhan, iqaama: prayers.fajr.iqaama },
+        { name: 'Dhuhr', key: 'dhuhr', adhan: prayers.dhuhr.adhan, iqaama: prayers.dhuhr.iqaama },
+        { name: 'Asr', key: 'asr', adhan: prayers.asr.adhan, iqaama: prayers.asr.iqaama },
+        { name: 'Maghrib', key: 'maghrib', adhan: prayers.maghrib.adhan, iqaama: prayers.maghrib.iqaama },
+        { name: 'Isha', key: 'isha', adhan: prayers.isha.adhan, iqaama: prayers.isha.iqaama }
     ];
     
-    let nextPrayer = prayerTimes[prayerTimes.length - 1];
-    for (let prayer of prayerTimes) {
-        const [hours, minutes] = prayer.time.split(':').map(Number);
-        const prayerMinutes = hours * 60 + minutes;
-        if (prayerMinutes > currentTime) {
-            nextPrayer = prayer;
+    // Find current prayer (if we're between adhan and iqaama)
+    let currentPrayer = null;
+    let nextPrayer = null;
+    
+    for (let i = 0; i < prayerTimes.length; i++) {
+        const prayer = prayerTimes[i];
+        const [adhanHours, adhanMins] = prayer.adhan.split(':').map(Number);
+        const [iqaamaHours, iqaamaMins] = prayer.iqaama.split(':').map(Number);
+        const adhanTime = adhanHours * 60 + adhanMins;
+        const iqaamaTime = iqaamaHours * 60 + iqaamaMins;
+        
+        // Check if we're currently in this prayer time (between adhan and iqaama)
+        if (currentTime >= adhanTime && currentTime < iqaamaTime) {
+            currentPrayer = prayer;
+            // Next prayer is the one after this
+            if (i + 1 < prayerTimes.length) {
+                nextPrayer = prayerTimes[i + 1];
+            } else {
+                // If this is Isha, next is tomorrow's Fajr
+                nextPrayer = prayerTimes[0];
+            }
             break;
         }
     }
     
-    const nextPrayerTime = document.getElementById('nextPrayerTime');
-    if (nextPrayerTime) {
-        nextPrayerTime.textContent = nextPrayer.name + ' (' + nextPrayer.time + ')';
+    // If no current prayer, find the next upcoming prayer
+    if (!currentPrayer) {
+        for (let prayer of prayerTimes) {
+            const [hours, minutes] = prayer.adhan.split(':').map(Number);
+            const prayerTime = hours * 60 + minutes;
+            if (prayerTime > currentTime) {
+                nextPrayer = prayer;
+                break;
+            }
+        }
+        
+        // If all prayers have passed, next is tomorrow's Fajr
+        if (!nextPrayer) {
+            nextPrayer = prayerTimes[0];
+        }
     }
+    
+    // Update next prayer display
+    const nextPrayerTime = document.getElementById('nextPrayerTime');
+    if (nextPrayerTime && nextPrayer) {
+        const [hours, minutes] = nextPrayer.adhan.split(':').map(Number);
+        const nextPrayerTimeMinutes = hours * 60 + minutes;
+        
+        // Calculate time until next prayer
+        let minutesUntil = nextPrayerTimeMinutes - currentTime;
+        if (minutesUntil < 0) {
+            // Next prayer is tomorrow
+            minutesUntil = (24 * 60) - currentTime + nextPrayerTimeMinutes;
+        }
+        
+        const hoursUntil = Math.floor(minutesUntil / 60);
+        const minsUntil = minutesUntil % 60;
+        
+        let timeString = '';
+        if (hoursUntil > 0) {
+            timeString = `${hoursUntil}h ${minsUntil}m`;
+        } else {
+            timeString = `${minsUntil}m`;
+        }
+        
+        nextPrayerTime.textContent = `${nextPrayer.name} (${nextPrayer.adhan}) - in ${timeString}`;
+    }
+    
+    // Highlight the next prayer (or current if we're in prayer time)
+    const prayerToHighlight = currentPrayer || nextPrayer;
+    if (prayerToHighlight) {
+        // Remove active class from all prayer items
+        document.querySelectorAll('.prayer-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        
+        // Find prayer item by prayer name
+        const prayerItems = document.querySelectorAll('.prayer-item');
+        prayerItems.forEach(item => {
+            const prayerName = item.querySelector('.prayer-name')?.textContent.trim();
+            if (prayerName === prayerToHighlight.name) {
+                item.classList.add('active');
+            }
+        });
+    }
+}
+
+// Update prayer times and next prayer continuously
+function startPrayerTimesUpdater() {
+    // Update immediately
+    const prayers = JSON.parse(localStorage.getItem('prayerTimes')) || {
+        fajr: { adhan: '05:30', iqaama: '05:40' },
+        dhuhr: { adhan: '12:15', iqaama: '12:25' },
+        asr: { adhan: '15:45', iqaama: '15:55' },
+        maghrib: { adhan: '18:20', iqaama: '18:25' },
+        isha: { adhan: '19:45', iqaama: '19:55' }
+    };
+    updateNextPrayerAndHighlight(prayers);
+    
+    // Update every minute
+    setInterval(() => {
+        const prayers = JSON.parse(localStorage.getItem('prayerTimes')) || {
+            fajr: { adhan: '05:30', iqaama: '05:40' },
+            dhuhr: { adhan: '12:15', iqaama: '12:25' },
+            asr: { adhan: '15:45', iqaama: '15:55' },
+            maghrib: { adhan: '18:20', iqaama: '18:25' },
+            isha: { adhan: '19:45', iqaama: '19:55' }
+        };
+        updateNextPrayerAndHighlight(prayers);
+    }, 60000); // Update every minute
 }
 
 // Update dates on load and continuously (auto-update)
