@@ -15,10 +15,44 @@ function getSupabaseClient() {
     
     if (typeof initializeSupabase === 'function') {
         window.supabaseClient = initializeSupabase();
-        return window.supabaseClient;
+        if (window.supabaseClient) {
+            return window.supabaseClient;
+        }
+    }
+    
+    // Try to initialize directly if config is available
+    if (typeof supabase !== 'undefined' && window.supabaseConfig) {
+        try {
+            window.supabaseClient = supabase.createClient(
+                window.supabaseConfig.supabaseUrl,
+                window.supabaseConfig.supabaseAnonKey
+            );
+            return window.supabaseClient;
+        } catch (e) {
+            console.error('Error creating Supabase client:', e);
+        }
     }
     
     throw new Error('Supabase not initialized. Make sure supabase-config.js is loaded and configured.');
+}
+
+// Auto-initialize Supabase client when script loads
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                getSupabaseClient();
+            } catch (e) {
+                console.warn('Supabase initialization deferred:', e.message);
+            }
+        });
+    } else {
+        try {
+            getSupabaseClient();
+        } catch (e) {
+            console.warn('Supabase initialization deferred:', e.message);
+        }
+    }
 }
 
 /**
