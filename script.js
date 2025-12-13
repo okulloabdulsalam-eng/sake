@@ -1074,7 +1074,7 @@ window.closeAdminLogin = function() {
     }
 }
 
-window.verifyAdminPassword = function() {
+window.verifyAdminPassword = async function() {
     const passwordInput = document.getElementById('adminPassword');
     if (!passwordInput) {
         console.error('Admin password input not found');
@@ -1089,45 +1089,113 @@ window.verifyAdminPassword = function() {
         return;
     }
     
-    // Verify password immediately
-    if (password === ADMIN_PASSWORD) {
-        isAdminLoggedIn = true;
-        localStorage.setItem('isAdminLoggedIn', 'true');
+    // Check if Firebase Auth is available
+    if (typeof signInWithEmail === 'function' && typeof getCurrentUser === 'function') {
+        // Try to get email from input or use a default admin email
+        // In production, you should have an email input field
+        const emailInput = document.getElementById('adminEmail');
+        const email = emailInput ? emailInput.value.trim() : null;
         
-        // Close login modal immediately
-        window.closeAdminLogin();
-        
-        // Enable editing only if on prayer times page (index.html has prayerTimesList)
-        const prayerTimesList = document.getElementById('prayerTimesList');
-        if (prayerTimesList) {
-            try {
-                enableEditing();
-            } catch (error) {
-                console.error('Error enabling editing:', error);
-                // Continue even if enableEditing fails
+        if (!email) {
+            // Fallback to password-based auth for backward compatibility
+            if (password === ADMIN_PASSWORD) {
+                isAdminLoggedIn = true;
+                localStorage.setItem('isAdminLoggedIn', 'true');
+                window.closeAdminLogin();
+                if (typeof window.checkAdminStatus === 'function') {
+                    window.checkAdminStatus();
+                }
+                alert('Admin mode enabled. You can now edit content.');
+                return;
+            } else {
+                const passwordError = document.getElementById('passwordError');
+                if (passwordError) {
+                    passwordError.style.display = 'block';
+                    passwordError.textContent = 'Incorrect password. Please try again.';
+                }
+                passwordInput.value = '';
+                passwordInput.focus();
+                return;
             }
         }
         
-        // Update UI for notifications/media pages immediately
-        if (typeof window.checkAdminStatus === 'function') {
-            window.checkAdminStatus();
-        } else if (typeof checkAdminStatus === 'function') {
-            checkAdminStatus();
+        // Use Firebase Auth
+        try {
+            const result = await signInWithEmail(email, password);
+            if (result.success) {
+                isAdminLoggedIn = result.isAdmin || false;
+                if (isAdminLoggedIn) {
+                    localStorage.setItem('isAdminLoggedIn', 'true');
+                }
+                window.closeAdminLogin();
+                
+                // Enable editing if on prayer times page
+                const prayerTimesList = document.getElementById('prayerTimesList');
+                if (prayerTimesList) {
+                    try {
+                        enableEditing();
+                    } catch (error) {
+                        console.error('Error enabling editing:', error);
+                    }
+                }
+                
+                // Update UI
+                if (typeof window.checkAdminStatus === 'function') {
+                    window.checkAdminStatus();
+                }
+                
+                alert('Admin mode enabled. You can now edit content.');
+            } else {
+                const passwordError = document.getElementById('passwordError');
+                if (passwordError) {
+                    passwordError.style.display = 'block';
+                    passwordError.textContent = result.message || 'Authentication failed. Please try again.';
+                }
+                passwordInput.value = '';
+                passwordInput.focus();
+            }
+        } catch (error) {
+            console.error('Auth error:', error);
+            const passwordError = document.getElementById('passwordError');
+            if (passwordError) {
+                passwordError.style.display = 'block';
+                passwordError.textContent = 'Authentication error. Please try again.';
+            }
+            passwordInput.value = '';
+            passwordInput.focus();
         }
-        
-        alert('Admin mode enabled. You can now edit content.');
     } else {
-        const passwordError = document.getElementById('passwordError');
-        if (passwordError) {
-            passwordError.style.display = 'block';
-            passwordError.textContent = 'Incorrect password. Please try again.';
+        // Fallback to password-based auth
+        if (password === ADMIN_PASSWORD) {
+            isAdminLoggedIn = true;
+            localStorage.setItem('isAdminLoggedIn', 'true');
+            window.closeAdminLogin();
+            if (typeof window.checkAdminStatus === 'function') {
+                window.checkAdminStatus();
+            }
+            alert('Admin mode enabled. You can now edit content.');
+        } else {
+            const passwordError = document.getElementById('passwordError');
+            if (passwordError) {
+                passwordError.style.display = 'block';
+                passwordError.textContent = 'Incorrect password. Please try again.';
+            }
+            passwordInput.value = '';
+            passwordInput.focus();
         }
-        passwordInput.value = '';
-        passwordInput.focus();
     }
 }
 
-window.logoutAdmin = function() {
+window.logoutAdmin = async function() {
+    // Sign out from Firebase if available
+    if (typeof signOut === 'function') {
+        try {
+            await signOut();
+        } catch (error) {
+            console.error('Sign out error:', error);
+        }
+    }
+    
     isAdminLoggedIn = false;
     localStorage.removeItem('isAdminLoggedIn');
     checkAdminStatus();

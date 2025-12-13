@@ -7,11 +7,13 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Firebase Cloud Messaging (FCM) -->
+    <!-- Firebase SDK -->
     <!-- Using compat version for compatibility with service worker -->
     <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-messaging-compat.js"></script>
     <script src="fcm-config.js"></script>
+    <script src="firebase-auth.js"></script>
     <script src="fcm-init.js"></script>
 </head>
 <body>
@@ -335,7 +337,15 @@
 
         window.addNotification = async function(e) {
             e.preventDefault();
-            if (!isAdminLoggedIn) {
+            
+            // Check authentication using Firebase Auth
+            if (typeof requireAdmin === 'function') {
+                const isAdmin = await requireAdmin(() => {});
+                if (!isAdmin) {
+                    alert('You must be logged in as admin to add notifications.');
+                    return;
+                }
+            } else if (!isAdminLoggedIn) {
                 alert('You must be logged in as admin to add notifications.');
                 return;
             }

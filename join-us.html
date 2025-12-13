@@ -3,9 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Join Us - KIUMA</title>
+    <title>My Account - KIUMA</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-auth-compat.js"></script>
+    <script src="fcm-config.js"></script>
+    <script src="firebase-auth.js"></script>
 </head>
 <body>
     <nav class="nav-menu" id="navMenu">
@@ -27,7 +33,7 @@
             <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
             <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
             <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
-            <li><a href="join-us.html" class="nav-link active"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+            <li><a href="join-us.html" class="nav-link active"><i class="fas fa-user-circle"></i> My Account</a></li>
         </ul>
     </nav>
 
@@ -79,54 +85,158 @@
                 </button>
             </section>
 
-            <section class="page-header">
-                <h2 class="page-title">Join Our Community</h2>
-            </section>
-
-            <section class="page-content">
-                <div class="info-card">
-                    <h3><i class="fas fa-users"></i> Welcome to KIUMA</h3>
-                    <p>Become part of a vibrant Islamic community dedicated to faith, knowledge, and service. Join Muslim students at Kampala International University who are making a difference.</p>
+            <!-- Login Section (shown when not logged in) -->
+            <section id="loginSection" class="page-content" style="display: none;">
+                <div class="page-header">
+                    <h2 class="page-title">Sign In to Your Account</h2>
                 </div>
 
-                <form id="joinForm" onsubmit="handleJoinSubmit(event)">
-                    <div id="formMessage" style="display: none; padding: 15px; margin-bottom: 20px; border-radius: 8px; font-size: 14px;"></div>
+                <div class="info-card">
+                    <h3><i class="fas fa-user-circle"></i> Welcome Back</h3>
+                    <p>Sign in to access your account, view your information, and manage your settings.</p>
+                </div>
+
+                <form id="loginForm" onsubmit="handleLogin(event)">
+                    <div id="loginMessage" style="display: none; padding: 15px; margin-bottom: 20px; border-radius: 8px; font-size: 14px;"></div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Email Address *</label>
+                        <input type="email" class="form-input" id="loginEmail" name="email" placeholder="Enter your email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Password *</label>
+                        <input type="password" class="form-input" id="loginPassword" name="password" placeholder="Enter your password" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        <i class="fas fa-sign-in-alt"></i> Sign In
+                    </button>
+                </form>
+
+                <div class="info-card" style="margin-top: 20px; background: #E3F2FD;">
+                    <h3 style="color: #1976D2; margin-bottom: 10px;"><i class="fas fa-user-plus"></i> New User?</h3>
+                    <p style="margin-bottom: 15px;">Don't have an account yet? Sign up to join our community.</p>
+                    <button type="button" class="btn btn-outline" onclick="showSignupForm()" style="width: 100%;">
+                        <i class="fas fa-user-plus"></i> Create Account
+                    </button>
+                </div>
+            </section>
+
+            <!-- Signup Section (shown when creating account) -->
+            <section id="signupSection" class="page-content" style="display: none;">
+                <div class="page-header">
+                    <h2 class="page-title">Create New Account</h2>
+                </div>
+
+                <form id="signupForm" onsubmit="handleSignup(event)">
+                    <div id="signupMessage" style="display: none; padding: 15px; margin-bottom: 20px; border-radius: 8px; font-size: 14px;"></div>
                     
                     <div class="form-group">
                         <label class="form-label">Full Name *</label>
-                        <input type="text" class="form-input" id="fullname" name="fullname" placeholder="Enter your full name" required>
+                        <input type="text" class="form-input" id="signupName" name="name" placeholder="Enter your full name" required>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Email Address *</label>
-                        <input type="email" class="form-input" id="email" name="email" placeholder="Enter your email" required>
+                        <input type="email" class="form-input" id="signupEmail" name="email" placeholder="Enter your email" required>
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Phone Number *</label>
-                        <input type="tel" class="form-input" id="phone" name="phone" placeholder="Enter your phone number" required>
+                        <label class="form-label">Password *</label>
+                        <input type="password" class="form-input" id="signupPassword" name="password" placeholder="Create a password (min. 6 characters)" required minlength="6">
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Role/Position (Optional)</label>
-                        <input type="text" class="form-input" id="role" name="role" placeholder="e.g., Student, Member, Volunteer">
-                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        <i class="fas fa-user-plus"></i> Create Account
+                    </button>
 
-
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-user-plus"></i> Join Now
+                    <button type="button" class="btn btn-outline" onclick="showLoginForm()" style="width: 100%; margin-top: 10px;">
+                        <i class="fas fa-arrow-left"></i> Back to Sign In
                     </button>
                 </form>
+            </section>
 
-                <div class="info-card" style="margin-top: 20px; background: #E8F5E9;">
-                    <h3 style="color: var(--dark-green); margin-bottom: 10px;"><i class="fas fa-heart"></i> Why Join?</h3>
-                    <ul class="info-list" style="margin: 0;">
-                        <li><i class="fas fa-check-circle" style="color: var(--primary-green);"></i> Access to educational programs and resources</li>
-                        <li><i class="fas fa-check-circle" style="color: var(--primary-green);"></i> Connect with a supportive community</li>
-                        <li><i class="fas fa-check-circle" style="color: var(--primary-green);"></i> Participate in events and activities</li>
-                        <li><i class="fas fa-check-circle" style="color: var(--primary-green);"></i> Get Islamic guidance and support</li>
-                        <li><i class="fas fa-check-circle" style="color: var(--primary-green);"></i> Make a positive impact in society</li>
-                    </ul>
+            <!-- Account Section (shown when logged in) -->
+            <section id="accountSection" class="page-content" style="display: none;">
+                <div class="page-header">
+                    <h2 class="page-title">My Account</h2>
+                </div>
+
+                <!-- User Info Card -->
+                <div class="info-card" style="background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); color: white; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 30px;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <h3 style="margin: 0 0 5px 0; font-size: 20px;" id="userDisplayName">User Name</h3>
+                            <p style="margin: 0; opacity: 0.9; font-size: 14px;" id="userEmail">user@example.com</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Options -->
+                <div class="settings-list">
+                    <!-- Edit Name -->
+                    <div class="settings-item" onclick="showEditNameModal()">
+                        <div class="settings-icon" style="background: #4CAF50;">
+                            <i class="fas fa-edit"></i>
+                        </div>
+                        <div class="settings-content">
+                            <h4>Edit Name</h4>
+                            <p>Update your display name</p>
+                        </div>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+
+                    <!-- Settings -->
+                    <div class="settings-item" onclick="showSettingsModal()">
+                        <div class="settings-icon" style="background: #2196F3;">
+                            <i class="fas fa-cog"></i>
+                        </div>
+                        <div class="settings-content">
+                            <h4>Settings</h4>
+                            <p>Manage your preferences</p>
+                        </div>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+
+                    <!-- Contact Developer -->
+                    <div class="settings-item" onclick="contactDeveloper()">
+                        <div class="settings-icon" style="background: #25D366;">
+                            <i class="fab fa-whatsapp"></i>
+                        </div>
+                        <div class="settings-content">
+                            <h4>Contact Developer</h4>
+                            <p>Get advice or help with the app</p>
+                        </div>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+
+                    <!-- Report Issue -->
+                    <div class="settings-item" onclick="showReportIssueModal()">
+                        <div class="settings-icon" style="background: #F44336;">
+                            <i class="fas fa-bug"></i>
+                        </div>
+                        <div class="settings-content">
+                            <h4>Report Issue</h4>
+                            <p>Report bugs or problems</p>
+                        </div>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+
+                    <!-- Logout -->
+                    <div class="settings-item" onclick="handleLogout()" style="border-top: 2px solid #f0f0f0; margin-top: 10px; padding-top: 15px;">
+                        <div class="settings-icon" style="background: #757575;">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </div>
+                        <div class="settings-content">
+                            <h4 style="color: #F44336;">Sign Out</h4>
+                            <p>Sign out of your account</p>
+                        </div>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
                 </div>
             </section>
         </main>
@@ -136,171 +246,477 @@
             <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
             <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
             <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
-            <a href="join-us.html" class="nav-item active"><i class="fas fa-user-plus"></i><span>Join</span></a>
+            <a href="join-us.html" class="nav-item active" id="accountNavItem"><i class="fas fa-user-circle"></i><span id="accountNavText">Account</span></a>
         </nav>
+    </div>
+
+    <!-- Edit Name Modal -->
+    <div class="modal-overlay" id="editNameModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Edit Name</h3>
+                <button class="modal-close" onclick="closeEditNameModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="editNameForm" onsubmit="handleEditName(event)">
+                    <div class="form-group">
+                        <label class="form-label">Display Name</label>
+                        <input type="text" class="form-input" id="editNameInput" placeholder="Enter your name" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settingsModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-cog"></i> Settings</h3>
+                <button class="modal-close" onclick="closeSettingsModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-option">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                        <input type="checkbox" id="notificationsEnabled" checked>
+                        <span>Enable Push Notifications</span>
+                    </label>
+                </div>
+                <div class="settings-option" style="margin-top: 15px;">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                        <input type="checkbox" id="emailUpdates" checked>
+                        <span>Receive Email Updates</span>
+                    </label>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="saveSettings()" style="width: 100%; margin-top: 20px;">
+                    <i class="fas fa-save"></i> Save Settings
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Issue Modal -->
+    <div class="modal-overlay" id="reportIssueModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-bug"></i> Report Issue</h3>
+                <button class="modal-close" onclick="closeReportIssueModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="reportIssueForm" onsubmit="handleReportIssue(event)">
+                    <div class="form-group">
+                        <label class="form-label">Issue Type</label>
+                        <select class="form-input" id="issueType" required>
+                            <option value="">Select issue type</option>
+                            <option value="bug">Bug / Error</option>
+                            <option value="feature">Feature Request</option>
+                            <option value="performance">Performance Issue</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-input" id="issueDescription" rows="5" placeholder="Describe the issue in detail..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        <i class="fas fa-paper-plane"></i> Submit Report
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
 
     <script src="script.js"></script>
     <script>
-        // PHP Backend API URL - Update this to match your server path
-        const API_URL = 'api/submit_recruit.php'; // Relative path to PHP API
-        
-        async function handleJoinSubmit(e) {
-            e.preventDefault();
-            
-            const submitBtn = document.querySelector('#joinForm button[type="submit"]');
-            const messageDiv = document.getElementById('formMessage');
-            const form = e.target;
-            
-            // Get form values
-            const fullname = document.getElementById('fullname').value.trim();
-            const email = document.getElementById('email').value.trim();
-            const phone = document.getElementById('phone').value.trim();
-            const role = document.getElementById('role').value.trim();
-            
-            // Validation
-            if (!fullname || !email || !phone) {
-                messageDiv.style.display = 'block';
-                messageDiv.style.backgroundColor = '#FFEBEE';
-                messageDiv.style.color = '#C62828';
-                messageDiv.style.border = '1px solid #F44336';
-                messageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please fill in all required fields.';
-                return;
-            }
-            
-            // Validate email format
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                messageDiv.style.display = 'block';
-                messageDiv.style.backgroundColor = '#FFEBEE';
-                messageDiv.style.color = '#C62828';
-                messageDiv.style.border = '1px solid #F44336';
-                messageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please enter a valid email address.';
-                return;
-            }
-            
-            // Disable submit button
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
-            messageDiv.style.display = 'none';
-            
-            // Prepare form data
-            const formData = new FormData();
-            formData.append('fullname', fullname);
-            formData.append('email', email);
-            formData.append('phone', phone);
-            formData.append('role', role);
-            
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    messageDiv.style.display = 'block';
-                    messageDiv.style.backgroundColor = '#E8F5E9';
-                    messageDiv.style.color = '#2E7D32';
-                    messageDiv.style.border = '1px solid #4CAF50';
-                    messageDiv.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message + '<br><small>You will receive a confirmation email and WhatsApp notification has been sent.</small>';
-                    
-                    // Reset form
-                    form.reset();
-                    
-                    // Store user name for greeting
-                    const firstName = fullname.split(' ')[0];
-                    localStorage.setItem('userName', firstName);
-                    
-                    // Redirect after 3 seconds
-                    setTimeout(() => {
-                        window.location.href = 'index.html';
-                    }, 3000);
+        // Developer WhatsApp number - UPDATE THIS WITH YOUR ACTUAL NUMBER
+        const DEVELOPER_WHATSAPP = '+256700000000'; // Format: +[country code][number] without spaces or dashes
+
+        let currentUser = null;
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuthState();
+            updateNavigation();
+        });
+
+        // Check authentication state
+        async function checkAuthState() {
+            if (typeof getCurrentUser === 'function') {
+                currentUser = getCurrentUser();
+                if (currentUser) {
+                    showAccountSection();
+                    updateUserInfo();
                 } else {
-                    messageDiv.style.display = 'block';
-                    messageDiv.style.backgroundColor = '#FFEBEE';
-                    messageDiv.style.color = '#C62828';
-                    messageDiv.style.border = '1px solid #F44336';
-                    messageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.message || 'An error occurred. Please try again.');
+                    showLoginSection();
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                messageDiv.style.display = 'block';
-                messageDiv.style.backgroundColor = '#FFEBEE';
-                messageDiv.style.color = '#C62828';
-                messageDiv.style.border = '1px solid #F44336';
-                messageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Network error. Please check your connection and try again. If the problem persists, contact support.';
-            } finally {
-                // Re-enable submit button
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Join Now';
+            } else {
+                // Fallback: check localStorage
+                const userData = localStorage.getItem('userData');
+                if (userData) {
+                    try {
+                        currentUser = JSON.parse(userData);
+                        showAccountSection();
+                        updateUserInfo();
+                    } catch (e) {
+                        showLoginSection();
+                    }
+                } else {
+                    showLoginSection();
+                }
             }
         }
+
+        // Show login section
+        function showLoginSection() {
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('signupSection').style.display = 'none';
+            document.getElementById('accountSection').style.display = 'none';
+        }
+
+        // Show signup section
+        function showSignupForm() {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('signupSection').style.display = 'block';
+            document.getElementById('accountSection').style.display = 'none';
+        }
+
+        // Show account section
+        function showAccountSection() {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('signupSection').style.display = 'none';
+            document.getElementById('accountSection').style.display = 'block';
+        }
+
+        // Update user info display
+        function updateUserInfo() {
+            if (currentUser) {
+                const displayName = currentUser.displayName || currentUser.email?.split('@')[0] || 'User';
+                const email = currentUser.email || 'No email';
+                
+                document.getElementById('userDisplayName').textContent = displayName;
+                document.getElementById('userEmail').textContent = email;
+            }
+        }
+
+        // Handle login
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const messageDiv = document.getElementById('loginMessage');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
+            messageDiv.style.display = 'none';
+
+            try {
+                if (typeof signInWithEmail === 'function') {
+                    const result = await signInWithEmail(email, password);
+                    if (result.success) {
+                        currentUser = result.user;
+                        showAccountSection();
+                        updateUserInfo();
+                        updateNavigation();
+                        messageDiv.style.display = 'block';
+                        messageDiv.style.backgroundColor = '#E8F5E9';
+                        messageDiv.style.color = '#2E7D32';
+                        messageDiv.style.border = '1px solid #4CAF50';
+                        messageDiv.innerHTML = '<i class="fas fa-check-circle"></i> Signed in successfully!';
+                        setTimeout(() => {
+                            messageDiv.style.display = 'none';
+                        }, 2000);
+                    } else {
+                        throw new Error(result.message || 'Login failed');
+                    }
+                } else {
+                    throw new Error('Firebase Auth not available');
+                }
+            } catch (error) {
+                messageDiv.style.display = 'block';
+                messageDiv.style.backgroundColor = '#FFEBEE';
+                messageDiv.style.color = '#C62828';
+                messageDiv.style.border = '1px solid #F44336';
+                messageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + error.message;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+            }
+        }
+
+        // Handle signup
+        async function handleSignup(e) {
+            e.preventDefault();
+            const name = document.getElementById('signupName').value.trim();
+            const email = document.getElementById('signupEmail').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            const messageDiv = document.getElementById('signupMessage');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
+            messageDiv.style.display = 'none';
+
+            try {
+                if (typeof signUpWithEmail === 'function') {
+                    const result = await signUpWithEmail(email, password, name);
+                    if (result.success) {
+                        currentUser = result.user;
+                        showAccountSection();
+                        updateUserInfo();
+                        updateNavigation();
+                        messageDiv.style.display = 'block';
+                        messageDiv.style.backgroundColor = '#E8F5E9';
+                        messageDiv.style.color = '#2E7D32';
+                        messageDiv.style.border = '1px solid #4CAF50';
+                        messageDiv.innerHTML = '<i class="fas fa-check-circle"></i> Account created successfully!';
+                    } else {
+                        throw new Error(result.message || 'Signup failed');
+                    }
+                } else {
+                    throw new Error('Firebase Auth not available');
+                }
+            } catch (error) {
+                messageDiv.style.display = 'block';
+                messageDiv.style.backgroundColor = '#FFEBEE';
+                messageDiv.style.color = '#C62828';
+                messageDiv.style.border = '1px solid #F44336';
+                messageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + error.message;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
+            }
+        }
+
+        // Handle logout
+        async function handleLogout() {
+            if (!confirm('Are you sure you want to sign out?')) {
+                return;
+            }
+
+            try {
+                if (typeof signOut === 'function') {
+                    await signOut();
+                } else {
+                    localStorage.removeItem('userData');
+                }
+                currentUser = null;
+                showLoginSection();
+                updateNavigation();
+            } catch (error) {
+                console.error('Logout error:', error);
+                alert('Error signing out. Please try again.');
+            }
+        }
+
+        // Edit name functions
+        function showEditNameModal() {
+            const modal = document.getElementById('editNameModal');
+            const input = document.getElementById('editNameInput');
+            if (currentUser) {
+                input.value = currentUser.displayName || currentUser.email?.split('@')[0] || '';
+            }
+            modal.style.display = 'flex';
+        }
+
+        function closeEditNameModal() {
+            document.getElementById('editNameModal').style.display = 'none';
+        }
+
+        async function handleEditName(e) {
+            e.preventDefault();
+            const newName = document.getElementById('editNameInput').value.trim();
+            
+            if (!newName) {
+                alert('Please enter a name');
+                return;
+            }
+
+            try {
+                if (currentUser && typeof currentUser.updateProfile === 'function') {
+                    await currentUser.updateProfile({ displayName: newName });
+                    currentUser.displayName = newName;
+                    updateUserInfo();
+                    closeEditNameModal();
+                    alert('Name updated successfully!');
+                } else {
+                    // Fallback: save to localStorage
+                    if (currentUser) {
+                        currentUser.displayName = newName;
+                        localStorage.setItem('userData', JSON.stringify(currentUser));
+                        updateUserInfo();
+                        closeEditNameModal();
+                        alert('Name updated successfully!');
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating name:', error);
+                alert('Error updating name. Please try again.');
+            }
+        }
+
+        // Settings functions
+        function showSettingsModal() {
+            document.getElementById('settingsModal').style.display = 'flex';
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        function saveSettings() {
+            const notifications = document.getElementById('notificationsEnabled').checked;
+            const emails = document.getElementById('emailUpdates').checked;
+            
+            localStorage.setItem('notificationsEnabled', notifications);
+            localStorage.setItem('emailUpdates', emails);
+            
+            closeSettingsModal();
+            alert('Settings saved successfully!');
+        }
+
+        // Contact developer
+        function contactDeveloper() {
+            const message = encodeURIComponent('Assalam Alaikum! I need help with the KIUMA app.');
+            const whatsappUrl = `https://wa.me/${DEVELOPER_WHATSAPP.replace(/[^0-9]/g, '')}?text=${message}`;
+            window.open(whatsappUrl, '_blank');
+        }
+
+        // Report issue functions
+        function showReportIssueModal() {
+            document.getElementById('reportIssueModal').style.display = 'flex';
+        }
+
+        function closeReportIssueModal() {
+            document.getElementById('reportIssueModal').style.display = 'none';
+            document.getElementById('reportIssueForm').reset();
+        }
+
+        function handleReportIssue(e) {
+            e.preventDefault();
+            const type = document.getElementById('issueType').value;
+            const description = document.getElementById('issueDescription').value.trim();
+            
+            if (!type || !description) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            const userInfo = currentUser ? `${currentUser.email || 'Unknown'}` : 'Not logged in';
+            const issueMessage = encodeURIComponent(
+                `*KIUMA App Issue Report*\n\n` +
+                `Type: ${type}\n` +
+                `User: ${userInfo}\n` +
+                `Description:\n${description}`
+            );
+            
+            const whatsappUrl = `https://wa.me/${DEVELOPER_WHATSAPP.replace(/[^0-9]/g, '')}?text=${issueMessage}`;
+            window.open(whatsappUrl, '_blank');
+            
+            closeReportIssueModal();
+            alert('Issue report opened in WhatsApp. Thank you for your feedback!');
+        }
+
+        // Update navigation
+        function updateNavigation() {
+            const navItem = document.getElementById('accountNavItem');
+            const navText = document.getElementById('accountNavText');
+            
+            if (currentUser) {
+                if (navText) navText.textContent = 'Account';
+                // Update all navigation links
+                document.querySelectorAll('a[href="join-us.html"]').forEach(link => {
+                    const icon = link.querySelector('i');
+                    if (icon) icon.className = 'fas fa-user-circle';
+                    const text = link.querySelector('span');
+                    if (text) text.textContent = 'Account';
+                });
+            } else {
+                if (navText) navText.textContent = 'Join';
+            }
+        }
+
+        // Close modals when clicking outside
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        });
     </script>
 
-    <!-- Floating Kizumu Visit Button -->
-    <div class="floating-kizumu-btn" onclick="showActivitiesModal()">
-        <i class="fas fa-heart"></i>
-        <span>Kizumu Visit</span>
-    </div>
+    <style>
+        .settings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
 
-    <!-- Activities Modal -->
-    <div class="modal-overlay" id="activitiesModal" style="display: none;">
-        <div class="modal-content activities-modal">
-            <div class="modal-header">
-                <h3><i class="fas fa-heart"></i> Important Activities</h3>
-                <button class="modal-close" onclick="closeActivitiesModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="activities-modal-list">
-                <div class="activity-modal-item" onclick="navigateToActivity('kizumu-visit')">
-                    <div class="activity-modal-icon" style="background: #E91E63;">
-                        <i class="fas fa-heart"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Kizumu Tahfiz Charity Visit</h4>
-                        <p>Support Islamic education through charity visit</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-                
-                <div class="activity-modal-item" onclick="navigateToActivity('tuition-brothers')">
-                    <div class="activity-modal-icon" style="background: var(--primary-green);">
-                        <i class="fas fa-graduation-cap"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Tuition for Brothers</h4>
-                        <p>Support brothers' education and learning</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-                
-                <div class="activity-modal-item" onclick="navigateToActivity('kisilaahe')">
-                    <div class="activity-modal-icon" style="background: #9C27B0;">
-                        <i class="fas fa-donate"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Donate to Kisilaahe</h4>
-                        <p>Support Kisilaahe with essential items</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-                
-                <div class="activity-modal-item" onclick="navigateToActivity('activities')">
-                    <div class="activity-modal-icon" style="background: #FF9800;">
-                        <i class="fas fa-running"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>View All Activities</h4>
-                        <p>See all community activities and events</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-            </div>
-        </div>
-    </div>
+        .settings-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .settings-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .settings-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        .settings-content {
+            flex: 1;
+        }
+
+        .settings-content h4 {
+            margin: 0 0 5px 0;
+            font-size: 16px;
+            color: var(--dark-gray);
+        }
+
+        .settings-content p {
+            margin: 0;
+            font-size: 13px;
+            color: var(--text-gray);
+        }
+
+        .settings-option {
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+
+        .settings-option input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+    </style>
 </body>
 </html>
-

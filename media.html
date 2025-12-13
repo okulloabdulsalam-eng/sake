@@ -72,7 +72,7 @@
             <section class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <h2 class="page-title">Media Gallery</h2>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button class="btn btn-secondary" id="adminLoginBtn" onclick="showAdminLogin()" style="padding: 10px 15px;">
+                    <button class="btn btn-secondary" id="adminLoginBtn" onclick="if(typeof window.showAdminLogin==='function')window.showAdminLogin(); else if(typeof showAdminLogin==='function')showAdminLogin();" style="padding: 10px 15px;">
                         <i class="fas fa-lock"></i> Admin Login
                     </button>
                     <button class="btn btn-primary admin-only" onclick="showAddMediaModal()" style="display: none; padding: 10px 15px;">
@@ -98,7 +98,7 @@
 
                 <div class="info-card" style="margin-top: 20px;">
                     <h3><i class="fas fa-info-circle"></i> About Media Gallery</h3>
-                    <p>Browse through our collection of videos, audio files, and images. All media files are stored securely on Google Drive and available for download.</p>
+                    <p>Browse through our collection of videos, audio files, and images. All media files are stored securely on Firebase Storage and available for download.</p>
                 </div>
             </section>
         </main>
@@ -112,22 +112,44 @@
         </nav>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-messaging-compat.js"></script>
+    
+    <!-- Firebase Configuration and Helpers -->
+    <script src="fcm-config.js"></script>
+    <script src="firebase-auth.js"></script>
+    <script src="firebase-storage.js"></script>
+    
+    <!-- API Config and Scripts -->
     <script src="api-config.js"></script>
     <script src="script.js"></script>
     <script>
-        window.showAddMediaModal = function() {
-            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
-            if (!adminStatus) {
-                if (typeof window.showAdminLogin === 'function') {
-                    window.showAdminLogin();
-                } else {
-                    alert('Please login as admin first.');
+        window.showAddMediaModal = async function() {
+            // Check if user is authenticated and is admin
+            if (typeof requireAdmin === 'function') {
+                await requireAdmin(() => {
+                    const modal = document.getElementById('addMediaModal');
+                    if (modal) {
+                        modal.style.display = 'flex';
+                    }
+                });
+            } else {
+                const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+                if (!adminStatus) {
+                    if (typeof window.showAdminLogin === 'function') {
+                        window.showAdminLogin();
+                    } else {
+                        alert('Please login as admin first.');
+                    }
+                    return;
                 }
-                return;
-            }
-            const modal = document.getElementById('addMediaModal');
-            if (modal) {
-                modal.style.display = 'flex';
+                const modal = document.getElementById('addMediaModal');
+                if (modal) {
+                    modal.style.display = 'flex';
+                }
             }
         };
 
@@ -159,13 +181,19 @@
             loadMediaFromStorage(type);
         };
 
-        window.addMedia = function(e) {
+        window.addMedia = async function(e) {
             if (e) e.preventDefault();
             
-            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
-            if (!adminStatus) {
-                alert('You must be logged in as admin to add media.');
-                return false;
+            // Check authentication
+            if (typeof requireAdmin === 'function') {
+                const isAdmin = await requireAdmin(() => {});
+                if (!isAdmin) return false;
+            } else {
+                const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+                if (!adminStatus) {
+                    alert('You must be logged in as admin to add media.');
+                    return false;
+                }
             }
 
             const fileInput = document.getElementById('mediaFile');
@@ -176,21 +204,69 @@
                 return false;
             }
 
-            const formData = new FormData();
-            formData.append('mediaFile', fileInput.files[0]);
-            formData.append('description', descriptionInput ? descriptionInput.value.trim() : '');
+            const file = fileInput.files[0];
+            const description = descriptionInput ? descriptionInput.value.trim() : '';
+            const fileType = getFileTypeCategory(file.type);
+            const folder = `media/${fileType}s`;
 
             const submitBtn = document.querySelector('#addMediaForm button[type="submit"]');
             const originalBtnText = submitBtn.innerHTML;
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
 
-            fetch(API_BASE_URL + '/upload_media.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
+            try {
+                // Upload to Firebase Storage
+                const uploadResult = await uploadToFirebaseStorage(file, folder, (progress) => {
+                    submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Uploading... ${Math.round(progress)}%`;
+                });
+
+                if (!uploadResult.success) {
+                    throw new Error(uploadResult.error || 'Upload failed');
+                }
+
+                // Generate thumbnail for images
+                let thumbnailUrl = null;
+                if (fileType === 'image' && typeof generateThumbnail === 'function') {
+                    try {
+                        const thumbnailFile = await generateThumbnail(file);
+                        const thumbnailResult = await uploadToFirebaseStorage(thumbnailFile, `media/thumbnails`);
+                        if (thumbnailResult.success) {
+                            thumbnailUrl = thumbnailResult.downloadURL;
+                        }
+                    } catch (thumbError) {
+                        console.warn('Thumbnail generation failed:', thumbError);
+                        // Use main image as thumbnail
+                        thumbnailUrl = uploadResult.downloadURL;
+                    }
+                } else if (fileType === 'image') {
+                    thumbnailUrl = uploadResult.downloadURL;
+                }
+
+                // Get current user for uploaded_by
+                const currentUser = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+                const uploadedBy = currentUser ? (currentUser.email || currentUser.uid) : 'Unknown';
+
+                // Save metadata to database
+                const response = await fetch(API_BASE_URL + '/upload_media.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        file_name: file.name,
+                        download_url: uploadResult.downloadURL,
+                        file_type: fileType,
+                        mime_type: file.type,
+                        file_size: file.size,
+                        description: description,
+                        thumbnail_url: thumbnailUrl,
+                        storage_path: uploadResult.storagePath,
+                        uploaded_by: uploadedBy
+                    })
+                });
+
+                const data = await response.json();
+                
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnText;
                 
@@ -199,54 +275,97 @@
                     window.closeAddMediaModal();
                     loadMediaFromStorage();
                 } else {
-                    alert('Error: ' + (data.message || 'Failed to upload media'));
+                    // If database save failed, try to delete from storage
+                    if (uploadResult.storagePath && typeof deleteFromFirebaseStorage === 'function') {
+                        await deleteFromFirebaseStorage(uploadResult.storagePath);
+                    }
+                    alert('Error: ' + (data.message || 'Failed to save media metadata'));
                 }
-            })
-            .catch(error => {
+            } catch (error) {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnText;
                 console.error('Error:', error);
-                alert('Error uploading media. Please try again.');
-            });
+                alert('Error uploading media: ' + error.message);
+            }
         };
 
-        window.deleteMedia = function(mediaId) {
-            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
-            if (!adminStatus) {
-                alert('You must be logged in as admin to delete media.');
-                return;
+        window.deleteMedia = async function(mediaId) {
+            // Check authentication
+            if (typeof requireAdmin === 'function') {
+                const isAdmin = await requireAdmin(() => {});
+                if (!isAdmin) return;
+            } else {
+                const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+                if (!adminStatus) {
+                    alert('You must be logged in as admin to delete media.');
+                    return;
+                }
             }
             
             if (!confirm('Are you sure you want to delete this media file?')) {
                 return;
             }
             
-            const adminPassword = prompt('Enter admin password to confirm deletion:');
-            if (!adminPassword) {
-                return;
-            }
-            
-            const formData = new FormData();
-            formData.append('id', mediaId);
-            formData.append('password', adminPassword);
-            
-            fetch(API_BASE_URL + '/delete_media.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
+            try {
+                // First, get media info to get storage path
+                const response = await fetch(API_BASE_URL + '/get_media.php');
+                const data = await response.json();
+                
+                if (!data.success || !data.media) {
+                    throw new Error('Failed to fetch media information');
+                }
+                
+                const media = data.media.find(m => m.id == mediaId);
+                if (!media) {
+                    throw new Error('Media not found');
+                }
+                
+                const storagePath = media.drive_file_id; // Storage path is stored in drive_file_id column
+                
+                // Delete from Firebase Storage if path exists
+                if (storagePath && typeof deleteFromFirebaseStorage === 'function') {
+                    try {
+                        await deleteFromFirebaseStorage(storagePath);
+                    } catch (storageError) {
+                        console.warn('Error deleting from Firebase Storage:', storageError);
+                        // Continue with database deletion even if storage deletion fails
+                    }
+                }
+                
+                // Get Firebase ID token for authentication
+                let authToken = null;
+                if (typeof getCurrentUser === 'function') {
+                    const user = getCurrentUser();
+                    if (user) {
+                        authToken = await user.getIdToken();
+                    }
+                }
+                
+                // Delete from database
+                const deleteResponse = await fetch(API_BASE_URL + '/delete_media.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+                    },
+                    body: JSON.stringify({
+                        id: mediaId,
+                        password: localStorage.getItem('adminPassword') || '' // Fallback for compatibility
+                    })
+                });
+                
+                const deleteData = await deleteResponse.json();
+                
+                if (deleteData.success) {
                     alert('Media deleted successfully!');
                     loadMediaFromStorage();
                 } else {
-                    alert('Error: ' + (data.message || 'Failed to delete media'));
+                    alert('Error: ' + (deleteData.message || 'Failed to delete media'));
                 }
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error:', error);
-                alert('Error deleting media. Please try again.');
-            });
+                alert('Error deleting media: ' + error.message);
+            }
         };
 
         function loadMediaFromStorage(type = 'all') {
@@ -259,7 +378,26 @@
             
             const url = type === 'all' ? (API_BASE_URL + '/get_media.php') : (API_BASE_URL + `/get_media.php?type=${type}`);
             fetch(url)
-                .then(response => response.json())
+                .then(response => {
+                    // Check if response is OK
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    // Check content type to ensure we're getting JSON
+                    const contentType = response.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        // If we got HTML/PHP instead of JSON, PHP isn't running
+                        return response.text().then(text => {
+                            if (text.trim().startsWith('<?php') || text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+                                throw new Error('PHP is not running. The server returned raw PHP/HTML instead of JSON. Please ensure PHP is enabled and the API endpoint is accessible.');
+                            }
+                            throw new Error(`Expected JSON but got ${contentType || 'unknown content type'}. Response: ${text.substring(0, 100)}...`);
+                        });
+                    }
+                    
+                    return response.json();
+                })
                 .then(data => {
                     if (data.success && data.media) {
                         if (data.media.length === 0) {
@@ -309,7 +447,8 @@
                 })
                 .catch(error => {
                     console.error('Error loading media:', error);
-                    mediaGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #f44336;"><i class="fas fa-exclamation-triangle"></i><p>Error loading media files</p></div>';
+                    const errorMessage = error.message || 'Unknown error occurred';
+                    mediaGrid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #f44336;"><i class="fas fa-exclamation-triangle"></i><p style="margin: 10px 0;">Error loading media files</p><p style="font-size: 12px; color: #999; margin-top: 10px;">${errorMessage}</p><p style="font-size: 11px; color: #999; margin-top: 5px;">API URL: ${url}</p></div>`;
                 });
         }
 

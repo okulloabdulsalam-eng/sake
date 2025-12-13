@@ -282,9 +282,9 @@
                 <i class="fas fa-credit-card"></i>
                 <span>Pay</span>
             </a>
-            <a href="join-us.html" class="nav-item">
-                <i class="fas fa-user-plus"></i>
-                <span>Join</span>
+            <a href="join-us.html" class="nav-item" id="accountNavLink">
+                <i class="fas fa-user-plus" id="accountNavIcon"></i>
+                <span id="accountNavText">Join</span>
             </a>
         </nav>
     </div>
@@ -492,6 +492,53 @@
                 }, 300);
             }
         });
+    </script>
+    
+    <!-- Update Navigation Based on Auth State -->
+    <script>
+        // Update navigation based on auth state
+        function updateAccountNavigation() {
+            let isLoggedIn = false;
+            
+            // Check Firebase Auth
+            if (typeof getCurrentUser === 'function') {
+                const user = getCurrentUser();
+                isLoggedIn = user !== null;
+            } else {
+                // Check localStorage
+                const userData = localStorage.getItem('userData');
+                isLoggedIn = userData !== null;
+            }
+            
+            const navIcon = document.getElementById('accountNavIcon');
+            const navText = document.getElementById('accountNavText');
+            
+            if (navIcon && navText) {
+                if (isLoggedIn) {
+                    navIcon.className = 'fas fa-user-circle';
+                    navText.textContent = 'Account';
+                } else {
+                    navIcon.className = 'fas fa-user-plus';
+                    navText.textContent = 'Join';
+                }
+            }
+        }
+        
+        // Update on page load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(updateAccountNavigation, 1000);
+            });
+        } else {
+            setTimeout(updateAccountNavigation, 1000);
+        }
+        
+        // Update when auth state changes
+        if (typeof firebase !== 'undefined' && firebase.auth) {
+            firebase.auth().onAuthStateChanged(() => {
+                updateAccountNavigation();
+            });
+        }
     </script>
 </body>
 </html>
