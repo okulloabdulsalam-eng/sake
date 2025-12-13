@@ -1045,13 +1045,24 @@ window.showAdminLogin = function() {
     modal.style.display = 'flex';
     modal.style.visibility = 'visible';
     
+    const emailInput = document.getElementById('adminEmail');
     const passwordInput = document.getElementById('adminPassword');
     const passwordError = document.getElementById('passwordError');
     
+    // Pre-fill email from localStorage if available
+    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+    if (emailInput) {
+        emailInput.value = userData.email || '';
+        if (!userData.email) {
+            emailInput.focus();
+        }
+    }
+    
     if (passwordInput) {
         passwordInput.value = '';
-        // Focus immediately
-        passwordInput.focus();
+        if (userData.email) {
+            passwordInput.focus();
+        }
     }
     
     if (passwordError) {
@@ -1061,11 +1072,15 @@ window.showAdminLogin = function() {
 
 window.closeAdminLogin = function() {
     const modal = document.getElementById('adminLoginModal');
+    const emailInput = document.getElementById('adminEmail');
     const passwordInput = document.getElementById('adminPassword');
     const passwordError = document.getElementById('passwordError');
     
     if (modal) {
         modal.style.display = 'none';
+    }
+    if (emailInput) {
+        emailInput.value = '';
     }
     if (passwordInput) {
         passwordInput.value = '';
@@ -1076,58 +1091,36 @@ window.closeAdminLogin = function() {
 }
 
 window.verifyAdminPassword = async function() {
+    const emailInput = document.getElementById('adminEmail');
     const passwordInput = document.getElementById('adminPassword');
+    const passwordError = document.getElementById('passwordError');
+    
     if (!passwordInput) {
         console.error('Admin password input not found');
         alert('Error: Admin login form not found. Please refresh the page.');
         return;
     }
     
+    const email = emailInput ? emailInput.value.trim() : '';
     const password = passwordInput.value.trim();
-    if (!password) {
-        alert('Please enter a password');
-        passwordInput.focus();
+    
+    if (!email || !password) {
+        if (passwordError) {
+            passwordError.style.display = 'block';
+            passwordError.textContent = 'Please enter both email and password.';
+        }
         return;
     }
     
-    // Check if Firebase Auth is available
-    if (typeof signInWithEmail === 'function' && typeof getCurrentUser === 'function') {
-        // Try to get email from input or use a default admin email
-        // In production, you should have an email input field
-        const emailInput = document.getElementById('adminEmail');
-        const email = emailInput ? emailInput.value.trim() : null;
-        
-        if (!email) {
-            // Fallback to password-based auth for backward compatibility
-            if (password === ADMIN_PASSWORD) {
-                isAdminLoggedIn = true;
-                localStorage.setItem('isAdminLoggedIn', 'true');
-                window.closeAdminLogin();
-                if (typeof window.checkAdminStatus === 'function') {
-                    window.checkAdminStatus();
-                }
-                alert('Admin mode enabled. You can now edit content.');
-                return;
-            } else {
-                const passwordError = document.getElementById('passwordError');
-                if (passwordError) {
-                    passwordError.style.display = 'block';
-                    passwordError.textContent = 'Incorrect password. Please try again.';
-                }
-                passwordInput.value = '';
-                passwordInput.focus();
-                return;
-            }
-        }
-        
-        // Use Firebase Auth
+    // Use Firebase Auth
+    if (typeof signInWithEmail === 'function') {
         try {
             const result = await signInWithEmail(email, password);
             if (result.success) {
-                isAdminLoggedIn = result.isAdmin || false;
-                if (isAdminLoggedIn) {
-                    localStorage.setItem('isAdminLoggedIn', 'true');
-                }
+                // User is now logged in - sync both systems
+                isAdminLoggedIn = true;
+                localStorage.setItem('isAdminLoggedIn', 'true');
+                
                 window.closeAdminLogin();
                 
                 // Enable editing if on prayer times page

@@ -74,9 +74,9 @@
                         <a href="about.html">KIUMA</a>
                     </h2>
                 </div>
-                <button class="account-icon-btn" id="accountIconBtn" onclick="toggleAccountModal()">
+                <a href="join-us.html" class="account-icon-btn" id="accountIconBtn">
                     <i class="fas fa-user-circle" id="accountIcon"></i>
-                </button>
+                </a>
             </section>
 
             <section class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -174,11 +174,15 @@
 
         // Check admin status on page load
         window.addEventListener('DOMContentLoaded', function() {
-            // Ensure checkAdminStatus is available
+            // Check admin status in background (non-blocking)
             if (typeof window.checkAdminStatus === 'function') {
-                window.checkAdminStatus();
+                setTimeout(() => {
+                    window.checkAdminStatus();
+                }, 0);
             } else if (typeof checkAdminStatus === 'function') {
-                checkAdminStatus();
+                setTimeout(() => {
+                    checkAdminStatus();
+                }, 0);
             }
             
             loadBooksFromStorage();
@@ -543,15 +547,33 @@
                 return;
             }
             
-            // Clear existing items first (except default placeholders)
+            // Show loading state if grid is empty or only has placeholders
             const existingItems = Array.from(libraryGrid.querySelectorAll('.media-item[data-id]'));
-            existingItems.forEach(item => item.remove());
+            if (existingItems.length === 0) {
+                const loadingDiv = document.createElement('div');
+                loadingDiv.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 40px; color: #999;';
+                loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size: 48px; margin-bottom: 10px;"></i><p>Loading books...</p>';
+                libraryGrid.appendChild(loadingDiv);
+            } else {
+                // Clear existing items first (except default placeholders)
+                existingItems.forEach(item => item.remove());
+            }
             
-            // Fetch books from server
+            // Fetch books from server with timeout
             const url = category === 'all' ? (API_BASE_URL + '/get_books.php') : (API_BASE_URL + `/get_books.php?category=${category}`);
-            fetch(url)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+            
+            fetch(url, { signal: controller.signal })
                 .then(response => response.json())
                 .then(data => {
+                    clearTimeout(timeoutId);
+                    // Remove loading indicator
+                    const loadingDiv = libraryGrid.querySelector('div[style*="grid-column: 1/-1"]');
+                    if (loadingDiv && loadingDiv.querySelector('.fa-spinner')) {
+                        loadingDiv.remove();
+                    }
+                    
                     if (data.success && data.books) {
                         data.books.forEach(book => {
                             const newBookItem = document.createElement('div');
@@ -593,7 +615,17 @@
                     }
                 })
                 .catch(error => {
+                    clearTimeout(timeoutId);
                     console.error('Error loading books:', error);
+                    // Remove loading indicator
+                    const loadingDiv = libraryGrid.querySelector('div[style*="grid-column: 1/-1"]');
+                    if (loadingDiv && loadingDiv.querySelector('.fa-spinner')) {
+                        if (error.name === 'AbortError') {
+                            loadingDiv.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 10px; opacity: 0.5;"></i><p>Request timed out. Please try again.</p>';
+                        } else {
+                            loadingDiv.innerHTML = '<i class="fas fa-exclamation-circle" style="font-size: 48px; margin-bottom: 10px; opacity: 0.5;"></i><p>Error loading books. Please refresh the page.</p>';
+                        }
+                    }
                 });
         }
         
@@ -615,11 +647,15 @@
                 </button>
             </div>
             <div class="modal-body">
-                <p style="margin-bottom: 15px;">Enter admin password to access admin features.</p>
+                <p style="margin-bottom: 15px;">Sign in with your account to access admin features.</p>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="adminEmail" placeholder="Enter your email">
+                </div>
                 <div class="form-group">
                     <label class="form-label">Password</label>
-                    <input type="password" class="form-input" id="adminPassword" placeholder="Enter admin password">
-                    <p id="passwordError" style="color: #f44336; font-size: 14px; margin-top: 5px; display: none;">Incorrect password. Please try again.</p>
+                    <input type="password" class="form-input" id="adminPassword" placeholder="Enter your password">
+                    <p id="passwordError" style="color: #f44336; font-size: 14px; margin-top: 5px; display: none;">Incorrect email or password.</p>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button class="btn btn-primary" onclick="if(typeof window.verifyAdminPassword==='function')window.verifyAdminPassword()" style="flex: 1;">

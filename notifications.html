@@ -12,6 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-messaging-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore-compat.js"></script>
     <script src="fcm-config.js"></script>
     <script src="firebase-auth.js"></script>
     <script src="fcm-init.js"></script>
@@ -83,9 +84,9 @@
                         <a href="about.html">KIUMA</a>
                     </h2>
                 </div>
-                <button class="account-icon-btn" id="accountIconBtn" onclick="toggleAccountModal()">
+                <a href="join-us.html" class="account-icon-btn" id="accountIconBtn">
                     <i class="fas fa-user-circle" id="accountIcon"></i>
-                </button>
+                </a>
             </section>
 
             <section class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -205,26 +206,25 @@
     <script>
         // Check admin status on page load
         window.addEventListener('DOMContentLoaded', function() {
-            // Ensure checkAdminStatus is available and call it
-            setTimeout(function() {
-                if (typeof window.checkAdminStatus === 'function') {
-                    window.checkAdminStatus();
-                } else if (typeof checkAdminStatus === 'function') {
-                    checkAdminStatus();
-                }
-            }, 100);
+            // Check admin status in background (non-blocking)
+            if (typeof window.checkAdminStatus === 'function') {
+                setTimeout(() => window.checkAdminStatus(), 0);
+            } else if (typeof checkAdminStatus === 'function') {
+                setTimeout(() => checkAdminStatus(), 0);
+            }
             
-            loadNotificationsFromStorage();
+            // Load notifications and update badges (non-blocking)
+            loadNotificationsFromStorage().then(() => {
+                initNotificationStatus();
+                setupNotificationClickHandlers();
+            }).catch(err => {
+                console.error('Error loading notifications:', err);
+            });
             
-            // Check for white days notification after a short delay to ensure dates are updated
-            setTimeout(function() {
-                // Trigger date update to check for white days
-                if (typeof updateDates === 'function') {
-                    updateDates();
-                }
-                // Reload notifications after date check
-                loadNotificationsFromStorage();
-            }, 1000);
+            // Check for white days notification in background (non-blocking)
+            if (typeof updateDates === 'function') {
+                setTimeout(() => updateDates(), 0);
+            }
             
             // Initialize admin login modal
             const adminModal = document.getElementById('adminLoginModal');
@@ -406,80 +406,49 @@
             e.preventDefault();
             
             // Check authentication using Firebase Auth
-            if (typeof requireAdmin === 'function') {
-                const isAdmin = await requireAdmin(() => {});
-                if (!isAdmin) {
-                    alert('You must be logged in as admin to add notifications.');
-                    return;
-                }
-            } else if (!isAdminLoggedIn) {
+            const isAdmin = localStorage.getItem('isAdminLoggedIn') === 'true';
+            if (!isAdmin) {
                 alert('You must be logged in as admin to add notifications.');
                 return;
             }
 
             const title = document.getElementById('notifTitle').value;
             const message = document.getElementById('notifMessage').value;
-            const icon = document.getElementById('notifIcon').value || 'fas fa-bell';
+            const icon = document.getElementById('notifIcon').value || 'fa-bell';
             
             if (!title || !message) {
                 alert('Please fill in all required fields.');
                 return;
             }
 
-            // Get admin password from localStorage or prompt
-            const adminPassword = localStorage.getItem('adminPassword') || prompt('Enter admin password to save notification:');
-            if (!adminPassword) {
-                alert('Admin password required to save notification.');
-                return;
-            }
-
-            // Save to database via API
+            // Save to Firebase Firestore
             try {
-                const formData = new FormData();
-                formData.append('title', title);
-                formData.append('message', message);
-                formData.append('type', 'announcement');
-                formData.append('target_audience', 'all');
-                formData.append('icon', icon);
-                formData.append('admin_password', adminPassword);
-
-                const API_BASE_URL = window.API_BASE_URL || '/api';
-                const response = await fetch(API_BASE_URL + '/save_notification.php', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const data = await response.json();
-
-                if (!data.success) {
-                    throw new Error(data.message || 'Failed to save notification');
+                const firestore = getFirestore();
+                if (!firestore) {
+                    throw new Error('Firestore not available');
                 }
 
-                // Also save to localStorage for immediate display (fallback)
-                let notificationsData = JSON.parse(localStorage.getItem('notificationsData') || '[]');
-                const notification = {
-                    id: data.notification.id.toString(),
+                const docRef = await firestore.collection('notifications').add({
                     title: title,
                     message: message,
                     icon: icon,
-                    status: 'unread',
-                    date: data.notification.created_date || new Date().toISOString(),
-                    timeDisplay: 'Just now'
-                };
+                    type: 'announcement',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    createdBy: firebase.auth().currentUser?.email || 'admin'
+                });
 
-                notificationsData.unshift(notification);
-                localStorage.setItem('notificationsData', JSON.stringify(notificationsData));
+                console.log('Notification saved to Firestore:', docRef.id);
 
-                // Create and display notification element
+                // Create and display notification element immediately
                 const notificationsContainer = document.querySelector('.page-content');
-                const firstNotification = notificationsContainer.querySelector('.notification-item');
+                const filterDiv = notificationsContainer.querySelector('div[style*="display: flex"]');
                 const newNotification = document.createElement('div');
-                newNotification.className = 'notification-item';
+                newNotification.className = 'notification-item firebase-notif';
                 newNotification.dataset.status = 'unread';
-                newNotification.dataset.id = notification.id;
+                newNotification.dataset.id = docRef.id;
                 newNotification.innerHTML = `
                     <div class="notification-icon">
-                        <i class="${icon}"></i>
+                        <i class="fas ${icon}"></i>
                     </div>
                     <div class="notification-content">
                         <h4>${title}</h4>
@@ -488,9 +457,9 @@
                     </div>
                 `;
 
-                // Insert at the top
-                if (firstNotification) {
-                    notificationsContainer.insertBefore(newNotification, firstNotification);
+                // Insert at the top (after filter buttons)
+                if (filterDiv && filterDiv.nextSibling) {
+                    notificationsContainer.insertBefore(newNotification, filterDiv.nextSibling);
                 } else {
                     notificationsContainer.appendChild(newNotification);
                 }
@@ -500,18 +469,14 @@
                     if (this.dataset.status === 'unread') {
                         this.dataset.status = 'read';
                         this.style.opacity = '0.7';
-                        // Update in localStorage
-                        updateNotificationStatus(notification.id, 'read');
+                        markNotificationAsRead(docRef.id);
+                        updateUnreadBadge();
                     }
                 });
 
+                updateUnreadBadge();
                 window.closeAddNotificationModal();
-                alert('Notification saved successfully!');
-                
-                // Optionally send to all users
-                if (confirm('Do you want to send this notification to all users via Email?')) {
-                    sendNotificationToAllUsers(title, message, data.notification.id);
-                }
+                alert('Notification added successfully!');
                 
             } catch (error) {
                 console.error('Error saving notification:', error);
@@ -540,67 +505,73 @@
             return date.toLocaleDateString();
         }
 
-        // Load notifications from database and localStorage on page load
+        // Initialize Firestore
+        let db = null;
+        function getFirestore() {
+            if (db) return db;
+            if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+                db = firebase.firestore();
+            }
+            return db;
+        }
+
+        // Load notifications from Firebase Firestore
         async function loadNotificationsFromStorage() {
             const notificationsContainer = document.querySelector('.page-content');
+            const readNotifications = getReadNotifications();
             
-            // Clear existing stored notifications (keep only hardcoded ones)
-            const existingStored = Array.from(notificationsContainer.querySelectorAll('.notification-item[data-id]'));
-            existingStored.forEach(item => item.remove());
-            
-            // Try to load from database first (only if not on static hosting)
+            // Try to load from Firestore first
             try {
-                const API_BASE_URL = window.API_BASE_URL || '/api';
-                const response = await fetch(API_BASE_URL + '/get_notifications.php');
-                if (!response.ok) throw new Error('API not available');
-                const data = await response.json();
-                
-                if (data.success && data.notifications) {
-                    // Load from database
-                    const sortedNotifications = data.notifications.sort((a, b) => {
-                        // Unread first
-                        if (a.is_read === 0 && b.is_read !== 0) return -1;
-                        if (a.is_read !== 0 && b.is_read === 0) return 1;
-                        // Then by date (newest first)
-                        return new Date(b.created_date) - new Date(a.created_date);
-                    });
+                const firestore = getFirestore();
+                if (firestore) {
+                    const snapshot = await firestore.collection('notifications')
+                        .orderBy('createdAt', 'desc')
+                        .limit(50)
+                        .get();
                     
-                    sortedNotifications.forEach(notif => {
-                        const newNotification = document.createElement('div');
-                        newNotification.className = 'notification-item';
-                        newNotification.dataset.status = notif.is_read ? 'read' : 'unread';
-                        newNotification.dataset.id = notif.id;
-                        newNotification.innerHTML = `
-                            <div class="notification-icon">
-                                <i class="fas fa-bell"></i>
-                            </div>
-                            <div class="notification-content">
-                                <h4>${notif.title}</h4>
-                                <p>${notif.message}</p>
-                                <span class="notification-time">${formatTimeAgo(notif.created_date)}</span>
-                            </div>
-                        `;
+                    if (!snapshot.empty) {
+                        // Clear existing dynamic notifications
+                        const existingStored = Array.from(notificationsContainer.querySelectorAll('.notification-item.firebase-notif'));
+                        existingStored.forEach(item => item.remove());
                         
-                        const firstNotification = notificationsContainer.querySelector('.notification-item');
-                        if (firstNotification) {
-                            notificationsContainer.insertBefore(newNotification, firstNotification);
-                        } else {
-                            notificationsContainer.appendChild(newNotification);
-                        }
-                        
-                        // Mark as read on click
-                        newNotification.addEventListener('click', function() {
-                            if (this.dataset.status === 'unread') {
-                                this.dataset.status = 'read';
-                                this.style.opacity = '0.7';
+                        snapshot.forEach(doc => {
+                            const notif = doc.data();
+                            const notifId = doc.id;
+                            const isRead = readNotifications.includes(notifId);
+                            
+                            const newNotification = document.createElement('div');
+                            newNotification.className = 'notification-item firebase-notif';
+                            newNotification.dataset.status = isRead ? 'read' : 'unread';
+                            newNotification.dataset.id = notifId;
+                            if (isRead) newNotification.style.opacity = '0.7';
+                            
+                            const iconClass = notif.icon || 'fa-bell';
+                            newNotification.innerHTML = `
+                                <div class="notification-icon">
+                                    <i class="fas ${iconClass}"></i>
+                                </div>
+                                <div class="notification-content">
+                                    <h4>${notif.title}</h4>
+                                    <p>${notif.message}</p>
+                                    <span class="notification-time">${formatTimeAgo(notif.createdAt?.toDate() || new Date())}</span>
+                                </div>
+                            `;
+                            
+                            // Insert at top (after filter buttons)
+                            const filterDiv = notificationsContainer.querySelector('div[style*="display: flex"]');
+                            if (filterDiv && filterDiv.nextSibling) {
+                                notificationsContainer.insertBefore(newNotification, filterDiv.nextSibling);
+                            } else {
+                                notificationsContainer.appendChild(newNotification);
                             }
                         });
-                    });
-                    
-                    return; // Successfully loaded from database
+                        
+                        console.log('Loaded notifications from Firestore');
+                        return;
+                    }
                 }
             } catch (error) {
-                console.log('Database not available, loading from localStorage:', error);
+                console.log('Firestore not available:', error.message);
             }
             
             // Fallback to localStorage
@@ -703,11 +674,15 @@
                 </button>
             </div>
             <div class="modal-body">
-                <p style="margin-bottom: 15px;">Enter admin password to access admin features.</p>
+                <p style="margin-bottom: 15px;">Sign in with your admin account to access admin features.</p>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="adminEmail" placeholder="Enter your email">
+                </div>
                 <div class="form-group">
                     <label class="form-label">Password</label>
-                    <input type="password" class="form-input" id="adminPassword" placeholder="Enter admin password">
-                    <p id="passwordError" style="color: #f44336; font-size: 14px; margin-top: 5px; display: none;">Incorrect password. Please try again.</p>
+                    <input type="password" class="form-input" id="adminPassword" placeholder="Enter your password">
+                    <p id="passwordError" style="color: #f44336; font-size: 14px; margin-top: 5px; display: none;">Incorrect email or password.</p>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button class="btn btn-primary" onclick="verifyAdminPassword()" style="flex: 1;">
@@ -717,6 +692,9 @@
                         Cancel
                     </button>
                 </div>
+                <p style="margin-top: 15px; font-size: 12px; color: #666; text-align: center;">
+                    Don't have an account? <a href="join-us.html" style="color: var(--primary-green);">Sign up</a>
+                </p>
             </div>
         </div>
     </div>

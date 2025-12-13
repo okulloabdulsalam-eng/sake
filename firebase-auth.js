@@ -118,8 +118,22 @@ async function signInWithEmail(email, password) {
         const userCredential = await auth.signInWithEmailAndPassword(email, password);
         currentUser = userCredential.user;
         
+        // Sync to localStorage for unified login state
+        const userData = {
+            name: currentUser.displayName || currentUser.email?.split('@')[0] || 'User',
+            firstName: (currentUser.displayName || currentUser.email?.split('@')[0] || 'User').split(' ')[0],
+            email: currentUser.email,
+            uid: currentUser.uid,
+            createdAt: currentUser.metadata?.creationTime || new Date().toISOString()
+        };
+        localStorage.setItem('userData', JSON.stringify(userData));
+        
         // Check admin status
         const isAdmin = await checkAdminStatus(currentUser);
+        
+        // Trigger UI update across all systems
+        if (typeof updateUserDisplay === 'function') updateUserDisplay();
+        if (typeof window.updateUserDisplay === 'function') window.updateUserDisplay();
         
         return {
             success: true,
@@ -157,6 +171,20 @@ async function signUpWithEmail(email, password, displayName = '') {
             });
         }
         
+        // Sync to localStorage for unified login state
+        const userData = {
+            name: displayName || currentUser.email?.split('@')[0] || 'User',
+            firstName: (displayName || currentUser.email?.split('@')[0] || 'User').split(' ')[0],
+            email: currentUser.email,
+            uid: currentUser.uid,
+            createdAt: new Date().toISOString()
+        };
+        localStorage.setItem('userData', JSON.stringify(userData));
+        
+        // Trigger UI update across all systems
+        if (typeof updateUserDisplay === 'function') updateUserDisplay();
+        if (typeof window.updateUserDisplay === 'function') window.updateUserDisplay();
+        
         return {
             success: true,
             user: currentUser
@@ -181,8 +209,16 @@ async function signOut() {
         const auth = firebase.auth();
         await auth.signOut();
         currentUser = null;
+        
+        // Clear all login state from localStorage
         localStorage.removeItem('isAdminLoggedIn');
+        localStorage.removeItem('userData');
+        
         updateAuthUI(null);
+        
+        // Trigger UI update across all systems
+        if (typeof updateUserDisplay === 'function') updateUserDisplay();
+        if (typeof window.updateUserDisplay === 'function') window.updateUserDisplay();
         
         // Reload page to reset state
         window.location.reload();
@@ -268,6 +304,42 @@ function updateAuthUI(user) {
     const userDisplay = document.getElementById('userDisplay');
     if (userDisplay && user) {
         userDisplay.textContent = user.displayName || user.email || 'User';
+    }
+    
+    // Update account icon state
+    const accountIcon = document.getElementById('accountIcon');
+    const accountIconBtn = document.getElementById('accountIconBtn');
+    if (accountIcon) {
+        accountIcon.className = isLoggedIn ? 'fas fa-user-circle logged-in' : 'fas fa-user-circle';
+    }
+    if (accountIconBtn) {
+        if (isLoggedIn) {
+            accountIconBtn.classList.add('logged-in');
+            accountIconBtn.title = 'Account';
+        } else {
+            accountIconBtn.classList.remove('logged-in');
+            accountIconBtn.title = 'Login / Create Account';
+        }
+    }
+    
+    // Sync localStorage if user is logged in
+    if (user) {
+        const existingData = localStorage.getItem('userData');
+        if (!existingData) {
+            const userData = {
+                name: user.displayName || user.email?.split('@')[0] || 'User',
+                firstName: (user.displayName || user.email?.split('@')[0] || 'User').split(' ')[0],
+                email: user.email,
+                uid: user.uid,
+                createdAt: user.metadata?.creationTime || new Date().toISOString()
+            };
+            localStorage.setItem('userData', JSON.stringify(userData));
+        }
+    }
+    
+    // Trigger script.js updateUserDisplay if available
+    if (typeof window.loadUserData === 'function') {
+        window.loadUserData();
     }
 }
 

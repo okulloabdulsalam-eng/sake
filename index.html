@@ -99,9 +99,9 @@
                         <span>Assalam Alaikum, <span id="userName">Brother/Sister</span></span>
                     </h2>
                 </div>
-                <button class="account-icon-btn" id="accountIconBtn" onclick="toggleAccountModal()">
+                <a href="join-us.html" class="account-icon-btn" id="accountIconBtn">
                     <i class="fas fa-user-circle" id="accountIcon"></i>
-                </button>
+                </a>
             </section>
 
             <!-- Prayer Times Card -->
@@ -167,15 +167,18 @@
             <div class="modal-overlay" id="adminLoginModal" style="display: none;">
                 <div class="modal-content">
                     <h3><i class="fas fa-lock"></i> Admin Login</h3>
-                    <p>Enter password to edit prayer times</p>
+                    <p>Sign in with your account to edit content</p>
                     <div class="form-group">
-                        <input type="password" class="form-input" id="adminPassword" placeholder="Enter admin password">
+                        <input type="email" class="form-input" id="adminEmail" placeholder="Enter your email">
+                    </div>
+                    <div class="form-group">
+                        <input type="password" class="form-input" id="adminPassword" placeholder="Enter your password">
                     </div>
                     <div style="display: flex; gap: 10px;">
                         <button class="btn btn-primary" onclick="verifyAdminPassword()" style="flex: 1;">Login</button>
                         <button class="btn btn-secondary" onclick="closeAdminLogin()" style="flex: 1;">Cancel</button>
                     </div>
-                    <p id="passwordError" style="color: #F44336; font-size: 12px; margin: 10px 0 0 0; display: none;">Incorrect password. Please try again.</p>
+                    <p id="passwordError" style="color: #F44336; font-size: 12px; margin: 10px 0 0 0; display: none;">Incorrect email or password.</p>
                 </div>
             </div>
 

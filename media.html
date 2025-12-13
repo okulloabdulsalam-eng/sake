@@ -64,9 +64,9 @@
                         <a href="about.html">KIUMA</a>
                     </h2>
                 </div>
-                <button class="account-icon-btn" id="accountIconBtn" onclick="toggleAccountModal()">
+                <a href="join-us.html" class="account-icon-btn" id="accountIconBtn">
                     <i class="fas fa-user-circle" id="accountIcon"></i>
-                </button>
+                </a>
             </section>
 
             <section class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -379,7 +379,10 @@
             
             if (!mediaGrid) return;
             
-            mediaGrid.innerHTML = '';
+            // Show loading state if grid is empty
+            if (mediaGrid.innerHTML.trim() === '') {
+                mediaGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;"><i class="fas fa-spinner fa-spin" style="font-size: 48px; margin-bottom: 10px;"></i><p>Loading media...</p></div>';
+            }
 
             // If on GitHub Pages, show sample/placeholder content
             if (isGitHubPages()) {
@@ -388,7 +391,11 @@
             }
             
             const url = type === 'all' ? (API_BASE_URL + '/get_media.php') : (API_BASE_URL + `/get_media.php?type=${type}`);
-            fetch(url)
+            // Add timeout to prevent hanging
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+            
+            fetch(url, { signal: controller.signal })
                 .then(response => {
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
@@ -407,12 +414,15 @@
                     return response.json();
                 })
                 .then(data => {
+                    clearTimeout(timeoutId);
                     if (data.success && data.media) {
                         if (data.media.length === 0) {
                             mediaGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;"><i class="fas fa-folder-open" style="font-size: 48px; margin-bottom: 10px; opacity: 0.5;"></i><p>No media files found</p></div>';
                             return;
                         }
                         
+                        // Clear loading state
+                        mediaGrid.innerHTML = '';
                         data.media.forEach(media => {
                             renderMediaItem(mediaGrid, media, adminStatus);
                         });
@@ -421,8 +431,13 @@
                     }
                 })
                 .catch(error => {
+                    clearTimeout(timeoutId);
                     console.error('Error loading media:', error);
-                    showGitHubPagesMedia(mediaGrid, type);
+                    if (error.name === 'AbortError') {
+                        mediaGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;"><i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 10px; opacity: 0.5;"></i><p>Request timed out. Please try again.</p></div>';
+                    } else {
+                        showGitHubPagesMedia(mediaGrid, type);
+                    }
                 });
         }
 
@@ -493,9 +508,21 @@
         }
 
         window.addEventListener('DOMContentLoaded', function() {
-            if (typeof window.checkAdminStatus === 'function') {
-                window.checkAdminStatus();
+            // Show loading state immediately
+            const mediaGrid = document.getElementById('mediaGrid');
+            if (mediaGrid) {
+                mediaGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;"><i class="fas fa-spinner fa-spin" style="font-size: 48px; margin-bottom: 10px;"></i><p>Loading media...</p></div>';
             }
+            
+            // Check admin status in background (non-blocking)
+            if (typeof window.checkAdminStatus === 'function') {
+                // Don't wait for this
+                setTimeout(() => {
+                    window.checkAdminStatus();
+                }, 0);
+            }
+            
+            // Load media (non-blocking)
             loadMediaFromStorage();
         });
     </script>
@@ -510,10 +537,15 @@
                 </button>
             </div>
             <div class="modal-body">
-                <p style="margin-bottom: 15px;">Enter admin password to access admin features.</p>
+                <p style="margin-bottom: 15px;">Sign in with your account to access admin features.</p>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="adminEmail" placeholder="Enter your email">
+                </div>
                 <div class="form-group">
                     <label class="form-label">Password</label>
-                    <input type="password" class="form-input" id="adminPassword" placeholder="Enter admin password">
+                    <input type="password" class="form-input" id="adminPassword" placeholder="Enter your password">
+                    <p id="passwordError" style="color: #f44336; font-size: 14px; margin-top: 5px; display: none;">Incorrect email or password.</p>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button class="btn btn-primary" onclick="if(typeof window.verifyAdminPassword==='function')window.verifyAdminPassword()" style="flex: 1;">Login</button>
