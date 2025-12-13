@@ -401,8 +401,8 @@
         async function checkAuthState() {
             // Wait a bit for Firebase to initialize (non-blocking)
             let retries = 0;
-            while (retries < 3 && (typeof firebase === 'undefined' || !firebase.auth)) {
-                await new Promise(resolve => setTimeout(resolve, 100));
+            while (retries < 10 && (typeof firebase === 'undefined' || !firebase.auth)) {
+                await new Promise(resolve => setTimeout(resolve, 200));
                 retries++;
             }
             
@@ -410,9 +410,26 @@
             if (typeof firebase !== 'undefined' && firebase.auth) {
                 try {
                     const auth = firebase.auth();
+                    // Wait for auth to be ready
+                    await new Promise((resolve) => {
+                        const unsubscribe = auth.onAuthStateChanged((user) => {
+                            unsubscribe();
+                            resolve(user);
+                        });
+                    });
+                    
                     const user = auth.currentUser;
                     if (user) {
+                        // Firebase user found - sync with localStorage
                         pageUser = user;
+                        const userData = {
+                            name: user.displayName || user.email?.split('@')[0] || 'User',
+                            firstName: user.displayName?.split(' ')[0] || user.email?.split('@')[0] || 'User',
+                            email: user.email,
+                            uid: user.uid,
+                            createdAt: user.metadata?.creationTime || new Date().toISOString()
+                        };
+                        localStorage.setItem('userData', JSON.stringify(userData));
                         showAccountSection();
                         updateUserInfo();
                         updateNavigation();
@@ -425,27 +442,61 @@
             
             // Try getCurrentUser function
             if (typeof getCurrentUser === 'function') {
-                const user = getCurrentUser();
-                if (user) {
-                    pageUser = user;
-                    showAccountSection();
-                    updateUserInfo();
-                    updateNavigation();
-                    return;
+                try {
+                    const user = getCurrentUser();
+                    if (user) {
+                        pageUser = user;
+                        // Sync with localStorage
+                        const userData = {
+                            name: user.displayName || user.email?.split('@')[0] || 'User',
+                            firstName: user.displayName?.split(' ')[0] || user.email?.split('@')[0] || 'User',
+                            email: user.email,
+                            uid: user.uid,
+                            createdAt: user.metadata?.creationTime || new Date().toISOString()
+                        };
+                        localStorage.setItem('userData', JSON.stringify(userData));
+                        showAccountSection();
+                        updateUserInfo();
+                        updateNavigation();
+                        return;
+                    }
+                } catch (e) {
+                    console.log('getCurrentUser failed:', e);
                 }
             }
             
-            // If no Firebase user found and we showed account section from localStorage,
-            // verify it's still valid (but don't block UI)
-            if (pageUser && !pageUser.uid && typeof firebase !== 'undefined' && firebase.auth) {
-                // User data from localStorage but no Firebase user - might be logged out
-                const auth = firebase.auth();
-                const user = auth.currentUser;
-                if (!user) {
-                    pageUser = null;
-                    showLoginSection();
-                    updateNavigation();
+            // If we have localStorage data but no Firebase user, check if we should keep showing account
+            // This handles the case where localStorage has data but Firebase session expired
+            const userData = localStorage.getItem('userData');
+            if (userData && pageUser) {
+                try {
+                    const parsedData = JSON.parse(userData);
+                    // If localStorage has valid data, keep showing account section
+                    // User might need to re-authenticate but we don't want to lose their data
+                    if (parsedData && (parsedData.email || parsedData.uid)) {
+                        // Keep account section visible but note that Firebase session might be expired
+                        if (!pageUser.uid) {
+                            // Convert localStorage data to user-like object for display
+                            pageUser = {
+                                displayName: parsedData.name || parsedData.firstName,
+                                email: parsedData.email,
+                                uid: parsedData.uid,
+                                metadata: { creationTime: parsedData.createdAt }
+                            };
+                            updateUserInfo();
+                        }
+                        return;
+                    }
+                } catch (e) {
+                    console.log('localStorage parse failed:', e);
                 }
+            }
+            
+            // If no user found anywhere, show login
+            if (!pageUser || (!pageUser.uid && !userData)) {
+                pageUser = null;
+                showLoginSection();
+                updateNavigation();
             }
         }
 

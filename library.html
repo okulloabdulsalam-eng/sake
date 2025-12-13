@@ -565,7 +565,17 @@
             const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
             
             fetch(url, { signal: controller.signal })
-                .then(response => response.json())
+                .then(response => {
+                    // Handle 404 and other errors gracefully
+                    if (response.status === 404) {
+                        console.warn('API endpoint not found (404). This is normal if PHP backend is not available.');
+                        throw new Error('API_NOT_FOUND');
+                    }
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     clearTimeout(timeoutId);
                     // Remove loading indicator
@@ -617,6 +627,9 @@
                 .catch(error => {
                     clearTimeout(timeoutId);
                     console.error('Error loading books:', error);
+                    if (error.message === 'API_NOT_FOUND' || error.message.includes('404')) {
+                        console.log('API endpoint not available, showing demo content');
+                    }
                     // Remove loading indicator
                     const loadingDiv = libraryGrid.querySelector('div[style*="grid-column: 1/-1"]');
                     if (loadingDiv && loadingDiv.querySelector('.fa-spinner')) {

@@ -437,6 +437,12 @@
             
             fetch(url, { signal: controller.signal })
                 .then(response => {
+                    // Handle 404 and other errors gracefully
+                    if (response.status === 404) {
+                        console.warn('API endpoint not found (404). This is normal if PHP backend is not available.');
+                        throw new Error('API_NOT_FOUND');
+                    }
+                    
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
@@ -475,6 +481,10 @@
                     console.error('Error loading media:', error);
                     if (error.name === 'AbortError') {
                         mediaGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;"><i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 10px; opacity: 0.5;"></i><p>Request timed out. Please try again.</p></div>';
+                    } else if (error.message === 'API_NOT_FOUND' || error.message.includes('404')) {
+                        // API not found - show demo content or empty state
+                        console.log('API endpoint not available, showing demo content');
+                        showGitHubPagesMedia(mediaGrid, type);
                     } else {
                         showGitHubPagesMedia(mediaGrid, type);
                     }
