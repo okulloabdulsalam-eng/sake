@@ -6,6 +6,13 @@
     <title>Notifications - KIUMA</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase Cloud Messaging (FCM) -->
+    <!-- Using compat version for compatibility with service worker -->
+    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-messaging-compat.js"></script>
+    <script src="fcm-config.js"></script>
+    <script src="fcm-init.js"></script>
 </head>
 <body>
     <nav class="nav-menu" id="navMenu">
@@ -82,6 +89,9 @@
             <section class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <h2 class="page-title">Notifications</h2>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="requestNotificationPermission()" style="padding: 10px 15px; background: #4CAF50;">
+                        <i class="fas fa-bell"></i> Enable Push Notifications
+                    </button>
                     <button class="btn btn-secondary" id="adminLoginBtn" onclick="showAdminLogin()" style="padding: 10px 15px;">
                         <i class="fas fa-lock"></i> Admin Login
                     </button>
@@ -422,7 +432,7 @@
                 alert('Notification saved successfully!');
                 
                 // Optionally send to all users
-                if (confirm('Do you want to send this notification to all users via WhatsApp and Email?')) {
+                if (confirm('Do you want to send this notification to all users via Email?')) {
                     sendNotificationToAllUsers(title, message, data.notification.id);
                 }
                 
@@ -594,7 +604,7 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    alert(`Notifications sent to ${data.totalUsers} users!\nWhatsApp: ${data.whatsappSent}\nEmail: ${data.emailSent}`);
+                    alert(`Notifications sent to ${data.totalUsers} users!\nEmail: ${data.emailSent}`);
                 } else {
                     throw new Error(data.message || 'Failed to send notifications');
                 }

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FCM Setup Test - KIUMA</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover { background: #45a049; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .token-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        h1 { color: #333; }
+        h2 { color: #666; margin-top: 30px; }
+    </style>
+    
+    <!-- Firebase Cloud Messaging (FCM) -->
+    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-messaging-compat.js"></script>
+    <script src="fcm-config.js"></script>
+    <script src="fcm-init.js"></script>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔔 FCM Setup Verification</h1>
+        <p>This page will test your Firebase Cloud Messaging setup and verify everything is configured correctly.</p>
+        
+        <div id="test-results"></div>
+        
+        <h2>Configuration Check</h2>
+        <div id="config-check"></div>
+        
+        <h2>Actions</h2>
+        <button onclick="runAllTests()">Run All Tests</button>
+        <button onclick="checkConfiguration()">Check Configuration</button>
+        <button onclick="testInitialization()">Test Initialization</button>
+        <button onclick="requestPermission()">Request Permission</button>
+        <button onclick="getToken()">Get FCM Token</button>
+        
+        <h2>FCM Token</h2>
+        <div id="token-display" class="token-display" style="display: none;">
+            <strong>Your FCM Token:</strong><br>
+            <span id="token-value"></span><br><br>
+            <button onclick="copyToken()">Copy Token</button>
+        </div>
+        
+        <h2>Test Results</h2>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('config-check').innerHTML = '';
+        }
+
+        function checkConfiguration() {
+            clearResults();
+            addResult('Checking Firebase configuration...', 'info');
+            
+            try {
+                // Check if config exists
+                if (typeof firebaseConfig === 'undefined') {
+                    addResult('❌ ERROR: firebaseConfig is not defined. Check if fcm-config.js is loaded.', 'error');
+                    return false;
+                }
+                
+                addResult('✅ firebaseConfig is defined', 'success');
+                
+                // Check each field
+                const requiredFields = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId', 'vapidKey'];
+                const configCheck = document.getElementById('config-check');
+                let allValid = true;
+                
+                requiredFields.forEach(field => {
+                    const value = firebaseConfig[field];
+                    const isPlaceholder = /YOUR_.*_HERE/i.test(value);
+                    
+                    if (!value || isPlaceholder) {
+                        addResult(`❌ ${field}: Missing or placeholder value`, 'error');
+                        allValid = false;
+                    } else {
+                        addResult(`✅ ${field}: Configured`, 'success');
+                    }
+                });
+                
+                if (allValid) {
+                    addResult('✅ All configuration values are set!', 'success');
+                } else {
+                    addResult('⚠️ Some configuration values need to be updated. See GET_VAPID_KEY.md for instructions.', 'warning');
+                }
+                
+                return allValid;
+            } catch (error) {
+                addResult(`❌ Error checking configuration: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function testInitialization() {
+            clearResults();
+            addResult('Testing FCM initialization...', 'info');
+            
+            try {
+                // Check Firebase SDK
+                if (typeof firebase === 'undefined') {
+                    addResult('❌ Firebase SDK not loaded', 'error');
+                    return false;
+                }
+                addResult('✅ Firebase SDK loaded', 'success');
+                
+                // Check if initialized
+                if (typeof initializeFCM === 'function') {
+                    addResult('✅ initializeFCM function available', 'success');
+                    const result = await initializeFCM();
+                    if (result) {
+                        addResult('✅ FCM initialized successfully!', 'success');
+                        return true;
+                    } else {
+                        addResult('❌ FCM initialization failed', 'error');
+                        return false;
+                    }
+                } else {
+                    addResult('❌ initializeFCM function not found', 'error');
+                    return false;
+                }
+            } catch (error) {
+                addResult(`❌ Error during initialization: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function requestPermission() {
+            clearResults();
+            addResult('Requesting notification permission...', 'info');
+            
+            try {
+                if (typeof requestNotificationPermission === 'function') {
+                    const result = await requestNotificationPermission();
+                    if (result === 'granted') {
+                        addResult('✅ Notification permission granted!', 'success');
+                        return true;
+                    } else if (result === 'denied') {
+                        addResult('❌ Notification permission denied. Please enable in browser settings.', 'error');
+                        return false;
+                    } else {
+                        addResult(`⚠️ Permission status: ${result}`, 'warning');
+                        return false;
+                    }
+                } else {
+                    addResult('❌ requestNotificationPermission function not found', 'error');
+                    return false;
+                }
+            } catch (error) {
+                addResult(`❌ Error requesting permission: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function getToken() {
+            clearResults();
+            addResult('Getting FCM token...', 'info');
+            
+            try {
+                if (typeof getFCMToken === 'function') {
+                    const token = await getFCMToken();
+                    if (token) {
+                        addResult('✅ FCM token retrieved successfully!', 'success');
+                        document.getElementById('token-display').style.display = 'block';
+                        document.getElementById('token-value').textContent = token;
+                        return token;
+                    } else {
+                        addResult('❌ Failed to get FCM token', 'error');
+                        return null;
+                    }
+                } else {
+                    addResult('❌ getFCMToken function not found', 'error');
+                    return null;
+                }
+            } catch (error) {
+                addResult(`❌ Error getting token: ${error.message}`, 'error');
+                return null;
+            }
+        }
+
+        function copyToken() {
+            const token = document.getElementById('token-value').textContent;
+            navigator.clipboard.writeText(token).then(() => {
+                addResult('✅ Token copied to clipboard!', 'success');
+            }).catch(err => {
+                addResult(`❌ Failed to copy token: ${err.message}`, 'error');
+            });
+        }
+
+        async function runAllTests() {
+            clearResults();
+            addResult('🚀 Running all tests...', 'info');
+            addResult('', 'info');
+            
+            // Test 1: Configuration
+            addResult('=== Test 1: Configuration Check ===', 'info');
+            const configOk = checkConfiguration();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            if (!configOk) {
+                addResult('', 'info');
+                addResult('⚠️ Configuration check failed. Please fix configuration before continuing.', 'warning');
+                return;
+            }
+            
+            // Test 2: Initialization
+            addResult('', 'info');
+            addResult('=== Test 2: FCM Initialization ===', 'info');
+            const initOk = await testInitialization();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            if (!initOk) {
+                addResult('', 'info');
+                addResult('⚠️ Initialization failed. Check browser console for details.', 'warning');
+                return;
+            }
+            
+            // Test 3: Permission
+            addResult('', 'info');
+            addResult('=== Test 3: Notification Permission ===', 'info');
+            const permOk = await requestPermission();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            if (!permOk) {
+                addResult('', 'info');
+                addResult('⚠️ Permission not granted. User needs to allow notifications.', 'warning');
+                return;
+            }
+            
+            // Test 4: Get Token
+            addResult('', 'info');
+            addResult('=== Test 4: Get FCM Token ===', 'info');
+            const token = await getToken();
+            
+            if (token) {
+                addResult('', 'info');
+                addResult('🎉 All tests passed! FCM is ready to use!', 'success');
+            } else {
+                addResult('', 'info');
+                addResult('⚠️ Could not get FCM token. Check VAPID key configuration.', 'warning');
+            }
+        }
+
+        // Auto-run configuration check on load
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                checkConfiguration();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
+

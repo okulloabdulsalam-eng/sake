@@ -27,24 +27,6 @@ define('EMAIL_FROM', 'noreply@kiuma.org');
 define('EMAIL_SUBJECT', 'New Recruit Joined - KIUMA');
 
 // ============================================
-// WHATSAPP CONFIGURATION (Twilio)
-// ============================================
-// WhatsApp number to receive notifications (include country code)
-define('WHATSAPP_TO', '+256703268522');
-
-// Your Twilio WhatsApp number (format: whatsapp:+14155238886)
-// Get this from Twilio Console after setting up WhatsApp Sandbox
-define('WHATSAPP_FROM', ''); // Example: 'whatsapp:+14155238886'
-
-// Twilio Account SID (starts with AC...)
-// Get from: https://console.twilio.com/
-define('TWILIO_ACCOUNT_SID', ''); // Example: 'ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-
-// Twilio Auth Token
-// Get from: https://console.twilio.com/
-define('TWILIO_AUTH_TOKEN', ''); // Your auth token here
-
-// ============================================
 // SMTP CONFIGURATION (Optional - for reliable email)
 // ============================================
 // Leave empty to use PHP mail() function, or configure SMTP for better reliability

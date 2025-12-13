@@ -1,13 +1,12 @@
 <?php
 /**
- * Send notifications to all users via WhatsApp and Email
+ * Send notifications to all users via Email
  * POST: subject, message, notification_id (optional)
  * 
  * This endpoint:
  * 1. Gets all users from database
- * 2. Sends WhatsApp notifications to users with WhatsApp numbers
- * 3. Sends Email notifications to users with emails
- * 4. Updates notification record with sent status
+ * 2. Sends Email notifications to users with emails
+ * 3. Updates notification record with sent status
  */
 
 require_once __DIR__ . '/library_media_config.php';
@@ -56,9 +55,9 @@ try {
     // Get all users from database (MySQL)
     // Note: To include SQLite users too, use get_all_users_combined.php endpoint
     $stmt = $pdo->query("
-        SELECT id, email, whatsapp, firstName, lastName, name 
+        SELECT id, email, firstName, lastName, name 
         FROM users 
-        WHERE (email IS NOT NULL AND email != '') OR (whatsapp IS NOT NULL AND whatsapp != '')
+        WHERE email IS NOT NULL AND email != ''
     ");
     $users = $stmt->fetchAll();
     
@@ -69,20 +68,10 @@ try {
             $sqlite = new PDO('sqlite:' . $sqlitePath);
             $sqlite->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             
-            // Check if whatsapp column exists
-            $pragmaStmt = $sqlite->query("PRAGMA table_info(users)");
-            $columns = $pragmaStmt->fetchAll(PDO::FETCH_COLUMN, 1);
-            $hasWhatsApp = in_array('whatsapp', $columns);
-            
-            $selectCols = ['id', 'email', 'firstName', 'lastName', 'name'];
-            if ($hasWhatsApp) {
-                $selectCols[] = 'whatsapp';
-            }
-            
             $sqliteStmt = $sqlite->query("
-                SELECT " . implode(', ', $selectCols) . "
+                SELECT id, email, firstName, lastName, name
                 FROM users 
-                WHERE (email IS NOT NULL AND email != '') OR " . ($hasWhatsApp ? "(whatsapp IS NOT NULL AND whatsapp != '')" : "1=0") . "
+                WHERE email IS NOT NULL AND email != ''
             ");
             $sqliteUsers = $sqliteStmt->fetchAll(PDO::FETCH_ASSOC);
             
@@ -90,10 +79,6 @@ try {
             $existingEmails = array_column($users, 'email');
             foreach ($sqliteUsers as $sqliteUser) {
                 if (!in_array($sqliteUser['email'] ?? '', $existingEmails)) {
-                    // Ensure whatsapp is set
-                    if (!isset($sqliteUser['whatsapp'])) {
-                        $sqliteUser['whatsapp'] = null;
-                    }
                     $users[] = $sqliteUser;
                 }
             }
@@ -103,8 +88,6 @@ try {
         }
     }
     
-    $whatsappSent = 0;
-    $whatsappFailed = 0;
     $emailSent = 0;
     $emailFailed = 0;
     $results = [];
@@ -114,32 +97,8 @@ try {
         $result = [
             'userId' => $user['id'],
             'name' => $user['name'] ?? ($user['firstName'] . ' ' . $user['lastName']),
-            'whatsapp' => 'not sent',
             'email' => 'not sent'
         ];
-        
-        // Send WhatsApp if available
-        if (!empty($user['whatsapp'])) {
-            // Try to send via WhatsApp API
-            require_once __DIR__ . '/whatsapp_integration.php';
-            $whatsappResult = sendWhatsApp($user['whatsapp'], $message);
-            
-            if ($whatsappResult['success']) {
-                $result['whatsapp'] = 'sent';
-                $whatsappSent++;
-            } else {
-                // Fallback: Prepare WhatsApp link for manual sending
-                $cleanNumber = preg_replace('/[^\d]/', '', $user['whatsapp']);
-                $whatsappUrl = "https://wa.me/{$cleanNumber}?text=" . urlencode($message);
-                $result['whatsapp'] = 'failed';
-                $result['whatsappUrl'] = $whatsappUrl;
-                $result['whatsappError'] = $whatsappResult['message'];
-                $whatsappFailed++;
-                
-                // Log for manual sending or queue processing
-                error_log("WhatsApp notification failed for {$user['whatsapp']}: {$whatsappResult['message']}");
-            }
-        }
         
         // Send Email if available
         if (!empty($user['email'])) {
@@ -164,8 +123,7 @@ try {
     if ($notificationId) {
         $updateStmt = $pdo->prepare("
             UPDATE notifications 
-            SET sent_to_whatsapp = TRUE, 
-                sent_to_email = TRUE, 
+            SET sent_to_email = TRUE, 
                 sent_date = NOW() 
             WHERE id = ?
         ");
@@ -176,12 +134,10 @@ try {
         'success' => true,
         'message' => 'Notifications processed',
         'totalUsers' => count($users),
-        'whatsappSent' => $whatsappSent,
-        'whatsappFailed' => $whatsappFailed,
         'emailSent' => $emailSent,
         'emailFailed' => $emailFailed,
         'results' => $results,
-        'note' => 'Notifications are prepared but not actually sent. Integrate WhatsApp/Email API for actual sending.'
+        'note' => 'Email notifications are prepared. Integrate Email API (SMTP/SendGrid/Mailgun) for actual sending.'
     ]);
     
 } catch (PDOException $e) {
