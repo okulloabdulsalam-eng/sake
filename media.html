@@ -75,7 +75,7 @@
                     <button class="btn btn-secondary" id="adminLoginBtn" onclick="if(typeof window.showAdminLogin==='function')window.showAdminLogin(); else if(typeof showAdminLogin==='function')showAdminLogin();" style="padding: 10px 15px;">
                         <i class="fas fa-lock"></i> Admin Login
                     </button>
-                    <button class="btn btn-primary admin-only" onclick="showAddMediaModal()" style="display: none; padding: 10px 15px;">
+                    <button class="btn btn-primary user-only" id="addMediaBtn" onclick="showAddMediaModal()" style="display: none; padding: 10px 15px;">
                         <i class="fas fa-plus"></i> Add Media
                     </button>
                     <button class="btn btn-secondary admin-logout" onclick="if(typeof window.logoutAdmin==='function')window.logoutAdmin()" style="display: none; padding: 10px 15px;">
@@ -190,14 +190,14 @@
         window.addMedia = async function(e) {
             if (e) e.preventDefault();
             
-            // Check authentication
-            if (typeof requireAdmin === 'function') {
-                const isAdmin = await requireAdmin(() => {});
-                if (!isAdmin) return false;
-            } else {
-                const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
-                if (!adminStatus) {
-                    alert('You must be logged in as admin to add media.');
+            // Check authentication - must be logged in Firebase user
+            const currentUser = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+            if (!currentUser) {
+                // Check localStorage fallback
+                const userData = localStorage.getItem('userData');
+                if (!userData) {
+                    alert('You must be logged in to add media. Please sign in first.');
+                    window.location.href = 'join-us.html';
                     return false;
                 }
             }
@@ -251,8 +251,34 @@
                 // Get current user for uploaded_by
                 const currentUser = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
                 const uploadedBy = currentUser ? (currentUser.email || currentUser.uid) : 'Unknown';
+                const userId = currentUser ? currentUser.uid : null;
 
-                // Save metadata to database
+                // Save to Firebase Firestore
+                let firestoreSaved = false;
+                if (typeof firebase !== 'undefined' && firebase.firestore && currentUser) {
+                    try {
+                        const firestore = firebase.firestore();
+                        await firestore.collection('media_files').add({
+                            store: 'supabase',
+                            publicUrl: uploadResult.downloadURL,
+                            fileType: fileType,
+                            userId: userId,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                            fileName: file.name,
+                            fileSize: file.size,
+                            mimeType: file.type,
+                            storagePath: uploadResult.storagePath,
+                            thumbnailUrl: thumbnailUrl,
+                            description: description || null
+                        });
+                        firestoreSaved = true;
+                        console.log('Saved to Firestore successfully');
+                    } catch (firestoreError) {
+                        console.warn('Firestore save failed (will use PHP API):', firestoreError);
+                    }
+                }
+
+                // Save metadata to database (PHP API - fallback or additional storage)
                 const response = await fetch(API_BASE_URL + '/upload_media.php', {
                     method: 'POST',
                     headers: {
@@ -276,7 +302,7 @@
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnText;
                 
-                if (data.success) {
+                if (data.success || firestoreSaved) {
                     alert('Media uploaded successfully!');
                     window.closeAddMediaModal();
                     loadMediaFromStorage();
@@ -284,6 +310,11 @@
                     // If database save failed, try to delete from storage
                     if (uploadResult.storagePath && typeof deleteFromSupabaseStorage === 'function') {
                         await deleteFromSupabaseStorage(uploadResult.storagePath);
+                    }
+                    // Also delete from Firestore if it was saved there
+                    if (firestoreSaved && typeof firebase !== 'undefined' && firebase.firestore) {
+                        // Note: We'd need the doc ID to delete, but we don't have it
+                        // This is okay - the file in storage is the important cleanup
                     }
                     alert('Error: ' + (data.message || 'Failed to save media metadata'));
                 }
