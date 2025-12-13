@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#757575">
+    <title>Offline - KIUMA</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .offline-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            text-align: center;
+            background: var(--gray);
+        }
+        
+        .offline-icon {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .offline-icon i {
+            font-size: 60px;
+            color: var(--white);
+        }
+        
+        .offline-title {
+            font-size: 28px;
+            color: var(--dark-gray);
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .offline-message {
+            font-size: 16px;
+            color: var(--text-gray);
+            margin-bottom: 30px;
+            line-height: 1.6;
+            max-width: 400px;
+        }
+        
+        .offline-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 300px;
+        }
+        
+        .btn-retry {
+            background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
+            color: var(--white);
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+        
+        .btn-retry:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+        
+        .btn-retry:active {
+            transform: translateY(0);
+        }
+        
+        .btn-home {
+            background: var(--white);
+            color: var(--primary-green);
+            padding: 15px 30px;
+            border: 2px solid var(--primary-green);
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s, color 0.2s;
+        }
+        
+        .btn-home:hover {
+            background: var(--lighter-green);
+        }
+        
+        .connection-status {
+            margin-top: 20px;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .connection-status.offline {
+            background: #FFEBEE;
+            color: #C62828;
+        }
+        
+        .connection-status.online {
+            background: #E8F5E9;
+            color: #2E7D32;
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">
+            <i class="fas fa-wifi"></i>
+        </div>
+        
+        <h1 class="offline-title">You're Offline</h1>
+        
+        <p class="offline-message">
+            It looks like you're not connected to the internet. Some features may not be available, but you can still access cached content.
+        </p>
+        
+        <div class="offline-actions">
+            <button class="btn-retry" onclick="retryConnection()">
+                <i class="fas fa-sync-alt"></i> Try Again
+            </button>
+            <a href="/index.html" class="btn-home">
+                <i class="fas fa-home"></i> Go to Home
+            </a>
+        </div>
+        
+        <div id="connectionStatus" class="connection-status offline">
+            <i class="fas fa-circle"></i> Offline
+        </div>
+    </div>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        // Check connection status
+        function updateConnectionStatus() {
+            const statusEl = document.getElementById('connectionStatus');
+            
+            if (navigator.onLine) {
+                statusEl.className = 'connection-status online';
+                statusEl.innerHTML = '<i class="fas fa-circle"></i> Online';
+            } else {
+                statusEl.className = 'connection-status offline';
+                statusEl.innerHTML = '<i class="fas fa-circle"></i> Offline';
+            }
+        }
+        
+        // Retry connection
+        function retryConnection() {
+            if (navigator.onLine) {
+                // If online, try to go back or reload
+                if (window.history.length > 1) {
+                    window.history.back();
+                } else {
+                    window.location.href = '/index.html';
+                }
+            } else {
+                // Still offline, just reload the page
+                window.location.reload();
+            }
+        }
+        
+        // Listen for online/offline events
+        window.addEventListener('online', () => {
+            updateConnectionStatus();
+            // Auto-redirect to home when back online
+            setTimeout(() => {
+                window.location.href = '/index.html';
+            }, 1000);
+        });
+        
+        window.addEventListener('offline', updateConnectionStatus);
+        
+        // Initial status check
+        updateConnectionStatus();
+        
+        // Check status every 5 seconds
+        setInterval(updateConnectionStatus, 5000);
+    </script>
+</body>
+</html>
+

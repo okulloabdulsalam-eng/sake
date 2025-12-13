@@ -27,7 +27,7 @@
             <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
             <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
             <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
-            <li><a href="join-us.html" class="nav-link"><i class="fas fa-user-circle"></i> My Account</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
         </ul>
     </nav>
 
@@ -36,7 +36,8 @@
             <div class="header-content">
                 <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
                 <div class="logo-container">
-                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
+                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; this.nextElementSibling.nextElementSibling.style.display='block';" onload="this.style.display='block'; this.nextElementSibling.nextElementSibling.style.display='none';">
+                    <span class="header-text">KIUMA</span>
                     <svg class="header-logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="display: none;">
                         <circle cx="100" cy="100" r="95" fill="none" stroke="#4CAF50" stroke-width="4"/>
                         <path id="topArc" d="M 20,100 A 80,80 0 0,1 180,100" fill="none"/>
@@ -72,7 +73,7 @@
             <section class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <h2 class="page-title">Media Gallery</h2>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button class="btn btn-secondary" id="adminLoginBtn" onclick="if(typeof window.showAdminLogin==='function')window.showAdminLogin(); else if(typeof showAdminLogin==='function')showAdminLogin();" style="padding: 10px 15px;">
+                    <button class="btn btn-secondary" id="adminLoginBtn" onclick="showAdminLogin()" style="padding: 10px 15px;">
                         <i class="fas fa-lock"></i> Admin Login
                     </button>
                     <button class="btn btn-primary admin-only" onclick="showAddMediaModal()" style="display: none; padding: 10px 15px;">
@@ -98,7 +99,7 @@
 
                 <div class="info-card" style="margin-top: 20px;">
                     <h3><i class="fas fa-info-circle"></i> About Media Gallery</h3>
-                    <p>Browse through our collection of videos, audio files, and images. All media files are stored securely on Firebase Storage and available for download.</p>
+                    <p>Browse through our collection of videos, audio files, and images. All media files are stored securely on Google Drive and available for download.</p>
                 </div>
             </section>
         </main>
@@ -108,48 +109,26 @@
             <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
             <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
             <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
-            <a href="join-us.html" class="nav-item" id="accountNavItem"><i class="fas fa-user-circle"></i><span id="accountNavText">Account</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
         </nav>
     </div>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-storage-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-messaging-compat.js"></script>
-    
-    <!-- Firebase Configuration and Helpers -->
-    <script src="fcm-config.js"></script>
-    <script src="firebase-auth.js"></script>
-    <script src="firebase-storage.js"></script>
-    
-    <!-- API Config and Scripts -->
     <script src="api-config.js"></script>
     <script src="script.js"></script>
     <script>
-        window.showAddMediaModal = async function() {
-            // Check if user is authenticated and is admin
-            if (typeof requireAdmin === 'function') {
-                await requireAdmin(() => {
-                    const modal = document.getElementById('addMediaModal');
-                    if (modal) {
-                        modal.style.display = 'flex';
-                    }
-                });
-            } else {
-                const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
-                if (!adminStatus) {
-                    if (typeof window.showAdminLogin === 'function') {
-                        window.showAdminLogin();
-                    } else {
-                        alert('Please login as admin first.');
-                    }
-                    return;
+        window.showAddMediaModal = function() {
+            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+            if (!adminStatus) {
+                if (typeof window.showAdminLogin === 'function') {
+                    window.showAdminLogin();
+                } else {
+                    alert('Please login as admin first.');
                 }
-                const modal = document.getElementById('addMediaModal');
-                if (modal) {
-                    modal.style.display = 'flex';
-                }
+                return;
+            }
+            const modal = document.getElementById('addMediaModal');
+            if (modal) {
+                modal.style.display = 'flex';
             }
         };
 
@@ -181,19 +160,13 @@
             loadMediaFromStorage(type);
         };
 
-        window.addMedia = async function(e) {
+        window.addMedia = function(e) {
             if (e) e.preventDefault();
             
-            // Check authentication
-            if (typeof requireAdmin === 'function') {
-                const isAdmin = await requireAdmin(() => {});
-                if (!isAdmin) return false;
-            } else {
-                const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
-                if (!adminStatus) {
-                    alert('You must be logged in as admin to add media.');
-                    return false;
-                }
+            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+            if (!adminStatus) {
+                alert('You must be logged in as admin to add media.');
+                return false;
             }
 
             const fileInput = document.getElementById('mediaFile');
@@ -204,69 +177,21 @@
                 return false;
             }
 
-            const file = fileInput.files[0];
-            const description = descriptionInput ? descriptionInput.value.trim() : '';
-            const fileType = getFileTypeCategory(file.type);
-            const folder = `media/${fileType}s`;
+            const formData = new FormData();
+            formData.append('mediaFile', fileInput.files[0]);
+            formData.append('description', descriptionInput ? descriptionInput.value.trim() : '');
 
             const submitBtn = document.querySelector('#addMediaForm button[type="submit"]');
             const originalBtnText = submitBtn.innerHTML;
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
 
-            try {
-                // Upload to Firebase Storage
-                const uploadResult = await uploadToFirebaseStorage(file, folder, (progress) => {
-                    submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Uploading... ${Math.round(progress)}%`;
-                });
-
-                if (!uploadResult.success) {
-                    throw new Error(uploadResult.error || 'Upload failed');
-                }
-
-                // Generate thumbnail for images
-                let thumbnailUrl = null;
-                if (fileType === 'image' && typeof generateThumbnail === 'function') {
-                    try {
-                        const thumbnailFile = await generateThumbnail(file);
-                        const thumbnailResult = await uploadToFirebaseStorage(thumbnailFile, `media/thumbnails`);
-                        if (thumbnailResult.success) {
-                            thumbnailUrl = thumbnailResult.downloadURL;
-                        }
-                    } catch (thumbError) {
-                        console.warn('Thumbnail generation failed:', thumbError);
-                        // Use main image as thumbnail
-                        thumbnailUrl = uploadResult.downloadURL;
-                    }
-                } else if (fileType === 'image') {
-                    thumbnailUrl = uploadResult.downloadURL;
-                }
-
-                // Get current user for uploaded_by
-                const currentUser = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
-                const uploadedBy = currentUser ? (currentUser.email || currentUser.uid) : 'Unknown';
-
-                // Save metadata to database
-                const response = await fetch(API_BASE_URL + '/upload_media.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        file_name: file.name,
-                        download_url: uploadResult.downloadURL,
-                        file_type: fileType,
-                        mime_type: file.type,
-                        file_size: file.size,
-                        description: description,
-                        thumbnail_url: thumbnailUrl,
-                        storage_path: uploadResult.storagePath,
-                        uploaded_by: uploadedBy
-                    })
-                });
-
-                const data = await response.json();
-                
+            fetch(API_BASE_URL + '/upload_media.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnText;
                 
@@ -275,103 +200,55 @@
                     window.closeAddMediaModal();
                     loadMediaFromStorage();
                 } else {
-                    // If database save failed, try to delete from storage
-                    if (uploadResult.storagePath && typeof deleteFromFirebaseStorage === 'function') {
-                        await deleteFromFirebaseStorage(uploadResult.storagePath);
-                    }
-                    alert('Error: ' + (data.message || 'Failed to save media metadata'));
+                    alert('Error: ' + (data.message || 'Failed to upload media'));
                 }
-            } catch (error) {
+            })
+            .catch(error => {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnText;
                 console.error('Error:', error);
-                alert('Error uploading media: ' + error.message);
-            }
+                alert('Error uploading media. Please try again.');
+            });
         };
 
-        window.deleteMedia = async function(mediaId) {
-            // Check authentication
-            if (typeof requireAdmin === 'function') {
-                const isAdmin = await requireAdmin(() => {});
-                if (!isAdmin) return;
-            } else {
-                const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
-                if (!adminStatus) {
-                    alert('You must be logged in as admin to delete media.');
-                    return;
-                }
+        window.deleteMedia = function(mediaId) {
+            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+            if (!adminStatus) {
+                alert('You must be logged in as admin to delete media.');
+                return;
             }
             
             if (!confirm('Are you sure you want to delete this media file?')) {
                 return;
             }
             
-            try {
-                // First, get media info to get storage path
-                const response = await fetch(API_BASE_URL + '/get_media.php');
-                const data = await response.json();
-                
-                if (!data.success || !data.media) {
-                    throw new Error('Failed to fetch media information');
-                }
-                
-                const media = data.media.find(m => m.id == mediaId);
-                if (!media) {
-                    throw new Error('Media not found');
-                }
-                
-                const storagePath = media.drive_file_id; // Storage path is stored in drive_file_id column
-                
-                // Delete from Firebase Storage if path exists
-                if (storagePath && typeof deleteFromFirebaseStorage === 'function') {
-                    try {
-                        await deleteFromFirebaseStorage(storagePath);
-                    } catch (storageError) {
-                        console.warn('Error deleting from Firebase Storage:', storageError);
-                        // Continue with database deletion even if storage deletion fails
-                    }
-                }
-                
-                // Get Firebase ID token for authentication
-                let authToken = null;
-                if (typeof getCurrentUser === 'function') {
-                    const user = getCurrentUser();
-                    if (user) {
-                        authToken = await user.getIdToken();
-                    }
-                }
-                
-                // Delete from database
-                const deleteResponse = await fetch(API_BASE_URL + '/delete_media.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
-                    },
-                    body: JSON.stringify({
-                        id: mediaId,
-                        password: localStorage.getItem('adminPassword') || '' // Fallback for compatibility
-                    })
-                });
-                
-                const deleteData = await deleteResponse.json();
-                
-                if (deleteData.success) {
+            const adminPassword = prompt('Enter admin password to confirm deletion:');
+            if (!adminPassword) {
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('id', mediaId);
+            formData.append('password', adminPassword);
+            
+            fetch(API_BASE_URL + '/delete_media.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
                     alert('Media deleted successfully!');
                     loadMediaFromStorage();
                 } else {
-                    alert('Error: ' + (deleteData.message || 'Failed to delete media'));
+                    alert('Error: ' + (data.message || 'Failed to delete media'));
                 }
-            } catch (error) {
+            })
+            .catch(error => {
                 console.error('Error:', error);
-                alert('Error deleting media: ' + error.message);
-            }
+                alert('Error deleting media. Please try again.');
+            });
         };
-
-        // Check if we're on GitHub Pages (no PHP backend)
-        function isGitHubPages() {
-            return window.location.hostname.includes('github.io');
-        }
 
         function loadMediaFromStorage(type = 'all') {
             const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
@@ -380,32 +257,10 @@
             if (!mediaGrid) return;
             
             mediaGrid.innerHTML = '';
-
-            // If on GitHub Pages, show sample/placeholder content
-            if (isGitHubPages()) {
-                showGitHubPagesMedia(mediaGrid, type);
-                return;
-            }
             
             const url = type === 'all' ? (API_BASE_URL + '/get_media.php') : (API_BASE_URL + `/get_media.php?type=${type}`);
             fetch(url)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    
-                    const contentType = response.headers.get('content-type');
-                    if (!contentType || !contentType.includes('application/json')) {
-                        return response.text().then(text => {
-                            if (text.trim().startsWith('<?php') || text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
-                                throw new Error('PHP backend not available. Media gallery requires a PHP server.');
-                            }
-                            throw new Error(`Expected JSON but got ${contentType || 'unknown content type'}.`);
-                        });
-                    }
-                    
-                    return response.json();
-                })
+                .then(response => response.json())
                 .then(data => {
                     if (data.success && data.media) {
                         if (data.media.length === 0) {
@@ -414,7 +269,40 @@
                         }
                         
                         data.media.forEach(media => {
-                            renderMediaItem(mediaGrid, media, adminStatus);
+                            const mediaItem = document.createElement('div');
+                            mediaItem.className = 'media-item';
+                            mediaItem.dataset.type = media.file_type;
+                            
+                            const safeName = (media.file_name || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+                            const safeDesc = (media.description || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+                            // Use proxy download endpoint for direct download
+                            const downloadLink = media.id ? (API_BASE_URL + '/download_media.php?id=' + media.id) : '';
+                            const thumbnail = media.thumbnail_url || '';
+                            
+                            let preview = '';
+                            if (media.file_type === 'video') {
+                                preview = `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, #f44336, #d32f2f); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-video"></i></div>`;
+                            } else if (media.file_type === 'audio') {
+                                preview = `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, #9C27B0, #7B1FA2); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-music"></i></div>`;
+                            } else if (media.file_type === 'image' && thumbnail) {
+                                preview = `<img src="${thumbnail}" alt="${safeName}" style="width: 100%; height: 200px; object-fit: cover;">`;
+                            } else {
+                                preview = `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, #2196F3, #1976D2); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-image"></i></div>`;
+                            }
+                            
+                            mediaItem.innerHTML = `
+                                <div style="width: 100%; height: 100%; position: relative; border-radius: 8px; overflow: hidden; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column;">
+                                    ${preview}
+                                    <div style="padding: 12px; flex: 1; display: flex; flex-direction: column;">
+                                        <h4 style="margin: 0 0 5px 0; font-size: 14px; font-weight: 600; color: var(--dark-gray); line-height: 1.3;">${safeName}</h4>
+                                        ${safeDesc ? `<p style="margin: 5px 0 0 0; font-size: 11px; color: var(--text-gray); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${safeDesc}</p>` : ''}
+                                        ${downloadLink ? `<a href="${downloadLink}" download="${safeName}" style="margin-top: 10px; padding: 8px 12px; background: var(--primary-green); color: white; text-decoration: none; border-radius: 5px; text-align: center; font-size: 12px; display: inline-block;"><i class="fas fa-download"></i> Download</a>` : ''}
+                                    </div>
+                                    ${adminStatus ? `<button onclick="deleteMedia('${media.id}')" style="position: absolute; top: 8px; right: 8px; background: #f44336; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); font-size: 14px; z-index: 10;"><i class="fas fa-trash"></i></button>` : ''}
+                                </div>
+                            `;
+                            
+                            mediaGrid.appendChild(mediaItem);
                         });
                     } else {
                         mediaGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;"><i class="fas fa-folder-open" style="font-size: 48px; margin-bottom: 10px; opacity: 0.5;"></i><p>No media files found</p></div>';
@@ -422,74 +310,8 @@
                 })
                 .catch(error => {
                     console.error('Error loading media:', error);
-                    showGitHubPagesMedia(mediaGrid, type);
+                    mediaGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #f44336;"><i class="fas fa-exclamation-triangle"></i><p>Error loading media files</p></div>';
                 });
-        }
-
-        function showGitHubPagesMedia(mediaGrid, type) {
-            // Sample media for demo/GitHub Pages
-            const sampleMedia = [
-                { id: 1, file_name: 'Quran Recitation', file_type: 'audio', description: 'Beautiful Quran recitation by KIUMA members', thumbnail_url: '' },
-                { id: 2, file_name: 'Jummah Khutbah', file_type: 'video', description: 'Weekly Friday sermon recording', thumbnail_url: '' },
-                { id: 3, file_name: 'Ramadan Event 2025', file_type: 'image', description: 'Photos from our Ramadan iftar gathering', thumbnail_url: 'https://images.unsplash.com/photo-1564769625905-50e93615e769?w=400' },
-                { id: 4, file_name: 'Islamic Lecture Series', file_type: 'audio', description: 'Weekly lecture on Islamic jurisprudence', thumbnail_url: '' },
-                { id: 5, file_name: 'Campus Mosque Photos', file_type: 'image', description: 'Beautiful photos of our campus mosque', thumbnail_url: 'https://images.unsplash.com/photo-1519817650390-64a93db51149?w=400' }
-            ];
-
-            const filtered = type === 'all' ? sampleMedia : sampleMedia.filter(m => m.file_type === type);
-            
-            if (filtered.length === 0) {
-                mediaGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;"><i class="fas fa-folder-open" style="font-size: 48px; margin-bottom: 10px; opacity: 0.5;"></i><p>No media files in this category</p></div>';
-                return;
-            }
-
-            mediaGrid.innerHTML = `
-                <div style="grid-column: 1/-1; background: #E3F2FD; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
-                    <i class="fas fa-info-circle" style="color: #1976D2;"></i>
-                    <span style="color: #1976D2; font-size: 14px;"> Demo Mode - Sample media shown. Full media requires PHP backend.</span>
-                </div>
-            `;
-
-            filtered.forEach(media => {
-                renderMediaItem(mediaGrid, media, false, true);
-            });
-        }
-
-        function renderMediaItem(mediaGrid, media, adminStatus, isDemo = false) {
-            const mediaItem = document.createElement('div');
-            mediaItem.className = 'media-item';
-            mediaItem.dataset.type = media.file_type;
-            
-            const safeName = (media.file_name || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
-            const safeDesc = (media.description || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
-            const downloadLink = !isDemo && media.id ? (API_BASE_URL + '/download_media.php?id=' + media.id) : '';
-            const thumbnail = media.thumbnail_url || '';
-            
-            let preview = '';
-            if (media.file_type === 'video') {
-                preview = `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, #f44336, #d32f2f); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-video"></i></div>`;
-            } else if (media.file_type === 'audio') {
-                preview = `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, #9C27B0, #7B1FA2); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-music"></i></div>`;
-            } else if (media.file_type === 'image' && thumbnail) {
-                preview = `<img src="${thumbnail}" alt="${safeName}" style="width: 100%; height: 200px; object-fit: cover;" onerror="this.parentElement.innerHTML='<div style=\\'width: 100%; height: 200px; background: linear-gradient(135deg, #2196F3, #1976D2); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;\\'><i class=\\'fas fa-image\\'></i></div>'">`;
-            } else {
-                preview = `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, #2196F3, #1976D2); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-image"></i></div>`;
-            }
-            
-            mediaItem.innerHTML = `
-                <div style="width: 100%; height: 100%; position: relative; border-radius: 8px; overflow: hidden; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column;">
-                    ${preview}
-                    <div style="padding: 12px; flex: 1; display: flex; flex-direction: column;">
-                        <h4 style="margin: 0 0 5px 0; font-size: 14px; font-weight: 600; color: var(--dark-gray); line-height: 1.3;">${safeName}</h4>
-                        ${safeDesc ? `<p style="margin: 5px 0 0 0; font-size: 11px; color: var(--text-gray); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${safeDesc}</p>` : ''}
-                        ${downloadLink ? `<a href="${downloadLink}" download="${safeName}" style="margin-top: 10px; padding: 8px 12px; background: var(--primary-green); color: white; text-decoration: none; border-radius: 5px; text-align: center; font-size: 12px; display: inline-block;"><i class="fas fa-download"></i> Download</a>` : ''}
-                        ${isDemo ? `<span style="margin-top: 10px; padding: 8px 12px; background: #E0E0E0; color: #666; border-radius: 5px; text-align: center; font-size: 12px; display: inline-block;"><i class="fas fa-eye"></i> Preview Only</span>` : ''}
-                    </div>
-                    ${adminStatus && !isDemo ? `<button onclick="deleteMedia('${media.id}')" style="position: absolute; top: 8px; right: 8px; background: #f44336; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); font-size: 14px; z-index: 10;"><i class="fas fa-trash"></i></button>` : ''}
-                </div>
-            `;
-            
-            mediaGrid.appendChild(mediaItem);
         }
 
         window.addEventListener('DOMContentLoaded', function() {

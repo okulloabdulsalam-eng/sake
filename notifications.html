@@ -6,15 +6,6 @@
     <title>Notifications - KIUMA</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Firebase SDK -->
-    <!-- Using compat version for compatibility with service worker -->
-    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-messaging-compat.js"></script>
-    <script src="fcm-config.js"></script>
-    <script src="firebase-auth.js"></script>
-    <script src="fcm-init.js"></script>
 </head>
 <body>
     <nav class="nav-menu" id="navMenu">
@@ -36,7 +27,7 @@
             <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
             <li><a href="notifications.html" class="nav-link active"><i class="fas fa-bell"></i> Notifications</a></li>
             <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
-            <li><a href="join-us.html" class="nav-link"><i class="fas fa-user-circle"></i> My Account</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
         </ul>
     </nav>
 
@@ -45,7 +36,8 @@
             <div class="header-content">
                 <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
                 <div class="logo-container">
-                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
+                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; this.nextElementSibling.nextElementSibling.style.display='block';" onload="this.style.display='block'; this.nextElementSibling.nextElementSibling.style.display='none';">
+                    <span class="header-text">KIUMA</span>
                     <svg class="header-logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="display: none;">
                         <circle cx="100" cy="100" r="95" fill="none" stroke="#4CAF50" stroke-width="4"/>
                         <path id="topArc" d="M 20,100 A 80,80 0 0,1 180,100" fill="none"/>
@@ -91,9 +83,6 @@
             <section class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <h2 class="page-title">Notifications</h2>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button class="btn btn-primary" onclick="requestNotificationPermission()" style="padding: 10px 15px; background: #4CAF50;">
-                        <i class="fas fa-bell"></i> Enable Push Notifications
-                    </button>
                     <button class="btn btn-secondary" id="adminLoginBtn" onclick="showAdminLogin()" style="padding: 10px 15px;">
                         <i class="fas fa-lock"></i> Admin Login
                     </button>
@@ -108,11 +97,11 @@
 
             <section class="page-content">
                 <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                    <button class="btn btn-primary filter-btn active" id="filterAll" style="flex: 1; padding: 12px;" onclick="filterNotifications('all')">All</button>
-                    <button class="btn btn-outline filter-btn" id="filterUnread" style="flex: 1; padding: 12px;" onclick="filterNotifications('unread')">Unread <span id="unreadBadge" class="badge" style="background: #f44336; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; margin-left: 5px;">0</span></button>
+                    <button class="btn btn-primary" style="flex: 1; padding: 12px;" onclick="filterNotifications('all')">All</button>
+                    <button class="btn btn-outline" style="flex: 1; padding: 12px;" onclick="filterNotifications('unread')">Unread</button>
                 </div>
 
-                <div class="notification-item" data-status="unread" data-id="ramadan-welcome">
+                <div class="notification-item" data-status="unread">
                     <div class="notification-icon">
                         <i class="fas fa-calendar-check"></i>
                     </div>
@@ -123,7 +112,7 @@
                     </div>
                 </div>
 
-                <div class="notification-item" data-status="unread" data-id="quran-study">
+                <div class="notification-item" data-status="unread">
                     <div class="notification-icon">
                         <i class="fas fa-book"></i>
                     </div>
@@ -134,7 +123,7 @@
                     </div>
                 </div>
 
-                <div class="notification-item" data-status="read" data-id="donation-thanks">
+                <div class="notification-item" data-status="read">
                     <div class="notification-icon">
                         <i class="fas fa-hand-holding-heart"></i>
                     </div>
@@ -145,7 +134,7 @@
                     </div>
                 </div>
 
-                <div class="notification-item" data-status="read" data-id="prayer-reminder">
+                <div class="notification-item" data-status="read">
                     <div class="notification-icon">
                         <i class="fas fa-clock"></i>
                     </div>
@@ -156,7 +145,7 @@
                     </div>
                 </div>
 
-                <div class="notification-item" data-status="read" data-id="community-iftar">
+                <div class="notification-item" data-status="read">
                     <div class="notification-icon">
                         <i class="fas fa-users"></i>
                     </div>
@@ -167,7 +156,7 @@
                     </div>
                 </div>
 
-                <div class="notification-item" data-status="read" data-id="online-course">
+                <div class="notification-item" data-status="read">
                     <div class="notification-icon">
                         <i class="fas fa-graduation-cap"></i>
                     </div>
@@ -196,7 +185,7 @@
             <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
             <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
             <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
-            <a href="join-us.html" class="nav-item" id="accountNavItem"><i class="fas fa-user-circle"></i><span id="accountNavText">Account</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
         </nav>
     </div>
 
@@ -257,64 +246,8 @@
             }
         });
 
-        // Get read notification IDs from localStorage
-        function getReadNotifications() {
-            return JSON.parse(localStorage.getItem('readNotifications') || '[]');
-        }
-
-        // Save read notification ID to localStorage
-        function markNotificationAsRead(id) {
-            const readNotifications = getReadNotifications();
-            if (!readNotifications.includes(id)) {
-                readNotifications.push(id);
-                localStorage.setItem('readNotifications', JSON.stringify(readNotifications));
-            }
-        }
-
-        // Update unread badge count
-        function updateUnreadBadge() {
-            const unreadCount = document.querySelectorAll('.notification-item[data-status="unread"]').length;
-            const badge = document.getElementById('unreadBadge');
-            const headerBadge = document.querySelector('.notifications-btn .badge');
-            
-            if (badge) {
-                badge.textContent = unreadCount;
-                badge.style.display = unreadCount > 0 ? 'inline' : 'none';
-            }
-            if (headerBadge) {
-                headerBadge.textContent = unreadCount;
-                headerBadge.style.display = unreadCount > 0 ? 'inline' : 'none';
-            }
-        }
-
-        // Initialize notification read status from localStorage
-        function initNotificationStatus() {
-            const readNotifications = getReadNotifications();
-            document.querySelectorAll('.notification-item').forEach((item, index) => {
-                const id = item.dataset.id || `notif-${index}`;
-                item.dataset.id = id;
-                
-                if (readNotifications.includes(id)) {
-                    item.dataset.status = 'read';
-                    item.style.opacity = '0.7';
-                }
-            });
-            updateUnreadBadge();
-        }
-
         function filterNotifications(status) {
             const items = Array.from(document.querySelectorAll('.notification-item'));
-            
-            // Update active button state
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('active', 'btn-primary');
-                btn.classList.add('btn-outline');
-            });
-            const activeBtn = status === 'all' ? document.getElementById('filterAll') : document.getElementById('filterUnread');
-            if (activeBtn) {
-                activeBtn.classList.add('active', 'btn-primary');
-                activeBtn.classList.remove('btn-outline');
-            }
             
             // Sort items before filtering:
             // 1. Unread first
@@ -348,24 +281,13 @@
         }
 
         // Mark as read on click
-        function setupNotificationClickHandlers() {
-            document.querySelectorAll('.notification-item').forEach((item, index) => {
-                item.addEventListener('click', function() {
-                    if (this.dataset.status === 'unread') {
-                        this.dataset.status = 'read';
-                        this.style.opacity = '0.7';
-                        const id = this.dataset.id || `notif-${index}`;
-                        markNotificationAsRead(id);
-                        updateUnreadBadge();
-                    }
-                });
+        document.querySelectorAll('.notification-item').forEach(item => {
+            item.addEventListener('click', function() {
+                if (this.dataset.status === 'unread') {
+                    this.dataset.status = 'read';
+                    this.style.opacity = '0.7';
+                }
             });
-        }
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            initNotificationStatus();
-            setupNotificationClickHandlers();
         });
 
         window.showAddNotificationModal = function() {
@@ -404,15 +326,7 @@
 
         window.addNotification = async function(e) {
             e.preventDefault();
-            
-            // Check authentication using Firebase Auth
-            if (typeof requireAdmin === 'function') {
-                const isAdmin = await requireAdmin(() => {});
-                if (!isAdmin) {
-                    alert('You must be logged in as admin to add notifications.');
-                    return;
-                }
-            } else if (!isAdminLoggedIn) {
+            if (!isAdminLoggedIn) {
                 alert('You must be logged in as admin to add notifications.');
                 return;
             }
@@ -509,7 +423,7 @@
                 alert('Notification saved successfully!');
                 
                 // Optionally send to all users
-                if (confirm('Do you want to send this notification to all users via Email?')) {
+                if (confirm('Do you want to send this notification to all users via WhatsApp and Email?')) {
                     sendNotificationToAllUsers(title, message, data.notification.id);
                 }
                 
@@ -540,7 +454,7 @@
             return date.toLocaleDateString();
         }
 
-        // Load notifications from database and localStorage on page load
+        // Load notifications from database and localStorage on page load (with offline support)
         async function loadNotificationsFromStorage() {
             const notificationsContainer = document.querySelector('.page-content');
             
@@ -548,59 +462,58 @@
             const existingStored = Array.from(notificationsContainer.querySelectorAll('.notification-item[data-id]'));
             existingStored.forEach(item => item.remove());
             
-            // Try to load from database first (only if not on static hosting)
+            // Try to load from cache first (offline support)
+            const cachedNotifications = localStorage.getItem('notificationsData');
+            if (cachedNotifications) {
+                try {
+                    const notifications = JSON.parse(cachedNotifications);
+                    displayNotifications(notifications, notificationsContainer);
+                    console.log('[Notifications] Loaded from cache');
+                } catch (e) {
+                    console.warn('[Notifications] Failed to parse cached notifications:', e);
+                }
+            }
+            
+            // If offline, use cached data only
+            if (!navigator.onLine) {
+                console.log('[Notifications] Offline - using cached data');
+                return;
+            }
+            
+            // Try to load from database (if online)
             try {
                 const API_BASE_URL = window.API_BASE_URL || '/api';
-                const response = await fetch(API_BASE_URL + '/get_notifications.php');
-                if (!response.ok) throw new Error('API not available');
+                const response = await fetch(API_BASE_URL + '/get_notifications.php', {
+                    cache: 'no-cache',
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
                 const data = await response.json();
                 
                 if (data.success && data.notifications) {
-                    // Load from database
-                    const sortedNotifications = data.notifications.sort((a, b) => {
-                        // Unread first
-                        if (a.is_read === 0 && b.is_read !== 0) return -1;
-                        if (a.is_read !== 0 && b.is_read === 0) return 1;
-                        // Then by date (newest first)
-                        return new Date(b.created_date) - new Date(a.created_date);
-                    });
+                    // Process and cache notifications
+                    const processedNotifications = data.notifications.map(notif => ({
+                        id: notif.id,
+                        title: notif.title,
+                        message: notif.message,
+                        type: notif.type,
+                        icon: notif.type === 'white_days' ? 'fas fa-moon' : 
+                              notif.type === 'fasting' ? 'fas fa-calendar-check' : 'fas fa-bell',
+                        date: notif.created_date,
+                        isRead: notif.is_read === 1
+                    }));
                     
-                    sortedNotifications.forEach(notif => {
-                        const newNotification = document.createElement('div');
-                        newNotification.className = 'notification-item';
-                        newNotification.dataset.status = notif.is_read ? 'read' : 'unread';
-                        newNotification.dataset.id = notif.id;
-                        newNotification.innerHTML = `
-                            <div class="notification-icon">
-                                <i class="fas fa-bell"></i>
-                            </div>
-                            <div class="notification-content">
-                                <h4>${notif.title}</h4>
-                                <p>${notif.message}</p>
-                                <span class="notification-time">${formatTimeAgo(notif.created_date)}</span>
-                            </div>
-                        `;
-                        
-                        const firstNotification = notificationsContainer.querySelector('.notification-item');
-                        if (firstNotification) {
-                            notificationsContainer.insertBefore(newNotification, firstNotification);
-                        } else {
-                            notificationsContainer.appendChild(newNotification);
-                        }
-                        
-                        // Mark as read on click
-                        newNotification.addEventListener('click', function() {
-                            if (this.dataset.status === 'unread') {
-                                this.dataset.status = 'read';
-                                this.style.opacity = '0.7';
-                            }
-                        });
-                    });
+                    // Save to cache
+                    localStorage.setItem('notificationsData', JSON.stringify(processedNotifications));
                     
-                    return; // Successfully loaded from database
+                    // Display notifications using helper function
+                    displayNotifications(processedNotifications, notificationsContainer);
+                    console.log('[Notifications] Loaded from server and cached');
+                    return;
                 }
             } catch (error) {
-                console.log('Database not available, loading from localStorage:', error);
+                console.log('Database not available, using cached data:', error);
+                // Already loaded from cache above, so just return
+                return;
             }
             
             // Fallback to localStorage
@@ -682,7 +595,7 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    alert(`Notifications sent to ${data.totalUsers} users!\nEmail: ${data.emailSent}`);
+                    alert(`Notifications sent to ${data.totalUsers} users!\nWhatsApp: ${data.whatsappSent}\nEmail: ${data.emailSent}`);
                 } else {
                     throw new Error(data.message || 'Failed to send notifications');
                 }
