@@ -166,6 +166,50 @@
                         <p><strong>Type:</strong> <span id="selectedType"></span></p>
                     </div>
 
+                    <!-- Subscription Form (for Semester/Monthly Subscriptions) -->
+                    <div id="subscriptionForm" style="display: none;">
+                        <h3 class="section-title" style="margin-bottom: 20px;">Subscription Details</h3>
+                        
+                        <!-- Reason for Donation -->
+                        <div class="form-group">
+                            <label class="form-label">Reason for Donation <span style="color: #F44336;">*</span></label>
+                            <select class="form-input" id="subscriptionReason" required>
+                                <option value="">Select reason for donation</option>
+                                <option value="general-donation">General Donation</option>
+                                <option value="iftar">Iftar</option>
+                                <option value="bananas">Bananas</option>
+                                <option value="mosque-building-fund">Mosque Building Fund</option>
+                                <option value="kizumu-tahfiz-charity-visit">Kizumu Tahfiz Charity Visit</option>
+                                <option value="tuition-for-brothers">Tuition for Brothers</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+
+                        <!-- Name Input -->
+                        <div class="form-group">
+                            <label class="form-label">Full Name <span style="color: #F44336;">*</span></label>
+                            <input type="text" class="form-input" id="subscriptionName" placeholder="Enter your full name" required>
+                        </div>
+
+                        <!-- Registration Number (for Students) -->
+                        <div class="form-group" id="regNumberGroup" style="display: none;">
+                            <label class="form-label">Registration Number <span style="color: #F44336;">*</span></label>
+                            <input type="text" class="form-input" id="regNumber" placeholder="Enter your registration number" required>
+                        </div>
+
+                        <!-- Course (for Students) -->
+                        <div class="form-group" id="courseGroup" style="display: none;">
+                            <label class="form-label">Course <span style="color: #F44336;">*</span></label>
+                            <input type="text" class="form-input" id="course" placeholder="Enter your course" required>
+                        </div>
+
+                        <!-- Faculty/Department (for Lecturers) -->
+                        <div class="form-group" id="facultyGroup" style="display: none;">
+                            <label class="form-label">Faculty/Department <span style="color: #F44336;">*</span></label>
+                            <input type="text" class="form-input" id="faculty" placeholder="Enter your faculty or department" required>
+                        </div>
+                    </div>
+
                     <!-- Notice for Amir Communication -->
                     <div class="info-card" id="amirNotice" style="display: none; background: #E3F2FD; border-left: 4px solid #2196F3; margin-bottom: 20px;">
                         <h4 style="color: #1976D2; margin-bottom: 10px;">
@@ -488,6 +532,14 @@
             document.getElementById('paymentForm').style.display = 'block';
             document.getElementById('customAmountGroup').style.display = 'none';
             document.getElementById('selectedPlanInfo').style.display = 'block';
+            document.getElementById('subscriptionForm').style.display = 'block';
+            
+            // Hide other form groups
+            document.getElementById('amirNotice').style.display = 'none';
+            document.getElementById('donationTypeGroup').style.display = 'none';
+            document.getElementById('reasonGroup').style.display = 'none';
+            document.getElementById('amirWhatsAppGroup').style.display = 'none';
+            document.getElementById('amirDaawaNotice').style.display = 'none';
 
             // Update plan info
             const planNames = {
@@ -499,6 +551,51 @@
             document.getElementById('selectedPlanName').textContent = planNames[planName];
             document.getElementById('selectedAmount').textContent = amount.toLocaleString();
             document.getElementById('selectedType').textContent = selectedPaymentType === 'semester' ? 'Semester Subscription' : 'Monthly Subscription';
+            
+            // Show/hide fields based on plan type
+            const regNumberGroup = document.getElementById('regNumberGroup');
+            const courseGroup = document.getElementById('courseGroup');
+            const facultyGroup = document.getElementById('facultyGroup');
+            
+            // Clear previous values
+            document.getElementById('subscriptionName').value = '';
+            document.getElementById('regNumber').value = '';
+            document.getElementById('course').value = '';
+            document.getElementById('faculty').value = '';
+            document.getElementById('subscriptionReason').value = '';
+            
+            // Check if student plan (undergraduate, postgraduate) or lecturer plan (university-staff)
+            if (planName === 'undergraduate' || planName === 'postgraduate') {
+                // Student fields
+                regNumberGroup.style.display = 'block';
+                courseGroup.style.display = 'block';
+                facultyGroup.style.display = 'none';
+                document.getElementById('regNumber').required = true;
+                document.getElementById('course').required = true;
+                document.getElementById('faculty').required = false;
+            } else if (planName === 'university-staff') {
+                // Lecturer fields
+                regNumberGroup.style.display = 'none';
+                courseGroup.style.display = 'none';
+                facultyGroup.style.display = 'block';
+                document.getElementById('regNumber').required = false;
+                document.getElementById('course').required = false;
+                document.getElementById('faculty').required = true;
+            } else {
+                // Elders or other plans - no special fields
+                regNumberGroup.style.display = 'none';
+                courseGroup.style.display = 'none';
+                facultyGroup.style.display = 'none';
+                document.getElementById('regNumber').required = false;
+                document.getElementById('course').required = false;
+                document.getElementById('faculty').required = false;
+            }
+            
+            // Pre-fill name from user data if available
+            const userData = JSON.parse(localStorage.getItem('userData') || 'null');
+            if (userData && (userData.name || userData.firstName)) {
+                document.getElementById('subscriptionName').value = userData.name || userData.firstName;
+            }
             
             // Scroll to payment form
             setTimeout(() => {
