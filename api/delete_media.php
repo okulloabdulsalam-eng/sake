@@ -1,10 +1,12 @@
 <?php
 /**
- * Delete media file from Google Drive and database
+ * Delete media file metadata from database
+ * 
+ * NOTE: File deletion from Supabase Storage is handled by the client.
+ * This endpoint only removes the database record.
  */
 
 require_once __DIR__ . '/library_media_config.php';
-require_once __DIR__ . '/../media-storage/vendor/autoload.php';
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -39,31 +41,9 @@ try {
         exit;
     }
     
-    // Delete from Google Drive
-    try {
-        $client = new Google_Client();
-        $client->setAuthConfig(GOOGLE_CREDENTIALS_PATH);
-        $client->addScope(Google_Service_Drive::DRIVE_FILE);
-        $client->setAccessType('offline');
-        
-        $tokenPath = __DIR__ . '/../media-storage/token.json';
-        if (file_exists($tokenPath)) {
-            $accessToken = json_decode(file_get_contents($tokenPath), true);
-            $client->setAccessToken($accessToken);
-        }
-        
-        if ($client->isAccessTokenExpired()) {
-            if ($client->getRefreshToken()) {
-                $client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
-                file_put_contents($tokenPath, json_encode($client->getAccessToken()));
-            }
-        }
-        
-        $driveService = new Google_Service_Drive($client);
-        $driveService->files->delete($media['drive_file_id']);
-    } catch (Exception $e) {
-        error_log("Error deleting from Google Drive: " . $e->getMessage());
-    }
+    // Note: File deletion from Supabase Storage is handled by the client
+    // The client calls deleteFromSupabaseStorage() before calling this API
+    // This endpoint only deletes the database record
     
     // Delete from database
     $stmt = $pdo->prepare("DELETE FROM media_files WHERE id = :id");
