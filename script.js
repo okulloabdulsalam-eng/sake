@@ -701,6 +701,7 @@ function startPrayerTimesUpdater() {
 // Update dates on load and continuously (auto-update)
 updateDates();
 loadPrayerTimes();
+startPrayerTimesUpdater();
 
 // Initialize fasting reminder checker (checks every minute for Sunday/Wednesday at 2pm, 6pm, 7:40pm)
 initFastingReminderChecker();
