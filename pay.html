@@ -169,21 +169,6 @@
                     <!-- Subscription Form (for Semester/Monthly Subscriptions) -->
                     <div id="subscriptionForm" style="display: none;">
                         <h3 class="section-title" style="margin-bottom: 20px;">Subscription Details</h3>
-                        
-                        <!-- Reason for Donation -->
-                        <div class="form-group">
-                            <label class="form-label">Reason for Donation <span style="color: #F44336;">*</span></label>
-                            <select class="form-input" id="subscriptionReason" required>
-                                <option value="">Select reason for donation</option>
-                                <option value="general-donation">General Donation</option>
-                                <option value="iftar">Iftar</option>
-                                <option value="bananas">Bananas</option>
-                                <option value="mosque-building-fund">Mosque Building Fund</option>
-                                <option value="kizumu-tahfiz-charity-visit">Kizumu Tahfiz Charity Visit</option>
-                                <option value="tuition-for-brothers">Tuition for Brothers</option>
-                                <option value="other">Other</option>
-                            </select>
-                        </div>
 
                         <!-- Name Input -->
                         <div class="form-group">
@@ -207,6 +192,13 @@
                         <div class="form-group" id="facultyGroup" style="display: none;">
                             <label class="form-label">Faculty/Department <span style="color: #F44336;">*</span></label>
                             <input type="text" class="form-input" id="faculty" placeholder="Enter your faculty or department" required>
+                        </div>
+
+                        <!-- WhatsApp Link to Amir Finance -->
+                        <div class="form-group" style="margin-top: 20px;">
+                            <button type="button" class="btn btn-primary" onclick="contactAmirFinance()" style="width: 100%; background: #25D366; border: none; padding: 15px; font-size: 16px; font-weight: 600;">
+                                <i class="fab fa-whatsapp"></i> Contact Amir Finance via WhatsApp
+                            </button>
                         </div>
                     </div>
 
@@ -429,6 +421,7 @@
     </div>
 
     <script src="script.js"></script>
+    <script src="update-navigation.js"></script>
     <script>
         let selectedPaymentType = '';
         let selectedPlan = null;
@@ -562,7 +555,6 @@
             document.getElementById('regNumber').value = '';
             document.getElementById('course').value = '';
             document.getElementById('faculty').value = '';
-            document.getElementById('subscriptionReason').value = '';
             
             // Check if student plan (undergraduate, postgraduate) or lecturer plan (university-staff)
             if (planName === 'undergraduate' || planName === 'postgraduate') {
@@ -614,17 +606,10 @@
                 const subscriptionForm = document.getElementById('subscriptionForm');
                 if (subscriptionForm && subscriptionForm.style.display !== 'none') {
                     const name = document.getElementById('subscriptionName').value;
-                    const reason = document.getElementById('subscriptionReason').value;
                     
                     if (!name || name.trim() === '') {
                         alert('Please enter your full name');
                         document.getElementById('subscriptionName').focus();
-                        return;
-                    }
-                    
-                    if (!reason) {
-                        alert('Please select a reason for donation');
-                        document.getElementById('subscriptionReason').focus();
                         return;
                     }
                     
@@ -684,10 +669,8 @@
             // Add subscription details if applicable
             if (selectedPaymentType === 'semester' || selectedPaymentType === 'monthly') {
                 const name = document.getElementById('subscriptionName').value;
-                const reason = document.getElementById('subscriptionReason').value;
-                const reasonText = document.getElementById('subscriptionReason').options[document.getElementById('subscriptionReason').selectedIndex].text;
                 
-                message += `Name: ${name}\nReason: ${reasonText}\n`;
+                message += `Name: ${name}\n`;
                 
                 if (selectedPlan === 'undergraduate' || selectedPlan === 'postgraduate') {
                     const regNumber = document.getElementById('regNumber').value;
@@ -802,6 +785,75 @@ Jazakallahu Khairan.`;
             setTimeout(() => {
                 document.getElementById('amirDaawaNotice').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }, 500);
+        };
+
+        window.contactAmirFinance = function() {
+            // Validate that a plan is selected
+            if (!selectedPlan || !selectedAmount) {
+                alert('Please select a subscription plan first');
+                return;
+            }
+
+            // Get form values
+            const name = document.getElementById('subscriptionName').value;
+            
+            if (!name || name.trim() === '') {
+                alert('Please enter your full name');
+                document.getElementById('subscriptionName').focus();
+                return;
+            }
+
+            // Get plan name
+            const planNames = {
+                'undergraduate': 'Undergraduate Plan',
+                'postgraduate': 'Postgraduate Plan',
+                'university-staff': 'University Staff Plan',
+                'elders': 'Elders Plan'
+            };
+            const planName = planNames[selectedPlan] || selectedPlan;
+
+            // Get payment type name
+            const paymentTypeName = selectedPaymentType === 'semester' ? 'Semester Subscription' : 'Monthly Subscription';
+
+            // Build message with plan and amount
+            let message = `Assalam Alaikum Amir Finance,\n\n`;
+            message += `I would like to make a subscription payment:\n\n`;
+            message += `Plan: ${planName}\n`;
+            message += `Type: ${paymentTypeName}\n`;
+            message += `Amount: ${selectedAmount.toLocaleString()} UGX\n`;
+            message += `Name: ${name}\n`;
+
+            // Add student-specific fields
+            if (selectedPlan === 'undergraduate' || selectedPlan === 'postgraduate') {
+                const regNumber = document.getElementById('regNumber').value;
+                const course = document.getElementById('course').value;
+                
+                if (regNumber && regNumber.trim() !== '') {
+                    message += `Registration Number: ${regNumber}\n`;
+                }
+                if (course && course.trim() !== '') {
+                    message += `Course: ${course}\n`;
+                }
+            }
+
+            // Add lecturer-specific fields
+            if (selectedPlan === 'university-staff') {
+                const faculty = document.getElementById('faculty').value;
+                if (faculty && faculty.trim() !== '') {
+                    message += `Faculty/Department: ${faculty}\n`;
+                }
+            }
+
+            message += `\nPlease confirm the payment details and provide further instructions.\n\nJazakallahu Khairan.`;
+
+            // Encode message for URL
+            const encodedMessage = encodeURIComponent(message);
+
+            // Create WhatsApp link (using the same number as the Finance Minister)
+            const whatsappLink = `https://wa.me/256703268522?text=${encodedMessage}`;
+
+            // Open WhatsApp
+            window.open(whatsappLink, '_blank');
         };
     </script>
 

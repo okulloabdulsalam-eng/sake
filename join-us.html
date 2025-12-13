@@ -347,6 +347,7 @@
     </div>
 
     <script src="script.js"></script>
+    <script src="update-navigation.js"></script>
     <script>
         // Use pageUser to avoid conflict with firebase-auth.js's currentUser
         var pageUser = null;
@@ -803,31 +804,13 @@
             alert('Privacy settings saved successfully!');
         }
 
-        // Update navigation text
+        // Update navigation text - uses unified navigation system
         function updateNavigation() {
-            const navItem = document.getElementById('accountNavItem');
-            const navText = document.getElementById('accountNavText');
-            
-            if (pageUser) {
-                // User is logged in - show "Account"
-                if (navText) navText.textContent = 'Account';
-                // Update all navigation links
-                document.querySelectorAll('a[href="join-us.html"]').forEach(link => {
-                    const icon = link.querySelector('i');
-                    if (icon) icon.className = 'fas fa-user-circle';
-                    const text = link.querySelector('span');
-                    if (text) text.textContent = 'Account';
-                });
-            } else {
-                // User is not logged in - show "Join"
-                if (navText) navText.textContent = 'Join';
-                // Update all navigation links
-                document.querySelectorAll('a[href="join-us.html"]').forEach(link => {
-                    const icon = link.querySelector('i');
-                    if (icon) icon.className = 'fas fa-user-plus';
-                    const text = link.querySelector('span');
-                    if (text) text.textContent = 'Join';
-                });
+            // Use the unified navigation update system
+            if (typeof window.forceUpdateNavigation === 'function') {
+                window.forceUpdateNavigation();
+            } else if (typeof window.updateNavigationLinks === 'function') {
+                window.updateNavigationLinks();
             }
         }
 

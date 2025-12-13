@@ -757,6 +757,13 @@ function updateUserDisplay() {
             accountIconBtn.title = 'Login / Create Account';
         }
     }
+    
+    // Trigger unified navigation update
+    if (typeof window.forceUpdateNavigation === 'function') {
+        window.forceUpdateNavigation();
+    } else if (typeof window.updateNavigationLinks === 'function') {
+        window.updateNavigationLinks();
+    }
 }
 
 // Initialize user data on page load

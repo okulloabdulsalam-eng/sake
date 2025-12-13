@@ -131,6 +131,14 @@ async function signInWithEmail(email, password) {
         // Check admin status
         const isAdmin = await checkAdminStatus(currentUser);
         
+        // Trigger unified navigation update
+        if (typeof window.forceUpdateNavigation === 'function') {
+            window.forceUpdateNavigation();
+        }
+        
+        // Dispatch login event
+        window.dispatchEvent(new CustomEvent('userLoggedIn'));
+        
         // Trigger UI update across all systems
         if (typeof updateUserDisplay === 'function') updateUserDisplay();
         if (typeof window.updateUserDisplay === 'function') window.updateUserDisplay();
@@ -181,6 +189,14 @@ async function signUpWithEmail(email, password, displayName = '') {
         };
         localStorage.setItem('userData', JSON.stringify(userData));
         
+        // Trigger unified navigation update
+        if (typeof window.forceUpdateNavigation === 'function') {
+            window.forceUpdateNavigation();
+        }
+        
+        // Dispatch login event
+        window.dispatchEvent(new CustomEvent('userLoggedIn'));
+        
         // Trigger UI update across all systems
         if (typeof updateUserDisplay === 'function') updateUserDisplay();
         if (typeof window.updateUserDisplay === 'function') window.updateUserDisplay();
@@ -215,6 +231,14 @@ async function signOut() {
         localStorage.removeItem('userData');
         
         updateAuthUI(null);
+        
+        // Trigger unified navigation update
+        if (typeof window.forceUpdateNavigation === 'function') {
+            window.forceUpdateNavigation();
+        }
+        
+        // Dispatch logout event
+        window.dispatchEvent(new CustomEvent('userLoggedOut'));
         
         // Trigger UI update across all systems
         if (typeof updateUserDisplay === 'function') updateUserDisplay();
@@ -337,10 +361,21 @@ function updateAuthUI(user) {
         }
     }
     
+    // Trigger unified navigation update
+    if (typeof window.forceUpdateNavigation === 'function') {
+        window.forceUpdateNavigation();
+    } else if (typeof window.updateNavigationLinks === 'function') {
+        window.updateNavigationLinks();
+    }
+    
     // Trigger script.js updateUserDisplay if available
     if (typeof window.loadUserData === 'function') {
         window.loadUserData();
     }
+    
+    // Dispatch custom event for navigation update
+    const event = new CustomEvent('authStateChanged', { detail: { user: user } });
+    window.dispatchEvent(event);
 }
 
 /**

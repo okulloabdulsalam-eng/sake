@@ -68,7 +68,7 @@ define('ALLOWED_BOOK_TYPES', [
 // ============================================
 // SECURITY CONFIGURATION
 // ============================================
-define('ADMIN_PASSWORD', 'kiuma2024'); // Change this!
+define('ADMIN_PASSWORD', 'kiuma2025'); // Media admin password
 
 // ============================================
 // DATABASE CONNECTION FUNCTION

@@ -72,13 +72,13 @@
             <section class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <h2 class="page-title">Media Gallery</h2>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button class="btn btn-secondary" id="adminLoginBtn" onclick="if(typeof window.showAdminLogin==='function')window.showAdminLogin(); else if(typeof showAdminLogin==='function')showAdminLogin();" style="padding: 10px 15px;">
-                        <i class="fas fa-lock"></i> Admin Login
+                    <button class="btn btn-secondary" id="adminLoginBtn" onclick="showMediaPasswordPrompt()" style="padding: 10px 15px;">
+                        <i class="fas fa-lock"></i> Admin Access
                     </button>
                     <button class="btn btn-primary admin-only" id="addMediaBtn" onclick="showAddMediaModal()" style="display: none; padding: 10px 15px;">
                         <i class="fas fa-plus"></i> Add Media
                     </button>
-                    <button class="btn btn-secondary admin-logout" onclick="if(typeof window.logoutAdmin==='function')window.logoutAdmin()" style="display: none; padding: 10px 15px;">
+                    <button class="btn btn-secondary admin-logout" onclick="logoutMediaAdmin()" style="display: none; padding: 10px 15px;">
                         <i class="fas fa-sign-out-alt"></i> Logout
                     </button>
                 </div>
@@ -132,30 +132,59 @@
     <!-- API Config and Scripts -->
     <script src="api-config.js"></script>
     <script src="script.js"></script>
+    <script src="update-navigation.js"></script>
     <script>
-        window.showAddMediaModal = async function() {
-            // Check if user is authenticated and is admin
-            if (typeof requireAdmin === 'function') {
-                await requireAdmin(() => {
-                    const modal = document.getElementById('addMediaModal');
-                    if (modal) {
-                        modal.style.display = 'flex';
-                    }
-                });
+        // Media Admin Password
+        const MEDIA_ADMIN_PASSWORD = 'kiuma2025';
+        
+        // Check if media admin is authenticated
+        function isMediaAdminAuthenticated() {
+            return sessionStorage.getItem('mediaAdminAuthenticated') === 'true';
+        }
+        
+        // Authenticate media admin with password
+        function authenticateMediaAdmin(password) {
+            if (password === MEDIA_ADMIN_PASSWORD) {
+                sessionStorage.setItem('mediaAdminAuthenticated', 'true');
+                return true;
+            }
+            return false;
+        }
+        
+        // Logout media admin
+        function logoutMediaAdmin() {
+            sessionStorage.removeItem('mediaAdminAuthenticated');
+            updateUploadButtonVisibility();
+            alert('Logged out successfully.');
+        }
+        
+        // Show password prompt for media admin
+        function showMediaPasswordPrompt() {
+            const password = prompt('Enter admin password to access media management:');
+            if (password === null) {
+                return; // User cancelled
+            }
+            
+            if (authenticateMediaAdmin(password)) {
+                alert('Access granted!');
+                updateUploadButtonVisibility();
             } else {
-                const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
-                if (!adminStatus) {
-                    if (typeof window.showAdminLogin === 'function') {
-                        window.showAdminLogin();
-                    } else {
-                        alert('Please login as admin first.');
-                    }
-                    return;
+                alert('Incorrect password. Access denied.');
+            }
+        }
+        
+        window.showAddMediaModal = function() {
+            // Check if user is authenticated with password
+            if (!isMediaAdminAuthenticated()) {
+                showMediaPasswordPrompt();
+                if (!isMediaAdminAuthenticated()) {
+                    return; // User didn't authenticate
                 }
-                const modal = document.getElementById('addMediaModal');
-                if (modal) {
-                    modal.style.display = 'flex';
-                }
+            }
+            
+            const modal = document.getElementById('addMediaModal');
+            if (modal) {
+                modal.style.display = 'flex';
             }
         };
 
@@ -190,17 +219,11 @@
         window.addMedia = async function(e) {
             if (e) e.preventDefault();
             
-            // Check authentication - must be ADMIN
-            if (typeof requireAdmin === 'function') {
-                const isAdmin = await requireAdmin(() => {});
-                if (!isAdmin) {
-                    alert('You must be logged in as admin to add media.');
-                    return false;
-                }
-            } else {
-                const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
-                if (!adminStatus) {
-                    alert('You must be logged in as admin to add media.');
+            // Check authentication - must have correct password
+            if (!isMediaAdminAuthenticated()) {
+                showMediaPasswordPrompt();
+                if (!isMediaAdminAuthenticated()) {
+                    alert('You must enter the correct password to add media.');
                     return false;
                 }
             }
@@ -296,7 +319,8 @@
                         description: description,
                         thumbnail_url: thumbnailUrl,
                         storage_path: uploadResult.storagePath,
-                        uploaded_by: uploadedBy
+                        uploaded_by: uploadedBy,
+                        password: MEDIA_ADMIN_PASSWORD // Include password for API authentication
                     })
                 });
 
@@ -330,14 +354,11 @@
         };
 
         window.deleteMedia = async function(mediaId) {
-            // Check authentication
-            if (typeof requireAdmin === 'function') {
-                const isAdmin = await requireAdmin(() => {});
-                if (!isAdmin) return;
-            } else {
-                const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
-                if (!adminStatus) {
-                    alert('You must be logged in as admin to delete media.');
+            // Check authentication - must have correct password
+            if (!isMediaAdminAuthenticated()) {
+                showMediaPasswordPrompt();
+                if (!isMediaAdminAuthenticated()) {
+                    alert('You must enter the correct password to delete media.');
                     return;
                 }
             }
@@ -390,7 +411,7 @@
                     },
                     body: JSON.stringify({
                         id: mediaId,
-                        password: localStorage.getItem('adminPassword') || '' // Fallback for compatibility
+                        password: MEDIA_ADMIN_PASSWORD // Use the media admin password
                     })
                 });
                 
@@ -414,7 +435,7 @@
         }
 
         function loadMediaFromStorage(type = 'all') {
-            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+            const adminStatus = isMediaAdminAuthenticated();
             const mediaGrid = document.getElementById('mediaGrid');
             
             if (!mediaGrid) return;
@@ -648,22 +669,25 @@
             }
         }
 
-        // Update upload button visibility - ADMIN ONLY
+        // Update upload button visibility - PASSWORD AUTHENTICATED ONLY
         function updateUploadButtonVisibility() {
             const addMediaBtn = document.getElementById('addMediaBtn');
             const adminLoginBtn = document.getElementById('adminLoginBtn');
+            const adminLogoutBtn = document.querySelector('.admin-logout');
             
-            // Check if user is admin (not just logged in)
-            const isAdmin = localStorage.getItem('isAdminLoggedIn') === 'true';
+            // Check if user is authenticated with password
+            const isAuthenticated = isMediaAdminAuthenticated();
             
-            if (isAdmin) {
-                // Admin is logged in - show upload button
+            if (isAuthenticated) {
+                // Authenticated - show upload button and logout button
                 if (addMediaBtn) addMediaBtn.style.display = 'block';
                 if (adminLoginBtn) adminLoginBtn.style.display = 'none';
+                if (adminLogoutBtn) adminLogoutBtn.style.display = 'block';
             } else {
-                // Not admin or not logged in - hide upload button
+                // Not authenticated - hide upload button, show login button
                 if (addMediaBtn) addMediaBtn.style.display = 'none';
                 if (adminLoginBtn) adminLoginBtn.style.display = 'block';
+                if (adminLogoutBtn) adminLogoutBtn.style.display = 'none';
             }
         }
 
@@ -674,56 +698,89 @@
                 mediaGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;"><i class="fas fa-spinner fa-spin" style="font-size: 48px; margin-bottom: 10px;"></i><p>Loading media...</p></div>';
             }
             
-            // Check admin status and update upload button visibility
-            if (typeof window.checkAdminStatus === 'function') {
-                window.checkAdminStatus();
-            } else {
-                updateUploadButtonVisibility();
-            }
-            
-            // Listen to auth state changes for admin status
-            if (typeof firebase !== 'undefined' && firebase.auth) {
-                firebase.auth().onAuthStateChanged(() => {
-                    if (typeof window.checkAdminStatus === 'function') {
-                        window.checkAdminStatus();
-                    } else {
-                        updateUploadButtonVisibility();
-                    }
-                });
-            }
+            // Update upload button visibility based on password authentication
+            updateUploadButtonVisibility();
             
             // Load media (non-blocking)
             loadMediaFromStorage();
         });
     </script>
 
-    <!-- Admin Login Modal -->
-    <div class="modal-overlay" id="adminLoginModal" style="display: none;">
+    <!-- Admin Password Modal (Optional - using prompt instead) -->
+    <div class="modal-overlay" id="adminPasswordModal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
-                <h3><i class="fas fa-shield-alt"></i> Admin Login</h3>
-                <button class="modal-close" onclick="closeAdminLogin()">
+                <h3><i class="fas fa-shield-alt"></i> Admin Access</h3>
+                <button class="modal-close" onclick="closeAdminPasswordModal()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="modal-body">
-                <p style="margin-bottom: 15px;">Sign in with your account to access admin features.</p>
-                <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <input type="email" class="form-input" id="adminEmail" placeholder="Enter your email">
-                </div>
+                <p style="margin-bottom: 15px;">Enter the admin password to access media management features.</p>
                 <div class="form-group">
                     <label class="form-label">Password</label>
-                    <input type="password" class="form-input" id="adminPassword" placeholder="Enter your password">
-                    <p id="passwordError" style="color: #f44336; font-size: 14px; margin-top: 5px; display: none;">Incorrect email or password.</p>
+                    <input type="password" class="form-input" id="mediaAdminPassword" placeholder="Enter admin password" autocomplete="off">
+                    <p id="passwordError" style="color: #f44336; font-size: 14px; margin-top: 5px; display: none;">Incorrect password.</p>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button class="btn btn-primary" onclick="if(typeof window.verifyAdminPassword==='function')window.verifyAdminPassword()" style="flex: 1;">Login</button>
-                    <button class="btn btn-secondary" onclick="if(typeof window.closeAdminLogin==='function')window.closeAdminLogin()" style="flex: 1;">Cancel</button>
+                    <button class="btn btn-primary" onclick="verifyMediaAdminPassword()" style="flex: 1;">Authenticate</button>
+                    <button class="btn btn-secondary" onclick="closeAdminPasswordModal()" style="flex: 1;">Cancel</button>
                 </div>
             </div>
         </div>
     </div>
+    
+    <script>
+        // Close admin password modal
+        function closeAdminPasswordModal() {
+            const modal = document.getElementById('adminPasswordModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+            const passwordInput = document.getElementById('mediaAdminPassword');
+            if (passwordInput) {
+                passwordInput.value = '';
+            }
+            const errorMsg = document.getElementById('passwordError');
+            if (errorMsg) {
+                errorMsg.style.display = 'none';
+            }
+        }
+        
+        // Verify media admin password from modal
+        function verifyMediaAdminPassword() {
+            const passwordInput = document.getElementById('mediaAdminPassword');
+            const errorMsg = document.getElementById('passwordError');
+            
+            if (!passwordInput) return;
+            
+            const password = passwordInput.value.trim();
+            
+            if (authenticateMediaAdmin(password)) {
+                closeAdminPasswordModal();
+                updateUploadButtonVisibility();
+                alert('Access granted!');
+            } else {
+                if (errorMsg) {
+                    errorMsg.style.display = 'block';
+                }
+                passwordInput.value = '';
+                passwordInput.focus();
+            }
+        }
+        
+        // Allow Enter key to submit password
+        document.addEventListener('DOMContentLoaded', function() {
+            const passwordInput = document.getElementById('mediaAdminPassword');
+            if (passwordInput) {
+                passwordInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        verifyMediaAdminPassword();
+                    }
+                });
+            }
+        });
+    </script>
 
     <!-- Add Media Modal -->
     <div class="modal-overlay" id="addMediaModal" style="display: none;">

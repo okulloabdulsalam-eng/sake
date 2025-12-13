@@ -36,6 +36,14 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $input = file_get_contents('php://input');
 $data = json_decode($input, true);
 
+// Check admin password
+$password = $data['password'] ?? $_POST['password'] ?? $_SERVER['HTTP_X_ADMIN_PASSWORD'] ?? '';
+if ($password !== ADMIN_PASSWORD) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'Unauthorized. Admin password required.']);
+    exit;
+}
+
 if (!$data) {
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'Invalid JSON data']);
