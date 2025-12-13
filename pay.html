@@ -107,7 +107,7 @@
                 </div>
 
                 <!-- Membership Plans Section (shown when Semester or Monthly Subscription is selected) -->
-                <div id="membershipPlans" style="display: none;">
+                <div id="membershipPlans" style="display: none; scroll-margin-top: 20px;">
                     <h3 class="section-title">Membership Plans</h3>
                     <div class="membership-plans-grid">
                         <!-- Undergraduate Plan -->
@@ -157,7 +157,7 @@
                 </div>
 
                 <!-- Payment Form (shown when a plan or other payment type is selected) -->
-                <div id="paymentForm" style="display: none;">
+                <div id="paymentForm" style="display: none; scroll-margin-top: 20px;">
                     <h3 class="section-title">Complete Payment</h3>
                     
                     <div class="info-card" id="selectedPlanInfo" style="margin-bottom: 20px; display: none;">
@@ -392,6 +392,11 @@
                 membershipPlans.style.display = 'block';
                 paymentForm.style.display = 'none';
                 selectedPlan = null;
+                
+                // Scroll to membership plans section
+                setTimeout(() => {
+                    membershipPlans.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
             } else if (type === 'kisilaahe') {
                 membershipPlans.style.display = 'none';
                 paymentForm.style.display = 'block';
@@ -404,6 +409,11 @@
                 selectedPlan = 'kisilaahe';
                 document.getElementById('donationTypeGroup').style.display = 'none';
                 document.getElementById('reasonGroup').style.display = 'none';
+                
+                // Scroll to payment form
+                setTimeout(() => {
+                    paymentForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
             } else {
                 membershipPlans.style.display = 'none';
                 paymentForm.style.display = 'block';
@@ -430,6 +440,11 @@
                     'kisilaahe': 'Kisilaahe Subscription'
                 };
                 document.getElementById('selectedType').textContent = typeNames[type] || type;
+                
+                // Scroll to payment form
+                setTimeout(() => {
+                    paymentForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
             }
         }
 
@@ -453,6 +468,11 @@
             document.getElementById('selectedPlanName').textContent = planNames[planName];
             document.getElementById('selectedAmount').textContent = amount.toLocaleString();
             document.getElementById('selectedType').textContent = selectedPaymentType === 'semester' ? 'Semester Subscription' : 'Monthly Subscription';
+            
+            // Scroll to payment form
+            setTimeout(() => {
+                document.getElementById('paymentForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
         }
 
         function processPayment() {
