@@ -609,6 +609,56 @@
                 return;
             }
 
+            // For subscription payments, validate subscription form
+            if (selectedPaymentType === 'semester' || selectedPaymentType === 'monthly') {
+                const subscriptionForm = document.getElementById('subscriptionForm');
+                if (subscriptionForm && subscriptionForm.style.display !== 'none') {
+                    const name = document.getElementById('subscriptionName').value;
+                    const reason = document.getElementById('subscriptionReason').value;
+                    
+                    if (!name || name.trim() === '') {
+                        alert('Please enter your full name');
+                        document.getElementById('subscriptionName').focus();
+                        return;
+                    }
+                    
+                    if (!reason) {
+                        alert('Please select a reason for donation');
+                        document.getElementById('subscriptionReason').focus();
+                        return;
+                    }
+                    
+                    // Check if student plan - validate reg number and course
+                    if (selectedPlan === 'undergraduate' || selectedPlan === 'postgraduate') {
+                        const regNumber = document.getElementById('regNumber').value;
+                        const course = document.getElementById('course').value;
+                        
+                        if (!regNumber || regNumber.trim() === '') {
+                            alert('Please enter your registration number');
+                            document.getElementById('regNumber').focus();
+                            return;
+                        }
+                        
+                        if (!course || course.trim() === '') {
+                            alert('Please enter your course');
+                            document.getElementById('course').focus();
+                            return;
+                        }
+                    }
+                    
+                    // Check if lecturer plan - validate faculty
+                    if (selectedPlan === 'university-staff') {
+                        const faculty = document.getElementById('faculty').value;
+                        
+                        if (!faculty || faculty.trim() === '') {
+                            alert('Please enter your faculty or department');
+                            document.getElementById('faculty').focus();
+                            return;
+                        }
+                    }
+                }
+            }
+
             let amount = selectedAmount;
             if (!amount) {
                 amount = document.getElementById('amount').value;
@@ -628,7 +678,32 @@
                 'kisilaahe': 'Kisilaahe Subscription'
             };
 
-            alert(`Payment Instructions:\n\nAmount: ${amount.toLocaleString()} UGX\nType: ${paymentTypeNames[selectedPaymentType]}\n\nPlease make payment using one of the recommended methods above.\n\nAfter payment, contact the Finance Minister via WhatsApp to confirm your deposit.`);
+            // Build confirmation message
+            let message = `Payment Instructions:\n\nAmount: ${amount.toLocaleString()} UGX\nType: ${paymentTypeNames[selectedPaymentType]}\n\n`;
+            
+            // Add subscription details if applicable
+            if (selectedPaymentType === 'semester' || selectedPaymentType === 'monthly') {
+                const name = document.getElementById('subscriptionName').value;
+                const reason = document.getElementById('subscriptionReason').value;
+                const reasonText = document.getElementById('subscriptionReason').options[document.getElementById('subscriptionReason').selectedIndex].text;
+                
+                message += `Name: ${name}\nReason: ${reasonText}\n`;
+                
+                if (selectedPlan === 'undergraduate' || selectedPlan === 'postgraduate') {
+                    const regNumber = document.getElementById('regNumber').value;
+                    const course = document.getElementById('course').value;
+                    message += `Registration Number: ${regNumber}\nCourse: ${course}\n`;
+                } else if (selectedPlan === 'university-staff') {
+                    const faculty = document.getElementById('faculty').value;
+                    message += `Faculty/Department: ${faculty}\n`;
+                }
+                
+                message += `\n`;
+            }
+            
+            message += `Please make payment using one of the recommended methods above.\n\nAfter payment, contact the Finance Minister via WhatsApp to confirm your deposit.`;
+
+            alert(message);
         }
 
         function copyToClipboard(text) {
