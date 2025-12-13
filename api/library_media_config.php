@@ -1,7 +1,7 @@
 <?php
 /**
  * Library and Media Configuration
- * Firebase Storage + MySQL Configuration
+ * Google Drive + MySQL Configuration
  */
 
 // ============================================
@@ -13,13 +13,14 @@ define('DB_PASS', '');
 define('DB_NAME', 'kiuma_main');
 
 // ============================================
-// FIREBASE STORAGE CONFIGURATION
+// GOOGLE DRIVE API CONFIGURATION
 // ============================================
-// Firebase Storage bucket name (from Firebase Console > Storage)
-define('FIREBASE_STORAGE_BUCKET', 'kiuma-mob-app.firebasestorage.app');
+// Path to your Google Drive API credentials JSON file
+define('GOOGLE_CREDENTIALS_PATH', __DIR__ . '/../media-storage/credentials.json');
 
-// Firebase Storage base URL
-define('FIREBASE_STORAGE_BASE_URL', 'https://firebasestorage.googleapis.com/v0/b/' . FIREBASE_STORAGE_BUCKET . '/o/');
+// Google Drive folder IDs (optional - leave empty for root)
+define('GOOGLE_DRIVE_LIBRARY_FOLDER_ID', ''); // For books
+define('GOOGLE_DRIVE_MEDIA_FOLDER_ID', '');   // For media files
 
 // ============================================
 // FILE UPLOAD CONFIGURATION
@@ -123,20 +124,28 @@ function getMediaTypeCategory($mimeType) {
     return 'unknown';
 }
 
-/**
- * Generate Firebase Storage download URL
- * 
- * @param {string} filePath - Path to file in Firebase Storage
- * @param {string} token - Optional access token
- * @returns {string} Download URL
- */
-function getFirebaseStorageUrl($filePath, $token = null) {
-    $encodedPath = urlencode($filePath);
-    $url = FIREBASE_STORAGE_BASE_URL . $encodedPath . '?alt=media';
-    if ($token) {
-        $url .= '&token=' . $token;
+function getAccessToken($client) {
+    $tokenPath = __DIR__ . '/../media-storage/token.json';
+    
+    if (file_exists($tokenPath)) {
+        $accessToken = json_decode(file_get_contents($tokenPath), true);
+        $client->setAccessToken($accessToken);
     }
-    return $url;
+    
+    if ($client->isAccessTokenExpired()) {
+        if ($client->getRefreshToken()) {
+            $client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
+        } else {
+            throw new Exception('Authorization required. Please run authorization first.');
+        }
+        
+        if (!file_exists(dirname($tokenPath))) {
+            mkdir(dirname($tokenPath), 0700, true);
+        }
+        file_put_contents($tokenPath, json_encode($client->getAccessToken()));
+    }
+    
+    return $client->getAccessToken();
 }
 
 ?>
