@@ -86,7 +86,7 @@ async function initializeFCM() {
                 console.log('Service Worker registered:', registration.scope);
             } catch (swError) {
                 console.error('Service Worker registration failed:', swError);
-                showError('Service Worker registration failed. HTTPS is required for push notifications.');
+                console.log('Push notifications may not work on static hosting (GitHub Pages).');
                 return false;
             }
 
@@ -244,7 +244,7 @@ async function getFCMToken() {
         } else if (error.code === 'messaging/unsupported-browser') {
             showError('This browser does not support push notifications.');
         } else {
-            showError(`Failed to get FCM token: ${error.message}`);
+            console.error(`Failed to get FCM token: ${error.message}`);
         }
         
         return null;
@@ -477,12 +477,13 @@ function showSuccess(message) {
  */
 function showError(message) {
     console.error('Error:', message);
-    // You can integrate with your existing notification system
-    // For now, using alert as fallback
+    // Only show alerts for user-actionable errors, not service worker issues
+    const silentErrors = ['Service Worker', 'FCM token', 'Firebase configuration'];
+    const isSilent = silentErrors.some(err => message.includes(err));
+    if (isSilent) return;
+    
     if (typeof showNotification === 'function') {
         showNotification(message, 'error');
-    } else {
-        alert(message);
     }
 }
 

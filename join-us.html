@@ -185,7 +185,7 @@
                             <i class="fas fa-user"></i>
                         </div>
                         <div style="flex: 1;">
-                            <h3 style="margin: 0 0 5px 0; font-size: 20px;" id="userDisplayName">User Name</h3>
+                            <h3 style="margin: 0 0 5px 0; font-size: 20px; color: #ffffff;" id="userDisplayName">User Name</h3>
                             <p style="margin: 0; opacity: 0.9; font-size: 14px;" id="userEmail">user@example.com</p>
                             <p style="margin: 5px 0 0 0; opacity: 0.8; font-size: 12px;" id="userMemberSince">Member since: --</p>
                         </div>
@@ -259,9 +259,9 @@
                         This app is your gateway to Islamic knowledge and community. Access Quran classes, Islamic lectures, prayer times, and connect with fellow Muslims at KIU.
                     </p>
                     <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                        <span style="background: var(--primary-green); color: white; padding: 5px 12px; border-radius: 15px; font-size: 12px;"><i class="fas fa-book"></i> Weekly Programs</span>
-                        <span style="background: var(--primary-green); color: white; padding: 5px 12px; border-radius: 15px; font-size: 12px;"><i class="fas fa-clock"></i> Prayer Times</span>
-                        <span style="background: var(--primary-green); color: white; padding: 5px 12px; border-radius: 15px; font-size: 12px;"><i class="fas fa-calendar"></i> Events</span>
+                        <a href="programs.html" style="background: var(--primary-green); color: white; padding: 5px 12px; border-radius: 15px; font-size: 12px; text-decoration: none; display: inline-block;"><i class="fas fa-book"></i> Weekly Programs</a>
+                        <a href="index.html#prayerTimesList" style="background: var(--primary-green); color: white; padding: 5px 12px; border-radius: 15px; font-size: 12px; text-decoration: none; display: inline-block;"><i class="fas fa-clock"></i> Prayer Times</a>
+                        <a href="events.html" style="background: var(--primary-green); color: white; padding: 5px 12px; border-radius: 15px; font-size: 12px; text-decoration: none; display: inline-block;"><i class="fas fa-calendar"></i> Events</a>
                     </div>
                 </div>
 
@@ -610,6 +610,15 @@
                     const result = await signInWithEmail(email, password);
                     if (result.success) {
                         pageUser = result.user;
+                        // Save user data to localStorage for homepage greeting
+                        const userData = {
+                            name: pageUser.displayName || pageUser.email?.split('@')[0] || 'User',
+                            firstName: pageUser.displayName?.split(' ')[0] || pageUser.email?.split('@')[0] || 'User',
+                            email: pageUser.email,
+                            uid: pageUser.uid,
+                            createdAt: pageUser.metadata?.creationTime || new Date().toISOString()
+                        };
+                        localStorage.setItem('userData', JSON.stringify(userData));
                         showAccountSection();
                         updateUserInfo();
                         updateNavigation();
@@ -657,6 +666,15 @@
                     const result = await signUpWithEmail(email, password, name);
                     if (result.success) {
                         pageUser = result.user;
+                        // Save user data to localStorage for homepage greeting
+                        const userData = {
+                            name: name || pageUser.displayName || pageUser.email?.split('@')[0] || 'User',
+                            firstName: (name || pageUser.displayName || pageUser.email?.split('@')[0] || 'User').split(' ')[0],
+                            email: pageUser.email,
+                            uid: pageUser.uid,
+                            createdAt: new Date().toISOString()
+                        };
+                        localStorage.setItem('userData', JSON.stringify(userData));
                         showAccountSection();
                         updateUserInfo();
                         updateNavigation();
@@ -731,19 +749,15 @@
                 if (pageUser && typeof pageUser.updateProfile === 'function') {
                     await pageUser.updateProfile({ displayName: newName });
                     pageUser.displayName = newName;
-                    updateUserInfo();
-                    closeEditNameModal();
-                    alert('Name updated successfully!');
-                } else {
-                    // Fallback: save to localStorage
-                    if (pageUser) {
-                        pageUser.displayName = newName;
-                        localStorage.setItem('userData', JSON.stringify(pageUser));
-                        updateUserInfo();
-                        closeEditNameModal();
-                        alert('Name updated successfully!');
-                    }
                 }
+                // Always update localStorage for homepage greeting
+                const existingData = JSON.parse(localStorage.getItem('userData') || '{}');
+                existingData.name = newName;
+                existingData.firstName = newName.split(' ')[0];
+                localStorage.setItem('userData', JSON.stringify(existingData));
+                updateUserInfo();
+                closeEditNameModal();
+                alert('Name updated successfully!');
             } catch (error) {
                 console.error('Error updating name:', error);
                 alert('Error updating name. Please try again.');

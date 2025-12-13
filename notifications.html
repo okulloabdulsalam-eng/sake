@@ -108,11 +108,11 @@
 
             <section class="page-content">
                 <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                    <button class="btn btn-primary" style="flex: 1; padding: 12px;" onclick="filterNotifications('all')">All</button>
-                    <button class="btn btn-outline" style="flex: 1; padding: 12px;" onclick="filterNotifications('unread')">Unread</button>
+                    <button class="btn btn-primary filter-btn active" id="filterAll" style="flex: 1; padding: 12px;" onclick="filterNotifications('all')">All</button>
+                    <button class="btn btn-outline filter-btn" id="filterUnread" style="flex: 1; padding: 12px;" onclick="filterNotifications('unread')">Unread <span id="unreadBadge" class="badge" style="background: #f44336; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; margin-left: 5px;">0</span></button>
                 </div>
 
-                <div class="notification-item" data-status="unread">
+                <div class="notification-item" data-status="unread" data-id="ramadan-welcome">
                     <div class="notification-icon">
                         <i class="fas fa-calendar-check"></i>
                     </div>
@@ -123,7 +123,7 @@
                     </div>
                 </div>
 
-                <div class="notification-item" data-status="unread">
+                <div class="notification-item" data-status="unread" data-id="quran-study">
                     <div class="notification-icon">
                         <i class="fas fa-book"></i>
                     </div>
@@ -134,7 +134,7 @@
                     </div>
                 </div>
 
-                <div class="notification-item" data-status="read">
+                <div class="notification-item" data-status="read" data-id="donation-thanks">
                     <div class="notification-icon">
                         <i class="fas fa-hand-holding-heart"></i>
                     </div>
@@ -145,7 +145,7 @@
                     </div>
                 </div>
 
-                <div class="notification-item" data-status="read">
+                <div class="notification-item" data-status="read" data-id="prayer-reminder">
                     <div class="notification-icon">
                         <i class="fas fa-clock"></i>
                     </div>
@@ -156,7 +156,7 @@
                     </div>
                 </div>
 
-                <div class="notification-item" data-status="read">
+                <div class="notification-item" data-status="read" data-id="community-iftar">
                     <div class="notification-icon">
                         <i class="fas fa-users"></i>
                     </div>
@@ -167,7 +167,7 @@
                     </div>
                 </div>
 
-                <div class="notification-item" data-status="read">
+                <div class="notification-item" data-status="read" data-id="online-course">
                     <div class="notification-icon">
                         <i class="fas fa-graduation-cap"></i>
                     </div>
@@ -257,8 +257,64 @@
             }
         });
 
+        // Get read notification IDs from localStorage
+        function getReadNotifications() {
+            return JSON.parse(localStorage.getItem('readNotifications') || '[]');
+        }
+
+        // Save read notification ID to localStorage
+        function markNotificationAsRead(id) {
+            const readNotifications = getReadNotifications();
+            if (!readNotifications.includes(id)) {
+                readNotifications.push(id);
+                localStorage.setItem('readNotifications', JSON.stringify(readNotifications));
+            }
+        }
+
+        // Update unread badge count
+        function updateUnreadBadge() {
+            const unreadCount = document.querySelectorAll('.notification-item[data-status="unread"]').length;
+            const badge = document.getElementById('unreadBadge');
+            const headerBadge = document.querySelector('.notifications-btn .badge');
+            
+            if (badge) {
+                badge.textContent = unreadCount;
+                badge.style.display = unreadCount > 0 ? 'inline' : 'none';
+            }
+            if (headerBadge) {
+                headerBadge.textContent = unreadCount;
+                headerBadge.style.display = unreadCount > 0 ? 'inline' : 'none';
+            }
+        }
+
+        // Initialize notification read status from localStorage
+        function initNotificationStatus() {
+            const readNotifications = getReadNotifications();
+            document.querySelectorAll('.notification-item').forEach((item, index) => {
+                const id = item.dataset.id || `notif-${index}`;
+                item.dataset.id = id;
+                
+                if (readNotifications.includes(id)) {
+                    item.dataset.status = 'read';
+                    item.style.opacity = '0.7';
+                }
+            });
+            updateUnreadBadge();
+        }
+
         function filterNotifications(status) {
             const items = Array.from(document.querySelectorAll('.notification-item'));
+            
+            // Update active button state
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active', 'btn-primary');
+                btn.classList.add('btn-outline');
+            });
+            const activeBtn = status === 'all' ? document.getElementById('filterAll') : document.getElementById('filterUnread');
+            if (activeBtn) {
+                activeBtn.classList.add('active', 'btn-primary');
+                activeBtn.classList.remove('btn-outline');
+            }
             
             // Sort items before filtering:
             // 1. Unread first
@@ -292,13 +348,24 @@
         }
 
         // Mark as read on click
-        document.querySelectorAll('.notification-item').forEach(item => {
-            item.addEventListener('click', function() {
-                if (this.dataset.status === 'unread') {
-                    this.dataset.status = 'read';
-                    this.style.opacity = '0.7';
-                }
+        function setupNotificationClickHandlers() {
+            document.querySelectorAll('.notification-item').forEach((item, index) => {
+                item.addEventListener('click', function() {
+                    if (this.dataset.status === 'unread') {
+                        this.dataset.status = 'read';
+                        this.style.opacity = '0.7';
+                        const id = this.dataset.id || `notif-${index}`;
+                        markNotificationAsRead(id);
+                        updateUnreadBadge();
+                    }
+                });
             });
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initNotificationStatus();
+            setupNotificationClickHandlers();
         });
 
         window.showAddNotificationModal = function() {
@@ -481,10 +548,11 @@
             const existingStored = Array.from(notificationsContainer.querySelectorAll('.notification-item[data-id]'));
             existingStored.forEach(item => item.remove());
             
-            // Try to load from database first
+            // Try to load from database first (only if not on static hosting)
             try {
                 const API_BASE_URL = window.API_BASE_URL || '/api';
                 const response = await fetch(API_BASE_URL + '/get_notifications.php');
+                if (!response.ok) throw new Error('API not available');
                 const data = await response.json();
                 
                 if (data.success && data.notifications) {
