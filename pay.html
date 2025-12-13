@@ -725,7 +725,7 @@
             });
         }
 
-        function contactAmir() {
+        window.contactAmir = function() {
             // Get form values
             const paymentType = selectedPaymentType;
             const amount = document.getElementById('amount').value;
@@ -802,7 +802,7 @@ Jazakallahu Khairan.`;
             setTimeout(() => {
                 document.getElementById('amirDaawaNotice').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }, 500);
-        }
+        };
     </script>
 
     <!-- Floating Kizumu Visit Button -->
