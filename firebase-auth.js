@@ -19,10 +19,22 @@ var authInitialized = false;
  */
 async function initializeFirebaseAuth() {
     try {
-        // Check if Firebase is already initialized
-        if (typeof firebase === 'undefined' || !firebase.apps || firebase.apps.length === 0) {
-            console.error('Firebase not initialized. Make sure firebase-app.js is loaded first.');
+        // Check if Firebase SDK is loaded
+        if (typeof firebase === 'undefined') {
+            console.warn('Firebase SDK not loaded yet. Will retry...');
             return false;
+        }
+        
+        // Try to initialize Firebase if not already done
+        if (!firebase.apps || firebase.apps.length === 0) {
+            if (typeof initializeFirebaseApp === 'function') {
+                initializeFirebaseApp();
+            } else if (typeof window.firebaseConfig !== 'undefined') {
+                firebase.initializeApp(window.firebaseConfig);
+            } else {
+                console.error('Firebase not initialized. Make sure fcm-config.js is loaded first.');
+                return false;
+            }
         }
 
         // Get auth instance

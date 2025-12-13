@@ -98,3 +98,41 @@ if (typeof window !== 'undefined') {
     window.validateFirebaseConfig = validateFirebaseConfig;
 }
 
+/**
+ * Initialize Firebase App
+ * This must be called before using any Firebase services
+ */
+function initializeFirebaseApp() {
+    try {
+        // Check if Firebase SDK is loaded
+        if (typeof firebase === 'undefined') {
+            console.warn('Firebase SDK not loaded yet');
+            return false;
+        }
+        
+        // Check if already initialized
+        if (firebase.apps && firebase.apps.length > 0) {
+            console.log('Firebase already initialized');
+            return true;
+        }
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        console.log('Firebase initialized successfully');
+        return true;
+    } catch (error) {
+        console.error('Error initializing Firebase:', error);
+        return false;
+    }
+}
+
+// Auto-initialize Firebase when script loads
+if (typeof window !== 'undefined' && typeof firebase !== 'undefined') {
+    initializeFirebaseApp();
+}
+
+// Make initialization function globally available
+if (typeof window !== 'undefined') {
+    window.initializeFirebaseApp = initializeFirebaseApp;
+}
+
