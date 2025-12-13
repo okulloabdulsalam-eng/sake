@@ -85,76 +85,91 @@
                 </button>
             </section>
 
-            <!-- Login Section (shown when not logged in) -->
+            <!-- Join/Auth Section (shown when not logged in) -->
             <section id="loginSection" class="page-content" style="display: none;">
-                <div class="page-header">
-                    <h2 class="page-title">Sign In to Your Account</h2>
+                <!-- Welcome Banner -->
+                <div class="info-card" style="background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); color: white; text-align: center; margin-bottom: 25px;">
+                    <div style="font-size: 50px; margin-bottom: 15px;"><i class="fas fa-mosque"></i></div>
+                    <h2 style="margin: 0 0 10px 0; font-size: 22px;">Join KIUMA Community</h2>
+                    <p style="margin: 0; opacity: 0.9; font-size: 14px;">Access Islamic programs, prayer times, events and more</p>
                 </div>
 
-                <div class="info-card">
-                    <h3><i class="fas fa-user-circle"></i> Welcome Back</h3>
-                    <p>Sign in to access your account, view your information, and manage your settings.</p>
-                </div>
-
-                <form id="loginForm" onsubmit="handleLogin(event)">
-                    <div id="loginMessage" style="display: none; padding: 15px; margin-bottom: 20px; border-radius: 8px; font-size: 14px;"></div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Email Address *</label>
-                        <input type="email" class="form-input" id="loginEmail" name="email" placeholder="Enter your email" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Password *</label>
-                        <input type="password" class="form-input" id="loginPassword" name="password" placeholder="Enter your password" required>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                <!-- Tab Buttons -->
+                <div style="display: flex; margin-bottom: 20px; background: #f0f0f0; border-radius: 10px; padding: 5px;">
+                    <button id="createAccountTab" class="auth-tab active" onclick="showCreateAccountTab()" style="flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                        <i class="fas fa-user-plus"></i> Create Account
+                    </button>
+                    <button id="signInTab" class="auth-tab" onclick="showSignInTab()" style="flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; background: transparent; transition: all 0.3s;">
                         <i class="fas fa-sign-in-alt"></i> Sign In
                     </button>
-                </form>
-
-                <div class="info-card" style="margin-top: 20px; background: #E3F2FD;">
-                    <h3 style="color: #1976D2; margin-bottom: 10px;"><i class="fas fa-user-plus"></i> New User?</h3>
-                    <p style="margin-bottom: 15px;">Don't have an account yet? Sign up to join our community.</p>
-                    <button type="button" class="btn btn-outline" onclick="showSignupForm()" style="width: 100%;">
-                        <i class="fas fa-user-plus"></i> Create Account
-                    </button>
-                </div>
-            </section>
-
-            <!-- Signup Section (shown when creating account) -->
-            <section id="signupSection" class="page-content" style="display: none;">
-                <div class="page-header">
-                    <h2 class="page-title">Create New Account</h2>
                 </div>
 
-                <form id="signupForm" onsubmit="handleSignup(event)">
-                    <div id="signupMessage" style="display: none; padding: 15px; margin-bottom: 20px; border-radius: 8px; font-size: 14px;"></div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Full Name *</label>
-                        <input type="text" class="form-input" id="signupName" name="name" placeholder="Enter your full name" required>
+                <!-- Create Account Form -->
+                <div id="createAccountForm">
+                    <form id="signupForm" onsubmit="handleSignup(event)">
+                        <div id="signupMessage" style="display: none; padding: 15px; margin-bottom: 20px; border-radius: 8px; font-size: 14px;"></div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Full Name *</label>
+                            <input type="text" class="form-input" id="signupName" name="name" placeholder="Enter your full name" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Email Address *</label>
+                            <input type="email" class="form-input" id="signupEmail" name="email" placeholder="Enter your email" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Password *</label>
+                            <input type="password" class="form-input" id="signupPassword" name="password" placeholder="Create a password (min. 6 characters)" required minlength="6">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 16px;">
+                            <i class="fas fa-user-plus"></i> Create Account
+                        </button>
+                    </form>
+
+                    <div style="text-align: center; margin-top: 20px; color: #666; font-size: 14px;">
+                        Already have an account? <a href="#" onclick="showSignInTab(); return false;" style="color: var(--primary-green); font-weight: 600;">Sign In</a>
                     </div>
+                </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Email Address *</label>
-                        <input type="email" class="form-input" id="signupEmail" name="email" placeholder="Enter your email" required>
+                <!-- Sign In Form -->
+                <div id="signInForm" style="display: none;">
+                    <form id="loginForm" onsubmit="handleLogin(event)">
+                        <div id="loginMessage" style="display: none; padding: 15px; margin-bottom: 20px; border-radius: 8px; font-size: 14px;"></div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Email Address *</label>
+                            <input type="email" class="form-input" id="loginEmail" name="email" placeholder="Enter your email" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Password *</label>
+                            <input type="password" class="form-input" id="loginPassword" name="password" placeholder="Enter your password" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 16px;">
+                            <i class="fas fa-sign-in-alt"></i> Sign In
+                        </button>
+                    </form>
+
+                    <div style="text-align: center; margin-top: 20px; color: #666; font-size: 14px;">
+                        Don't have an account? <a href="#" onclick="showCreateAccountTab(); return false;" style="color: var(--primary-green); font-weight: 600;">Create Account</a>
                     </div>
+                </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Password *</label>
-                        <input type="password" class="form-input" id="signupPassword" name="password" placeholder="Create a password (min. 6 characters)" required minlength="6">
-                    </div>
-
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">
-                        <i class="fas fa-user-plus"></i> Create Account
-                    </button>
-
-                    <button type="button" class="btn btn-outline" onclick="showLoginForm()" style="width: 100%; margin-top: 10px;">
-                        <i class="fas fa-arrow-left"></i> Back to Sign In
-                    </button>
-                </form>
+                <!-- Benefits Section -->
+                <div class="info-card" style="margin-top: 25px; background: #FFF8E1; border-left: 4px solid #FFC107;">
+                    <h4 style="margin: 0 0 15px 0; color: #F57C00;"><i class="fas fa-star"></i> Benefits of Joining</h4>
+                    <ul style="margin: 0; padding-left: 20px; font-size: 14px; color: #666; line-height: 1.8;">
+                        <li>Access all Islamic programs and courses</li>
+                        <li>Get prayer time notifications</li>
+                        <li>Stay updated with events and activities</li>
+                        <li>Download resources from the library</li>
+                        <li>Connect with the KIUMA community</li>
+                    </ul>
+                </div>
             </section>
 
             <!-- Account Section (shown when logged in) -->
@@ -166,25 +181,46 @@
                 <!-- User Info Card -->
                 <div class="info-card" style="background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); color: white; margin-bottom: 20px;">
                     <div style="display: flex; align-items: center; gap: 15px;">
-                        <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 30px;">
+                        <div style="width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 35px;">
                             <i class="fas fa-user"></i>
                         </div>
                         <div style="flex: 1;">
                             <h3 style="margin: 0 0 5px 0; font-size: 20px;" id="userDisplayName">User Name</h3>
                             <p style="margin: 0; opacity: 0.9; font-size: 14px;" id="userEmail">user@example.com</p>
+                            <p style="margin: 5px 0 0 0; opacity: 0.8; font-size: 12px;" id="userMemberSince">Member since: --</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Settings Options -->
+                <!-- Account Details Section -->
+                <div class="info-card" style="margin-bottom: 20px;">
+                    <h3 style="margin: 0 0 15px 0; font-size: 16px; color: var(--dark-green);"><i class="fas fa-id-card"></i> Account Details</h3>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div style="display: flex; justify-content: space-between; padding: 10px; background: #f5f5f5; border-radius: 8px;">
+                            <span style="color: #666;">Full Name</span>
+                            <span style="font-weight: 600;" id="detailName">--</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 10px; background: #f5f5f5; border-radius: 8px;">
+                            <span style="color: #666;">Email</span>
+                            <span style="font-weight: 600;" id="detailEmail">--</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 10px; background: #f5f5f5; border-radius: 8px;">
+                            <span style="color: #666;">Account Status</span>
+                            <span style="font-weight: 600; color: var(--primary-green);"><i class="fas fa-check-circle"></i> Active</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <h4 style="margin: 20px 0 15px 0; color: var(--dark-gray);"><i class="fas fa-bolt"></i> Quick Actions</h4>
                 <div class="settings-list">
-                    <!-- Edit Name -->
+                    <!-- Edit Profile -->
                     <div class="settings-item" onclick="showEditNameModal()">
                         <div class="settings-icon" style="background: #4CAF50;">
-                            <i class="fas fa-edit"></i>
+                            <i class="fas fa-user-edit"></i>
                         </div>
                         <div class="settings-content">
-                            <h4>Edit Name</h4>
+                            <h4>Edit Profile</h4>
                             <p>Update your display name</p>
                         </div>
                         <i class="fas fa-chevron-right"></i>
@@ -197,19 +233,61 @@
                         </div>
                         <div class="settings-content">
                             <h4>Settings</h4>
-                            <p>Manage your preferences</p>
+                            <p>Notifications & preferences</p>
                         </div>
                         <i class="fas fa-chevron-right"></i>
                     </div>
 
-                    <!-- Contact Developer -->
-                    <div class="settings-item" onclick="contactDeveloper()">
-                        <div class="settings-icon" style="background: #25D366;">
-                            <i class="fab fa-whatsapp"></i>
+                    <!-- My Enrolled Programs -->
+                    <div class="settings-item" onclick="window.location.href='join-programs.html'">
+                        <div class="settings-icon" style="background: #9C27B0;">
+                            <i class="fas fa-graduation-cap"></i>
                         </div>
                         <div class="settings-content">
-                            <h4>Contact Developer</h4>
-                            <p>Get advice or help with the app</p>
+                            <h4>My Programs</h4>
+                            <p>View enrolled courses</p>
+                        </div>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+
+                <!-- About App Section -->
+                <h4 style="margin: 25px 0 15px 0; color: var(--dark-gray);"><i class="fas fa-info-circle"></i> About KIUMA App</h4>
+                <div class="info-card" style="background: linear-gradient(135deg, #E8F5E9, #C8E6C9); border-left: 4px solid var(--primary-green);">
+                    <h3 style="margin: 0 0 10px 0; font-size: 16px; color: var(--dark-green);"><i class="fas fa-mosque"></i> Kampala International University Muslim Association</h3>
+                    <p style="margin: 0 0 15px 0; font-size: 14px; color: #555; line-height: 1.6;">
+                        This app is your gateway to Islamic knowledge and community. Access Quran classes, Islamic lectures, prayer times, and connect with fellow Muslims at KIU.
+                    </p>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        <span style="background: var(--primary-green); color: white; padding: 5px 12px; border-radius: 15px; font-size: 12px;"><i class="fas fa-book"></i> Weekly Programs</span>
+                        <span style="background: var(--primary-green); color: white; padding: 5px 12px; border-radius: 15px; font-size: 12px;"><i class="fas fa-clock"></i> Prayer Times</span>
+                        <span style="background: var(--primary-green); color: white; padding: 5px 12px; border-radius: 15px; font-size: 12px;"><i class="fas fa-calendar"></i> Events</span>
+                    </div>
+                </div>
+
+                <!-- Tips Section -->
+                <div class="info-card" style="margin-top: 15px; background: #FFF8E1; border-left: 4px solid #FFC107;">
+                    <h3 style="margin: 0 0 10px 0; font-size: 16px; color: #F57C00;"><i class="fas fa-lightbulb"></i> Tips for Using the App</h3>
+                    <ul style="margin: 0; padding-left: 20px; font-size: 14px; color: #666; line-height: 1.8;">
+                        <li>Check <strong>Prayer Times</strong> daily on the home page</li>
+                        <li>Enroll in <strong>Weekly Programs</strong> to learn Quran & Islamic studies</li>
+                        <li>Stay updated with <strong>Events</strong> and community activities</li>
+                        <li>Use the <strong>Library</strong> for Islamic resources and books</li>
+                        <li>Enable <strong>Notifications</strong> to never miss important updates</li>
+                    </ul>
+                </div>
+
+                <!-- Support Section -->
+                <h4 style="margin: 25px 0 15px 0; color: var(--dark-gray);"><i class="fas fa-hands-helping"></i> Support</h4>
+                <div class="settings-list">
+                    <!-- Help & FAQ -->
+                    <div class="settings-item" onclick="showHelpModal()">
+                        <div class="settings-icon" style="background: #00BCD4;">
+                            <i class="fas fa-question-circle"></i>
+                        </div>
+                        <div class="settings-content">
+                            <h4>Help & FAQ</h4>
+                            <p>Common questions answered</p>
                         </div>
                         <i class="fas fa-chevron-right"></i>
                     </div>
@@ -226,8 +304,22 @@
                         <i class="fas fa-chevron-right"></i>
                     </div>
 
-                    <!-- Logout -->
-                    <div class="settings-item" onclick="handleLogout()" style="border-top: 2px solid #f0f0f0; margin-top: 10px; padding-top: 15px;">
+                    <!-- Contact Developer -->
+                    <div class="settings-item" onclick="contactDeveloper()">
+                        <div class="settings-icon" style="background: #25D366;">
+                            <i class="fab fa-whatsapp"></i>
+                        </div>
+                        <div class="settings-content">
+                            <h4>Contact Developer</h4>
+                            <p>Get help or give feedback</p>
+                        </div>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+
+                <!-- Sign Out -->
+                <div class="settings-list" style="margin-top: 20px;">
+                    <div class="settings-item" onclick="handleLogout()" style="border: 2px solid #FFCDD2;">
                         <div class="settings-icon" style="background: #757575;">
                             <i class="fas fa-sign-out-alt"></i>
                         </div>
@@ -238,6 +330,12 @@
                         <i class="fas fa-chevron-right"></i>
                     </div>
                 </div>
+
+                <!-- App Version -->
+                <p style="text-align: center; margin-top: 30px; color: #999; font-size: 12px;">
+                    <i class="fas fa-mobile-alt"></i> KIUMA App v1.0.0<br>
+                    Made with <i class="fas fa-heart" style="color: #F44336;"></i> for the Muslim Community
+                </p>
             </section>
         </main>
 
@@ -335,6 +433,43 @@
         </div>
     </div>
 
+    <!-- Help & FAQ Modal -->
+    <div class="modal-overlay" id="helpModal" style="display: none;">
+        <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h3><i class="fas fa-question-circle"></i> Help & FAQ</h3>
+                <button class="modal-close" onclick="closeHelpModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: var(--primary-green); margin-bottom: 10px;"><i class="fas fa-user-plus"></i> How do I create an account?</h4>
+                    <p style="color: #666; font-size: 14px; line-height: 1.6;">Click "Create Account" on the login screen, enter your name, email, and password. You'll be automatically signed in after registration.</p>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: var(--primary-green); margin-bottom: 10px;"><i class="fas fa-book"></i> How do I enroll in programs?</h4>
+                    <p style="color: #666; font-size: 14px; line-height: 1.6;">Go to "Join Programs" from the menu or home page. Fill in your details and select the courses you want to join. An email will be sent to confirm your enrollment.</p>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: var(--primary-green); margin-bottom: 10px;"><i class="fas fa-clock"></i> How do I check prayer times?</h4>
+                    <p style="color: #666; font-size: 14px; line-height: 1.6;">Prayer times are displayed on the home page. The current prayer is highlighted. Times are based on the Umm al-Qura calculation method.</p>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: var(--primary-green); margin-bottom: 10px;"><i class="fas fa-bell"></i> How do I enable notifications?</h4>
+                    <p style="color: #666; font-size: 14px; line-height: 1.6;">Go to Settings in your account and enable "Push Notifications". You'll receive updates about events, programs, and important announcements.</p>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: var(--primary-green); margin-bottom: 10px;"><i class="fas fa-credit-card"></i> How do I make payments?</h4>
+                    <p style="color: #666; font-size: 14px; line-height: 1.6;">Use the "Pay" section to contribute to KIUMA activities. You can pay for dues, donations, or program fees through Mobile Money or other supported methods.</p>
+                </div>
+                <div style="background: #E3F2FD; padding: 15px; border-radius: 8px;">
+                    <p style="margin: 0; color: #1976D2; font-size: 14px;"><i class="fas fa-info-circle"></i> Still have questions? Contact the developer via WhatsApp for assistance.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
     <script>
         // Developer WhatsApp number - UPDATE THIS WITH YOUR ACTUAL NUMBER
@@ -375,24 +510,50 @@
             }
         }
 
-        // Show login section
+        // Show login section (Join page when not logged in)
         function showLoginSection() {
             document.getElementById('loginSection').style.display = 'block';
-            document.getElementById('signupSection').style.display = 'none';
             document.getElementById('accountSection').style.display = 'none';
+            // Initialize with Create Account tab active
+            showCreateAccountTab();
         }
 
-        // Show signup section
+        // Show signup section (legacy - redirect to tab)
         function showSignupForm() {
-            document.getElementById('loginSection').style.display = 'none';
-            document.getElementById('signupSection').style.display = 'block';
-            document.getElementById('accountSection').style.display = 'none';
+            showCreateAccountTab();
+        }
+        
+        // Show login form (legacy - redirect to tab)
+        function showLoginForm() {
+            showSignInTab();
+        }
+
+        // Tab switching functions
+        function showCreateAccountTab() {
+            document.getElementById('createAccountTab').classList.add('active');
+            document.getElementById('createAccountTab').style.background = 'var(--primary-green)';
+            document.getElementById('createAccountTab').style.color = 'white';
+            document.getElementById('signInTab').classList.remove('active');
+            document.getElementById('signInTab').style.background = 'transparent';
+            document.getElementById('signInTab').style.color = '#666';
+            document.getElementById('createAccountForm').style.display = 'block';
+            document.getElementById('signInForm').style.display = 'none';
+        }
+
+        function showSignInTab() {
+            document.getElementById('signInTab').classList.add('active');
+            document.getElementById('signInTab').style.background = 'var(--primary-green)';
+            document.getElementById('signInTab').style.color = 'white';
+            document.getElementById('createAccountTab').classList.remove('active');
+            document.getElementById('createAccountTab').style.background = 'transparent';
+            document.getElementById('createAccountTab').style.color = '#666';
+            document.getElementById('signInForm').style.display = 'block';
+            document.getElementById('createAccountForm').style.display = 'none';
         }
 
         // Show account section
         function showAccountSection() {
             document.getElementById('loginSection').style.display = 'none';
-            document.getElementById('signupSection').style.display = 'none';
             document.getElementById('accountSection').style.display = 'block';
         }
 
@@ -402,8 +563,32 @@
                 const displayName = currentUser.displayName || currentUser.email?.split('@')[0] || 'User';
                 const email = currentUser.email || 'No email';
                 
+                // Main user card
                 document.getElementById('userDisplayName').textContent = displayName;
                 document.getElementById('userEmail').textContent = email;
+                
+                // Account details section
+                const detailName = document.getElementById('detailName');
+                const detailEmail = document.getElementById('detailEmail');
+                const memberSince = document.getElementById('userMemberSince');
+                
+                if (detailName) detailName.textContent = displayName;
+                if (detailEmail) detailEmail.textContent = email;
+                
+                // Member since date
+                if (memberSince) {
+                    let joinDate = '--';
+                    if (currentUser.metadata?.creationTime) {
+                        joinDate = new Date(currentUser.metadata.creationTime).toLocaleDateString('en-US', {
+                            year: 'numeric', month: 'short', day: 'numeric'
+                        });
+                    } else if (currentUser.createdAt) {
+                        joinDate = new Date(currentUser.createdAt).toLocaleDateString('en-US', {
+                            year: 'numeric', month: 'short', day: 'numeric'
+                        });
+                    }
+                    memberSince.textContent = 'Member since: ' + joinDate;
+                }
             }
         }
 
@@ -591,6 +776,15 @@
             window.open(whatsappUrl, '_blank');
         }
 
+        // Help modal functions
+        function showHelpModal() {
+            document.getElementById('helpModal').style.display = 'flex';
+        }
+
+        function closeHelpModal() {
+            document.getElementById('helpModal').style.display = 'none';
+        }
+
         // Report issue functions
         function showReportIssueModal() {
             document.getElementById('reportIssueModal').style.display = 'flex';
@@ -716,6 +910,17 @@
             width: 20px;
             height: 20px;
             cursor: pointer;
+        }
+
+        /* Auth Tab Styles */
+        .auth-tab {
+            background: transparent;
+            color: #666;
+        }
+        
+        .auth-tab.active {
+            background: var(--primary-green) !important;
+            color: white !important;
         }
     </style>
 </body>
