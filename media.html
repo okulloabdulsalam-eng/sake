@@ -253,7 +253,12 @@
                 });
 
                 if (!uploadResult.success) {
-                    throw new Error(uploadResult.error || 'Upload failed');
+                    const errorMsg = uploadResult.error || 'Upload failed';
+                    // Provide helpful message for RLS errors
+                    if (errorMsg.includes('row-level security') || errorMsg.includes('Storage access denied')) {
+                        alert('Upload failed: Storage access denied.\n\nPlease check Supabase Storage policies.\n\nSee SUPABASE_RLS_FIX.md for instructions on how to fix this.\n\nYou need to update the RLS policies in your Supabase dashboard to allow uploads.');
+                    }
+                    throw new Error(errorMsg);
                 }
 
                 // Generate thumbnail for images

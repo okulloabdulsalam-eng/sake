@@ -86,6 +86,10 @@ async function uploadToSupabaseStorage(file, folder = 'media', onProgress = null
             });
 
         if (error) {
+            // Provide more helpful error messages for RLS issues
+            if (error.message && error.message.includes('row-level security')) {
+                throw new Error('Storage access denied. Please check Supabase Storage policies. The bucket may require authentication or have restricted upload policies. See STORAGE_SETUP.md for instructions.');
+            }
             throw error;
         }
 
