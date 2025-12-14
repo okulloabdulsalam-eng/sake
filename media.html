@@ -2,10 +2,315 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#4CAF50">
     <title>Media - KIUMA</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Mobile-First Styles */
+        * {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        body {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overscroll-behavior: none;
+        }
+        
+        .mobile-header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .mobile-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+        
+        .mobile-btn {
+            min-height: 44px; /* iOS touch target */
+            padding: 12px 16px;
+            font-size: 14px;
+            border-radius: 8px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .mobile-file-input-wrapper {
+            position: relative;
+            width: 100%;
+            min-height: 120px;
+            border: 2px dashed #4CAF50;
+            border-radius: 12px;
+            background: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            margin: 16px 0;
+            touch-action: manipulation;
+        }
+        
+        .mobile-file-input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            z-index: 10;
+            font-size: 16px; /* Prevents zoom on iOS */
+            cursor: pointer;
+        }
+        
+        .mobile-file-input-label {
+            pointer-events: none;
+            text-align: center;
+            color: #4CAF50;
+            z-index: 1;
+        }
+        
+        .mobile-file-input-label i {
+            font-size: 48px;
+            margin-bottom: 12px;
+            display: block;
+        }
+        
+        .mobile-file-selected {
+            background: #E8F5E9;
+            border-color: #4CAF50;
+        }
+        
+        .mobile-media-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding: 12px 0;
+        }
+        
+        @media (min-width: 480px) {
+            .mobile-media-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        .mobile-media-item {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #f5f5f5;
+            touch-action: manipulation;
+        }
+        
+        .mobile-media-item img,
+        .mobile-media-item video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .mobile-media-item .play-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.6);
+            color: white;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .mobile-media-item .delete-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            touch-action: manipulation;
+            z-index: 5;
+        }
+        
+        .mobile-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 10000;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 0;
+            animation: fadeIn 0.2s ease;
+        }
+        
+        .mobile-modal.active {
+            display: flex;
+        }
+        
+        .mobile-modal-content {
+            background: white;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            border-radius: 20px 20px 0 0;
+            padding: 24px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        
+        .mobile-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .mobile-modal-header h3 {
+            margin: 0;
+            font-size: 20px;
+            color: #333;
+        }
+        
+        .mobile-close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #666;
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+        }
+        
+        .mobile-form-group {
+            margin-bottom: 20px;
+        }
+        
+        .mobile-form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .mobile-form-input,
+        .mobile-form-textarea {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px; /* Prevents zoom on iOS */
+            font-family: inherit;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        
+        .mobile-form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .mobile-submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 20px;
+            touch-action: manipulation;
+            min-height: 48px;
+        }
+        
+        .mobile-submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .mobile-filter-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 8px;
+        }
+        
+        .mobile-filter-btn {
+            flex-shrink: 0;
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            touch-action: manipulation;
+            min-height: 40px;
+        }
+        
+        .mobile-loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+        
+        .mobile-empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .mobile-empty-state i {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+    </style>
 </head>
 <body>
     <nav class="nav-menu" id="navMenu">
@@ -32,9 +337,9 @@
     </nav>
 
     <div class="container">
-        <header class="header">
+        <header class="header mobile-header">
             <div class="header-content">
-                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <button class="menu-toggle" id="menuToggle" aria-label="Menu"><i class="fas fa-bars"></i></button>
                 <div class="logo-container">
                     <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='block';" onload="this.style.display='block'; if(this.nextElementSibling) this.nextElementSibling.style.display='none';">
                     <svg class="header-logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="display: none;">
@@ -50,7 +355,7 @@
                         <text x="100" y="145" font-size="22" font-weight="bold" fill="#4CAF50" text-anchor="middle" font-family="Arial, sans-serif" letter-spacing="2">KIUMA</text>
                     </svg>
                 </div>
-                <button class="notifications-btn" id="notificationsBtn">
+                <button class="notifications-btn" id="notificationsBtn" aria-label="Notifications">
                     <i class="fas fa-bell"></i>
                     <span class="badge" style="display: none;">0</span>
                 </button>
@@ -64,41 +369,39 @@
                         <a href="about.html">KIUMA</a>
                     </h2>
                 </div>
-                <a href="join-us.html" class="account-icon-btn" id="accountIconBtn">
+                <a href="join-us.html" class="account-icon-btn" id="accountIconBtn" aria-label="Account">
                     <i class="fas fa-user-circle" id="accountIcon"></i>
                 </a>
             </section>
 
-            <section class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <section class="page-header">
                 <h2 class="page-title">Media Gallery</h2>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button class="btn btn-secondary" id="adminLoginBtn" onclick="showMediaPasswordPrompt()" style="padding: 10px 15px;">
-                        <i class="fas fa-lock"></i> Admin Access
+                <div class="mobile-actions">
+                    <button class="btn btn-secondary mobile-btn" id="adminLoginBtn" onclick="showMediaPasswordPrompt()">
+                        <i class="fas fa-lock"></i> Admin
                     </button>
-                    <button class="btn btn-primary admin-only" id="addMediaBtn" onclick="showAddMediaModal()" style="display: none; padding: 10px 15px;">
+                    <button class="btn btn-primary mobile-btn admin-only" id="addMediaBtn" onclick="showAddMediaModal()" style="display: none;">
                         <i class="fas fa-plus"></i> Add Media
                     </button>
-                    <button class="btn btn-secondary admin-logout" onclick="logoutMediaAdmin()" style="display: none; padding: 10px 15px;">
+                    <button class="btn btn-secondary mobile-btn admin-logout" onclick="logoutMediaAdmin()" style="display: none;">
                         <i class="fas fa-sign-out-alt"></i> Logout
                     </button>
                 </div>
             </section>
 
             <section class="page-content">
-                <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
-                    <button class="btn btn-primary" style="flex: 1; min-width: calc(33.33% - 7px); padding: 12px;" onclick="filterMedia('all')">All</button>
-                    <button class="btn btn-outline" style="flex: 1; min-width: calc(33.33% - 7px); padding: 12px;" onclick="filterMedia('video')">Videos</button>
-                    <button class="btn btn-outline" style="flex: 1; min-width: calc(33.33% - 7px); padding: 12px;" onclick="filterMedia('audio')">Audio</button>
-                    <button class="btn btn-outline" style="flex: 1; min-width: calc(33.33% - 7px); padding: 12px;" onclick="filterMedia('image')">Images</button>
+                <div class="mobile-filter-buttons">
+                    <button class="btn btn-primary mobile-filter-btn" onclick="filterMedia('all')" data-filter="all">All</button>
+                    <button class="btn btn-outline mobile-filter-btn" onclick="filterMedia('video')" data-filter="video">Videos</button>
+                    <button class="btn btn-outline mobile-filter-btn" onclick="filterMedia('audio')" data-filter="audio">Audio</button>
+                    <button class="btn btn-outline mobile-filter-btn" onclick="filterMedia('image')" data-filter="image">Images</button>
                 </div>
 
-                <div class="media-grid" id="mediaGrid">
-                    <!-- Media items will be loaded here -->
-                </div>
-
-                <div class="info-card" style="margin-top: 20px;">
-                    <h3><i class="fas fa-info-circle"></i> About Media Gallery</h3>
-                    <p>Browse through our collection of videos, audio files, and images. All media files are stored securely on Supabase Storage and available for download.</p>
+                <div class="mobile-media-grid" id="mediaGrid">
+                    <div class="mobile-loading">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading media...</p>
+                    </div>
                 </div>
             </section>
         </main>
@@ -112,30 +415,58 @@
         </nav>
     </div>
 
-    <!-- Firebase SDK (Auth, Firestore, FCM only - NO Storage) -->
-    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-messaging-compat.js"></script>
-    
-    <!-- Supabase SDK (Storage ONLY) -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- Firebase Configuration (Auth, Firestore, FCM) -->
-    <script src="fcm-config.js"></script>
-    <script src="firebase-auth.js"></script>
-    
-    <!-- Supabase Configuration (Storage ONLY) -->
+    <!-- Add Media Modal (Mobile-Optimized) -->
+    <div class="mobile-modal" id="addMediaModal">
+        <div class="mobile-modal-content">
+            <div class="mobile-modal-header">
+                <h3><i class="fas fa-upload"></i> Add Media</h3>
+                <button class="mobile-close-btn" onclick="closeAddMediaModal()" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="addMediaForm" onsubmit="addMedia(event)">
+                <div class="mobile-form-group">
+                    <label class="mobile-form-label">Select File *</label>
+                    <div class="mobile-file-input-wrapper" id="fileInputWrapper">
+                        <input type="file" 
+                               id="mediaFile" 
+                               class="mobile-file-input" 
+                               accept="image/*,video/*,audio/*"
+                               capture="environment"
+                               required>
+                        <div class="mobile-file-input-label" id="fileInputLabel">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <div style="font-weight: 600; margin-bottom: 4px;">Tap to Choose File</div>
+                            <div style="font-size: 12px; color: #999;">Video, audio, or image (Max 500MB)</div>
+                        </div>
+                        <div id="fileSelectedInfo" style="display: none; text-align: center; z-index: 2;">
+                            <i class="fas fa-check-circle" style="color: #4CAF50; font-size: 32px; margin-bottom: 8px;"></i>
+                            <div id="fileName" style="font-weight: 600; color: #333; margin-bottom: 4px;"></div>
+                            <div id="fileSize" style="font-size: 12px; color: #666;"></div>
+                            <div style="font-size: 12px; color: #4CAF50; margin-top: 8px;">Tap to change</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mobile-form-group">
+                    <label class="mobile-form-label">Description (Optional)</label>
+                    <textarea class="mobile-form-textarea" id="mediaDescription" placeholder="Add a description..."></textarea>
+                </div>
+                <button type="submit" class="mobile-submit-btn">
+                    <i class="fas fa-upload"></i> Upload Media
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="api-config.js"></script>
     <script src="supabase-config.js"></script>
     <script src="supabase-storage.js"></script>
-    
-    <!-- API Config and Scripts -->
-    <script src="api-config.js"></script>
     <script src="script.js"></script>
     <script src="update-navigation.js"></script>
     <script>
         // Media Admin Password
         const MEDIA_ADMIN_PASSWORD = 'kiuma2025';
+        let currentFilter = 'all';
         
         // Check if media admin is authenticated
         function isMediaAdminAuthenticated() {
@@ -158,7 +489,7 @@
             alert('Logged out successfully.');
         }
         
-        // Show password prompt for media admin
+        // Show password prompt for media admin (mobile-optimized)
         function showMediaPasswordPrompt() {
             const password = prompt('Enter admin password to access media management:');
             if (password === null) {
@@ -173,53 +504,227 @@
             }
         }
         
+        // Update admin button visibility
+        function updateUploadButtonVisibility() {
+            const isAuth = isMediaAdminAuthenticated();
+            const adminLoginBtn = document.getElementById('adminLoginBtn');
+            const addMediaBtn = document.getElementById('addMediaBtn');
+            const adminLogoutBtn = document.querySelector('.admin-logout');
+            
+            if (isAuth) {
+                if (adminLoginBtn) adminLoginBtn.style.display = 'none';
+                if (addMediaBtn) addMediaBtn.style.display = 'block';
+                if (adminLogoutBtn) adminLogoutBtn.style.display = 'block';
+            } else {
+                if (adminLoginBtn) adminLoginBtn.style.display = 'block';
+                if (addMediaBtn) addMediaBtn.style.display = 'none';
+                if (adminLogoutBtn) adminLogoutBtn.style.display = 'none';
+            }
+        }
+        
+        // Show add media modal
         window.showAddMediaModal = function() {
-            // Check if user is authenticated with password
             if (!isMediaAdminAuthenticated()) {
                 showMediaPasswordPrompt();
                 if (!isMediaAdminAuthenticated()) {
-                    return; // User didn't authenticate
+                    return;
                 }
             }
             
             const modal = document.getElementById('addMediaModal');
             if (modal) {
-                modal.style.display = 'flex';
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
             }
         };
-
+        
+        // Close add media modal
         window.closeAddMediaModal = function() {
             const modal = document.getElementById('addMediaModal');
             if (modal) {
-                modal.style.display = 'none';
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
             }
             const form = document.getElementById('addMediaForm');
             if (form) {
                 form.reset();
+                updateFileInputDisplay();
             }
         };
-
+        
+        // Update file input display
+        function updateFileInputDisplay() {
+            const fileInput = document.getElementById('mediaFile');
+            const fileInputWrapper = document.getElementById('fileInputWrapper');
+            const fileInputLabel = document.getElementById('fileInputLabel');
+            const fileSelectedInfo = document.getElementById('fileSelectedInfo');
+            const fileName = document.getElementById('fileName');
+            const fileSize = document.getElementById('fileSize');
+            
+            if (fileInput && fileInput.files && fileInput.files[0]) {
+                const file = fileInput.files[0];
+                const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                
+                fileName.textContent = file.name;
+                fileSize.textContent = fileSizeMB + ' MB';
+                
+                fileInputLabel.style.display = 'none';
+                fileSelectedInfo.style.display = 'block';
+                fileInputWrapper.classList.add('mobile-file-selected');
+            } else {
+                fileInputLabel.style.display = 'block';
+                fileSelectedInfo.style.display = 'none';
+                fileInputWrapper.classList.remove('mobile-file-selected');
+            }
+        }
+        
+        // Filter media
         window.filterMedia = function(type) {
-            const buttons = document.querySelectorAll('.page-content > div:first-child button');
-            buttons.forEach(btn => {
-                const btnText = btn.textContent.trim().toLowerCase();
-                const isActive = (type === 'all' && btnText === 'all') ||
-                                (type === 'video' && btnText === 'videos') ||
-                                (type === 'audio' && btnText === 'audio') ||
-                                (type === 'image' && btnText === 'images');
-                if (isActive) {
-                    btn.className = 'btn btn-primary';
+            currentFilter = type;
+            
+            // Update button states
+            document.querySelectorAll('.mobile-filter-btn').forEach(btn => {
+                const filter = btn.dataset.filter;
+                if (filter === type) {
+                    btn.classList.remove('btn-outline');
+                    btn.classList.add('btn-primary');
                 } else {
-                    btn.className = 'btn btn-outline';
+                    btn.classList.remove('btn-primary');
+                    btn.classList.add('btn-outline');
                 }
             });
+            
             loadMediaFromStorage(type);
         };
-
+        
+        // Load media from storage
+        async function loadMediaFromStorage(filter = 'all') {
+            const mediaGrid = document.getElementById('mediaGrid');
+            if (!mediaGrid) return;
+            
+            mediaGrid.innerHTML = '<div class="mobile-loading"><i class="fas fa-spinner fa-spin"></i><p>Loading media...</p></div>';
+            
+            try {
+                const API_BASE_URL = window.API_BASE_URL || '/api';
+                const isStaticHosting = window.location.hostname.includes('github.io') || 
+                                       window.location.hostname.includes('netlify.app') ||
+                                       window.location.hostname.includes('vercel.app');
+                
+                let mediaItems = [];
+                
+                // Try to load from API if not static hosting
+                if (!isStaticHosting) {
+                    try {
+                        const response = await fetch(API_BASE_URL + '/get_media.php');
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.success && data.media) {
+                                mediaItems = data.media;
+                            }
+                        }
+                    } catch (error) {
+                        console.log('API not available, using Firestore');
+                    }
+                }
+                
+                // Filter media
+                if (filter !== 'all') {
+                    mediaItems = mediaItems.filter(item => {
+                        const type = item.type || item.file_type || '';
+                        return type.toLowerCase().includes(filter);
+                    });
+                }
+                
+                // Display media
+                if (mediaItems.length === 0) {
+                    mediaGrid.innerHTML = `
+                        <div class="mobile-empty-state">
+                            <i class="fas fa-photo-video"></i>
+                            <p>No media found</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                mediaGrid.innerHTML = '';
+                mediaItems.forEach(item => {
+                    const mediaItem = createMediaItem(item);
+                    mediaGrid.appendChild(mediaItem);
+                });
+                
+            } catch (error) {
+                console.error('Error loading media:', error);
+                mediaGrid.innerHTML = `
+                    <div class="mobile-empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Error loading media</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Create media item element
+        function createMediaItem(item) {
+            const div = document.createElement('div');
+            div.className = 'mobile-media-item';
+            div.dataset.id = item.id;
+            div.dataset.type = item.type || item.file_type || 'unknown';
+            
+            const url = item.url || item.drive_file_id || item.storage_url || '';
+            const isAuth = isMediaAdminAuthenticated();
+            
+            if (item.type === 'video' || (item.file_type && item.file_type.includes('video'))) {
+                div.innerHTML = `
+                    <video src="${url}" preload="metadata"></video>
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                    ${isAuth ? `<button class="delete-btn" onclick="deleteMedia(${item.id}, event)" aria-label="Delete"><i class="fas fa-trash"></i></button>` : ''}
+                `;
+                div.addEventListener('click', () => {
+                    if (url) window.open(url, '_blank');
+                });
+            } else if (item.type === 'audio' || (item.file_type && item.file_type.includes('audio'))) {
+                div.innerHTML = `
+                    <div style="width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;">
+                        <i class="fas fa-music"></i>
+                    </div>
+                    ${isAuth ? `<button class="delete-btn" onclick="deleteMedia(${item.id}, event)" aria-label="Delete"><i class="fas fa-trash"></i></button>` : ''}
+                `;
+                div.addEventListener('click', () => {
+                    if (url) window.open(url, '_blank');
+                });
+            } else {
+                div.innerHTML = `
+                    <img src="${url}" alt="${item.description || 'Media'}" loading="lazy" onerror="this.parentElement.innerHTML='<div style=\\'width: 100%; height: 100%; background: linear-gradient(135deg, #2196F3, #1976D2); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;\\'><i class=\\'fas fa-image\\'></i></div>'">
+                    ${isAuth ? `<button class="delete-btn" onclick="deleteMedia(${item.id}, event)" aria-label="Delete"><i class="fas fa-trash"></i></button>` : ''}
+                `;
+                div.addEventListener('click', () => {
+                    if (url) {
+                        const img = div.querySelector('img');
+                        if (img) {
+                            // Open in fullscreen view
+                            const modal = document.createElement('div');
+                            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+                            modal.innerHTML = `<img src="${url}" style="max-width: 100%; max-height: 100%; object-fit: contain;"><button onclick="this.parentElement.remove(); document.body.style.overflow='';" style="position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 20px;"><i class="fas fa-times"></i></button>`;
+                            document.body.style.overflow = 'hidden';
+                            document.body.appendChild(modal);
+                            modal.addEventListener('click', (e) => {
+                                if (e.target === modal) {
+                                    modal.remove();
+                                    document.body.style.overflow = '';
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+            
+            return div;
+        }
+        
+        // Add media
         window.addMedia = async function(e) {
             if (e) e.preventDefault();
             
-            // Check authentication - must have correct password
             if (!isMediaAdminAuthenticated()) {
                 showMediaPasswordPrompt();
                 if (!isMediaAdminAuthenticated()) {
@@ -227,7 +732,7 @@
                     return false;
                 }
             }
-
+            
             const fileInput = document.getElementById('mediaFile');
             const descriptionInput = document.getElementById('mediaDescription');
             
@@ -235,152 +740,70 @@
                 alert('Please select a file to upload.');
                 return false;
             }
-
+            
             const file = fileInput.files[0];
             const description = descriptionInput ? descriptionInput.value.trim() : '';
             const fileType = getFileTypeCategory(file.type);
             const folder = `media/${fileType}s`;
-
+            
             const submitBtn = document.querySelector('#addMediaForm button[type="submit"]');
             const originalBtnText = submitBtn.innerHTML;
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
-
+            
             try {
                 // Upload to Supabase Storage
                 const uploadResult = await uploadToSupabaseStorage(file, folder, (progress) => {
                     submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Uploading... ${Math.round(progress)}%`;
                 });
-
+                
                 if (!uploadResult.success) {
-                    const errorMsg = uploadResult.error || 'Upload failed';
-                    // Provide helpful message for RLS errors
-                    if (errorMsg.includes('row-level security') || errorMsg.includes('Storage access denied')) {
-                        alert('Upload failed: Storage access denied.\n\nPlease check Supabase Storage policies.\n\nSee SUPABASE_RLS_FIX.md for instructions on how to fix this.\n\nYou need to update the RLS policies in your Supabase dashboard to allow uploads.');
-                    }
-                    throw new Error(errorMsg);
+                    throw new Error(uploadResult.error || 'Upload failed');
                 }
-
-                // Generate thumbnail for images
-                let thumbnailUrl = null;
-                if (fileType === 'image' && typeof generateThumbnail === 'function') {
+                
+                // Save metadata to database
+                const API_BASE_URL = window.API_BASE_URL || '/api';
+                const isStaticHosting = window.location.hostname.includes('github.io');
+                
+                if (!isStaticHosting) {
                     try {
-                        const thumbnailFile = await generateThumbnail(file);
-                        const thumbnailResult = await uploadToSupabaseStorage(thumbnailFile, `media/thumbnails`);
-                        if (thumbnailResult.success) {
-                            thumbnailUrl = thumbnailResult.downloadURL;
-                        }
-                    } catch (thumbError) {
-                        console.warn('Thumbnail generation failed:', thumbError);
-                        // Use main image as thumbnail
-                        thumbnailUrl = uploadResult.downloadURL;
-                    }
-                } else if (fileType === 'image') {
-                    thumbnailUrl = uploadResult.downloadURL;
-                }
-
-                // Get current user for uploaded_by
-                const currentUser = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
-                const uploadedBy = currentUser ? (currentUser.email || currentUser.uid) : 'Unknown';
-                const userId = currentUser ? currentUser.uid : null;
-
-                // Save to Firebase Firestore
-                let firestoreSaved = false;
-                if (typeof firebase !== 'undefined' && firebase.firestore && currentUser) {
-                    try {
-                        const firestore = firebase.firestore();
-                        await firestore.collection('media_files').add({
-                            store: 'supabase',
-                            publicUrl: uploadResult.downloadURL,
-                            fileType: fileType,
-                            userId: userId,
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                            fileName: file.name,
-                            fileSize: file.size,
-                            mimeType: file.type,
-                            storagePath: uploadResult.storagePath,
-                            thumbnailUrl: thumbnailUrl,
-                            description: description || null
+                        const formData = new FormData();
+                        formData.append('url', uploadResult.url);
+                        formData.append('description', description);
+                        formData.append('type', fileType);
+                        formData.append('file_name', file.name);
+                        formData.append('file_size', file.size);
+                        formData.append('admin_password', MEDIA_ADMIN_PASSWORD);
+                        
+                        await fetch(API_BASE_URL + '/upload_media.php', {
+                            method: 'POST',
+                            body: formData
                         });
-                        firestoreSaved = true;
-                        console.log('Saved to Firestore successfully');
-                    } catch (firestoreError) {
-                        console.warn('Firestore save failed (will use PHP API):', firestoreError);
+                    } catch (error) {
+                        console.warn('Database save failed:', error);
                     }
                 }
-
-                // Save metadata to database (PHP API - fallback or additional storage)
-                const response = await fetch(API_BASE_URL + '/upload_media.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        file_name: file.name,
-                        download_url: uploadResult.downloadURL,
-                        file_type: fileType,
-                        mime_type: file.type,
-                        file_size: file.size,
-                        description: description,
-                        thumbnail_url: thumbnailUrl,
-                        storage_path: uploadResult.storagePath,
-                        uploaded_by: uploadedBy,
-                        password: MEDIA_ADMIN_PASSWORD // Include password for API authentication
-                    })
-                });
-
-                const data = await response.json();
                 
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalBtnText;
+                closeAddMediaModal();
+                alert('Media uploaded successfully!');
+                loadMediaFromStorage(currentFilter);
                 
-                if (data.success || firestoreSaved) {
-                    alert('Media uploaded successfully!');
-                    window.closeAddMediaModal();
-                    loadMediaFromStorage();
-                } else {
-                    // If database save failed, try to delete from storage
-                    if (uploadResult.storagePath && typeof deleteFromSupabaseStorage === 'function') {
-                        await deleteFromSupabaseStorage(uploadResult.storagePath);
-                    }
-                    // Also delete from Firestore if it was saved there
-                    if (firestoreSaved && typeof firebase !== 'undefined' && firebase.firestore) {
-                        // Note: We'd need the doc ID to delete, but we don't have it
-                        // This is okay - the file in storage is the important cleanup
-                    }
-                    alert('Error: ' + (data.message || 'Failed to save media metadata'));
-                }
             } catch (error) {
-                // Always re-enable button and restore text, even on error
+                console.error('Upload error:', error);
+                alert('Error uploading media: ' + error.message);
+            } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnText;
-                console.error('Error uploading media:', error);
-                
-                // Show user-friendly error message
-                let errorMessage = 'Error uploading media: ';
-                if (error.message) {
-                    errorMessage += error.message;
-                } else if (typeof error === 'string') {
-                    errorMessage += error;
-                } else {
-                    errorMessage += 'Unknown error occurred. Please try again.';
-                }
-                
-                alert(errorMessage);
-                
-                // Log full error for debugging
-                console.error('Full error details:', error);
-            } finally {
-                // Ensure button is always re-enabled, even if something unexpected happens
-                submitBtn.disabled = false;
-                if (submitBtn.innerHTML.includes('spinner') || submitBtn.innerHTML.includes('Uploading')) {
-                    submitBtn.innerHTML = originalBtnText;
-                }
             }
         };
-
-        window.deleteMedia = async function(mediaId) {
-            // Check authentication - must have correct password
+        
+        // Delete media
+        window.deleteMedia = async function(mediaId, event) {
+            if (event) {
+                event.stopPropagation();
+                event.preventDefault();
+            }
+            
             if (!isMediaAdminAuthenticated()) {
                 showMediaPasswordPrompt();
                 if (!isMediaAdminAuthenticated()) {
@@ -394,551 +817,67 @@
             }
             
             try {
-                // First, get media info to get storage path
-                const response = await fetch(API_BASE_URL + '/get_media.php');
-                const data = await response.json();
+                const API_BASE_URL = window.API_BASE_URL || '/api';
+                const formData = new FormData();
+                formData.append('id', mediaId);
+                formData.append('admin_password', MEDIA_ADMIN_PASSWORD);
                 
-                if (!data.success || !data.media) {
-                    throw new Error('Failed to fetch media information');
-                }
-                
-                const media = data.media.find(m => m.id == mediaId);
-                if (!media) {
-                    throw new Error('Media not found');
-                }
-                
-                const storagePath = media.drive_file_id; // Storage path is stored in drive_file_id column
-                
-                // Delete from Supabase Storage if path exists
-                if (storagePath && typeof deleteFromSupabaseStorage === 'function') {
-                    try {
-                        await deleteFromSupabaseStorage(storagePath);
-                    } catch (storageError) {
-                        console.warn('Error deleting from Supabase Storage:', storageError);
-                        // Continue with database deletion even if storage deletion fails
-                    }
-                }
-                
-                // Get Firebase ID token for authentication
-                let authToken = null;
-                if (typeof getCurrentUser === 'function') {
-                    const user = getCurrentUser();
-                    if (user) {
-                        authToken = await user.getIdToken();
-                    }
-                }
-                
-                // Delete from database
-                const deleteResponse = await fetch(API_BASE_URL + '/delete_media.php', {
+                const response = await fetch(API_BASE_URL + '/delete_media.php', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
-                    },
-                    body: JSON.stringify({
-                        id: mediaId,
-                        password: MEDIA_ADMIN_PASSWORD // Use the media admin password
-                    })
+                    body: formData
                 });
                 
-                const deleteData = await deleteResponse.json();
-                
-                if (deleteData.success) {
+                if (response.ok) {
                     alert('Media deleted successfully!');
-                    loadMediaFromStorage();
+                    loadMediaFromStorage(currentFilter);
                 } else {
-                    alert('Error: ' + (deleteData.message || 'Failed to delete media'));
+                    throw new Error('Delete failed');
                 }
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Delete error:', error);
                 alert('Error deleting media: ' + error.message);
             }
         };
-
-        // Check if we're on GitHub Pages (no PHP backend)
-        function isGitHubPages() {
-            return window.location.hostname.includes('github.io');
-        }
-
-        function loadMediaFromStorage(type = 'all') {
-            const adminStatus = isMediaAdminAuthenticated();
-            const mediaGrid = document.getElementById('mediaGrid');
-            
-            if (!mediaGrid) return;
-            
-            // Show loading state if grid is empty
-            if (mediaGrid.innerHTML.trim() === '') {
-                mediaGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;"><i class="fas fa-spinner fa-spin" style="font-size: 48px; margin-bottom: 10px;"></i><p>Loading media...</p></div>';
-            }
-
-            // If on GitHub Pages, show sample/placeholder content
-            if (isGitHubPages()) {
-                showGitHubPagesMedia(mediaGrid, type);
-                return;
-            }
-            
-            const url = type === 'all' ? (API_BASE_URL + '/get_media.php') : (API_BASE_URL + `/get_media.php?type=${type}`);
-            // Add timeout to prevent hanging
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-            
-            fetch(url, { signal: controller.signal })
-                .then(response => {
-                    // Handle 404 and other errors gracefully
-                    if (response.status === 404) {
-                        console.warn('API endpoint not found (404). This is normal if PHP backend is not available.');
-                        throw new Error('API_NOT_FOUND');
-                    }
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    
-                    const contentType = response.headers.get('content-type');
-                    if (!contentType || !contentType.includes('application/json')) {
-                        return response.text().then(text => {
-                            if (text.trim().startsWith('<?php') || text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
-                                throw new Error('PHP backend not available. Media gallery requires a PHP server.');
-                            }
-                            throw new Error(`Expected JSON but got ${contentType || 'unknown content type'}.`);
-                        });
-                    }
-                    
-                    return response.json();
-                })
-                .then(data => {
-                    clearTimeout(timeoutId);
-                    if (data.success && data.media) {
-                        if (data.media.length === 0) {
-                            mediaGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;"><i class="fas fa-folder-open" style="font-size: 48px; margin-bottom: 10px; opacity: 0.5;"></i><p>No media files found</p></div>';
-                            return;
-                        }
-                        
-                        // Clear loading state
-                        mediaGrid.innerHTML = '';
-                        data.media.forEach(media => {
-                            renderMediaItem(mediaGrid, media, adminStatus);
-                        });
-                    } else {
-                        mediaGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;"><i class="fas fa-folder-open" style="font-size: 48px; margin-bottom: 10px; opacity: 0.5;"></i><p>No media files found</p></div>';
-                    }
-                })
-                .catch(error => {
-                    clearTimeout(timeoutId);
-                    console.error('Error loading media:', error);
-                    if (error.name === 'AbortError') {
-                        mediaGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;"><i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 10px; opacity: 0.5;"></i><p>Request timed out. Please try again.</p></div>';
-                    } else if (error.message === 'API_NOT_FOUND' || error.message.includes('404')) {
-                        // API not found - show demo content or empty state
-                        console.log('API endpoint not available, showing demo content');
-                        showGitHubPagesMedia(mediaGrid, type);
-                    } else {
-                        showGitHubPagesMedia(mediaGrid, type);
-                    }
-                });
-        }
-
-        function showGitHubPagesMedia(mediaGrid, type) {
-            // Sample media for demo/GitHub Pages
-            const sampleMedia = [
-                { id: 1, file_name: 'Quran Recitation', file_type: 'audio', description: 'Beautiful Quran recitation by KIUMA members', thumbnail_url: '' },
-                { id: 2, file_name: 'Jummah Khutbah', file_type: 'video', description: 'Weekly Friday sermon recording', thumbnail_url: '' },
-                { id: 3, file_name: 'Ramadan Event 2025', file_type: 'image', description: 'Photos from our Ramadan iftar gathering', thumbnail_url: 'https://images.unsplash.com/photo-1564769625905-50e93615e769?w=400' },
-                { id: 4, file_name: 'Islamic Lecture Series', file_type: 'audio', description: 'Weekly lecture on Islamic jurisprudence', thumbnail_url: '' },
-                { id: 5, file_name: 'Campus Mosque Photos', file_type: 'image', description: 'Beautiful photos of our campus mosque', thumbnail_url: 'https://images.unsplash.com/photo-1519817650390-64a93db51149?w=400' }
-            ];
-
-            const filtered = type === 'all' ? sampleMedia : sampleMedia.filter(m => m.file_type === type);
-            
-            if (filtered.length === 0) {
-                mediaGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;"><i class="fas fa-folder-open" style="font-size: 48px; margin-bottom: 10px; opacity: 0.5;"></i><p>No media files in this category</p></div>';
-                return;
-            }
-
-            mediaGrid.innerHTML = `
-                <div style="grid-column: 1/-1; background: #E3F2FD; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
-                    <i class="fas fa-info-circle" style="color: #1976D2;"></i>
-                    <span style="color: #1976D2; font-size: 14px;"> Demo Mode - Sample media shown. Full media requires PHP backend.</span>
-                </div>
-            `;
-
-            filtered.forEach(media => {
-                renderMediaItem(mediaGrid, media, false, true);
-            });
-        }
-
-        function renderMediaItem(mediaGrid, media, adminStatus, isDemo = false) {
-            const mediaItem = document.createElement('div');
-            mediaItem.className = 'media-item';
-            mediaItem.dataset.type = media.file_type;
-            
-            // Check if user is logged in
-            const isLoggedIn = (() => {
-                if (typeof getCurrentUser === 'function') {
-                    return getCurrentUser() !== null;
-                }
-                const userData = localStorage.getItem('userData');
-                return userData !== null;
-            })();
-            
-            const safeName = (media.file_name || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
-            const safeDesc = (media.description || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
-            const downloadLink = !isDemo && media.id ? (API_BASE_URL + '/download_media.php?id=' + media.id) : '';
-            const thumbnail = media.thumbnail_url || '';
-            const directUrl = media.direct_download_link || downloadLink;
-            
-            // Play online button (for videos/audio) - only for logged-in users
-            let playButton = '';
-            if (isLoggedIn && !isDemo && directUrl) {
-                if (media.file_type === 'video') {
-                    playButton = `<button onclick="playMedia('${directUrl}', 'video')" style="margin-top: 10px; padding: 8px 12px; background: #2196F3; color: white; border: none; border-radius: 5px; text-align: center; font-size: 12px; cursor: pointer; width: 100%;"><i class="fas fa-play"></i> Play Online</button>`;
-                } else if (media.file_type === 'audio') {
-                    playButton = `<button onclick="playMedia('${directUrl}', 'audio')" style="margin-top: 10px; padding: 8px 12px; background: #9C27B0; color: white; border: none; border-radius: 5px; text-align: center; font-size: 12px; cursor: pointer; width: 100%;"><i class="fas fa-play"></i> Play Online</button>`;
-                }
-            }
-            
-            let preview = '';
-            if (media.file_type === 'video') {
-                preview = `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, #f44336, #d32f2f); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-video"></i></div>`;
-            } else if (media.file_type === 'audio') {
-                preview = `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, #9C27B0, #7B1FA2); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-music"></i></div>`;
-            } else if (media.file_type === 'image' && thumbnail) {
-                preview = `<img src="${thumbnail}" alt="${safeName}" style="width: 100%; height: 200px; object-fit: cover;" onerror="this.parentElement.innerHTML='<div style=\\'width: 100%; height: 200px; background: linear-gradient(135deg, #2196F3, #1976D2); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;\\'><i class=\\'fas fa-image\\'></i></div>'">`;
-            } else {
-                preview = `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, #2196F3, #1976D2); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-image"></i></div>`;
-            }
-            
-            // Download button - only for logged-in users
-            let downloadButton = '';
-            if (isLoggedIn && downloadLink && !isDemo) {
-                downloadButton = `<a href="${downloadLink}" download="${safeName}" onclick="return checkDownloadAuth(event)" style="margin-top: 10px; padding: 8px 12px; background: var(--primary-green); color: white; text-decoration: none; border-radius: 5px; text-align: center; font-size: 12px; display: inline-block;"><i class="fas fa-download"></i> Download</a>`;
-            } else if (!isLoggedIn && !isDemo) {
-                downloadButton = `<button onclick="requireLoginForDownload()" style="margin-top: 10px; padding: 8px 12px; background: #E0E0E0; color: #666; border: none; border-radius: 5px; text-align: center; font-size: 12px; cursor: pointer; width: 100%;"><i class="fas fa-lock"></i> Login to Download</button>`;
-            }
-            
-            mediaItem.innerHTML = `
-                <div style="width: 100%; height: 100%; position: relative; border-radius: 8px; overflow: hidden; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column;">
-                    ${preview}
-                    <div style="padding: 12px; flex: 1; display: flex; flex-direction: column;">
-                        <h4 style="margin: 0 0 5px 0; font-size: 14px; font-weight: 600; color: var(--dark-gray); line-height: 1.3;">${safeName}</h4>
-                        ${safeDesc ? `<p style="margin: 5px 0 0 0; font-size: 11px; color: var(--text-gray); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${safeDesc}</p>` : ''}
-                        ${playButton}
-                        ${downloadButton}
-                        ${isDemo ? `<span style="margin-top: 10px; padding: 8px 12px; background: #E0E0E0; color: #666; border-radius: 5px; text-align: center; font-size: 12px; display: inline-block;"><i class="fas fa-eye"></i> Preview Only</span>` : ''}
-                    </div>
-                    ${adminStatus && !isDemo ? `<button onclick="deleteMedia('${media.id}')" style="position: absolute; top: 8px; right: 8px; background: #f44336; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); font-size: 14px; z-index: 10;"><i class="fas fa-trash"></i></button>` : ''}
-                </div>
-            `;
-            
-            mediaGrid.appendChild(mediaItem);
+        
+        // Get file type category
+        function getFileTypeCategory(mimeType) {
+            if (mimeType.startsWith('video/')) return 'video';
+            if (mimeType.startsWith('audio/')) return 'audio';
+            if (mimeType.startsWith('image/')) return 'image';
+            return 'other';
         }
         
-        // Check authentication before download
-        function checkDownloadAuth(event) {
-            const isLoggedIn = (() => {
-                if (typeof getCurrentUser === 'function') {
-                    return getCurrentUser() !== null;
-                }
-                const userData = localStorage.getItem('userData');
-                return userData !== null;
-            })();
-            
-            if (!isLoggedIn) {
-                event.preventDefault();
-                requireLoginForDownload();
-                return false;
-            }
-            return true;
-        }
-        
-        // Require login for download
-        function requireLoginForDownload() {
-            if (confirm('You must be logged in to download media. Would you like to sign in now?')) {
-                window.location.href = 'join-us.html';
-            }
-        }
-        
-        // Play media online (videos/audio)
-        function playMedia(url, type) {
-            const isLoggedIn = (() => {
-                if (typeof getCurrentUser === 'function') {
-                    return getCurrentUser() !== null;
-                }
-                const userData = localStorage.getItem('userData');
-                return userData !== null;
-            })();
-            
-            if (!isLoggedIn) {
-                alert('You must be logged in to play media online.');
-                window.location.href = 'join-us.html';
-                return;
-            }
-            
-            // Open in new window/tab for playback
-            if (type === 'video') {
-                window.open(url, '_blank');
-            } else if (type === 'audio') {
-                // Create audio player modal
-                const modal = document.createElement('div');
-                modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center;';
-                modal.innerHTML = `
-                    <div style="background: white; padding: 30px; border-radius: 10px; max-width: 500px; width: 90%; text-align: center;">
-                        <h3 style="margin-bottom: 20px;">Audio Player</h3>
-                        <audio controls autoplay style="width: 100%; margin-bottom: 20px;">
-                            <source src="${url}" type="audio/mpeg">
-                            Your browser does not support the audio element.
-                        </audio>
-                        <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" style="padding: 10px 20px; background: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer;">Close</button>
-                    </div>
-                `;
-                document.body.appendChild(modal);
-            }
-        }
-
-        // Update upload button visibility - PASSWORD AUTHENTICATED ONLY
-        function updateUploadButtonVisibility() {
-            const addMediaBtn = document.getElementById('addMediaBtn');
-            const adminLoginBtn = document.getElementById('adminLoginBtn');
-            const adminLogoutBtn = document.querySelector('.admin-logout');
-            
-            // Check if user is authenticated with password
-            const isAuthenticated = isMediaAdminAuthenticated();
-            
-            if (isAuthenticated) {
-                // Authenticated - show upload button and logout button
-                if (addMediaBtn) addMediaBtn.style.display = 'block';
-                if (adminLoginBtn) adminLoginBtn.style.display = 'none';
-                if (adminLogoutBtn) adminLogoutBtn.style.display = 'block';
-            } else {
-                // Not authenticated - hide upload button, show login button
-                if (addMediaBtn) addMediaBtn.style.display = 'none';
-                if (adminLoginBtn) adminLoginBtn.style.display = 'block';
-                if (adminLogoutBtn) adminLogoutBtn.style.display = 'none';
-            }
-        }
-
-        // Update file input display when file is selected (mobile-friendly)
-        function updateFileInputDisplay() {
-            const fileInput = document.getElementById('mediaFile');
-            const selectedFileName = document.getElementById('selectedFileName');
-            const fileInputText = document.getElementById('fileInputText');
-            const fileInputButton = document.getElementById('fileInputButton');
-            
-            if (fileInput && fileInput.files && fileInput.files[0]) {
-                const file = fileInput.files[0];
-                const fileName = file.name;
-                const fileSize = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
-                
-                if (selectedFileName) {
-                    selectedFileName.textContent = `✓ ${fileName} (${fileSize})`;
-                    selectedFileName.style.display = 'block';
-                }
-                if (fileInputText) {
-                    fileInputText.textContent = 'File selected - Tap to change';
-                }
-                if (fileInputButton) {
-                    fileInputButton.style.borderColor = 'var(--primary-green)';
-                    fileInputButton.style.background = '#E8F5E9';
-                }
-            } else {
-                if (selectedFileName) {
-                    selectedFileName.style.display = 'none';
-                }
-                if (fileInputText) {
-                    fileInputText.textContent = 'Upload video, audio, or image file (Max 500MB)';
-                }
-                if (fileInputButton) {
-                    fileInputButton.style.borderColor = 'var(--primary-green)';
-                    fileInputButton.style.background = '#f5f5f5';
-                }
-            }
-        }
-
-        window.addEventListener('DOMContentLoaded', function() {
-            // Show loading state immediately
-            const mediaGrid = document.getElementById('mediaGrid');
-            if (mediaGrid) {
-                mediaGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;"><i class="fas fa-spinner fa-spin" style="font-size: 48px; margin-bottom: 10px;"></i><p>Loading media...</p></div>';
-            }
-            
-            // Update upload button visibility based on password authentication
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
             updateUploadButtonVisibility();
+            loadMediaFromStorage('all');
             
-            // Setup mobile-friendly file input
+            // File input change handler
             const fileInput = document.getElementById('mediaFile');
-            const fileInputButton = document.getElementById('fileInputButton');
-            
             if (fileInput) {
                 fileInput.addEventListener('change', updateFileInputDisplay);
                 
-                // Ensure file input is accessible on mobile - make it cover the button area
-                fileInput.style.position = 'absolute';
-                fileInput.style.top = '0';
-                fileInput.style.left = '0';
-                fileInput.style.width = '100%';
-                fileInput.style.height = '100%';
-                fileInput.style.opacity = '0';
-                fileInput.style.zIndex = '10';
-                fileInput.style.fontSize = '16px'; // Prevents zoom on iOS
-                fileInput.style.cursor = 'pointer';
-                fileInput.style.margin = '0';
-                fileInput.style.padding = '0';
-                fileInput.style.border = 'none';
-                
-                // Add touch event support for mobile
-                fileInput.addEventListener('touchstart', function(e) {
-                    e.stopPropagation();
-                }, { passive: true });
-                
-                fileInput.addEventListener('touchend', function(e) {
-                    e.stopPropagation();
-                    // Trigger click on touch end
-                    setTimeout(() => {
-                        this.click();
-                    }, 0);
-                }, { passive: true });
-            }
-            
-            // Also make the button trigger the file input (backup method)
-            if (fileInputButton && fileInput) {
-                fileInputButton.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (fileInput) {
+                // Mobile touch handlers
+                const fileInputWrapper = document.getElementById('fileInputWrapper');
+                if (fileInputWrapper) {
+                    fileInputWrapper.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
                         fileInput.click();
-                    }
-                });
-                
-                fileInputButton.addEventListener('touchend', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (fileInput) {
-                        fileInput.click();
-                    }
-                }, { passive: false });
-            }
-            
-            // Load media (non-blocking)
-            loadMediaFromStorage();
-        });
-    </script>
-
-    <!-- Admin Password Modal (Optional - using prompt instead) -->
-    <div class="modal-overlay" id="adminPasswordModal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-shield-alt"></i> Admin Access</h3>
-                <button class="modal-close" onclick="closeAdminPasswordModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p style="margin-bottom: 15px;">Enter the admin password to access media management features.</p>
-                <div class="form-group">
-                    <label class="form-label">Password</label>
-                    <input type="password" class="form-input" id="mediaAdminPassword" placeholder="Enter admin password" autocomplete="off">
-                    <p id="passwordError" style="color: #f44336; font-size: 14px; margin-top: 5px; display: none;">Incorrect password.</p>
-                </div>
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button class="btn btn-primary" onclick="verifyMediaAdminPassword()" style="flex: 1;">Authenticate</button>
-                    <button class="btn btn-secondary" onclick="closeAdminPasswordModal()" style="flex: 1;">Cancel</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <script>
-        // Close admin password modal
-        function closeAdminPasswordModal() {
-            const modal = document.getElementById('adminPasswordModal');
-            if (modal) {
-                modal.style.display = 'none';
-            }
-            const passwordInput = document.getElementById('mediaAdminPassword');
-            if (passwordInput) {
-                passwordInput.value = '';
-            }
-            const errorMsg = document.getElementById('passwordError');
-            if (errorMsg) {
-                errorMsg.style.display = 'none';
-            }
-        }
-        
-        // Verify media admin password from modal
-        function verifyMediaAdminPassword() {
-            const passwordInput = document.getElementById('mediaAdminPassword');
-            const errorMsg = document.getElementById('passwordError');
-            
-            if (!passwordInput) return;
-            
-            const password = passwordInput.value.trim();
-            
-            if (authenticateMediaAdmin(password)) {
-                closeAdminPasswordModal();
-                updateUploadButtonVisibility();
-                alert('Access granted!');
-            } else {
-                if (errorMsg) {
-                    errorMsg.style.display = 'block';
+                    });
                 }
-                passwordInput.value = '';
-                passwordInput.focus();
             }
-        }
-        
-        // Allow Enter key to submit password
-        document.addEventListener('DOMContentLoaded', function() {
-            const passwordInput = document.getElementById('mediaAdminPassword');
-            if (passwordInput) {
-                passwordInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        verifyMediaAdminPassword();
+            
+            // Close modal on overlay click
+            const modal = document.getElementById('addMediaModal');
+            if (modal) {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        closeAddMediaModal();
                     }
                 });
             }
         });
     </script>
-
-    <!-- Add Media Modal -->
-    <div class="modal-overlay" id="addMediaModal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-upload"></i> Add Media File</h3>
-                <button class="modal-close" onclick="closeAddMediaModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="addMediaForm" onsubmit="event.preventDefault(); addMedia(event); return false;" enctype="multipart/form-data">
-                    <div class="form-group">
-                        <label class="form-label">Select File *</label>
-                        <!-- Mobile-friendly file input wrapper -->
-                        <div style="position: relative; width: 100%; min-height: 120px;">
-                            <!-- File input - positioned to cover entire button area -->
-                            <input type="file" class="form-input" id="mediaFile" required accept="video/*,audio/*,image/*" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10; font-size: 16px; margin: 0; padding: 0;">
-                            <!-- Visible button/label for mobile -->
-                            <div id="fileInputButton" style="position: relative; padding: 20px; border: 2px dashed var(--primary-green); border-radius: 8px; background: #f5f5f5; text-align: center; cursor: pointer; transition: all 0.3s; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none;">
-                                <i class="fas fa-cloud-upload-alt" style="font-size: 40px; color: var(--primary-green); margin-bottom: 10px; display: block;"></i>
-                                <div style="font-weight: 600; color: var(--dark-gray); margin-bottom: 5px; font-size: 16px;">Tap to Choose File</div>
-                                <div style="font-size: 12px; color: var(--text-gray);" id="fileInputText">Upload video, audio, or image file (Max 500MB)</div>
-                                <div id="selectedFileName" style="display: none; margin-top: 10px; padding: 8px; background: white; border-radius: 5px; font-size: 14px; color: var(--dark-green); font-weight: 600;"></div>
-                            </div>
-                        </div>
-                        <p style="font-size: 12px; color: var(--text-gray); margin-top: 5px; text-align: center;">Upload video, audio, or image file (Max 500MB)</p>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Description (Optional)</label>
-                        <textarea class="form-input" id="mediaDescription" rows="3" placeholder="Enter description"></textarea>
-                    </div>
-                    <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button type="submit" class="btn btn-primary" style="flex: 1;">
-                            <i class="fas fa-upload"></i> Upload to Google Drive
-                        </button>
-                        <button type="button" class="btn btn-secondary" onclick="closeAddMediaModal()" style="flex: 1;">Cancel</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
 </body>
 </html>
+

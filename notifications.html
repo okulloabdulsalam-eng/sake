@@ -2,13 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#4CAF50">
     <title>Notifications - KIUMA</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Firebase SDK -->
-    <!-- Using compat version for compatibility with service worker -->
     <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-messaging-compat.js"></script>
@@ -16,6 +19,300 @@
     <script src="fcm-config.js"></script>
     <script src="firebase-auth.js"></script>
     <script src="fcm-init.js"></script>
+    
+    <style>
+        /* Mobile-First Styles */
+        * {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        body {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overscroll-behavior: none;
+        }
+        
+        .mobile-header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .mobile-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+        
+        .mobile-btn {
+            min-height: 44px; /* iOS touch target */
+            padding: 12px 16px;
+            font-size: 14px;
+            border-radius: 8px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .mobile-notification-item {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 12px;
+            position: relative;
+            touch-action: manipulation;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .mobile-notification-item:active {
+            transform: scale(0.98);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+        
+        .mobile-notification-item.unread {
+            border-left: 4px solid #4CAF50;
+        }
+        
+        .mobile-notification-item.read {
+            opacity: 0.7;
+        }
+        
+        .mobile-notification-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: #E8F5E9;
+            color: #4CAF50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        
+        .mobile-notification-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .mobile-notification-content h4 {
+            margin: 0 0 6px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .mobile-notification-content p {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            color: #666;
+            line-height: 1.4;
+        }
+        
+        .mobile-notification-time {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .mobile-notification-delete {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            touch-action: manipulation;
+            z-index: 5;
+        }
+        
+        .mobile-filter-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 8px;
+        }
+        
+        .mobile-filter-btn {
+            flex-shrink: 0;
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            touch-action: manipulation;
+            min-height: 40px;
+        }
+        
+        .mobile-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 10000;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 0;
+            animation: fadeIn 0.2s ease;
+        }
+        
+        .mobile-modal.active {
+            display: flex;
+        }
+        
+        .mobile-modal-content {
+            background: white;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            border-radius: 20px 20px 0 0;
+            padding: 24px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        
+        .mobile-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .mobile-modal-header h3 {
+            margin: 0;
+            font-size: 20px;
+            color: #333;
+        }
+        
+        .mobile-close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #666;
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+        }
+        
+        .mobile-form-group {
+            margin-bottom: 20px;
+        }
+        
+        .mobile-form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .mobile-form-input,
+        .mobile-form-textarea {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px; /* Prevents zoom on iOS */
+            font-family: inherit;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        
+        .mobile-form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .mobile-form-select {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            background: white;
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 40px;
+        }
+        
+        .mobile-submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 20px;
+            touch-action: manipulation;
+            min-height: 48px;
+        }
+        
+        .mobile-submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .mobile-empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .mobile-empty-state i {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        .mobile-badge {
+            background: #f44336;
+            color: white;
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+    </style>
 </head>
 <body>
     <nav class="nav-menu" id="navMenu">
@@ -42,9 +339,9 @@
     </nav>
 
     <div class="container">
-        <header class="header">
+        <header class="header mobile-header">
             <div class="header-content">
-                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <button class="menu-toggle" id="menuToggle" aria-label="Menu"><i class="fas fa-bars"></i></button>
                 <div class="logo-container">
                     <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='block';" onload="this.style.display='block'; if(this.nextElementSibling) this.nextElementSibling.style.display='none';">
                     <svg class="header-logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="display: none;">
@@ -57,19 +354,10 @@
                         <text fill="#4CAF50" font-size="9" font-weight="bold" font-family="Arial, sans-serif" letter-spacing="0.5">
                             <textPath href="#bottomArc" startOffset="50%" text-anchor="middle">MUSLIM ASSOCIATION</textPath>
                         </text>
-                        <path d="M 50,75 L 50,115 L 58,115 L 58,105 L 63,100 L 58,95 L 58,85 Z" fill="none" stroke="#4CAF50" stroke-width="2"/>
-                        <circle cx="56.5" cy="100" r="2" fill="#4CAF50"/>
-                        <rect x="88" y="65" width="10" height="45" fill="none" stroke="#4CAF50" stroke-width="2"/>
-                        <rect x="90" y="75" width="6" height="2" fill="#4CAF50"/>
-                        <rect x="90" y="85" width="6" height="2" fill="#4CAF50"/>
-                        <rect x="90" y="95" width="6" height="2" fill="#4CAF50"/>
-                        <polygon points="93,60 90,65 96,65" fill="#4CAF50"/>
-                        <path d="M 140,92 A 12,12 0 0,1 128,92 A 10,10 0 0,0 140,92 Z" fill="#4CAF50"/>
-                        <path d="M 130,88 L 131.5,92 L 136,92 L 132.5,94.5 L 134,99 L 130,96.5 L 126,99 L 127.5,94.5 L 124,92 L 128.5,92 Z" fill="#4CAF50"/>
                         <text x="100" y="145" font-size="22" font-weight="bold" fill="#4CAF50" text-anchor="middle" font-family="Arial, sans-serif" letter-spacing="2">KIUMA</text>
                     </svg>
                 </div>
-                <button class="notifications-btn" id="notificationsBtn">
+                <button class="notifications-btn" id="notificationsBtn" aria-label="Notifications">
                     <i class="fas fa-bell"></i>
                     <span class="badge" style="display: none;">0</span>
                 </button>
@@ -77,116 +365,47 @@
         </header>
 
         <main class="main-content">
-            <!-- Welcome Section -->
             <section class="welcome-section">
                 <div>
                     <h2 class="greeting">
                         <a href="about.html">KIUMA</a>
                     </h2>
                 </div>
-                <a href="join-us.html" class="account-icon-btn" id="accountIconBtn">
+                <a href="join-us.html" class="account-icon-btn" id="accountIconBtn" aria-label="Account">
                     <i class="fas fa-user-circle" id="accountIcon"></i>
                 </a>
             </section>
 
-            <section class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <section class="page-header">
                 <h2 class="page-title">Notifications</h2>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button class="btn btn-primary" onclick="requestNotificationPermission()" style="padding: 10px 15px; background: #4CAF50;">
-                        <i class="fas fa-bell"></i> Enable Push Notifications
+                <div class="mobile-actions">
+                    <button class="btn btn-primary mobile-btn" onclick="requestNotificationPermission()">
+                        <i class="fas fa-bell"></i> Enable Push
                     </button>
-                    <button class="btn btn-secondary" id="adminLoginBtn" onclick="showAdminLogin()" style="padding: 10px 15px;">
-                        <i class="fas fa-lock"></i> Admin Login
+                    <button class="btn btn-secondary mobile-btn" id="adminLoginBtn" onclick="showAdminLogin()">
+                        <i class="fas fa-lock"></i> Admin
                     </button>
-                    <button class="btn btn-primary admin-only" onclick="window.showAddNotificationModal()" style="padding: 10px 15px; display: none;">
-                        <i class="fas fa-plus"></i> Add Notification
+                    <button class="btn btn-primary mobile-btn admin-only" onclick="showAddNotificationModal()" style="display: none;">
+                        <i class="fas fa-plus"></i> Add
                     </button>
-                    <button class="btn btn-secondary admin-logout" onclick="logoutAdmin()" style="padding: 10px 15px; display: none;">
+                    <button class="btn btn-secondary mobile-btn admin-logout" onclick="logoutAdmin()" style="display: none;">
                         <i class="fas fa-sign-out-alt"></i> Logout
                     </button>
                 </div>
             </section>
 
             <section class="page-content">
-                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                    <button class="btn btn-primary filter-btn active" id="filterAll" style="flex: 1; padding: 12px;" onclick="filterNotifications('all')">All</button>
-                    <button class="btn btn-outline filter-btn" id="filterUnread" style="flex: 1; padding: 12px;" onclick="filterNotifications('unread')">Unread <span id="unreadBadge" class="badge" style="background: #f44336; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; margin-left: 5px;">0</span></button>
+                <div class="mobile-filter-buttons">
+                    <button class="btn btn-primary mobile-filter-btn" onclick="filterNotifications('all')" data-filter="all">All</button>
+                    <button class="btn btn-outline mobile-filter-btn" onclick="filterNotifications('unread')" data-filter="unread">
+                        Unread <span class="mobile-badge" id="unreadBadge">0</span>
+                    </button>
                 </div>
 
-                <div class="notification-item" data-status="unread" data-id="ramadan-welcome">
-                    <div class="notification-icon">
-                        <i class="fas fa-calendar-check"></i>
-                    </div>
-                    <div class="notification-content">
-                        <h4>New Event: Ramadan Welcome</h4>
-                        <p>Join us this Friday for a special Ramadan welcome event. Dinner and spiritual talks included.</p>
-                        <span class="notification-time">2 hours ago</span>
-                    </div>
-                </div>
-
-                <div class="notification-item" data-status="unread" data-id="quran-study">
-                    <div class="notification-icon">
-                        <i class="fas fa-book"></i>
-                    </div>
-                    <div class="notification-content">
-                        <h4>Quran Study Registration Open</h4>
-                        <p>Registration for the weekly Quran Study Circle is now open. Limited spots available.</p>
-                        <span class="notification-time">5 hours ago</span>
-                    </div>
-                </div>
-
-                <div class="notification-item" data-status="read" data-id="donation-thanks">
-                    <div class="notification-icon">
-                        <i class="fas fa-hand-holding-heart"></i>
-                    </div>
-                    <div class="notification-content">
-                        <h4>Thank You for Your Donation</h4>
-                        <p>Your Zakat contribution has been received. May Allah accept it from you.</p>
-                        <span class="notification-time">1 day ago</span>
-                    </div>
-                </div>
-
-                <div class="notification-item" data-status="read" data-id="prayer-reminder">
-                    <div class="notification-icon">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <div class="notification-content">
-                        <h4>Prayer Time Reminder</h4>
-                        <p>Asr prayer begins in 15 minutes. Don't forget to pray!</p>
-                        <span class="notification-time">2 days ago</span>
-                    </div>
-                </div>
-
-                <div class="notification-item" data-status="read" data-id="community-iftar">
-                    <div class="notification-icon">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <div class="notification-content">
-                        <h4>Community Iftar Tomorrow</h4>
-                        <p>Join us tomorrow evening for community Iftar at 7:00 PM. All welcome!</p>
-                        <span class="notification-time">3 days ago</span>
-                    </div>
-                </div>
-
-                <div class="notification-item" data-status="read" data-id="online-course">
-                    <div class="notification-icon">
-                        <i class="fas fa-graduation-cap"></i>
-                    </div>
-                    <div class="notification-content">
-                        <h4>New Online Course Available</h4>
-                        <p>Check out our new Islamic Studies course available on the online platform.</p>
-                        <span class="notification-time">1 week ago</span>
-                    </div>
-                </div>
-
-                <div class="notification-item" data-status="read">
-                    <div class="notification-icon">
-                        <i class="fas fa-star-and-crescent"></i>
-                    </div>
-                    <div class="notification-content">
-                        <h4>Ramadan Mubarak!</h4>
-                        <p>The blessed month of Ramadan has begun. May this month bring you peace and blessings.</p>
-                        <span class="notification-time">2 weeks ago</span>
+                <div id="notificationsList">
+                    <div class="mobile-empty-state">
+                        <i class="fas fa-bell"></i>
+                        <p>Loading notifications...</p>
                     </div>
                 </div>
             </section>
@@ -201,33 +420,73 @@
         </nav>
     </div>
 
+    <!-- Admin Login Modal -->
+    <div class="mobile-modal" id="adminLoginModal">
+        <div class="mobile-modal-content">
+            <div class="mobile-modal-header">
+                <h3><i class="fas fa-shield-alt"></i> Admin Login</h3>
+                <button class="mobile-close-btn" onclick="closeAdminLogin()" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="mobile-form-group">
+                <label class="mobile-form-label">Password</label>
+                <input type="password" class="mobile-form-input" id="adminPassword" placeholder="Enter admin password" autocomplete="off">
+                <p id="passwordError" style="color: #f44336; font-size: 14px; margin-top: 8px; display: none;"></p>
+            </div>
+            <button class="mobile-submit-btn" onclick="verifyAdminPassword()">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </button>
+        </div>
+    </div>
+
+    <!-- Add Notification Modal -->
+    <div class="mobile-modal" id="addNotificationModal">
+        <div class="mobile-modal-content">
+            <div class="mobile-modal-header">
+                <h3><i class="fas fa-bell"></i> Add Notification</h3>
+                <button class="mobile-close-btn" onclick="closeAddNotificationModal()" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="addNotificationForm" onsubmit="addNotification(event)">
+                <div class="mobile-form-group">
+                    <label class="mobile-form-label">Title *</label>
+                    <input type="text" class="mobile-form-input" id="notifTitle" placeholder="Notification title" required>
+                </div>
+                <div class="mobile-form-group">
+                    <label class="mobile-form-label">Message *</label>
+                    <textarea class="mobile-form-textarea" id="notifMessage" placeholder="Notification message" required></textarea>
+                </div>
+                <div class="mobile-form-group">
+                    <label class="mobile-form-label">Icon</label>
+                    <select class="mobile-form-select" id="notifIcon">
+                        <option value="fa-bell">Bell</option>
+                        <option value="fa-calendar-check">Calendar</option>
+                        <option value="fa-book">Book</option>
+                        <option value="fa-hand-holding-heart">Donation</option>
+                        <option value="fa-clock">Time</option>
+                        <option value="fa-users">Users</option>
+                        <option value="fa-graduation-cap">Education</option>
+                        <option value="fa-star-and-crescent">Star</option>
+                    </select>
+                </div>
+                <button type="submit" class="mobile-submit-btn">
+                    <i class="fas fa-plus"></i> Add Notification
+                </button>
+            </form>
+        </div>
+    </div>
+
     <script src="api-config.js"></script>
     <script src="script.js"></script>
     <script src="update-navigation.js"></script>
     <script>
-        // Notifications Admin Password (same as media)
+        // Notifications Admin Password
         const NOTIFICATIONS_ADMIN_PASSWORD = 'kiuma2025';
+        let currentFilter = 'all';
         
-        // Admin authentication
-        let isAdminAuthenticated = false;
-        
-        // Show admin login modal
-        function showAdminLogin() {
-            const modal = document.getElementById('adminLoginModal');
-            if (modal) {
-                modal.style.display = 'flex';
-                const passwordInput = document.getElementById('adminPassword');
-                if (passwordInput) {
-                    passwordInput.value = '';
-                    passwordInput.focus();
-                }
-            } else {
-                // Fallback to prompt if modal doesn't exist
-                verifyAdminPassword();
-            }
-        }
-        
-        // Update admin button visibility (like media system)
+        // Update admin button visibility
         function updateAdminButtonVisibility() {
             const isAuth = sessionStorage.getItem('isAdminAuthenticated') === 'true' || 
                           localStorage.getItem('adminPassword') === NOTIFICATIONS_ADMIN_PASSWORD;
@@ -237,101 +496,36 @@
             const adminLogoutBtns = document.querySelectorAll('.admin-logout');
             
             if (isAuth) {
-                // Hide login button, show admin buttons
                 if (adminLoginBtn) adminLoginBtn.style.display = 'none';
                 adminOnlyBtns.forEach(btn => btn.style.display = 'block');
                 adminLogoutBtns.forEach(btn => btn.style.display = 'block');
-                
-                // Add delete buttons to existing notifications
-                document.querySelectorAll('.notification-item').forEach(item => {
-                    const notifId = item.dataset.id;
-                    const databaseId = item.dataset.databaseId || '';
-                    const firestoreId = item.dataset.firestoreId || '';
-                    
-                    // Check if delete button already exists
-                    if (!item.querySelector('button[onclick*="deleteNotification"]')) {
-                        const deleteBtn = document.createElement('button');
-                        deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
-                        deleteBtn.style.cssText = 'position: absolute; top: 8px; right: 8px; background: #f44336; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-size: 14px; z-index: 10;';
-                        deleteBtn.title = 'Delete notification';
-                        deleteBtn.onclick = (e) => {
-                            e.stopPropagation();
-                            deleteNotification(notifId, databaseId, firestoreId, e);
-                        };
-                        item.style.position = 'relative';
-                        item.appendChild(deleteBtn);
-                    }
-                });
             } else {
-                // Show login button, hide admin buttons
                 if (adminLoginBtn) adminLoginBtn.style.display = 'block';
                 adminOnlyBtns.forEach(btn => btn.style.display = 'none');
                 adminLogoutBtns.forEach(btn => btn.style.display = 'none');
-                
-                // Remove delete buttons from notifications
-                document.querySelectorAll('.notification-item button[onclick*="deleteNotification"]').forEach(btn => {
-                    btn.remove();
-                });
             }
         }
         
-        // Logout admin
-        function logoutAdmin() {
-            isAdminAuthenticated = false;
-            sessionStorage.removeItem('isAdminAuthenticated');
-            localStorage.removeItem('adminPassword');
-            updateAdminButtonVisibility();
-            alert('Logged out successfully!');
-        }
-        
-        // Verify admin password (same as media system)
-        function verifyAdminPassword() {
-            const passwordInput = document.getElementById('adminPassword');
-            const password = passwordInput ? passwordInput.value : prompt('Enter admin password:');
-            
-            if (!password) {
-                return false;
-            }
-            
-            if (password === NOTIFICATIONS_ADMIN_PASSWORD) {
-                isAdminAuthenticated = true;
-                sessionStorage.setItem('isAdminAuthenticated', 'true');
-                localStorage.setItem('adminPassword', NOTIFICATIONS_ADMIN_PASSWORD);
-                
-                // Close modal
-                const modal = document.getElementById('adminLoginModal');
-                if (modal) {
-                    modal.style.display = 'none';
-                }
-                
-                // Clear password field
+        // Show admin login
+        function showAdminLogin() {
+            const modal = document.getElementById('adminLoginModal');
+            if (modal) {
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+                const passwordInput = document.getElementById('adminPassword');
                 if (passwordInput) {
                     passwordInput.value = '';
+                    passwordInput.focus();
                 }
-                
-                // Update button visibility
-                updateAdminButtonVisibility();
-                
-                // Show success
-                alert('Admin access granted!');
-                return true;
-            } else {
-                const errorMsg = document.getElementById('passwordError');
-                if (errorMsg) {
-                    errorMsg.style.display = 'block';
-                    errorMsg.textContent = 'Incorrect password. Please try again.';
-                } else {
-                    alert('Incorrect password. Please try again.');
-                }
-                return false;
             }
         }
         
-        // Close admin login modal
+        // Close admin login
         function closeAdminLogin() {
             const modal = document.getElementById('adminLoginModal');
             if (modal) {
-                modal.style.display = 'none';
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
             }
             const passwordInput = document.getElementById('adminPassword');
             if (passwordInput) {
@@ -343,247 +537,264 @@
             }
         }
         
-        // Make functions globally accessible
-        window.showAdminLogin = showAdminLogin;
-        window.verifyAdminPassword = verifyAdminPassword;
-        window.closeAdminLogin = closeAdminLogin;
-        window.logoutAdmin = logoutAdmin;
-        window.updateAdminButtonVisibility = updateAdminButtonVisibility;
-        
-        // Check admin status on page load
-        window.addEventListener('DOMContentLoaded', function() {
-            // Update admin button visibility immediately
-            updateAdminButtonVisibility();
-            
-            // Check admin status in background (non-blocking)
-            if (typeof window.checkAdminStatus === 'function') {
-                setTimeout(() => window.checkAdminStatus(), 0);
-            } else if (typeof checkAdminStatus === 'function') {
-                setTimeout(() => checkAdminStatus(), 0);
-            }
-            
-            // Update admin button visibility on load
-            updateAdminButtonVisibility();
-            
-            // Load notifications and update badges (non-blocking)
-            loadNotificationsFromStorage().then(() => {
-                initNotificationStatus();
-                setupNotificationClickHandlers();
-                updateUnreadBadge();
-                // Update admin buttons again after notifications load (to show delete buttons)
-                updateAdminButtonVisibility();
-                if (typeof window.updateNotificationBadge === 'function') {
-                    window.updateNotificationBadge();
-                }
-            }).catch(err => {
-                console.error('Error loading notifications:', err);
-                updateUnreadBadge();
-                if (typeof window.updateNotificationBadge === 'function') {
-                    window.updateNotificationBadge();
-                }
-            });
-            
-            // Check for white days notification in background (non-blocking)
-            if (typeof updateDates === 'function') {
-                setTimeout(() => updateDates(), 0);
-            }
-            
-            // Initialize admin login modal
-            const adminModal = document.getElementById('adminLoginModal');
-            if (adminModal) {
-                adminModal.addEventListener('click', function(e) {
-                    if (e.target === adminModal) {
-                        closeAdminLogin();
-                    }
-                });
-            }
-            
-            // Allow Enter key to submit password
+        // Verify admin password
+        function verifyAdminPassword() {
             const passwordInput = document.getElementById('adminPassword');
-            if (passwordInput) {
-                passwordInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        verifyAdminPassword();
-                    }
-                });
+            const password = passwordInput ? passwordInput.value : '';
+            
+            if (!password) {
+                return false;
             }
-
-            // Close add notification modal on overlay click
-            const addNotifModal = document.getElementById('addNotificationModal');
-            if (addNotifModal) {
-                addNotifModal.addEventListener('click', function(e) {
-                    if (e.target === addNotifModal) {
-                        window.closeAddNotificationModal();
-                    }
-                });
-            }
-        });
-
-        // Get read notification IDs from localStorage
-        function getReadNotifications() {
-            return JSON.parse(localStorage.getItem('readNotifications') || '[]');
-        }
-
-        // Save read notification ID to localStorage
-        function markNotificationAsRead(id) {
-            const readNotifications = getReadNotifications();
-            if (!readNotifications.includes(id)) {
-                readNotifications.push(id);
-                localStorage.setItem('readNotifications', JSON.stringify(readNotifications));
-                // Update global badge on all pages
-                if (typeof window.updateNotificationBadge === 'function') {
-                    window.updateNotificationBadge();
+            
+            if (password === NOTIFICATIONS_ADMIN_PASSWORD) {
+                sessionStorage.setItem('isAdminAuthenticated', 'true');
+                localStorage.setItem('adminPassword', NOTIFICATIONS_ADMIN_PASSWORD);
+                closeAdminLogin();
+                updateAdminButtonVisibility();
+                alert('Admin access granted!');
+                return true;
+            } else {
+                const errorMsg = document.getElementById('passwordError');
+                if (errorMsg) {
+                    errorMsg.style.display = 'block';
+                    errorMsg.textContent = 'Incorrect password. Please try again.';
                 }
+                return false;
             }
         }
-
-        // Update unread badge count
-        function updateUnreadBadge() {
-            const unreadCount = document.querySelectorAll('.notification-item[data-status="unread"]').length;
-            const badge = document.getElementById('unreadBadge');
-            const headerBadge = document.querySelector('.notifications-btn .badge');
-            
-            if (badge) {
-                badge.textContent = unreadCount;
-                badge.style.display = unreadCount > 0 ? 'inline' : 'none';
-            }
-            if (headerBadge) {
-                headerBadge.textContent = unreadCount;
-                headerBadge.style.display = unreadCount > 0 ? 'inline' : 'none';
-            }
+        
+        // Logout admin
+        function logoutAdmin() {
+            sessionStorage.removeItem('isAdminAuthenticated');
+            localStorage.removeItem('adminPassword');
+            updateAdminButtonVisibility();
+            alert('Logged out successfully!');
         }
-
-        // Initialize notification read status from localStorage
-        function initNotificationStatus() {
-            const readNotifications = getReadNotifications();
-            document.querySelectorAll('.notification-item').forEach((item, index) => {
-                const id = item.dataset.id || `notif-${index}`;
-                item.dataset.id = id;
-                
-                if (readNotifications.includes(id)) {
-                    item.dataset.status = 'read';
-                    item.style.opacity = '0.7';
-                }
-            });
-            updateUnreadBadge();
-        }
-
-        function filterNotifications(status) {
-            const items = Array.from(document.querySelectorAll('.notification-item'));
-            
-            // Update active button state
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('active', 'btn-primary');
-                btn.classList.add('btn-outline');
-            });
-            const activeBtn = status === 'all' ? document.getElementById('filterAll') : document.getElementById('filterUnread');
-            if (activeBtn) {
-                activeBtn.classList.add('active', 'btn-primary');
-                activeBtn.classList.remove('btn-outline');
-            }
-            
-            // Sort items before filtering:
-            // 1. Unread first
-            // 2. Then by date (newest first)
-            items.sort((a, b) => {
-                const statusA = a.dataset.status;
-                const statusB = b.dataset.status;
-                
-                // Unread comes first
-                if (statusA === 'unread' && statusB !== 'unread') return -1;
-                if (statusA !== 'unread' && statusB === 'unread') return 1;
-                
-                // If same status, maintain DOM order (newest first)
-                return 0;
-            });
-            
-            // Re-append sorted items to maintain order
-            const container = document.querySelector('.page-content');
-            items.forEach(item => {
-                container.appendChild(item);
-            });
-            
-            // Now filter
-            items.forEach(item => {
-                if (status === 'all' || item.dataset.status === status) {
-                    item.style.display = 'flex';
-                } else {
-                    item.style.display = 'none';
-                }
-            });
-        }
-
-        // Mark as read on click
-        function setupNotificationClickHandlers() {
-            document.querySelectorAll('.notification-item').forEach((item, index) => {
-                item.addEventListener('click', function() {
-                    if (this.dataset.status === 'unread') {
-                        this.dataset.status = 'read';
-                        this.style.opacity = '0.7';
-                        const id = this.dataset.id || `notif-${index}`;
-                        markNotificationAsRead(id);
-                        updateUnreadBadge();
-                        // Update global badge on all pages
-                        if (typeof window.updateNotificationBadge === 'function') {
-                            window.updateNotificationBadge();
-                        }
-                    }
-                });
-            });
-        }
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            initNotificationStatus();
-            setupNotificationClickHandlers();
-        });
-
+        
+        // Show add notification modal
         window.showAddNotificationModal = function() {
-            // Check admin authentication (same as media system)
             const isAuth = sessionStorage.getItem('isAdminAuthenticated') === 'true' || 
-                          localStorage.getItem('adminPassword') === NOTIFICATIONS_ADMIN_PASSWORD ||
-                          localStorage.getItem('isAdminLoggedIn') === 'true';
+                          localStorage.getItem('adminPassword') === NOTIFICATIONS_ADMIN_PASSWORD;
             
             if (!isAuth) {
-                // Show login modal instead of redirecting
                 showAdminLogin();
                 return;
             }
             
-            // User is authenticated - show the add notification modal
             const modal = document.getElementById('addNotificationModal');
             if (modal) {
-                modal.style.display = 'flex';
-            } else {
-                alert('Error: Notification modal not found. Please refresh the page.');
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
             }
         };
-
+        
+        // Close add notification modal
         window.closeAddNotificationModal = function() {
             const modal = document.getElementById('addNotificationModal');
             if (modal) {
-                modal.style.display = 'none';
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
             }
             const form = document.getElementById('addNotificationForm');
             if (form) {
                 form.reset();
             }
         };
-
+        
+        // Filter notifications
+        window.filterNotifications = function(status) {
+            currentFilter = status;
+            
+            document.querySelectorAll('.mobile-filter-btn').forEach(btn => {
+                const filter = btn.dataset.filter;
+                if (filter === status) {
+                    btn.classList.remove('btn-outline');
+                    btn.classList.add('btn-primary');
+                } else {
+                    btn.classList.remove('btn-primary');
+                    btn.classList.add('btn-outline');
+                }
+            });
+            
+            loadNotificationsFromStorage();
+        };
+        
+        // Get read notifications
+        function getReadNotifications() {
+            return JSON.parse(localStorage.getItem('readNotifications') || '[]');
+        }
+        
+        // Mark notification as read
+        function markNotificationAsRead(id) {
+            const readNotifications = getReadNotifications();
+            if (!readNotifications.includes(id)) {
+                readNotifications.push(id);
+                localStorage.setItem('readNotifications', JSON.stringify(readNotifications));
+            }
+        }
+        
+        // Update unread badge
+        function updateUnreadBadge() {
+            const unreadCount = document.querySelectorAll('.mobile-notification-item.unread').length;
+            const badge = document.getElementById('unreadBadge');
+            if (badge) {
+                badge.textContent = unreadCount;
+                badge.style.display = unreadCount > 0 ? 'inline' : 'none';
+            }
+        }
+        
+        // Format time ago
+        function formatTimeAgo(dateString) {
+            const now = new Date();
+            const date = new Date(dateString);
+            const diffInSeconds = Math.floor((now - date) / 1000);
+            
+            if (diffInSeconds < 60) return 'Just now';
+            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+            if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+            return date.toLocaleDateString();
+        }
+        
+        // Get Firestore
+        let db = null;
+        function getFirestore() {
+            if (db) return db;
+            if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+                db = firebase.firestore();
+            }
+            return db;
+        }
+        
+        // Load notifications
+        async function loadNotificationsFromStorage() {
+            const notificationsList = document.getElementById('notificationsList');
+            if (!notificationsList) return;
+            
+            notificationsList.innerHTML = '<div class="mobile-empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div>';
+            
+            const readNotifications = getReadNotifications();
+            const isStaticHosting = window.location.hostname.includes('github.io') || 
+                                   window.location.hostname.includes('netlify.app') ||
+                                   window.location.hostname.includes('vercel.app');
+            
+            let notifications = [];
+            
+            // Try database first (if not static hosting)
+            if (!isStaticHosting) {
+                try {
+                    const API_BASE_URL = window.API_BASE_URL || '/api';
+                    const response = await fetch(API_BASE_URL + '/get_notifications.php');
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success && data.notifications) {
+                            notifications = data.notifications;
+                        }
+                    }
+                } catch (error) {
+                    console.log('Database not available, using Firestore');
+                }
+            }
+            
+            // Fallback to Firestore
+            if (notifications.length === 0) {
+                try {
+                    const firestore = getFirestore();
+                    if (firestore) {
+                        const snapshot = await firestore.collection('notifications')
+                            .orderBy('createdAt', 'desc')
+                            .limit(50)
+                            .get();
+                        
+                        notifications = snapshot.docs.map(doc => ({
+                            id: doc.id,
+                            title: doc.data().title,
+                            message: doc.data().message,
+                            icon: doc.data().icon || 'fa-bell',
+                            createdAt: doc.data().createdAt?.toDate() || new Date(),
+                            firestoreId: doc.id
+                        }));
+                    }
+                } catch (error) {
+                    console.log('Firestore not available:', error);
+                }
+            }
+            
+            // Filter by status
+            if (currentFilter === 'unread') {
+                notifications = notifications.filter(n => !readNotifications.includes(n.id.toString()));
+            }
+            
+            // Display notifications
+            if (notifications.length === 0) {
+                notificationsList.innerHTML = `
+                    <div class="mobile-empty-state">
+                        <i class="fas fa-bell"></i>
+                        <p>No notifications found</p>
+                    </div>
+                `;
+                updateUnreadBadge();
+                return;
+            }
+            
+            notificationsList.innerHTML = '';
+            const isAuth = sessionStorage.getItem('isAdminAuthenticated') === 'true' || 
+                          localStorage.getItem('adminPassword') === NOTIFICATIONS_ADMIN_PASSWORD;
+            
+            notifications.forEach(notif => {
+                const notifId = notif.id.toString();
+                const isRead = readNotifications.includes(notifId);
+                const iconClass = notif.icon || 'fa-bell';
+                
+                const item = document.createElement('div');
+                item.className = `mobile-notification-item ${isRead ? 'read' : 'unread'}`;
+                item.dataset.id = notifId;
+                item.dataset.status = isRead ? 'read' : 'unread';
+                
+                item.innerHTML = `
+                    <div class="mobile-notification-icon">
+                        <i class="fas ${iconClass}"></i>
+                    </div>
+                    <div class="mobile-notification-content">
+                        <h4>${notif.title}</h4>
+                        <p>${notif.message}</p>
+                        <span class="mobile-notification-time">${formatTimeAgo(notif.createdAt || notif.created_date || new Date())}</span>
+                    </div>
+                    ${isAuth ? `<button class="mobile-notification-delete" onclick="deleteNotification('${notifId}', '${notif.databaseId || ''}', '${notif.firestoreId || ''}', event)" aria-label="Delete"><i class="fas fa-trash"></i></button>` : ''}
+                `;
+                
+                // Mark as read on click
+                item.addEventListener('click', function(e) {
+                    if (e.target.closest('.mobile-notification-delete')) return;
+                    
+                    if (this.dataset.status === 'unread') {
+                        this.dataset.status = 'read';
+                        this.classList.remove('unread');
+                        this.classList.add('read');
+                        markNotificationAsRead(notifId);
+                        updateUnreadBadge();
+                    }
+                });
+                
+                notificationsList.appendChild(item);
+            });
+            
+            updateUnreadBadge();
+        }
+        
+        // Add notification
         window.addNotification = async function(e) {
             e.preventDefault();
             
-            // Check admin authentication (same as media system)
             const isAuth = sessionStorage.getItem('isAdminAuthenticated') === 'true' || 
-                          localStorage.getItem('adminPassword') === NOTIFICATIONS_ADMIN_PASSWORD ||
-                          localStorage.getItem('isAdminLoggedIn') === 'true';
+                          localStorage.getItem('adminPassword') === NOTIFICATIONS_ADMIN_PASSWORD;
             
             if (!isAuth) {
                 alert('You must be authenticated as admin to add notifications.');
                 showAdminLogin();
                 return;
             }
-
+            
             const title = document.getElementById('notifTitle').value.trim();
             const message = document.getElementById('notifMessage').value.trim();
             const icon = document.getElementById('notifIcon').value || 'fa-bell';
@@ -592,148 +803,61 @@
                 alert('Please fill in all required fields.');
                 return;
             }
-
-            const submitBtn = document.querySelector('#addNotificationForm button[type="submit"]');
-            const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-            }
-
-            let firestoreId = null;
-            let databaseId = null;
-
-            // Try to save to database (PHP API) - only if not on static hosting
-            const isStaticHosting = window.location.hostname.includes('github.io') || 
-                                   window.location.hostname.includes('netlify.app') ||
-                                   window.location.hostname.includes('vercel.app');
             
-            if (!isStaticHosting) {
-                try {
-                    const API_BASE_URL = window.API_BASE_URL || '/api';
-                    const formData = new FormData();
-                    formData.append('title', title);
-                    formData.append('message', message);
-                    formData.append('type', 'announcement');
-                    formData.append('target_audience', 'all');
-                    formData.append('icon', icon);
-                    formData.append('admin_password', NOTIFICATIONS_ADMIN_PASSWORD);
-                    
-                    const dbResponse = await fetch(API_BASE_URL + '/save_notification.php', {
-                        method: 'POST',
-                        body: formData
+            const submitBtn = document.querySelector('#addNotificationForm button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            
+            try {
+                // Save to Firestore
+                const firestore = getFirestore();
+                if (firestore) {
+                    await firestore.collection('notifications').add({
+                        title: title,
+                        message: message,
+                        icon: icon,
+                        type: 'announcement',
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        createdBy: firebase.auth().currentUser?.email || 'admin'
                     });
-                    
-                    if (dbResponse.ok) {
-                        const dbData = await dbResponse.json();
+                }
+                
+                // Try to save to database
+                const isStaticHosting = window.location.hostname.includes('github.io');
+                if (!isStaticHosting) {
+                    try {
+                        const API_BASE_URL = window.API_BASE_URL || '/api';
+                        const formData = new FormData();
+                        formData.append('title', title);
+                        formData.append('message', message);
+                        formData.append('type', 'announcement');
+                        formData.append('icon', icon);
+                        formData.append('admin_password', NOTIFICATIONS_ADMIN_PASSWORD);
                         
-                        if (dbData.success && dbData.notification) {
-                            databaseId = dbData.notification.id;
-                            console.log('Notification saved to database:', databaseId);
-                        } else {
-                            console.warn('Database save failed:', dbData.message);
-                        }
-                    }
-                } catch (dbError) {
-                    console.warn('Database API not available, using Firestore only:', dbError.message);
-                }
-            } else {
-                console.log('Static hosting detected, saving to Firestore only');
-            }
-
-                // Also save to Firebase Firestore (backup/secondary)
-                try {
-                    const firestore = getFirestore();
-                    if (firestore) {
-                        const docRef = await firestore.collection('notifications').add({
-                            title: title,
-                            message: message,
-                            icon: icon,
-                            type: 'announcement',
-                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                            createdBy: firebase.auth().currentUser?.email || 'admin',
-                            databaseId: databaseId // Link to database record
+                        await fetch(API_BASE_URL + '/save_notification.php', {
+                            method: 'POST',
+                            body: formData
                         });
-                        firestoreId = docRef.id;
-                        console.log('Notification saved to Firestore:', firestoreId);
+                    } catch (error) {
+                        console.warn('Database save failed:', error);
                     }
-                } catch (firestoreError) {
-                    console.warn('Firestore save failed (will use database only):', firestoreError);
-                }
-
-                // Use database ID if available, otherwise Firestore ID
-                const notificationId = databaseId || firestoreId || 'temp-' + Date.now();
-                
-                // Create and display notification element immediately
-                const notificationsContainer = document.querySelector('.page-content');
-                const filterDiv = notificationsContainer.querySelector('div[style*="display: flex"]');
-                const newNotification = document.createElement('div');
-                newNotification.className = 'notification-item';
-                if (firestoreId) newNotification.classList.add('firebase-notif');
-                newNotification.dataset.status = 'unread';
-                newNotification.dataset.id = notificationId;
-                newNotification.dataset.databaseId = databaseId || '';
-                newNotification.dataset.firestoreId = firestoreId || '';
-                
-                // Add delete button for admin
-                const isAuth = sessionStorage.getItem('isAdminAuthenticated') === 'true' || 
-                              localStorage.getItem('adminPassword') === NOTIFICATIONS_ADMIN_PASSWORD;
-                
-                newNotification.innerHTML = `
-                    <div class="notification-icon">
-                        <i class="fas ${icon}"></i>
-                    </div>
-                    <div class="notification-content">
-                        <h4>${title}</h4>
-                        <p>${message}</p>
-                        <span class="notification-time">Just now</span>
-                    </div>
-                    ${isAuth ? `<button onclick="deleteNotification('${notificationId}', '${databaseId || ''}', '${firestoreId || ''}', event)" style="position: absolute; top: 8px; right: 8px; background: #f44336; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-size: 14px; z-index: 10;" title="Delete notification"><i class="fas fa-trash"></i></button>` : ''}
-                `;
-                newNotification.style.position = 'relative';
-
-                // Insert at the top (after filter buttons)
-                if (filterDiv && filterDiv.nextSibling) {
-                    notificationsContainer.insertBefore(newNotification, filterDiv.nextSibling);
-                } else {
-                    notificationsContainer.appendChild(newNotification);
-                }
-
-                // Mark as read on click
-                newNotification.addEventListener('click', function(e) {
-                    // Don't mark as read if clicking delete button
-                    if (e.target.closest('button')) return;
-                    
-                    if (this.dataset.status === 'unread') {
-                        this.dataset.status = 'read';
-                        this.style.opacity = '0.7';
-                        markNotificationAsRead(notificationId);
-                        updateUnreadBadge();
-                    }
-                });
-
-                updateUnreadBadge();
-                window.closeAddNotificationModal();
-                
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalBtnText;
                 }
                 
+                closeAddNotificationModal();
                 alert('Notification added successfully!');
+                loadNotificationsFromStorage();
                 
             } catch (error) {
                 console.error('Error saving notification:', error);
                 alert('Error saving notification: ' + error.message);
-                
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalBtnText;
-                }
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
             }
         };
         
-        // Delete notification function
+        // Delete notification
         async function deleteNotification(notificationId, databaseId, firestoreId, event) {
             if (event) {
                 event.stopPropagation();
@@ -744,7 +868,6 @@
                 return;
             }
             
-            // Check admin authentication
             const isAuth = sessionStorage.getItem('isAdminAuthenticated') === 'true' || 
                           localStorage.getItem('adminPassword') === NOTIFICATIONS_ADMIN_PASSWORD;
             
@@ -755,47 +878,29 @@
             }
             
             try {
-                // Delete from database (PHP API) - PRIMARY
+                // Delete from database
                 if (databaseId) {
                     const API_BASE_URL = window.API_BASE_URL || '/api';
                     const formData = new FormData();
                     formData.append('notification_id', databaseId);
                     formData.append('admin_password', NOTIFICATIONS_ADMIN_PASSWORD);
                     
-                    const dbResponse = await fetch(API_BASE_URL + '/delete_notification.php', {
+                    await fetch(API_BASE_URL + '/delete_notification.php', {
                         method: 'POST',
                         body: formData
                     });
-                    
-                    const dbData = await dbResponse.json();
-                    if (dbData.success) {
-                        console.log('Notification deleted from database:', databaseId);
-                    }
                 }
                 
-                // Delete from Firestore (if exists)
+                // Delete from Firestore
                 if (firestoreId) {
-                    try {
-                        const firestore = getFirestore();
-                        if (firestore) {
-                            await firestore.collection('notifications').doc(firestoreId).delete();
-                            console.log('Notification deleted from Firestore:', firestoreId);
-                        }
-                    } catch (firestoreError) {
-                        console.warn('Firestore delete failed:', firestoreError);
+                    const firestore = getFirestore();
+                    if (firestore) {
+                        await firestore.collection('notifications').doc(firestoreId).delete();
                     }
                 }
                 
-                // Remove from DOM
-                const notificationElement = document.querySelector(`[data-id="${notificationId}"]`);
-                if (notificationElement) {
-                    notificationElement.remove();
-                    updateUnreadBadge();
-                    alert('Notification deleted successfully!');
-                } else {
-                    // Reload notifications if element not found
-                    loadNotificationsFromStorage();
-                }
+                alert('Notification deleted successfully!');
+                loadNotificationsFromStorage();
                 
             } catch (error) {
                 console.error('Error deleting notification:', error);
@@ -803,466 +908,39 @@
             }
         }
         
-        // Make delete function globally accessible
-        window.deleteNotification = deleteNotification;
-
-        function updateNotificationStatus(id, status) {
-            let notificationsData = JSON.parse(localStorage.getItem('notificationsData') || '[]');
-            const notif = notificationsData.find(n => n.id === id);
-            if (notif) {
-                notif.status = status;
-                localStorage.setItem('notificationsData', JSON.stringify(notificationsData));
-            }
-        }
-
-        function formatTimeAgo(dateString) {
-            const now = new Date();
-            const date = new Date(dateString);
-            const diffInSeconds = Math.floor((now - date) / 1000);
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateAdminButtonVisibility();
+            loadNotificationsFromStorage();
             
-            if (diffInSeconds < 60) return 'Just now';
-            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
-            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
-            if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
-            return date.toLocaleDateString();
-        }
-
-        // Initialize Firestore
-        let db = null;
-        function getFirestore() {
-            if (db) return db;
-            if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
-                db = firebase.firestore();
-            }
-            return db;
-        }
-
-        // Load notifications from database (PHP API) or Firestore
-        async function loadNotificationsFromStorage() {
-            const notificationsContainer = document.querySelector('.page-content');
-            const readNotifications = getReadNotifications();
-            
-            // Try to load from database first (PRIMARY) - only if API is available
-            // Skip if on GitHub Pages or static hosting (PHP not available)
-            const isStaticHosting = window.location.hostname.includes('github.io') || 
-                                   window.location.hostname.includes('netlify.app') ||
-                                   window.location.hostname.includes('vercel.app');
-            
-            if (!isStaticHosting) {
-                try {
-                    const API_BASE_URL = window.API_BASE_URL || '/api';
-                    const response = await fetch(API_BASE_URL + '/get_notifications.php', {
-                        method: 'GET',
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        
-                        if (data.success && data.notifications && data.notifications.length > 0) {
-                            // Clear existing dynamic notifications
-                            const existingStored = Array.from(notificationsContainer.querySelectorAll('.notification-item[data-database-id]'));
-                            existingStored.forEach(item => item.remove());
-                            
-                            // Sort by date (newest first)
-                            const sorted = data.notifications.sort((a, b) => {
-                                const dateA = new Date(a.created_date || a.createdAt || 0);
-                                const dateB = new Date(b.created_date || b.createdAt || 0);
-                                return dateB - dateA;
-                            });
-                            
-                            sorted.forEach(notif => {
-                                const notifId = notif.id.toString();
-                                const isRead = readNotifications.includes(notifId);
-                                
-                                const newNotification = document.createElement('div');
-                                newNotification.className = 'notification-item';
-                                newNotification.dataset.status = isRead ? 'read' : 'unread';
-                                newNotification.dataset.id = notifId;
-                                newNotification.dataset.databaseId = notifId;
-                                if (isRead) newNotification.style.opacity = '0.7';
-                                newNotification.style.position = 'relative';
-                                
-                                const iconClass = notif.icon || 'fa-bell';
-                                const isAuth = sessionStorage.getItem('isAdminAuthenticated') === 'true' || 
-                                              localStorage.getItem('adminPassword') === NOTIFICATIONS_ADMIN_PASSWORD;
-                                
-                                newNotification.innerHTML = `
-                                    <div class="notification-icon">
-                                        <i class="fas ${iconClass}"></i>
-                                    </div>
-                                    <div class="notification-content">
-                                        <h4>${notif.title}</h4>
-                                        <p>${notif.message}</p>
-                                        <span class="notification-time">${formatTimeAgo(notif.created_date || notif.createdAt || new Date())}</span>
-                                    </div>
-                                    ${isAuth ? `<button onclick="deleteNotification('${notifId}', '${notifId}', '', event)" style="position: absolute; top: 8px; right: 8px; background: #f44336; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-size: 14px; z-index: 10;" title="Delete notification"><i class="fas fa-trash"></i></button>` : ''}
-                                `;
-                                
-                                // Insert at top (after filter buttons)
-                                const filterDiv = notificationsContainer.querySelector('div[style*="display: flex"]');
-                                if (filterDiv && filterDiv.nextSibling) {
-                                    notificationsContainer.insertBefore(newNotification, filterDiv.nextSibling);
-                                } else {
-                                    notificationsContainer.appendChild(newNotification);
-                                }
-                                
-                                // Mark as read on click
-                                newNotification.addEventListener('click', function(e) {
-                                    // Don't mark as read if clicking delete button
-                                    if (e.target.closest('button')) return;
-                                    
-                                    if (this.dataset.status === 'unread') {
-                                        this.dataset.status = 'read';
-                                        this.style.opacity = '0.7';
-                                        markNotificationAsRead(notifId);
-                                        updateUnreadBadge();
-                                    }
-                                });
-                            });
-                            
-                            console.log('Loaded notifications from database');
-                            updateUnreadBadge();
-                            if (typeof window.updateNotificationBadge === 'function') {
-                                window.updateNotificationBadge();
-                            }
-                            return;
-                        }
+            // Password input enter key
+            const passwordInput = document.getElementById('adminPassword');
+            if (passwordInput) {
+                passwordInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        verifyAdminPassword();
                     }
-                } catch (error) {
-                    console.log('Database API not available, using Firestore:', error.message);
-                }
-            } else {
-                console.log('Static hosting detected, using Firestore for notifications');
+                });
             }
             
-            // Load from Firestore (works on all hosting including GitHub Pages)
-            try {
-                const firestore = getFirestore();
-                if (firestore) {
-                    const snapshot = await firestore.collection('notifications')
-                        .orderBy('createdAt', 'desc')
-                        .limit(50)
-                        .get();
-                    
-                    if (!snapshot.empty) {
-                        // Clear existing dynamic notifications
-                        const existingStored = Array.from(notificationsContainer.querySelectorAll('.notification-item.firebase-notif, .notification-item[data-firestore-id]'));
-                        existingStored.forEach(item => item.remove());
-                        
-                        snapshot.forEach(doc => {
-                            const notif = doc.data();
-                            const notifId = doc.id;
-                            const isRead = readNotifications.includes(notifId);
-                            
-                            const newNotification = document.createElement('div');
-                            newNotification.className = 'notification-item firebase-notif';
-                            newNotification.dataset.status = isRead ? 'read' : 'unread';
-                            newNotification.dataset.id = notifId;
-                            newNotification.dataset.firestoreId = notifId;
-                            if (isRead) newNotification.style.opacity = '0.7';
-                            newNotification.style.position = 'relative';
-                            
-                            const iconClass = notif.icon || 'fa-bell';
-                            const isAuth = sessionStorage.getItem('isAdminAuthenticated') === 'true' || 
-                                          localStorage.getItem('adminPassword') === NOTIFICATIONS_ADMIN_PASSWORD;
-                            
-                            newNotification.innerHTML = `
-                                <div class="notification-icon">
-                                    <i class="fas ${iconClass}"></i>
-                                </div>
-                                <div class="notification-content">
-                                    <h4>${notif.title}</h4>
-                                    <p>${notif.message}</p>
-                                    <span class="notification-time">${formatTimeAgo(notif.createdAt?.toDate() || new Date())}</span>
-                                </div>
-                                ${isAuth ? `<button onclick="deleteNotification('${notifId}', '', '${notifId}', event)" style="position: absolute; top: 8px; right: 8px; background: #f44336; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-size: 14px; z-index: 10;" title="Delete notification"><i class="fas fa-trash"></i></button>` : ''}
-                            `;
-                            
-                            // Insert at top (after filter buttons)
-                            const filterDiv = notificationsContainer.querySelector('div[style*="display: flex"]');
-                            if (filterDiv && filterDiv.nextSibling) {
-                                notificationsContainer.insertBefore(newNotification, filterDiv.nextSibling);
-                            } else {
-                                notificationsContainer.appendChild(newNotification);
-                            }
-                            
-                            // Mark as read on click
-                            newNotification.addEventListener('click', function(e) {
-                                // Don't mark as read if clicking delete button
-                                if (e.target.closest('button')) return;
-                                
-                                if (this.dataset.status === 'unread') {
-                                    this.dataset.status = 'read';
-                                    this.style.opacity = '0.7';
-                                    markNotificationAsRead(notifId);
-                                    updateUnreadBadge();
-                                }
-                            });
-                        });
-                        
-                        console.log('Loaded notifications from Firestore');
-                        updateUnreadBadge();
-                        if (typeof window.updateNotificationBadge === 'function') {
-                            window.updateNotificationBadge();
-                        }
-                        return;
-                    }
-                }
-            } catch (error) {
-                console.log('Firestore not available:', error.message);
-            }
-            
-            // Fallback to localStorage
-            const notificationsData = JSON.parse(localStorage.getItem('notificationsData') || '[]');
-            
-            // Sort notifications: 
-            // 1. Unread first (status = 'unread')
-            // 2. Then by date (newest first)
-            const sortedNotifications = notificationsData.sort((a, b) => {
-                // First, sort by status (unread comes before read)
-                if (a.status === 'unread' && b.status !== 'unread') return -1;
-                if (a.status !== 'unread' && b.status === 'unread') return 1;
-                
-                // If same status, sort by date (newest first)
-                const dateA = new Date(a.date || 0);
-                const dateB = new Date(b.date || 0);
-                return dateB - dateA; // Newest first
-            });
-            
-            // Add stored notifications (now sorted)
-            sortedNotifications.forEach(notif => {
-                const newNotification = document.createElement('div');
-                newNotification.className = 'notification-item';
-                newNotification.dataset.status = notif.status || 'read';
-                newNotification.dataset.id = notif.id;
-                newNotification.innerHTML = `
-                    <div class="notification-icon">
-                        <i class="${notif.icon || 'fas fa-bell'}"></i>
-                    </div>
-                    <div class="notification-content">
-                        <h4>${notif.title}</h4>
-                        <p>${notif.message}</p>
-                        <span class="notification-time">${formatTimeAgo(notif.date)}</span>
-                    </div>
-                `;
-
-                // Insert at the top
-                const firstNotification = notificationsContainer.querySelector('.notification-item');
-                if (firstNotification) {
-                    notificationsContainer.insertBefore(newNotification, firstNotification);
-                } else {
-                    notificationsContainer.appendChild(newNotification);
-                }
-
-                // Mark as read on click
-                newNotification.addEventListener('click', function() {
-                    if (this.dataset.status === 'unread') {
-                        this.dataset.status = 'read';
-                        this.style.opacity = '0.7';
-                        updateNotificationStatus(notif.id, 'read');
-                        updateUnreadBadge();
-                        if (typeof window.updateNotificationBadge === 'function') {
-                            window.updateNotificationBadge();
-                        }
+            // Close modals on overlay click
+            document.querySelectorAll('.mobile-modal').forEach(modal => {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.classList.remove('active');
+                        document.body.style.overflow = '';
                     }
                 });
             });
-        }
+        });
         
-        // Send notification to all users via WhatsApp and Email
-        async function sendNotificationToAllUsers(subject, message, notificationId = null) {
-            try {
-                // Check if already authenticated
-                const isAuth = sessionStorage.getItem('isAdminAuthenticated') === 'true' || 
-                              localStorage.getItem('adminPassword') === NOTIFICATIONS_ADMIN_PASSWORD;
-                
-                let adminPassword = NOTIFICATIONS_ADMIN_PASSWORD;
-                
-                if (!isAuth) {
-                    // Prompt for password
-                    const enteredPassword = prompt('Enter admin password to send notifications:');
-                    if (!enteredPassword || enteredPassword !== NOTIFICATIONS_ADMIN_PASSWORD) {
-                        alert('Admin password required to send notifications.');
-                        return;
-                    }
-                    // Store for future use
-                    sessionStorage.setItem('isAdminAuthenticated', 'true');
-                    localStorage.setItem('adminPassword', NOTIFICATIONS_ADMIN_PASSWORD);
-                }
-                
-                const formData = new FormData();
-                formData.append('subject', subject);
-                formData.append('message', message);
-                if (notificationId) {
-                    formData.append('notification_id', notificationId);
-                }
-                formData.append('admin_password', adminPassword);
-                
-                const API_BASE_URL = window.API_BASE_URL || '/api';
-                const response = await fetch(API_BASE_URL + '/send_notifications_to_all.php', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    alert(`Notifications sent to ${data.totalUsers} users!\nEmail: ${data.emailSent}`);
-                } else {
-                    throw new Error(data.message || 'Failed to send notifications');
-                }
-            } catch (error) {
-                console.error('Error sending notifications:', error);
-                alert('Error sending notifications: ' + error.message);
-            }
-        }
+        // Make functions globally accessible
+        window.deleteNotification = deleteNotification;
+        window.showAdminLogin = showAdminLogin;
+        window.closeAdminLogin = closeAdminLogin;
+        window.verifyAdminPassword = verifyAdminPassword;
+        window.logoutAdmin = logoutAdmin;
     </script>
-
-    <!-- Admin Login Modal -->
-    <div class="modal-overlay" id="adminLoginModal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-shield-alt"></i> Admin Login</h3>
-                <button class="modal-close" onclick="closeAdminLogin()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p style="margin-bottom: 15px;">Sign in with your admin account to access admin features.</p>
-                <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <input type="email" class="form-input" id="adminEmail" placeholder="Enter your email">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Password</label>
-                    <input type="password" class="form-input" id="adminPassword" placeholder="Enter your password">
-                    <p id="passwordError" style="color: #f44336; font-size: 14px; margin-top: 5px; display: none;">Incorrect email or password.</p>
-                </div>
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button class="btn btn-primary" onclick="verifyAdminPassword()" style="flex: 1;">
-                        <i class="fas fa-sign-in-alt"></i> Login
-                    </button>
-                    <button class="btn btn-secondary" onclick="closeAdminLogin()" style="flex: 1;">
-                        Cancel
-                    </button>
-                </div>
-                <p style="margin-top: 15px; font-size: 12px; color: #666; text-align: center;">
-                    Don't have an account? <a href="join-us.html" style="color: var(--primary-green);">Sign up</a>
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add Notification Modal -->
-    <div class="modal-overlay" id="addNotificationModal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-bell"></i> Add New Notification</h3>
-                <button class="modal-close" onclick="window.closeAddNotificationModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="addNotificationForm" onsubmit="addNotification(event)">
-                    <div class="form-group">
-                        <label class="form-label">Title *</label>
-                        <input type="text" class="form-input" id="notifTitle" placeholder="Notification title" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Message *</label>
-                        <textarea class="form-input" id="notifMessage" rows="4" placeholder="Notification message" required></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Icon</label>
-                        <select class="form-input" id="notifIcon">
-                            <option value="fas fa-bell">Bell</option>
-                            <option value="fas fa-calendar-check">Calendar</option>
-                            <option value="fas fa-book">Book</option>
-                            <option value="fas fa-hand-holding-heart">Donation</option>
-                            <option value="fas fa-clock">Time</option>
-                            <option value="fas fa-users">Users</option>
-                            <option value="fas fa-graduation-cap">Education</option>
-                            <option value="fas fa-star-and-crescent">Star</option>
-                        </select>
-                    </div>
-                    <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button type="submit" class="btn btn-primary" style="flex: 1;">
-                            <i class="fas fa-plus"></i> Add Notification
-                        </button>
-                        <button type="button" class="btn btn-secondary" onclick="window.closeAddNotificationModal()" style="flex: 1;">
-                            Cancel
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Floating Kizumu Visit Button -->
-    <div class="floating-kizumu-btn" onclick="showActivitiesModal()">
-        <i class="fas fa-heart"></i>
-        <span>Kizumu Visit</span>
-    </div>
-
-    <!-- Activities Modal -->
-    <div class="modal-overlay" id="activitiesModal" style="display: none;">
-        <div class="modal-content activities-modal">
-            <div class="modal-header">
-                <h3><i class="fas fa-heart"></i> Important Activities</h3>
-                <button class="modal-close" onclick="closeActivitiesModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="activities-modal-list">
-                <div class="activity-modal-item" onclick="navigateToActivity('kizumu-visit')">
-                    <div class="activity-modal-icon" style="background: #E91E63;">
-                        <i class="fas fa-heart"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Kizumu Tahfiz Charity Visit</h4>
-                        <p>Support Islamic education through charity visit</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-                
-                <div class="activity-modal-item" onclick="navigateToActivity('tuition-brothers')">
-                    <div class="activity-modal-icon" style="background: var(--primary-green);">
-                        <i class="fas fa-graduation-cap"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Tuition for Brothers</h4>
-                        <p>Support brothers' education and learning</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-                
-                <div class="activity-modal-item" onclick="navigateToActivity('kisilaahe')">
-                    <div class="activity-modal-icon" style="background: #9C27B0;">
-                        <i class="fas fa-donate"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Donate to Kisilaahe</h4>
-                        <p>Support Kisilaahe with essential items</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-                
-                <div class="activity-modal-item" onclick="navigateToActivity('activities')">
-                    <div class="activity-modal-icon" style="background: #FF9800;">
-                        <i class="fas fa-running"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>View All Activities</h4>
-                        <p>See all community activities and events</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-            </div>
-        </div>
-    </div>
 </body>
 </html>
 
