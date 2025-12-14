@@ -766,18 +766,56 @@
             
             // Setup mobile-friendly file input
             const fileInput = document.getElementById('mediaFile');
+            const fileInputButton = document.getElementById('fileInputButton');
+            
             if (fileInput) {
                 fileInput.addEventListener('change', updateFileInputDisplay);
+                
                 // Ensure file input is accessible on mobile - make it cover the button area
                 fileInput.style.position = 'absolute';
+                fileInput.style.top = '0';
+                fileInput.style.left = '0';
                 fileInput.style.width = '100%';
                 fileInput.style.height = '100%';
                 fileInput.style.opacity = '0';
-                fileInput.style.zIndex = '2';
+                fileInput.style.zIndex = '10';
                 fileInput.style.fontSize = '16px'; // Prevents zoom on iOS
                 fileInput.style.cursor = 'pointer';
-                fileInput.style.top = '0';
-                fileInput.style.left = '0';
+                fileInput.style.margin = '0';
+                fileInput.style.padding = '0';
+                fileInput.style.border = 'none';
+                
+                // Add touch event support for mobile
+                fileInput.addEventListener('touchstart', function(e) {
+                    e.stopPropagation();
+                }, { passive: true });
+                
+                fileInput.addEventListener('touchend', function(e) {
+                    e.stopPropagation();
+                    // Trigger click on touch end
+                    setTimeout(() => {
+                        this.click();
+                    }, 0);
+                }, { passive: true });
+            }
+            
+            // Also make the button trigger the file input (backup method)
+            if (fileInputButton && fileInput) {
+                fileInputButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (fileInput) {
+                        fileInput.click();
+                    }
+                });
+                
+                fileInputButton.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (fileInput) {
+                        fileInput.click();
+                    }
+                }, { passive: false });
             }
             
             // Load media (non-blocking)
@@ -875,13 +913,13 @@
                     <div class="form-group">
                         <label class="form-label">Select File *</label>
                         <!-- Mobile-friendly file input wrapper -->
-                        <div style="position: relative; width: 100%;">
-                            <!-- Hidden file input -->
-                            <input type="file" class="form-input" id="mediaFile" required accept="video/*,audio/*,image/*" style="position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; z-index: 2; font-size: 16px;" capture="environment">
+                        <div style="position: relative; width: 100%; min-height: 120px;">
+                            <!-- File input - positioned to cover entire button area -->
+                            <input type="file" class="form-input" id="mediaFile" required accept="video/*,audio/*,image/*" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10; font-size: 16px; margin: 0; padding: 0;">
                             <!-- Visible button/label for mobile -->
-                            <div id="fileInputButton" style="padding: 15px; border: 2px dashed var(--primary-green); border-radius: 8px; background: #f5f5f5; text-align: center; cursor: pointer; transition: all 0.3s;" onclick="document.getElementById('mediaFile').click();">
-                                <i class="fas fa-cloud-upload-alt" style="font-size: 32px; color: var(--primary-green); margin-bottom: 10px; display: block;"></i>
-                                <div style="font-weight: 600; color: var(--dark-gray); margin-bottom: 5px;">Tap to Choose File</div>
+                            <div id="fileInputButton" style="position: relative; padding: 20px; border: 2px dashed var(--primary-green); border-radius: 8px; background: #f5f5f5; text-align: center; cursor: pointer; transition: all 0.3s; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none;">
+                                <i class="fas fa-cloud-upload-alt" style="font-size: 40px; color: var(--primary-green); margin-bottom: 10px; display: block;"></i>
+                                <div style="font-weight: 600; color: var(--dark-gray); margin-bottom: 5px; font-size: 16px;">Tap to Choose File</div>
                                 <div style="font-size: 12px; color: var(--text-gray);" id="fileInputText">Upload video, audio, or image file (Max 500MB)</div>
                                 <div id="selectedFileName" style="display: none; margin-top: 10px; padding: 8px; background: white; border-radius: 5px; font-size: 14px; color: var(--dark-green); font-weight: 600;"></div>
                             </div>

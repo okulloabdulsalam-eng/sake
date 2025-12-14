@@ -227,6 +227,63 @@
             }
         }
         
+        // Update admin button visibility (like media system)
+        function updateAdminButtonVisibility() {
+            const isAuth = sessionStorage.getItem('isAdminAuthenticated') === 'true' || 
+                          localStorage.getItem('adminPassword') === NOTIFICATIONS_ADMIN_PASSWORD;
+            
+            const adminLoginBtn = document.getElementById('adminLoginBtn');
+            const adminOnlyBtns = document.querySelectorAll('.admin-only');
+            const adminLogoutBtns = document.querySelectorAll('.admin-logout');
+            
+            if (isAuth) {
+                // Hide login button, show admin buttons
+                if (adminLoginBtn) adminLoginBtn.style.display = 'none';
+                adminOnlyBtns.forEach(btn => btn.style.display = 'block');
+                adminLogoutBtns.forEach(btn => btn.style.display = 'block');
+                
+                // Add delete buttons to existing notifications
+                document.querySelectorAll('.notification-item').forEach(item => {
+                    const notifId = item.dataset.id;
+                    const databaseId = item.dataset.databaseId || '';
+                    const firestoreId = item.dataset.firestoreId || '';
+                    
+                    // Check if delete button already exists
+                    if (!item.querySelector('button[onclick*="deleteNotification"]')) {
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                        deleteBtn.style.cssText = 'position: absolute; top: 8px; right: 8px; background: #f44336; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-size: 14px; z-index: 10;';
+                        deleteBtn.title = 'Delete notification';
+                        deleteBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            deleteNotification(notifId, databaseId, firestoreId, e);
+                        };
+                        item.style.position = 'relative';
+                        item.appendChild(deleteBtn);
+                    }
+                });
+            } else {
+                // Show login button, hide admin buttons
+                if (adminLoginBtn) adminLoginBtn.style.display = 'block';
+                adminOnlyBtns.forEach(btn => btn.style.display = 'none');
+                adminLogoutBtns.forEach(btn => btn.style.display = 'none');
+                
+                // Remove delete buttons from notifications
+                document.querySelectorAll('.notification-item button[onclick*="deleteNotification"]').forEach(btn => {
+                    btn.remove();
+                });
+            }
+        }
+        
+        // Logout admin
+        function logoutAdmin() {
+            isAdminAuthenticated = false;
+            sessionStorage.removeItem('isAdminAuthenticated');
+            localStorage.removeItem('adminPassword');
+            updateAdminButtonVisibility();
+            alert('Logged out successfully!');
+        }
+        
         // Verify admin password (same as media system)
         function verifyAdminPassword() {
             const passwordInput = document.getElementById('adminPassword');
@@ -251,6 +308,9 @@
                 if (passwordInput) {
                     passwordInput.value = '';
                 }
+                
+                // Update button visibility
+                updateAdminButtonVisibility();
                 
                 // Show success
                 alert('Admin access granted!');
@@ -287,9 +347,14 @@
         window.showAdminLogin = showAdminLogin;
         window.verifyAdminPassword = verifyAdminPassword;
         window.closeAdminLogin = closeAdminLogin;
+        window.logoutAdmin = logoutAdmin;
+        window.updateAdminButtonVisibility = updateAdminButtonVisibility;
         
         // Check admin status on page load
         window.addEventListener('DOMContentLoaded', function() {
+            // Update admin button visibility immediately
+            updateAdminButtonVisibility();
+            
             // Check admin status in background (non-blocking)
             if (typeof window.checkAdminStatus === 'function') {
                 setTimeout(() => window.checkAdminStatus(), 0);
@@ -297,11 +362,16 @@
                 setTimeout(() => checkAdminStatus(), 0);
             }
             
+            // Update admin button visibility on load
+            updateAdminButtonVisibility();
+            
             // Load notifications and update badges (non-blocking)
             loadNotificationsFromStorage().then(() => {
                 initNotificationStatus();
                 setupNotificationClickHandlers();
                 updateUnreadBadge();
+                // Update admin buttons again after notifications load (to show delete buttons)
+                updateAdminButtonVisibility();
                 if (typeof window.updateNotificationBadge === 'function') {
                     window.updateNotificationBadge();
                 }
@@ -474,22 +544,17 @@
                           localStorage.getItem('adminPassword') === NOTIFICATIONS_ADMIN_PASSWORD ||
                           localStorage.getItem('isAdminLoggedIn') === 'true';
             
-            console.log('showAddNotificationModal called, isAuth:', isAuth);
             if (!isAuth) {
-                console.log('Not authenticated, showing login');
-                if (typeof showAdminLogin === 'function') {
-                    showAdminLogin();
-                } else if (typeof window.showAdminLogin === 'function') {
-                    window.showAdminLogin();
-                }
+                // Show login modal instead of redirecting
+                showAdminLogin();
                 return;
             }
+            
+            // User is authenticated - show the add notification modal
             const modal = document.getElementById('addNotificationModal');
             if (modal) {
-                console.log('Showing modal');
                 modal.style.display = 'flex';
             } else {
-                console.error('Add notification modal not found');
                 alert('Error: Notification modal not found. Please refresh the page.');
             }
         };
@@ -519,8 +584,8 @@
                 return;
             }
 
-            const title = document.getElementById('notifTitle').value;
-            const message = document.getElementById('notifMessage').value;
+            const title = document.getElementById('notifTitle').value.trim();
+            const message = document.getElementById('notifMessage').value.trim();
             const icon = document.getElementById('notifIcon').value || 'fa-bell';
             
             if (!title || !message) {
@@ -528,31 +593,79 @@
                 return;
             }
 
-            // Save to Firebase Firestore
+            const submitBtn = document.querySelector('#addNotificationForm button[type="submit"]');
+            const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            }
+
+            let firestoreId = null;
+            let databaseId = null;
+
             try {
-                const firestore = getFirestore();
-                if (!firestore) {
-                    throw new Error('Firestore not available');
+                // Save to database (PHP API) - PRIMARY STORAGE
+                const API_BASE_URL = window.API_BASE_URL || '/api';
+                const formData = new FormData();
+                formData.append('title', title);
+                formData.append('message', message);
+                formData.append('type', 'announcement');
+                formData.append('target_audience', 'all');
+                formData.append('icon', icon);
+                formData.append('admin_password', NOTIFICATIONS_ADMIN_PASSWORD);
+                
+                const dbResponse = await fetch(API_BASE_URL + '/save_notification.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const dbData = await dbResponse.json();
+                
+                if (dbData.success && dbData.notification) {
+                    databaseId = dbData.notification.id;
+                    console.log('Notification saved to database:', databaseId);
+                } else {
+                    console.warn('Database save failed:', dbData.message);
                 }
 
-                const docRef = await firestore.collection('notifications').add({
-                    title: title,
-                    message: message,
-                    icon: icon,
-                    type: 'announcement',
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    createdBy: firebase.auth().currentUser?.email || 'admin'
-                });
+                // Also save to Firebase Firestore (backup/secondary)
+                try {
+                    const firestore = getFirestore();
+                    if (firestore) {
+                        const docRef = await firestore.collection('notifications').add({
+                            title: title,
+                            message: message,
+                            icon: icon,
+                            type: 'announcement',
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            createdBy: firebase.auth().currentUser?.email || 'admin',
+                            databaseId: databaseId // Link to database record
+                        });
+                        firestoreId = docRef.id;
+                        console.log('Notification saved to Firestore:', firestoreId);
+                    }
+                } catch (firestoreError) {
+                    console.warn('Firestore save failed (will use database only):', firestoreError);
+                }
 
-                console.log('Notification saved to Firestore:', docRef.id);
-
+                // Use database ID if available, otherwise Firestore ID
+                const notificationId = databaseId || firestoreId || 'temp-' + Date.now();
+                
                 // Create and display notification element immediately
                 const notificationsContainer = document.querySelector('.page-content');
                 const filterDiv = notificationsContainer.querySelector('div[style*="display: flex"]');
                 const newNotification = document.createElement('div');
-                newNotification.className = 'notification-item firebase-notif';
+                newNotification.className = 'notification-item';
+                if (firestoreId) newNotification.classList.add('firebase-notif');
                 newNotification.dataset.status = 'unread';
-                newNotification.dataset.id = docRef.id;
+                newNotification.dataset.id = notificationId;
+                newNotification.dataset.databaseId = databaseId || '';
+                newNotification.dataset.firestoreId = firestoreId || '';
+                
+                // Add delete button for admin
+                const isAuth = sessionStorage.getItem('isAdminAuthenticated') === 'true' || 
+                              localStorage.getItem('adminPassword') === NOTIFICATIONS_ADMIN_PASSWORD;
+                
                 newNotification.innerHTML = `
                     <div class="notification-icon">
                         <i class="fas ${icon}"></i>
@@ -562,7 +675,9 @@
                         <p>${message}</p>
                         <span class="notification-time">Just now</span>
                     </div>
+                    ${isAuth ? `<button onclick="deleteNotification('${notificationId}', '${databaseId || ''}', '${firestoreId || ''}', event)" style="position: absolute; top: 8px; right: 8px; background: #f44336; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-size: 14px; z-index: 10;" title="Delete notification"><i class="fas fa-trash"></i></button>` : ''}
                 `;
+                newNotification.style.position = 'relative';
 
                 // Insert at the top (after filter buttons)
                 if (filterDiv && filterDiv.nextSibling) {
@@ -572,24 +687,111 @@
                 }
 
                 // Mark as read on click
-                newNotification.addEventListener('click', function() {
+                newNotification.addEventListener('click', function(e) {
+                    // Don't mark as read if clicking delete button
+                    if (e.target.closest('button')) return;
+                    
                     if (this.dataset.status === 'unread') {
                         this.dataset.status = 'read';
                         this.style.opacity = '0.7';
-                        markNotificationAsRead(docRef.id);
+                        markNotificationAsRead(notificationId);
                         updateUnreadBadge();
                     }
                 });
 
                 updateUnreadBadge();
                 window.closeAddNotificationModal();
+                
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                }
+                
                 alert('Notification added successfully!');
                 
             } catch (error) {
                 console.error('Error saving notification:', error);
                 alert('Error saving notification: ' + error.message);
+                
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                }
             }
         };
+        
+        // Delete notification function
+        async function deleteNotification(notificationId, databaseId, firestoreId, event) {
+            if (event) {
+                event.stopPropagation();
+                event.preventDefault();
+            }
+            
+            if (!confirm('Are you sure you want to delete this notification?')) {
+                return;
+            }
+            
+            // Check admin authentication
+            const isAuth = sessionStorage.getItem('isAdminAuthenticated') === 'true' || 
+                          localStorage.getItem('adminPassword') === NOTIFICATIONS_ADMIN_PASSWORD;
+            
+            if (!isAuth) {
+                alert('You must be authenticated as admin to delete notifications.');
+                showAdminLogin();
+                return;
+            }
+            
+            try {
+                // Delete from database (PHP API) - PRIMARY
+                if (databaseId) {
+                    const API_BASE_URL = window.API_BASE_URL || '/api';
+                    const formData = new FormData();
+                    formData.append('notification_id', databaseId);
+                    formData.append('admin_password', NOTIFICATIONS_ADMIN_PASSWORD);
+                    
+                    const dbResponse = await fetch(API_BASE_URL + '/delete_notification.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const dbData = await dbResponse.json();
+                    if (dbData.success) {
+                        console.log('Notification deleted from database:', databaseId);
+                    }
+                }
+                
+                // Delete from Firestore (if exists)
+                if (firestoreId) {
+                    try {
+                        const firestore = getFirestore();
+                        if (firestore) {
+                            await firestore.collection('notifications').doc(firestoreId).delete();
+                            console.log('Notification deleted from Firestore:', firestoreId);
+                        }
+                    } catch (firestoreError) {
+                        console.warn('Firestore delete failed:', firestoreError);
+                    }
+                }
+                
+                // Remove from DOM
+                const notificationElement = document.querySelector(`[data-id="${notificationId}"]`);
+                if (notificationElement) {
+                    notificationElement.remove();
+                    updateUnreadBadge();
+                    alert('Notification deleted successfully!');
+                } else {
+                    // Reload notifications if element not found
+                    loadNotificationsFromStorage();
+                }
+                
+            } catch (error) {
+                console.error('Error deleting notification:', error);
+                alert('Error deleting notification: ' + error.message);
+            }
+        }
+        
+        // Make delete function globally accessible
+        window.deleteNotification = deleteNotification;
 
         function updateNotificationStatus(id, status) {
             let notificationsData = JSON.parse(localStorage.getItem('notificationsData') || '[]');
@@ -622,12 +824,94 @@
             return db;
         }
 
-        // Load notifications from Firebase Firestore
+        // Load notifications from database (PHP API) - PRIMARY SOURCE
         async function loadNotificationsFromStorage() {
             const notificationsContainer = document.querySelector('.page-content');
             const readNotifications = getReadNotifications();
             
-            // Try to load from Firestore first
+            // Try to load from database first (PRIMARY)
+            try {
+                const API_BASE_URL = window.API_BASE_URL || '/api';
+                const response = await fetch(API_BASE_URL + '/get_notifications.php');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data.success && data.notifications && data.notifications.length > 0) {
+                        // Clear existing dynamic notifications
+                        const existingStored = Array.from(notificationsContainer.querySelectorAll('.notification-item[data-database-id]'));
+                        existingStored.forEach(item => item.remove());
+                        
+                        // Sort by date (newest first)
+                        const sorted = data.notifications.sort((a, b) => {
+                            const dateA = new Date(a.created_date || a.createdAt || 0);
+                            const dateB = new Date(b.created_date || b.createdAt || 0);
+                            return dateB - dateA;
+                        });
+                        
+                        sorted.forEach(notif => {
+                            const notifId = notif.id.toString();
+                            const isRead = readNotifications.includes(notifId);
+                            
+                            const newNotification = document.createElement('div');
+                            newNotification.className = 'notification-item';
+                            newNotification.dataset.status = isRead ? 'read' : 'unread';
+                            newNotification.dataset.id = notifId;
+                            newNotification.dataset.databaseId = notifId;
+                            if (isRead) newNotification.style.opacity = '0.7';
+                            newNotification.style.position = 'relative';
+                            
+                            const iconClass = notif.icon || 'fa-bell';
+                            const isAuth = sessionStorage.getItem('isAdminAuthenticated') === 'true' || 
+                                          localStorage.getItem('adminPassword') === NOTIFICATIONS_ADMIN_PASSWORD;
+                            
+                            newNotification.innerHTML = `
+                                <div class="notification-icon">
+                                    <i class="fas ${iconClass}"></i>
+                                </div>
+                                <div class="notification-content">
+                                    <h4>${notif.title}</h4>
+                                    <p>${notif.message}</p>
+                                    <span class="notification-time">${formatTimeAgo(notif.created_date || notif.createdAt || new Date())}</span>
+                                </div>
+                                ${isAuth ? `<button onclick="deleteNotification('${notifId}', '${notifId}', '', event)" style="position: absolute; top: 8px; right: 8px; background: #f44336; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-size: 14px; z-index: 10;" title="Delete notification"><i class="fas fa-trash"></i></button>` : ''}
+                            `;
+                            
+                            // Insert at top (after filter buttons)
+                            const filterDiv = notificationsContainer.querySelector('div[style*="display: flex"]');
+                            if (filterDiv && filterDiv.nextSibling) {
+                                notificationsContainer.insertBefore(newNotification, filterDiv.nextSibling);
+                            } else {
+                                notificationsContainer.appendChild(newNotification);
+                            }
+                            
+                            // Mark as read on click
+                            newNotification.addEventListener('click', function(e) {
+                                // Don't mark as read if clicking delete button
+                                if (e.target.closest('button')) return;
+                                
+                                if (this.dataset.status === 'unread') {
+                                    this.dataset.status = 'read';
+                                    this.style.opacity = '0.7';
+                                    markNotificationAsRead(notifId);
+                                    updateUnreadBadge();
+                                }
+                            });
+                        });
+                        
+                        console.log('Loaded notifications from database');
+                        updateUnreadBadge();
+                        if (typeof window.updateNotificationBadge === 'function') {
+                            window.updateNotificationBadge();
+                        }
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.log('Database not available, trying Firestore:', error.message);
+            }
+            
+            // Fallback: Try to load from Firestore
             try {
                 const firestore = getFirestore();
                 if (firestore) {
@@ -650,9 +934,14 @@
                             newNotification.className = 'notification-item firebase-notif';
                             newNotification.dataset.status = isRead ? 'read' : 'unread';
                             newNotification.dataset.id = notifId;
+                            newNotification.dataset.firestoreId = notifId;
                             if (isRead) newNotification.style.opacity = '0.7';
+                            newNotification.style.position = 'relative';
                             
                             const iconClass = notif.icon || 'fa-bell';
+                            const isAuth = sessionStorage.getItem('isAdminAuthenticated') === 'true' || 
+                                          localStorage.getItem('adminPassword') === NOTIFICATIONS_ADMIN_PASSWORD;
+                            
                             newNotification.innerHTML = `
                                 <div class="notification-icon">
                                     <i class="fas ${iconClass}"></i>
@@ -662,6 +951,7 @@
                                     <p>${notif.message}</p>
                                     <span class="notification-time">${formatTimeAgo(notif.createdAt?.toDate() || new Date())}</span>
                                 </div>
+                                ${isAuth ? `<button onclick="deleteNotification('${notifId}', '', '${notifId}', event)" style="position: absolute; top: 8px; right: 8px; background: #f44336; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-size: 14px; z-index: 10;" title="Delete notification"><i class="fas fa-trash"></i></button>` : ''}
                             `;
                             
                             // Insert at top (after filter buttons)
@@ -671,6 +961,19 @@
                             } else {
                                 notificationsContainer.appendChild(newNotification);
                             }
+                            
+                            // Mark as read on click
+                            newNotification.addEventListener('click', function(e) {
+                                // Don't mark as read if clicking delete button
+                                if (e.target.closest('button')) return;
+                                
+                                if (this.dataset.status === 'unread') {
+                                    this.dataset.status = 'read';
+                                    this.style.opacity = '0.7';
+                                    markNotificationAsRead(notifId);
+                                    updateUnreadBadge();
+                                }
+                            });
                         });
                         
                         console.log('Loaded notifications from Firestore');
