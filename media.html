@@ -351,10 +351,31 @@
                     alert('Error: ' + (data.message || 'Failed to save media metadata'));
                 }
             } catch (error) {
+                // Always re-enable button and restore text, even on error
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnText;
-                console.error('Error:', error);
-                alert('Error uploading media: ' + error.message);
+                console.error('Error uploading media:', error);
+                
+                // Show user-friendly error message
+                let errorMessage = 'Error uploading media: ';
+                if (error.message) {
+                    errorMessage += error.message;
+                } else if (typeof error === 'string') {
+                    errorMessage += error;
+                } else {
+                    errorMessage += 'Unknown error occurred. Please try again.';
+                }
+                
+                alert(errorMessage);
+                
+                // Log full error for debugging
+                console.error('Full error details:', error);
+            } finally {
+                // Ensure button is always re-enabled, even if something unexpected happens
+                submitBtn.disabled = false;
+                if (submitBtn.innerHTML.includes('spinner') || submitBtn.innerHTML.includes('Uploading')) {
+                    submitBtn.innerHTML = originalBtnText;
+                }
             }
         };
 

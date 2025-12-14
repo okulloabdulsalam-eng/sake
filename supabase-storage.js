@@ -64,6 +64,9 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
  * @returns {Promise<Object>} Upload result with download URL and storage path
  */
 async function uploadToSupabaseStorage(file, folder = 'media', onProgress = null) {
+    let progressInterval = null;
+    let uploadTimeout = null;
+    
     try {
         const supabase = getSupabaseClient();
         if (!supabase) {
@@ -77,20 +80,49 @@ async function uploadToSupabaseStorage(file, folder = 'media', onProgress = null
         const fileName = `${timestamp}_${randomString}.${fileExtension}`;
         const filePath = `${folder}/${fileName}`;
         
-        // Upload file to Supabase Storage
-        const { data, error } = await supabase.storage
+        // Start progress simulation (will be cleared when upload completes)
+        if (onProgress) {
+            let progress = 0;
+            progressInterval = setInterval(() => {
+                progress += 5;
+                if (progress < 90) { // Don't go to 100% until upload actually completes
+                    onProgress(progress);
+                }
+            }, 200);
+        }
+        
+        // Set upload timeout (5 minutes for large files)
+        const timeoutPromise = new Promise((_, reject) => {
+            uploadTimeout = setTimeout(() => {
+                reject(new Error('Upload timeout: File upload took too long. Please try again with a smaller file.'));
+            }, 5 * 60 * 1000); // 5 minutes
+        });
+        
+        // Upload file to Supabase Storage with timeout
+        const uploadPromise = supabase.storage
             .from(window.supabaseConfig.storageBucket || 'media')
             .upload(filePath, file, {
                 cacheControl: '3600',
                 upsert: false
             });
+        
+        const { data, error } = await Promise.race([uploadPromise, timeoutPromise]);
+
+        // Clear timeout and progress interval
+        if (uploadTimeout) clearTimeout(uploadTimeout);
+        if (progressInterval) clearInterval(progressInterval);
 
         if (error) {
             // Provide more helpful error messages for RLS issues
             if (error.message && error.message.includes('row-level security')) {
-                throw new Error('Storage access denied. Please check Supabase Storage policies. The bucket may require authentication or have restricted upload policies. See STORAGE_SETUP.md for instructions.');
+                throw new Error('Storage access denied. Please check Supabase Storage policies. The bucket may require authentication or have restricted upload policies. See SUPABASE_RLS_FIX_COMPLETE.md for instructions.');
             }
             throw error;
+        }
+
+        // Update progress to 100%
+        if (onProgress) {
+            onProgress(100);
         }
 
         // Get public URL
@@ -99,21 +131,6 @@ async function uploadToSupabaseStorage(file, folder = 'media', onProgress = null
             .getPublicUrl(filePath);
 
         const downloadURL = urlData.publicUrl;
-
-        // Simulate progress for compatibility
-        if (onProgress) {
-            // Since Supabase doesn't provide progress events, simulate it
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += 10;
-                if (progress >= 100) {
-                    clearInterval(interval);
-                    onProgress(100);
-                } else {
-                    onProgress(progress);
-                }
-            }, 100);
-        }
 
         return {
             success: true,
@@ -125,6 +142,10 @@ async function uploadToSupabaseStorage(file, folder = 'media', onProgress = null
         };
 
     } catch (error) {
+        // Clean up intervals and timeouts on error
+        if (uploadTimeout) clearTimeout(uploadTimeout);
+        if (progressInterval) clearInterval(progressInterval);
+        
         console.error('Error uploading to Supabase Storage:', error);
         return {
             success: false,
