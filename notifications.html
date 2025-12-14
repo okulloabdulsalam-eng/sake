@@ -37,7 +37,7 @@
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
-            margin-top: 12px;
+            justify-content: center;
         }
         
         .mobile-btn {
@@ -47,6 +47,16 @@
             border-radius: 8px;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
+            flex: 1;
+            min-width: 100px;
+            max-width: 150px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .mobile-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
         
         .mobile-notification-item {
@@ -60,6 +70,7 @@
             position: relative;
             touch-action: manipulation;
             transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid #f0f0f0;
         }
         
         .mobile-notification-item:active {
@@ -69,23 +80,26 @@
         
         .mobile-notification-item.unread {
             border-left: 4px solid #4CAF50;
+            background: linear-gradient(to right, #E8F5E9 0%, white 4%);
         }
         
         .mobile-notification-item.read {
             opacity: 0.7;
+            background: #fafafa;
         }
         
         .mobile-notification-icon {
             width: 48px;
             height: 48px;
             border-radius: 12px;
-            background: #E8F5E9;
+            background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
             color: #4CAF50;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 20px;
             flex-shrink: 0;
+            box-shadow: 0 2px 4px rgba(76, 175, 80, 0.2);
         }
         
         .mobile-notification-content {
@@ -134,19 +148,32 @@
         .mobile-filter-buttons {
             display: flex;
             gap: 8px;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
             padding-bottom: 8px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .mobile-filter-buttons::-webkit-scrollbar {
+            display: none;
         }
         
         .mobile-filter-btn {
             flex-shrink: 0;
-            padding: 10px 16px;
+            padding: 10px 20px;
             border-radius: 20px;
             font-size: 14px;
+            font-weight: 600;
             touch-action: manipulation;
             min-height: 40px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .mobile-filter-btn:active {
+            transform: scale(0.95);
         }
         
         .mobile-modal {
@@ -380,7 +407,10 @@
 
             <section class="page-header">
                 <h2 class="page-title">Notifications</h2>
-                <div class="mobile-actions">
+            </section>
+
+            <section class="page-content">
+                <div class="mobile-actions" style="margin-bottom: 16px;">
                     <button class="btn btn-primary mobile-btn" onclick="requestNotificationPermission()">
                         <i class="fas fa-bell"></i> Enable Push
                     </button>
@@ -394,9 +424,7 @@
                         <i class="fas fa-sign-out-alt"></i> Logout
                     </button>
                 </div>
-            </section>
-
-            <section class="page-content">
+                
                 <div class="mobile-filter-buttons">
                     <button class="btn btn-primary mobile-filter-btn" onclick="filterNotifications('all')" data-filter="all">All</button>
                     <button class="btn btn-outline mobile-filter-btn" onclick="filterNotifications('unread')" data-filter="unread">
@@ -487,6 +515,8 @@
         // Notifications Admin Password
         const NOTIFICATIONS_ADMIN_PASSWORD = 'kiuma2025';
         let currentFilter = 'all';
+        let cachedNotifications = []; // Cache notifications for instant filtering
+        let isLoadingNotifications = false;
         
         // Update admin button visibility
         function updateAdminButtonVisibility() {
@@ -603,10 +633,11 @@
             }
         };
         
-        // Filter notifications
+        // Filter notifications (instant client-side filtering)
         window.filterNotifications = function(status) {
             currentFilter = status;
             
+            // Update button states
             document.querySelectorAll('.mobile-filter-btn').forEach(btn => {
                 const filter = btn.dataset.filter;
                 if (filter === status) {
@@ -618,117 +649,28 @@
                 }
             });
             
-            loadNotificationsFromStorage();
+            // Instant client-side filtering (no reload)
+            displayNotifications(cachedNotifications, status);
         };
         
-        // Get read notifications
-        function getReadNotifications() {
-            return JSON.parse(localStorage.getItem('readNotifications') || '[]');
-        }
-        
-        // Mark notification as read
-        function markNotificationAsRead(id) {
-            const readNotifications = getReadNotifications();
-            if (!readNotifications.includes(id)) {
-                readNotifications.push(id);
-                localStorage.setItem('readNotifications', JSON.stringify(readNotifications));
-            }
-        }
-        
-        // Update unread badge
-        function updateUnreadBadge() {
-            const unreadCount = document.querySelectorAll('.mobile-notification-item.unread').length;
-            const badge = document.getElementById('unreadBadge');
-            if (badge) {
-                badge.textContent = unreadCount;
-                badge.style.display = unreadCount > 0 ? 'inline' : 'none';
-            }
-        }
-        
-        // Format time ago
-        function formatTimeAgo(dateString) {
-            const now = new Date();
-            const date = new Date(dateString);
-            const diffInSeconds = Math.floor((now - date) / 1000);
-            
-            if (diffInSeconds < 60) return 'Just now';
-            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-            if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-            return date.toLocaleDateString();
-        }
-        
-        // Get Firestore
-        let db = null;
-        function getFirestore() {
-            if (db) return db;
-            if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
-                db = firebase.firestore();
-            }
-            return db;
-        }
-        
-        // Load notifications
-        async function loadNotificationsFromStorage() {
+        // Display notifications (instant, no loading)
+        function displayNotifications(notifications, filter = 'all') {
             const notificationsList = document.getElementById('notificationsList');
             if (!notificationsList) return;
             
-            notificationsList.innerHTML = '<div class="mobile-empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div>';
-            
             const readNotifications = getReadNotifications();
-            const isStaticHosting = window.location.hostname.includes('github.io') || 
-                                   window.location.hostname.includes('netlify.app') ||
-                                   window.location.hostname.includes('vercel.app');
             
-            let notifications = [];
-            
-            // Try database first (if not static hosting)
-            if (!isStaticHosting) {
-                try {
-                    const API_BASE_URL = window.API_BASE_URL || '/api';
-                    const response = await fetch(API_BASE_URL + '/get_notifications.php');
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data.success && data.notifications) {
-                            notifications = data.notifications;
-                        }
-                    }
-                } catch (error) {
-                    console.log('Database not available, using Firestore');
-                }
-            }
-            
-            // Fallback to Firestore
-            if (notifications.length === 0) {
-                try {
-                    const firestore = getFirestore();
-                    if (firestore) {
-                        const snapshot = await firestore.collection('notifications')
-                            .orderBy('createdAt', 'desc')
-                            .limit(50)
-                            .get();
-                        
-                        notifications = snapshot.docs.map(doc => ({
-                            id: doc.id,
-                            title: doc.data().title,
-                            message: doc.data().message,
-                            icon: doc.data().icon || 'fa-bell',
-                            createdAt: doc.data().createdAt?.toDate() || new Date(),
-                            firestoreId: doc.id
-                        }));
-                    }
-                } catch (error) {
-                    console.log('Firestore not available:', error);
-                }
-            }
-            
-            // Filter by status
-            if (currentFilter === 'unread') {
-                notifications = notifications.filter(n => !readNotifications.includes(n.id.toString()));
+            // Filter by status (client-side, instant)
+            let filtered = notifications;
+            if (filter === 'unread') {
+                filtered = notifications.filter(n => {
+                    const notifId = n.id.toString();
+                    return !readNotifications.includes(notifId);
+                });
             }
             
             // Display notifications
-            if (notifications.length === 0) {
+            if (filtered.length === 0) {
                 notificationsList.innerHTML = `
                     <div class="mobile-empty-state">
                         <i class="fas fa-bell"></i>
@@ -743,7 +685,7 @@
             const isAuth = sessionStorage.getItem('isAdminAuthenticated') === 'true' || 
                           localStorage.getItem('adminPassword') === NOTIFICATIONS_ADMIN_PASSWORD;
             
-            notifications.forEach(notif => {
+            filtered.forEach(notif => {
                 const notifId = notif.id.toString();
                 const isRead = readNotifications.includes(notifId);
                 const iconClass = notif.icon || 'fa-bell';
@@ -775,6 +717,10 @@
                         this.classList.add('read');
                         markNotificationAsRead(notifId);
                         updateUnreadBadge();
+                        // Update filter if on unread view
+                        if (currentFilter === 'unread') {
+                            displayNotifications(cachedNotifications, 'unread');
+                        }
                     }
                 });
                 
@@ -782,6 +728,173 @@
             });
             
             updateUnreadBadge();
+        }
+        
+        // Get read notifications
+        function getReadNotifications() {
+            return JSON.parse(localStorage.getItem('readNotifications') || '[]');
+        }
+        
+        // Mark notification as read
+        function markNotificationAsRead(id) {
+            const readNotifications = getReadNotifications();
+            if (!readNotifications.includes(id)) {
+                readNotifications.push(id);
+                localStorage.setItem('readNotifications', JSON.stringify(readNotifications));
+            }
+        }
+        
+        // Update unread badge (fast calculation from cache)
+        function updateUnreadBadge() {
+            const readNotifications = getReadNotifications();
+            const unreadCount = cachedNotifications.filter(n => {
+                const notifId = n.id.toString();
+                return !readNotifications.includes(notifId);
+            }).length;
+            
+            const badge = document.getElementById('unreadBadge');
+            if (badge) {
+                badge.textContent = unreadCount;
+                badge.style.display = unreadCount > 0 ? 'inline' : 'none';
+            }
+        }
+        
+        // Format time ago
+        function formatTimeAgo(dateString) {
+            const now = new Date();
+            const date = new Date(dateString);
+            const diffInSeconds = Math.floor((now - date) / 1000);
+            
+            if (diffInSeconds < 60) return 'Just now';
+            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+            if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+            return date.toLocaleDateString();
+        }
+        
+        // Get Firestore
+        let db = null;
+        function getFirestore() {
+            if (db) return db;
+            if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+                db = firebase.firestore();
+            }
+            return db;
+        }
+        
+        // Load notifications (with caching and timeout)
+        async function loadNotificationsFromStorage(showLoading = true) {
+            if (isLoadingNotifications) {
+                return; // Already loading, don't duplicate
+            }
+            
+            const notificationsList = document.getElementById('notificationsList');
+            if (!notificationsList) return;
+            
+            // Try to load from localStorage cache first (instant)
+            if (cachedNotifications.length === 0) {
+                try {
+                    const cached = localStorage.getItem('cachedNotifications');
+                    if (cached) {
+                        cachedNotifications = JSON.parse(cached);
+                        if (cachedNotifications.length > 0) {
+                            displayNotifications(cachedNotifications, currentFilter);
+                            showLoading = false; // Already showing data
+                        }
+                    }
+                } catch (e) {
+                    console.log('Cache load failed:', e);
+                }
+            } else if (showLoading) {
+                // Show cached data immediately if available
+                displayNotifications(cachedNotifications, currentFilter);
+                showLoading = false;
+            }
+            
+            if (showLoading) {
+                notificationsList.innerHTML = '<div class="mobile-empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div>';
+            }
+            
+            isLoadingNotifications = true;
+            
+            const isStaticHosting = window.location.hostname.includes('github.io') || 
+                                   window.location.hostname.includes('netlify.app') ||
+                                   window.location.hostname.includes('vercel.app');
+            
+            let notifications = [];
+            
+            // Try database first (if not static hosting) - with timeout
+            if (!isStaticHosting) {
+                try {
+                    const API_BASE_URL = window.API_BASE_URL || '/api';
+                    const fetchPromise = fetch(API_BASE_URL + '/get_notifications.php');
+                    const timeoutPromise = new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('Request timeout')), 3000)
+                    );
+                    
+                    const response = await Promise.race([fetchPromise, timeoutPromise]);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success && data.notifications) {
+                            notifications = data.notifications.map(n => ({
+                                id: n.id.toString(),
+                                title: n.title,
+                                message: n.message,
+                                icon: n.icon || 'fa-bell',
+                                createdAt: n.created_date ? new Date(n.created_date) : new Date(),
+                                created_date: n.created_date,
+                                databaseId: n.id.toString()
+                            }));
+                        }
+                    }
+                } catch (error) {
+                    console.log('Database not available, using Firestore:', error.message);
+                }
+            }
+            
+            // Fallback to Firestore - with timeout
+            if (notifications.length === 0) {
+                try {
+                    const firestore = getFirestore();
+                    if (firestore) {
+                        const firestorePromise = firestore.collection('notifications')
+                            .orderBy('createdAt', 'desc')
+                            .limit(50)
+                            .get();
+                        
+                        const timeoutPromise = new Promise((_, reject) => 
+                            setTimeout(() => reject(new Error('Firestore timeout')), 5000)
+                        );
+                        
+                        const snapshot = await Promise.race([firestorePromise, timeoutPromise]);
+                        
+                        notifications = snapshot.docs.map(doc => ({
+                            id: doc.id,
+                            title: doc.data().title,
+                            message: doc.data().message,
+                            icon: doc.data().icon || 'fa-bell',
+                            createdAt: doc.data().createdAt?.toDate() || new Date(),
+                            firestoreId: doc.id
+                        }));
+                    }
+                } catch (error) {
+                    console.log('Firestore not available:', error.message);
+                }
+            }
+            
+            // Cache notifications
+            cachedNotifications = notifications;
+            isLoadingNotifications = false;
+            
+            // Save to localStorage for instant load next time
+            try {
+                localStorage.setItem('cachedNotifications', JSON.stringify(cachedNotifications));
+            } catch (e) {
+                console.log('Cache save failed:', e);
+            }
+            
+            // Display with current filter (instant)
+            displayNotifications(cachedNotifications, currentFilter);
         }
         
         // Add notification
@@ -881,9 +994,25 @@
                 }
                 
                 if (saved) {
+                    // Add to cache immediately (optimistic update)
+                    const newNotif = {
+                        id: Date.now().toString(), // Temporary ID
+                        title: title,
+                        message: message,
+                        icon: icon,
+                        createdAt: new Date(),
+                        firestoreId: null
+                    };
+                    cachedNotifications.unshift(newNotif); // Add to beginning
+                    displayNotifications(cachedNotifications, currentFilter);
+                    
                     closeAddNotificationModal();
                     alert('Notification added successfully!');
-                    loadNotificationsFromStorage();
+                    
+                    // Refresh in background to get real ID
+                    setTimeout(() => {
+                        loadNotificationsFromStorage(false);
+                    }, 500);
                 } else {
                     throw new Error('Failed to save notification. Please try again.');
                 }
@@ -942,8 +1071,19 @@
                     }
                 }
                 
+                // Remove from cache immediately (optimistic update)
+                cachedNotifications = cachedNotifications.filter(n => {
+                    const notifId = n.id.toString();
+                    return notifId !== notificationId;
+                });
+                displayNotifications(cachedNotifications, currentFilter);
+                
                 alert('Notification deleted successfully!');
-                loadNotificationsFromStorage();
+                
+                // Refresh in background
+                setTimeout(() => {
+                    loadNotificationsFromStorage(false);
+                }, 500);
                 
             } catch (error) {
                 console.error('Error deleting notification:', error);
@@ -954,7 +1094,16 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             updateAdminButtonVisibility();
-            loadNotificationsFromStorage();
+            
+            // Load notifications immediately (non-blocking)
+            loadNotificationsFromStorage(true);
+            
+            // Refresh notifications in background every 30 seconds
+            setInterval(() => {
+                if (!isLoadingNotifications) {
+                    loadNotificationsFromStorage(false); // Silent refresh
+                }
+            }, 30000);
             
             // Password input enter key
             const passwordInput = document.getElementById('adminPassword');

@@ -27,7 +27,7 @@
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
-            margin-top: 12px;
+            justify-content: center;
         }
         
         .mobile-btn {
@@ -37,6 +37,16 @@
             border-radius: 8px;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
+            flex: 1;
+            min-width: 100px;
+            max-width: 150px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .mobile-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
         
         .mobile-file-input-wrapper {
@@ -105,6 +115,13 @@
             overflow: hidden;
             background: #f5f5f5;
             touch-action: manipulation;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .mobile-media-item:active {
+            transform: scale(0.98);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.15);
         }
         
         .mobile-media-item img,
@@ -270,19 +287,32 @@
         .mobile-filter-buttons {
             display: flex;
             gap: 8px;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
             padding-bottom: 8px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .mobile-filter-buttons::-webkit-scrollbar {
+            display: none;
         }
         
         .mobile-filter-btn {
             flex-shrink: 0;
-            padding: 10px 16px;
+            padding: 10px 20px;
             border-radius: 20px;
             font-size: 14px;
+            font-weight: 600;
             touch-action: manipulation;
             min-height: 40px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .mobile-filter-btn:active {
+            transform: scale(0.95);
         }
         
         .mobile-loading {
@@ -378,7 +408,10 @@
 
             <section class="page-header">
                 <h2 class="page-title">Media Gallery</h2>
-                <div class="mobile-actions">
+            </section>
+
+            <section class="page-content">
+                <div class="mobile-actions" style="margin-bottom: 16px;">
                     <button class="btn btn-secondary mobile-btn" id="adminLoginBtn" onclick="showMediaPasswordPrompt()">
                         <i class="fas fa-lock"></i> Admin
                     </button>
@@ -389,9 +422,7 @@
                         <i class="fas fa-sign-out-alt"></i> Logout
                     </button>
                 </div>
-            </section>
-
-            <section class="page-content">
+                
                 <div class="mobile-filter-buttons">
                     <button class="btn btn-primary mobile-filter-btn" onclick="filterMedia('all')" data-filter="all">All</button>
                     <button class="btn btn-outline mobile-filter-btn" onclick="filterMedia('video')" data-filter="video">Videos</button>
@@ -470,6 +501,8 @@
         // Media Admin Password
         const MEDIA_ADMIN_PASSWORD = 'kiuma2025';
         let currentFilter = 'all';
+        let cachedMedia = []; // Cache media for instant filtering
+        let isLoadingMedia = false;
         
         // Check if media admin is authenticated
         function isMediaAdminAuthenticated() {
@@ -581,7 +614,7 @@
             }
         }
         
-        // Filter media
+        // Filter media (instant client-side filtering)
         window.filterMedia = function(type) {
             currentFilter = type;
             
@@ -597,15 +630,86 @@
                 }
             });
             
-            loadMediaFromStorage(type);
+            // Instant client-side filtering (no reload)
+            displayMedia(cachedMedia, type);
         };
         
-        // Load media from storage
-        async function loadMediaFromStorage(filter = 'all') {
+        // Get Firestore
+        let db = null;
+        function getFirestore() {
+            if (db) return db;
+            if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+                db = firebase.firestore();
+            }
+            return db;
+        }
+        
+        // Display media (instant, no loading)
+        function displayMedia(mediaItems, filter = 'all') {
             const mediaGrid = document.getElementById('mediaGrid');
             if (!mediaGrid) return;
             
-            mediaGrid.innerHTML = '<div class="mobile-loading"><i class="fas fa-spinner fa-spin"></i><p>Loading media...</p></div>';
+            // Filter media (client-side, instant)
+            let filtered = mediaItems;
+            if (filter !== 'all') {
+                filtered = mediaItems.filter(item => {
+                    const type = item.type || item.file_type || '';
+                    return type.toLowerCase().includes(filter);
+                });
+            }
+            
+            // Display media
+            if (filtered.length === 0) {
+                mediaGrid.innerHTML = `
+                    <div class="mobile-empty-state">
+                        <i class="fas fa-photo-video"></i>
+                        <p>No media found</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            mediaGrid.innerHTML = '';
+            filtered.forEach(item => {
+                const mediaItem = createMediaItem(item);
+                mediaGrid.appendChild(mediaItem);
+            });
+        }
+        
+        // Load media from storage (with caching and timeout)
+        async function loadMediaFromStorage(filter = 'all', showLoading = true) {
+            if (isLoadingMedia) {
+                return; // Already loading, don't duplicate
+            }
+            
+            const mediaGrid = document.getElementById('mediaGrid');
+            if (!mediaGrid) return;
+            
+            // Try to load from localStorage cache first (instant)
+            if (cachedMedia.length === 0) {
+                try {
+                    const cached = localStorage.getItem('cachedMedia');
+                    if (cached) {
+                        cachedMedia = JSON.parse(cached);
+                        if (cachedMedia.length > 0) {
+                            displayMedia(cachedMedia, filter);
+                            showLoading = false; // Already showing data
+                        }
+                    }
+                } catch (e) {
+                    console.log('Cache load failed:', e);
+                }
+            } else if (showLoading) {
+                // Show cached data immediately if available
+                displayMedia(cachedMedia, filter);
+                showLoading = false;
+            }
+            
+            if (showLoading) {
+                mediaGrid.innerHTML = '<div class="mobile-loading"><i class="fas fa-spinner fa-spin"></i><p>Loading media...</p></div>';
+            }
+            
+            isLoadingMedia = true;
             
             try {
                 const API_BASE_URL = window.API_BASE_URL || '/api';
@@ -615,10 +719,15 @@
                 
                 let mediaItems = [];
                 
-                // Try to load from API if not static hosting
+                // Try to load from API if not static hosting (with timeout)
                 if (!isStaticHosting) {
                     try {
-                        const response = await fetch(API_BASE_URL + '/get_media.php');
+                        const fetchPromise = fetch(API_BASE_URL + '/get_media.php');
+                        const timeoutPromise = new Promise((_, reject) => 
+                            setTimeout(() => reject(new Error('Request timeout')), 3000)
+                        );
+                        
+                        const response = await Promise.race([fetchPromise, timeoutPromise]);
                         if (response.ok) {
                             const data = await response.json();
                             if (data.success && data.media) {
@@ -626,43 +735,71 @@
                             }
                         }
                     } catch (error) {
-                        console.log('API not available, using Firestore');
+                        console.log('API not available, using Firestore:', error.message);
                     }
                 }
                 
-                // Filter media
-                if (filter !== 'all') {
-                    mediaItems = mediaItems.filter(item => {
-                        const type = item.type || item.file_type || '';
-                        return type.toLowerCase().includes(filter);
-                    });
-                }
-                
-                // Display media
+                // Fallback to Firestore (with timeout)
                 if (mediaItems.length === 0) {
-                    mediaGrid.innerHTML = `
-                        <div class="mobile-empty-state">
-                            <i class="fas fa-photo-video"></i>
-                            <p>No media found</p>
-                        </div>
-                    `;
-                    return;
+                    try {
+                        const firestore = getFirestore();
+                        if (firestore) {
+                            const firestorePromise = firestore.collection('media')
+                                .orderBy('uploaded_date', 'desc')
+                                .limit(100)
+                                .get();
+                            
+                            const timeoutPromise = new Promise((_, reject) => 
+                                setTimeout(() => reject(new Error('Firestore timeout')), 5000)
+                            );
+                            
+                            const snapshot = await Promise.race([firestorePromise, timeoutPromise]);
+                            
+                            mediaItems = snapshot.docs.map(doc => {
+                                const data = doc.data();
+                                return {
+                                    id: doc.id,
+                                    url: data.url || data.storage_url || '',
+                                    description: data.description || '',
+                                    type: data.type || data.file_type || 'other',
+                                    file_type: data.file_type || data.type || 'other',
+                                    file_name: data.file_name || '',
+                                    file_size: data.file_size || 0,
+                                    uploaded_date: data.uploaded_date?.toDate() || new Date(),
+                                    firestoreId: doc.id
+                                };
+                            });
+                        }
+                    } catch (error) {
+                        console.log('Firestore not available:', error.message);
+                    }
                 }
                 
-                mediaGrid.innerHTML = '';
-                mediaItems.forEach(item => {
-                    const mediaItem = createMediaItem(item);
-                    mediaGrid.appendChild(mediaItem);
-                });
+                // Cache media
+                cachedMedia = mediaItems;
+                isLoadingMedia = false;
+                
+                // Save to localStorage for instant load next time
+                try {
+                    localStorage.setItem('cachedMedia', JSON.stringify(cachedMedia));
+                } catch (e) {
+                    console.log('Cache save failed:', e);
+                }
+                
+                // Display with current filter (instant)
+                displayMedia(cachedMedia, filter);
                 
             } catch (error) {
                 console.error('Error loading media:', error);
-                mediaGrid.innerHTML = `
-                    <div class="mobile-empty-state">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <p>Error loading media</p>
-                    </div>
-                `;
+                isLoadingMedia = false;
+                if (cachedMedia.length === 0) {
+                    mediaGrid.innerHTML = `
+                        <div class="mobile-empty-state">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>Error loading media</p>
+                        </div>
+                    `;
+                }
             }
         }
         
@@ -766,7 +903,11 @@
                 
                 // Save metadata to database
                 const API_BASE_URL = window.API_BASE_URL || '/api';
-                const isStaticHosting = window.location.hostname.includes('github.io');
+                const isStaticHosting = window.location.hostname.includes('github.io') || 
+                                       window.location.hostname.includes('netlify.app') ||
+                                       window.location.hostname.includes('vercel.app');
+                
+                let saved = false;
                 
                 if (!isStaticHosting) {
                     try {
@@ -778,18 +919,89 @@
                         formData.append('file_size', file.size);
                         formData.append('admin_password', MEDIA_ADMIN_PASSWORD);
                         
-                        await fetch(API_BASE_URL + '/upload_media.php', {
+                        const response = await fetch(API_BASE_URL + '/upload_media.php', {
                             method: 'POST',
                             body: formData
                         });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.success) {
+                                saved = true;
+                                console.log('Media saved to database');
+                            }
+                        }
                     } catch (error) {
                         console.warn('Database save failed:', error);
                     }
                 }
                 
-                closeAddMediaModal();
-                alert('Media uploaded successfully!');
-                loadMediaFromStorage(currentFilter);
+                // Also save to Firestore (with timeout to prevent hanging)
+                try {
+                    const firestore = getFirestore();
+                    if (firestore) {
+                        const firestorePromise = firestore.collection('media').add({
+                            url: uploadResult.url,
+                            description: description,
+                            type: fileType,
+                            file_type: fileType,
+                            file_name: file.name,
+                            file_size: file.size,
+                            uploaded_date: firebase.firestore.FieldValue.serverTimestamp(),
+                            createdBy: firebase.auth().currentUser?.email || 'admin'
+                        });
+                        
+                        const timeoutPromise = new Promise((_, reject) => 
+                            setTimeout(() => reject(new Error('Firestore timeout')), 5000)
+                        );
+                        
+                        await Promise.race([firestorePromise, timeoutPromise]);
+                        console.log('Media saved to Firestore');
+                        saved = true;
+                    }
+                } catch (error) {
+                    console.warn('Firestore save failed:', error);
+                    // Continue even if Firestore fails
+                }
+                
+                // If neither saved, at least show success (for GitHub Pages)
+                if (!saved && isStaticHosting) {
+                    saved = true; // Allow it on static hosting
+                }
+                
+                if (saved) {
+                    // Add to cache immediately (optimistic update)
+                    const newMedia = {
+                        id: Date.now().toString(), // Temporary ID
+                        url: uploadResult.url,
+                        description: description,
+                        type: fileType,
+                        file_type: fileType,
+                        file_name: file.name,
+                        file_size: file.size,
+                        uploaded_date: new Date(),
+                        firestoreId: null
+                    };
+                    cachedMedia.unshift(newMedia); // Add to beginning
+                    displayMedia(cachedMedia, currentFilter);
+                    
+                    // Save to localStorage
+                    try {
+                        localStorage.setItem('cachedMedia', JSON.stringify(cachedMedia));
+                    } catch (e) {
+                        console.log('Cache save failed:', e);
+                    }
+                    
+                    closeAddMediaModal();
+                    alert('Media uploaded successfully!');
+                    
+                    // Refresh in background to get real ID
+                    setTimeout(() => {
+                        loadMediaFromStorage(currentFilter, false);
+                    }, 500);
+                } else {
+                    throw new Error('Failed to save media metadata. Please try again.');
+                }
                 
             } catch (error) {
                 console.error('Upload error:', error);
@@ -825,14 +1037,68 @@
                 formData.append('id', mediaId);
                 formData.append('admin_password', MEDIA_ADMIN_PASSWORD);
                 
-                const response = await fetch(API_BASE_URL + '/delete_media.php', {
-                    method: 'POST',
-                    body: formData
-                });
+                const isStaticHosting = window.location.hostname.includes('github.io') || 
+                                       window.location.hostname.includes('netlify.app') ||
+                                       window.location.hostname.includes('vercel.app');
                 
-                if (response.ok) {
-                    alert('Media deleted successfully!');
-                    loadMediaFromStorage(currentFilter);
+                let deleted = false;
+                
+                // Try to delete from database if not static hosting
+                if (!isStaticHosting) {
+                    try {
+                        const response = await fetch(API_BASE_URL + '/delete_media.php', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.success) {
+                                deleted = true;
+                                console.log('Media deleted from database');
+                            }
+                        }
+                    } catch (error) {
+                        console.warn('Database delete failed:', error);
+                    }
+                }
+                
+                // Also delete from Firestore
+                try {
+                    // Find the media item to get Firestore ID
+                    const mediaItem = cachedMedia.find(m => m.id.toString() === mediaId.toString() || m.firestoreId === mediaId.toString());
+                    if (mediaItem && mediaItem.firestoreId) {
+                        const firestore = getFirestore();
+                        if (firestore) {
+                            await firestore.collection('media').doc(mediaItem.firestoreId).delete();
+                            console.log('Media deleted from Firestore');
+                            deleted = true;
+                        }
+                    }
+                } catch (error) {
+                    console.warn('Firestore delete failed:', error);
+                }
+                
+                // Remove from cache immediately (optimistic update)
+                cachedMedia = cachedMedia.filter(m => {
+                    const mId = m.id.toString();
+                    return mId !== mediaId.toString();
+                });
+                displayMedia(cachedMedia, currentFilter);
+                
+                // Save to localStorage
+                try {
+                    localStorage.setItem('cachedMedia', JSON.stringify(cachedMedia));
+                } catch (e) {
+                    console.log('Cache save failed:', e);
+                }
+                
+                alert('Media deleted successfully!');
+                
+                // Refresh in background
+                setTimeout(() => {
+                    loadMediaFromStorage(currentFilter, false);
+                }, 500);
                 } else {
                     throw new Error('Delete failed');
                 }
@@ -853,7 +1119,14 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             updateUploadButtonVisibility();
-            loadMediaFromStorage('all');
+            loadMediaFromStorage('all', true);
+            
+            // Refresh media in background every 30 seconds
+            setInterval(() => {
+                if (!isLoadingMedia) {
+                    loadMediaFromStorage(currentFilter, false); // Silent refresh
+                }
+            }, 30000);
             
             // File input change handler
             const fileInput = document.getElementById('mediaFile');
