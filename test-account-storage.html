@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Storage Test - KIUMA</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #4CAF50;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Account Storage Test - KIUMA</h1>
+    
+    <div class="test-section">
+        <h2>1. localStorage Test</h2>
+        <button onclick="testLocalStorage()">Test localStorage</button>
+        <div id="localStorageResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. userData Storage Test</h2>
+        <button onclick="testUserDataStorage()">Test userData Storage</button>
+        <div id="userDataResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Firebase Auth Test</h2>
+        <button onclick="testFirebaseAuth()">Test Firebase Auth</button>
+        <div id="firebaseAuthResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. Navigation Update Test</h2>
+        <button onclick="testNavigationUpdate()">Test Navigation</button>
+        <div id="navigationResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>5. Data Persistence Test</h2>
+        <button onclick="testDataPersistence()">Test Persistence</button>
+        <div id="persistenceResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>6. Cross-Page Storage Test</h2>
+        <button onclick="testCrossPageStorage()">Test Cross-Page</button>
+        <div id="crossPageResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>7. Complete Storage Test</h2>
+        <button onclick="runAllTests()">Run All Tests</button>
+        <div id="allTestsResult"></div>
+    </div>
+
+    <!-- Firebase Configuration (MUST be loaded first) -->
+    <script src="fcm-config.js"></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Load required scripts -->
+    <script src="update-navigation.js"></script>
+    <script src="firebase-auth.js"></script>
+    
+    <script>
+        // Initialize Firebase - wait for config to load
+        function initializeFirebaseForTest() {
+            // Wait a bit for fcm-config.js to load
+            let retries = 0;
+            const maxRetries = 10;
+            
+            const initInterval = setInterval(() => {
+                retries++;
+                
+                // Try to initialize Firebase
+                if (typeof firebase !== 'undefined') {
+                    try {
+                        // Check if already initialized
+                        if (firebase.apps && firebase.apps.length > 0) {
+                            console.log('Firebase already initialized');
+                            clearInterval(initInterval);
+                            return;
+                        }
+                        
+                        // Try to get config from various sources
+                        let config = null;
+                        if (typeof window.firebaseConfig !== 'undefined') {
+                            config = window.firebaseConfig;
+                        } else if (typeof firebaseConfig !== 'undefined') {
+                            config = firebaseConfig;
+                        } else if (typeof initializeFirebaseApp === 'function') {
+                            // Use the initialization function from fcm-config.js
+                            initializeFirebaseApp();
+                            clearInterval(initInterval);
+                            return;
+                        }
+                        
+                        // Initialize if config found
+                        if (config) {
+                            firebase.initializeApp(config);
+                            console.log('Firebase initialized successfully for test');
+                            clearInterval(initInterval);
+                        }
+                    } catch (error) {
+                        if (error.code === 'app/duplicate-app') {
+                            console.log('Firebase already initialized');
+                            clearInterval(initInterval);
+                        } else {
+                            console.warn('Firebase initialization attempt failed:', error.message);
+                        }
+                    }
+                }
+                
+                // Stop trying after max retries
+                if (retries >= maxRetries) {
+                    console.warn('Firebase config not found after ' + maxRetries + ' attempts');
+                    clearInterval(initInterval);
+                }
+            }, 200); // Check every 200ms
+        }
+        
+        // Start initialization when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeFirebaseForTest);
+        } else {
+            initializeFirebaseForTest();
+        }
+        
+        function addResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = message;
+            element.appendChild(div);
+        }
+        
+        function clearResults(elementId) {
+            document.getElementById(elementId).innerHTML = '';
+        }
+        
+        function testLocalStorage() {
+            clearResults('localStorageResult');
+            addResult('localStorageResult', 'Testing localStorage functionality...', 'info');
+            
+            try {
+                // Test 1: Check if localStorage is available
+                if (typeof Storage === 'undefined') {
+                    addResult('localStorageResult', '❌ localStorage is not supported', 'error');
+                    return;
+                }
+                addResult('localStorageResult', '✅ localStorage is supported', 'success');
+                
+                // Test 2: Write test data
+                const testData = { test: 'value', timestamp: Date.now() };
+                localStorage.setItem('test_storage', JSON.stringify(testData));
+                addResult('localStorageResult', '✅ Test data written to localStorage', 'success');
+                
+                // Test 3: Read test data
+                const readData = localStorage.getItem('test_storage');
+                if (readData) {
+                    const parsed = JSON.parse(readData);
+                    addResult('localStorageResult', `✅ Test data read successfully: ${JSON.stringify(parsed)}`, 'success');
+                } else {
+                    addResult('localStorageResult', '❌ Failed to read test data', 'error');
+                }
+                
+                // Test 4: Check current userData
+                const userData = localStorage.getItem('userData');
+                if (userData) {
+                    const parsed = JSON.parse(userData);
+                    addResult('localStorageResult', `✅ userData found: ${JSON.stringify(parsed, null, 2)}`, 'success');
+                } else {
+                    addResult('localStorageResult', 'ℹ️ No userData in localStorage (user not logged in)', 'info');
+                }
+                
+                // Test 5: Check users array
+                const users = localStorage.getItem('users');
+                if (users) {
+                    const parsed = JSON.parse(users);
+                    addResult('localStorageResult', `✅ Users array found: ${parsed.length} users`, 'success');
+                } else {
+                    addResult('localStorageResult', 'ℹ️ No users array in localStorage', 'info');
+                }
+                
+                // Cleanup
+                localStorage.removeItem('test_storage');
+                addResult('localStorageResult', '✅ Test cleanup completed', 'success');
+                
+            } catch (error) {
+                addResult('localStorageResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        function testUserDataStorage() {
+            clearResults('userDataResult');
+            addResult('userDataResult', 'Testing userData storage...', 'info');
+            
+            try {
+                // Test 1: Create test user data
+                const testUserData = {
+                    name: 'Test User',
+                    firstName: 'Test',
+                    email: 'test@example.com',
+                    uid: 'test-uid-123',
+                    createdAt: new Date().toISOString()
+                };
+                
+                // Save to localStorage
+                localStorage.setItem('userData', JSON.stringify(testUserData));
+                addResult('userDataResult', '✅ Test userData saved', 'success');
+                
+                // Read back
+                const stored = localStorage.getItem('userData');
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    addResult('userDataResult', `✅ userData retrieved: ${JSON.stringify(parsed, null, 2)}`, 'success');
+                    
+                    // Verify fields
+                    if (parsed.name && parsed.email && parsed.uid) {
+                        addResult('userDataResult', '✅ All required fields present', 'success');
+                    } else {
+                        addResult('userDataResult', '❌ Missing required fields', 'error');
+                    }
+                } else {
+                    addResult('userDataResult', '❌ Failed to retrieve userData', 'error');
+                }
+                
+                // Test loadUserData function (if available)
+                if (typeof loadUserData === 'function') {
+                    loadUserData();
+                    addResult('userDataResult', '✅ loadUserData() function called', 'success');
+                } else {
+                    addResult('userDataResult', 'ℹ️ loadUserData() function not available', 'info');
+                }
+                
+                // Restore original userData if it existed
+                const original = localStorage.getItem('userData_backup');
+                if (original) {
+                    localStorage.setItem('userData', original);
+                }
+                
+            } catch (error) {
+                addResult('userDataResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        function testFirebaseAuth() {
+            clearResults('firebaseAuthResult');
+            addResult('firebaseAuthResult', 'Testing Firebase Auth storage...', 'info');
+            
+            try {
+                // Test 1: Check if Firebase SDK is loaded
+                if (typeof firebase === 'undefined') {
+                    addResult('firebaseAuthResult', '❌ Firebase SDK not loaded', 'error');
+                    addResult('firebaseAuthResult', '💡 Make sure Firebase SDK scripts are included', 'info');
+                    return;
+                }
+                addResult('firebaseAuthResult', '✅ Firebase SDK is loaded', 'success');
+                
+                // Test 2: Check if Firebase is initialized
+                if (!firebase.apps || firebase.apps.length === 0) {
+                    addResult('firebaseAuthResult', '⚠️ Firebase not initialized', 'error');
+                    addResult('firebaseAuthResult', '💡 Trying to initialize Firebase...', 'info');
+                    
+                    // Try to initialize
+                    try {
+                        if (typeof window.firebaseConfig !== 'undefined') {
+                            firebase.initializeApp(window.firebaseConfig);
+                            addResult('firebaseAuthResult', '✅ Firebase initialized successfully', 'success');
+                        } else if (typeof firebaseConfig !== 'undefined') {
+                            firebase.initializeApp(firebaseConfig);
+                            addResult('firebaseAuthResult', '✅ Firebase initialized successfully', 'success');
+                        } else if (typeof initializeFirebaseApp === 'function') {
+                            initializeFirebaseApp();
+                            addResult('firebaseAuthResult', '✅ Firebase initialized using initializeFirebaseApp()', 'success');
+                        } else {
+                            addResult('firebaseAuthResult', '❌ Firebase config not found', 'error');
+                            addResult('firebaseAuthResult', '💡 Make sure fcm-config.js is loaded before Firebase SDK', 'info');
+                            return;
+                        }
+                    } catch (initError) {
+                        if (initError.code === 'app/duplicate-app') {
+                            addResult('firebaseAuthResult', '✅ Firebase already initialized', 'success');
+                        } else {
+                            addResult('firebaseAuthResult', `❌ Initialization error: ${initError.message}`, 'error');
+                            return;
+                        }
+                    }
+                } else {
+                    addResult('firebaseAuthResult', '✅ Firebase is initialized', 'success');
+                }
+                
+                // Test 3: Check if Firebase Auth is available
+                if (!firebase.auth) {
+                    addResult('firebaseAuthResult', '❌ Firebase Auth not available', 'error');
+                    return;
+                }
+                addResult('firebaseAuthResult', '✅ Firebase Auth is available', 'success');
+                
+                // Test 4: Check current user
+                const auth = firebase.auth();
+                const currentUser = auth.currentUser;
+                
+                if (currentUser) {
+                    addResult('firebaseAuthResult', `✅ User is authenticated: ${currentUser.email}`, 'success');
+                    addResult('firebaseAuthResult', `✅ User UID: ${currentUser.uid}`, 'success');
+                    addResult('firebaseAuthResult', `✅ Display Name: ${currentUser.displayName || 'Not set'}`, 'success');
+                } else {
+                    addResult('firebaseAuthResult', 'ℹ️ No user currently authenticated', 'info');
+                }
+                
+                // Test 5: Check getCurrentUser function
+                if (typeof getCurrentUser === 'function') {
+                    const user = getCurrentUser();
+                    if (user) {
+                        addResult('firebaseAuthResult', `✅ getCurrentUser() returned: ${user.email}`, 'success');
+                    } else {
+                        addResult('firebaseAuthResult', 'ℹ️ getCurrentUser() returned null', 'info');
+                    }
+                } else {
+                    addResult('firebaseAuthResult', 'ℹ️ getCurrentUser() function not available', 'info');
+                }
+                
+                // Test 6: Check auth state listener
+                if (auth.onAuthStateChanged) {
+                    addResult('firebaseAuthResult', '✅ Auth state listener available', 'success');
+                } else {
+                    addResult('firebaseAuthResult', '❌ Auth state listener not available', 'error');
+                }
+                
+            } catch (error) {
+                addResult('firebaseAuthResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        function testNavigationUpdate() {
+            clearResults('navigationResult');
+            addResult('navigationResult', 'Testing navigation update...', 'info');
+            
+            try {
+                // Test 1: Check updateNavigationLinks function
+                if (typeof updateNavigationLinks === 'function') {
+                    updateNavigationLinks();
+                    addResult('navigationResult', '✅ updateNavigationLinks() function called', 'success');
+                } else if (typeof window.updateNavigationLinks === 'function') {
+                    window.updateNavigationLinks();
+                    addResult('navigationResult', '✅ window.updateNavigationLinks() function called', 'success');
+                } else {
+                    addResult('navigationResult', '❌ updateNavigationLinks() function not found', 'error');
+                }
+                
+                // Test 2: Check checkIfLoggedIn function
+                if (typeof checkIfLoggedIn === 'function') {
+                    const isLoggedIn = checkIfLoggedIn();
+                    addResult('navigationResult', `✅ checkIfLoggedIn() returned: ${isLoggedIn}`, 'success');
+                } else if (typeof window.checkIfLoggedIn === 'function') {
+                    const isLoggedIn = window.checkIfLoggedIn();
+                    addResult('navigationResult', `✅ window.checkIfLoggedIn() returned: ${isLoggedIn}`, 'success');
+                } else {
+                    addResult('navigationResult', 'ℹ️ checkIfLoggedIn() function not found', 'info');
+                }
+                
+                // Test 3: Check navigation elements
+                const navItems = document.querySelectorAll('.bottom-nav a[href="join-us.html"]');
+                if (navItems.length > 0) {
+                    navItems.forEach((item, index) => {
+                        const text = item.querySelector('span')?.textContent || item.textContent.trim();
+                        addResult('navigationResult', `✅ Navigation item ${index + 1}: "${text}"`, 'success');
+                    });
+                } else {
+                    addResult('navigationResult', 'ℹ️ No navigation items found on this page', 'info');
+                }
+                
+            } catch (error) {
+                addResult('navigationResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        function testDataPersistence() {
+            clearResults('persistenceResult');
+            addResult('persistenceResult', 'Testing data persistence...', 'info');
+            
+            try {
+                // Backup current userData
+                const originalUserData = localStorage.getItem('userData');
+                if (originalUserData) {
+                    localStorage.setItem('userData_backup', originalUserData);
+                }
+                
+                // Test 1: Save test data
+                const testData = {
+                    name: 'Persistence Test',
+                    firstName: 'Persistence',
+                    email: 'persistence@test.com',
+                    uid: 'persist-test-' + Date.now(),
+                    createdAt: new Date().toISOString()
+                };
+                localStorage.setItem('userData', JSON.stringify(testData));
+                addResult('persistenceResult', '✅ Test data saved', 'success');
+                
+                // Test 2: Reload and check
+                const reloaded = localStorage.getItem('userData');
+                if (reloaded) {
+                    const parsed = JSON.parse(reloaded);
+                    if (parsed.email === testData.email) {
+                        addResult('persistenceResult', '✅ Data persisted correctly', 'success');
+                    } else {
+                        addResult('persistenceResult', '❌ Data mismatch after reload', 'error');
+                    }
+                } else {
+                    addResult('persistenceResult', '❌ Data not found after save', 'error');
+                }
+                
+                // Test 3: Check if data survives page operations
+                const testKey = 'persistence_test_' + Date.now();
+                localStorage.setItem(testKey, 'test_value');
+                const retrieved = localStorage.getItem(testKey);
+                if (retrieved === 'test_value') {
+                    addResult('persistenceResult', '✅ Data survives localStorage operations', 'success');
+                } else {
+                    addResult('persistenceResult', '❌ Data lost during operations', 'error');
+                }
+                localStorage.removeItem(testKey);
+                
+                // Restore original
+                if (originalUserData) {
+                    localStorage.setItem('userData', originalUserData);
+                    localStorage.removeItem('userData_backup');
+                } else {
+                    localStorage.removeItem('userData');
+                }
+                addResult('persistenceResult', '✅ Original data restored', 'success');
+                
+            } catch (error) {
+                addResult('persistenceResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        function testCrossPageStorage() {
+            clearResults('crossPageResult');
+            addResult('crossPageResult', 'Testing cross-page storage...', 'info');
+            
+            try {
+                // Test 1: Save test marker
+                const testMarker = 'cross_page_test_' + Date.now();
+                localStorage.setItem('crossPageTest', testMarker);
+                addResult('crossPageResult', `✅ Test marker saved: ${testMarker}`, 'success');
+                
+                // Test 2: Verify it can be read
+                const readMarker = localStorage.getItem('crossPageTest');
+                if (readMarker === testMarker) {
+                    addResult('crossPageResult', '✅ Test marker verified', 'success');
+                } else {
+                    addResult('crossPageResult', '❌ Test marker mismatch', 'error');
+                }
+                
+                // Test 3: Check userData structure
+                const userData = localStorage.getItem('userData');
+                if (userData) {
+                    const parsed = JSON.parse(userData);
+                    const requiredFields = ['email', 'uid'];
+                    const missingFields = requiredFields.filter(field => !parsed[field]);
+                    
+                    if (missingFields.length === 0) {
+                        addResult('crossPageResult', '✅ userData has all required fields', 'success');
+                    } else {
+                        addResult('crossPageResult', `⚠️ Missing fields: ${missingFields.join(', ')}`, 'error');
+                    }
+                } else {
+                    addResult('crossPageResult', 'ℹ️ No userData (user not logged in)', 'info');
+                }
+                
+                // Cleanup
+                localStorage.removeItem('crossPageTest');
+                
+            } catch (error) {
+                addResult('crossPageResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        function runAllTests() {
+            clearResults('allTestsResult');
+            addResult('allTestsResult', '<h3>Running All Tests...</h3>', 'info');
+            
+            // Run all tests sequentially
+            setTimeout(() => {
+                testLocalStorage();
+                setTimeout(() => {
+                    testUserDataStorage();
+                    setTimeout(() => {
+                        testFirebaseAuth();
+                        setTimeout(() => {
+                            testNavigationUpdate();
+                            setTimeout(() => {
+                                testDataPersistence();
+                                setTimeout(() => {
+                                    testCrossPageStorage();
+                                    setTimeout(() => {
+                                        addResult('allTestsResult', '<h3>✅ All Tests Completed!</h3>', 'success');
+                                    }, 500);
+                                }, 500);
+                            }, 500);
+                        }, 500);
+                    }, 500);
+                }, 500);
+            }, 100);
+        }
+        
+        // Auto-run basic test on load
+        window.addEventListener('DOMContentLoaded', function() {
+            addResult('allTestsResult', '🔍 Account Storage Test Page Loaded. Click "Run All Tests" to test all storage systems.', 'info');
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KIUMA Payment - Pesapal</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .payment-form {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            display: none;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>KIUMA Payment - Pesapal</h1>
+    
+    <div class="payment-form">
+        <h2>Make a Payment</h2>
+        <form id="paymentForm">
+            <div class="form-group">
+                <label for="amount">Amount (UGX)</label>
+                <input type="number" id="amount" name="amount" min="1" required value="10000">
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Description</label>
+                <input type="text" id="description" name="description" required value="KIUMA Subscription Payment">
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="phone">Phone (Optional)</label>
+                <input type="tel" id="phone" name="phone">
+            </div>
+            
+            <button type="submit" id="payButton">Pay with Pesapal</button>
+        </form>
+    </div>
+    
+    <div class="loading" id="loading">
+        <p>Initializing payment...</p>
+    </div>
+    
+    <div class="success" id="success">
+        <h3>Payment Successful!</h3>
+        <p id="successMessage"></p>
+    </div>
+    
+    <div class="error" id="error">
+        <h3>Payment Failed</h3>
+        <p id="errorMessage"></p>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
+    
+    <!-- Payment Script -->
+    <script src="payment.js"></script>
+    
+    <!-- Firebase Config (replace with your config) -->
+    <script>
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        
+        // Check authentication status
+        firebase.auth().onAuthStateChanged((user) => {
+            if (!user) {
+                // Redirect to login or show login prompt
+                alert('Please log in to make payments');
+                // window.location.href = 'login.html';
+            }
+        });
+        
+        // Check if returning from Pesapal callback
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('OrderTrackingId') || urlParams.has('order_tracking_id')) {
+            // Handle Pesapal callback
+            handlePesapalCallback({
+                OrderTrackingId: urlParams.get('OrderTrackingId') || urlParams.get('order_tracking_id'),
+                OrderMerchantReference: urlParams.get('OrderMerchantReference') || urlParams.get('reference')
+            }).then((result) => {
+                document.getElementById('success').style.display = 'block';
+                document.getElementById('successMessage').textContent = 
+                    `Payment of ${result.amount} ${result.currency} completed successfully. Reference: ${result.reference}`;
+            }).catch((error) => {
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('errorMessage').textContent = error.message;
+            });
+        }
+    </script>
+    
+    <script>
+        // Payment form handler
+        document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Hide previous messages
+            document.getElementById('success').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('payButton').disabled = true;
+            
+            // Get form data
+            const paymentData = {
+                amount: parseFloat(document.getElementById('amount').value),
+                description: document.getElementById('description').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                currency: 'UGX'
+            };
+            
+            try {
+                // Process payment (will redirect to Pesapal)
+                await processPayment(paymentData);
+                // Note: User will be redirected to Pesapal, so code below won't execute
+            } catch (error) {
+                // Show error (only if redirect didn't happen)
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('errorMessage').textContent = error.message;
+                document.getElementById('payButton').disabled = false;
+            }
+        });
+        
+        // Helper functions for payment.js
+        function showPaymentLoading(message) {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('loading').querySelector('p').textContent = message;
+        }
+        
+        function hidePaymentLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
+

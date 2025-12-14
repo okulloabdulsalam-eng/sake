@@ -205,6 +205,89 @@
     <script src="script.js"></script>
     <script src="update-navigation.js"></script>
     <script>
+        // Notifications Admin Password (same as media)
+        const NOTIFICATIONS_ADMIN_PASSWORD = 'kiuma2025';
+        
+        // Admin authentication
+        let isAdminAuthenticated = false;
+        
+        // Show admin login modal
+        function showAdminLogin() {
+            const modal = document.getElementById('adminLoginModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                const passwordInput = document.getElementById('adminPassword');
+                if (passwordInput) {
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                }
+            } else {
+                // Fallback to prompt if modal doesn't exist
+                verifyAdminPassword();
+            }
+        }
+        
+        // Verify admin password (same as media system)
+        function verifyAdminPassword() {
+            const passwordInput = document.getElementById('adminPassword');
+            const password = passwordInput ? passwordInput.value : prompt('Enter admin password:');
+            
+            if (!password) {
+                return false;
+            }
+            
+            if (password === NOTIFICATIONS_ADMIN_PASSWORD) {
+                isAdminAuthenticated = true;
+                sessionStorage.setItem('isAdminAuthenticated', 'true');
+                localStorage.setItem('adminPassword', NOTIFICATIONS_ADMIN_PASSWORD);
+                
+                // Close modal
+                const modal = document.getElementById('adminLoginModal');
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+                
+                // Clear password field
+                if (passwordInput) {
+                    passwordInput.value = '';
+                }
+                
+                // Show success
+                alert('Admin access granted!');
+                return true;
+            } else {
+                const errorMsg = document.getElementById('passwordError');
+                if (errorMsg) {
+                    errorMsg.style.display = 'block';
+                    errorMsg.textContent = 'Incorrect password. Please try again.';
+                } else {
+                    alert('Incorrect password. Please try again.');
+                }
+                return false;
+            }
+        }
+        
+        // Close admin login modal
+        function closeAdminLogin() {
+            const modal = document.getElementById('adminLoginModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+            const passwordInput = document.getElementById('adminPassword');
+            if (passwordInput) {
+                passwordInput.value = '';
+            }
+            const errorMsg = document.getElementById('passwordError');
+            if (errorMsg) {
+                errorMsg.style.display = 'none';
+            }
+        }
+        
+        // Make functions globally accessible
+        window.showAdminLogin = showAdminLogin;
+        window.verifyAdminPassword = verifyAdminPassword;
+        window.closeAdminLogin = closeAdminLogin;
+        
         // Check admin status on page load
         window.addEventListener('DOMContentLoaded', function() {
             // Check admin status in background (non-blocking)
@@ -386,11 +469,14 @@
         });
 
         window.showAddNotificationModal = function() {
-            // Check admin status from localStorage
-            const isAdmin = localStorage.getItem('isAdminLoggedIn') === 'true';
-            console.log('showAddNotificationModal called, isAdmin:', isAdmin);
-            if (!isAdmin) {
-                console.log('Not admin, showing login');
+            // Check admin authentication (same as media system)
+            const isAuth = sessionStorage.getItem('isAdminAuthenticated') === 'true' || 
+                          localStorage.getItem('adminPassword') === NOTIFICATIONS_ADMIN_PASSWORD ||
+                          localStorage.getItem('isAdminLoggedIn') === 'true';
+            
+            console.log('showAddNotificationModal called, isAuth:', isAuth);
+            if (!isAuth) {
+                console.log('Not authenticated, showing login');
                 if (typeof showAdminLogin === 'function') {
                     showAdminLogin();
                 } else if (typeof window.showAdminLogin === 'function') {
@@ -422,10 +508,14 @@
         window.addNotification = async function(e) {
             e.preventDefault();
             
-            // Check authentication using Firebase Auth
-            const isAdmin = localStorage.getItem('isAdminLoggedIn') === 'true';
-            if (!isAdmin) {
-                alert('You must be logged in as admin to add notifications.');
+            // Check admin authentication (same as media system)
+            const isAuth = sessionStorage.getItem('isAdminAuthenticated') === 'true' || 
+                          localStorage.getItem('adminPassword') === NOTIFICATIONS_ADMIN_PASSWORD ||
+                          localStorage.getItem('isAdminLoggedIn') === 'true';
+            
+            if (!isAuth) {
+                alert('You must be authenticated as admin to add notifications.');
+                showAdminLogin();
                 return;
             }
 
@@ -655,10 +745,22 @@
         // Send notification to all users via WhatsApp and Email
         async function sendNotificationToAllUsers(subject, message, notificationId = null) {
             try {
-                const adminPassword = localStorage.getItem('adminPassword') || prompt('Enter admin password to send notifications:');
-                if (!adminPassword) {
-                    alert('Admin password required to send notifications.');
-                    return;
+                // Check if already authenticated
+                const isAuth = sessionStorage.getItem('isAdminAuthenticated') === 'true' || 
+                              localStorage.getItem('adminPassword') === NOTIFICATIONS_ADMIN_PASSWORD;
+                
+                let adminPassword = NOTIFICATIONS_ADMIN_PASSWORD;
+                
+                if (!isAuth) {
+                    // Prompt for password
+                    const enteredPassword = prompt('Enter admin password to send notifications:');
+                    if (!enteredPassword || enteredPassword !== NOTIFICATIONS_ADMIN_PASSWORD) {
+                        alert('Admin password required to send notifications.');
+                        return;
+                    }
+                    // Store for future use
+                    sessionStorage.setItem('isAdminAuthenticated', 'true');
+                    localStorage.setItem('adminPassword', NOTIFICATIONS_ADMIN_PASSWORD);
                 }
                 
                 const formData = new FormData();
