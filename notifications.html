@@ -46,7 +46,7 @@
             <div class="header-content">
                 <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
                 <div class="logo-container">
-                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
+                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='block';" onload="this.style.display='block'; if(this.nextElementSibling) this.nextElementSibling.style.display='none';">
                     <svg class="header-logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="display: none;">
                         <circle cx="100" cy="100" r="95" fill="none" stroke="#4CAF50" stroke-width="4"/>
                         <path id="topArc" d="M 20,100 A 80,80 0 0,1 180,100" fill="none"/>
@@ -603,30 +603,43 @@
             let firestoreId = null;
             let databaseId = null;
 
-            try {
-                // Save to database (PHP API) - PRIMARY STORAGE
-                const API_BASE_URL = window.API_BASE_URL || '/api';
-                const formData = new FormData();
-                formData.append('title', title);
-                formData.append('message', message);
-                formData.append('type', 'announcement');
-                formData.append('target_audience', 'all');
-                formData.append('icon', icon);
-                formData.append('admin_password', NOTIFICATIONS_ADMIN_PASSWORD);
-                
-                const dbResponse = await fetch(API_BASE_URL + '/save_notification.php', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const dbData = await dbResponse.json();
-                
-                if (dbData.success && dbData.notification) {
-                    databaseId = dbData.notification.id;
-                    console.log('Notification saved to database:', databaseId);
-                } else {
-                    console.warn('Database save failed:', dbData.message);
+            // Try to save to database (PHP API) - only if not on static hosting
+            const isStaticHosting = window.location.hostname.includes('github.io') || 
+                                   window.location.hostname.includes('netlify.app') ||
+                                   window.location.hostname.includes('vercel.app');
+            
+            if (!isStaticHosting) {
+                try {
+                    const API_BASE_URL = window.API_BASE_URL || '/api';
+                    const formData = new FormData();
+                    formData.append('title', title);
+                    formData.append('message', message);
+                    formData.append('type', 'announcement');
+                    formData.append('target_audience', 'all');
+                    formData.append('icon', icon);
+                    formData.append('admin_password', NOTIFICATIONS_ADMIN_PASSWORD);
+                    
+                    const dbResponse = await fetch(API_BASE_URL + '/save_notification.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (dbResponse.ok) {
+                        const dbData = await dbResponse.json();
+                        
+                        if (dbData.success && dbData.notification) {
+                            databaseId = dbData.notification.id;
+                            console.log('Notification saved to database:', databaseId);
+                        } else {
+                            console.warn('Database save failed:', dbData.message);
+                        }
+                    }
+                } catch (dbError) {
+                    console.warn('Database API not available, using Firestore only:', dbError.message);
                 }
+            } else {
+                console.log('Static hosting detected, saving to Firestore only');
+            }
 
                 // Also save to Firebase Firestore (backup/secondary)
                 try {
@@ -824,94 +837,108 @@
             return db;
         }
 
-        // Load notifications from database (PHP API) - PRIMARY SOURCE
+        // Load notifications from database (PHP API) or Firestore
         async function loadNotificationsFromStorage() {
             const notificationsContainer = document.querySelector('.page-content');
             const readNotifications = getReadNotifications();
             
-            // Try to load from database first (PRIMARY)
-            try {
-                const API_BASE_URL = window.API_BASE_URL || '/api';
-                const response = await fetch(API_BASE_URL + '/get_notifications.php');
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    
-                    if (data.success && data.notifications && data.notifications.length > 0) {
-                        // Clear existing dynamic notifications
-                        const existingStored = Array.from(notificationsContainer.querySelectorAll('.notification-item[data-database-id]'));
-                        existingStored.forEach(item => item.remove());
-                        
-                        // Sort by date (newest first)
-                        const sorted = data.notifications.sort((a, b) => {
-                            const dateA = new Date(a.created_date || a.createdAt || 0);
-                            const dateB = new Date(b.created_date || b.createdAt || 0);
-                            return dateB - dateA;
-                        });
-                        
-                        sorted.forEach(notif => {
-                            const notifId = notif.id.toString();
-                            const isRead = readNotifications.includes(notifId);
-                            
-                            const newNotification = document.createElement('div');
-                            newNotification.className = 'notification-item';
-                            newNotification.dataset.status = isRead ? 'read' : 'unread';
-                            newNotification.dataset.id = notifId;
-                            newNotification.dataset.databaseId = notifId;
-                            if (isRead) newNotification.style.opacity = '0.7';
-                            newNotification.style.position = 'relative';
-                            
-                            const iconClass = notif.icon || 'fa-bell';
-                            const isAuth = sessionStorage.getItem('isAdminAuthenticated') === 'true' || 
-                                          localStorage.getItem('adminPassword') === NOTIFICATIONS_ADMIN_PASSWORD;
-                            
-                            newNotification.innerHTML = `
-                                <div class="notification-icon">
-                                    <i class="fas ${iconClass}"></i>
-                                </div>
-                                <div class="notification-content">
-                                    <h4>${notif.title}</h4>
-                                    <p>${notif.message}</p>
-                                    <span class="notification-time">${formatTimeAgo(notif.created_date || notif.createdAt || new Date())}</span>
-                                </div>
-                                ${isAuth ? `<button onclick="deleteNotification('${notifId}', '${notifId}', '', event)" style="position: absolute; top: 8px; right: 8px; background: #f44336; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-size: 14px; z-index: 10;" title="Delete notification"><i class="fas fa-trash"></i></button>` : ''}
-                            `;
-                            
-                            // Insert at top (after filter buttons)
-                            const filterDiv = notificationsContainer.querySelector('div[style*="display: flex"]');
-                            if (filterDiv && filterDiv.nextSibling) {
-                                notificationsContainer.insertBefore(newNotification, filterDiv.nextSibling);
-                            } else {
-                                notificationsContainer.appendChild(newNotification);
-                            }
-                            
-                            // Mark as read on click
-                            newNotification.addEventListener('click', function(e) {
-                                // Don't mark as read if clicking delete button
-                                if (e.target.closest('button')) return;
-                                
-                                if (this.dataset.status === 'unread') {
-                                    this.dataset.status = 'read';
-                                    this.style.opacity = '0.7';
-                                    markNotificationAsRead(notifId);
-                                    updateUnreadBadge();
-                                }
-                            });
-                        });
-                        
-                        console.log('Loaded notifications from database');
-                        updateUnreadBadge();
-                        if (typeof window.updateNotificationBadge === 'function') {
-                            window.updateNotificationBadge();
+            // Try to load from database first (PRIMARY) - only if API is available
+            // Skip if on GitHub Pages or static hosting (PHP not available)
+            const isStaticHosting = window.location.hostname.includes('github.io') || 
+                                   window.location.hostname.includes('netlify.app') ||
+                                   window.location.hostname.includes('vercel.app');
+            
+            if (!isStaticHosting) {
+                try {
+                    const API_BASE_URL = window.API_BASE_URL || '/api';
+                    const response = await fetch(API_BASE_URL + '/get_notifications.php', {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json'
                         }
-                        return;
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        if (data.success && data.notifications && data.notifications.length > 0) {
+                            // Clear existing dynamic notifications
+                            const existingStored = Array.from(notificationsContainer.querySelectorAll('.notification-item[data-database-id]'));
+                            existingStored.forEach(item => item.remove());
+                            
+                            // Sort by date (newest first)
+                            const sorted = data.notifications.sort((a, b) => {
+                                const dateA = new Date(a.created_date || a.createdAt || 0);
+                                const dateB = new Date(b.created_date || b.createdAt || 0);
+                                return dateB - dateA;
+                            });
+                            
+                            sorted.forEach(notif => {
+                                const notifId = notif.id.toString();
+                                const isRead = readNotifications.includes(notifId);
+                                
+                                const newNotification = document.createElement('div');
+                                newNotification.className = 'notification-item';
+                                newNotification.dataset.status = isRead ? 'read' : 'unread';
+                                newNotification.dataset.id = notifId;
+                                newNotification.dataset.databaseId = notifId;
+                                if (isRead) newNotification.style.opacity = '0.7';
+                                newNotification.style.position = 'relative';
+                                
+                                const iconClass = notif.icon || 'fa-bell';
+                                const isAuth = sessionStorage.getItem('isAdminAuthenticated') === 'true' || 
+                                              localStorage.getItem('adminPassword') === NOTIFICATIONS_ADMIN_PASSWORD;
+                                
+                                newNotification.innerHTML = `
+                                    <div class="notification-icon">
+                                        <i class="fas ${iconClass}"></i>
+                                    </div>
+                                    <div class="notification-content">
+                                        <h4>${notif.title}</h4>
+                                        <p>${notif.message}</p>
+                                        <span class="notification-time">${formatTimeAgo(notif.created_date || notif.createdAt || new Date())}</span>
+                                    </div>
+                                    ${isAuth ? `<button onclick="deleteNotification('${notifId}', '${notifId}', '', event)" style="position: absolute; top: 8px; right: 8px; background: #f44336; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-size: 14px; z-index: 10;" title="Delete notification"><i class="fas fa-trash"></i></button>` : ''}
+                                `;
+                                
+                                // Insert at top (after filter buttons)
+                                const filterDiv = notificationsContainer.querySelector('div[style*="display: flex"]');
+                                if (filterDiv && filterDiv.nextSibling) {
+                                    notificationsContainer.insertBefore(newNotification, filterDiv.nextSibling);
+                                } else {
+                                    notificationsContainer.appendChild(newNotification);
+                                }
+                                
+                                // Mark as read on click
+                                newNotification.addEventListener('click', function(e) {
+                                    // Don't mark as read if clicking delete button
+                                    if (e.target.closest('button')) return;
+                                    
+                                    if (this.dataset.status === 'unread') {
+                                        this.dataset.status = 'read';
+                                        this.style.opacity = '0.7';
+                                        markNotificationAsRead(notifId);
+                                        updateUnreadBadge();
+                                    }
+                                });
+                            });
+                            
+                            console.log('Loaded notifications from database');
+                            updateUnreadBadge();
+                            if (typeof window.updateNotificationBadge === 'function') {
+                                window.updateNotificationBadge();
+                            }
+                            return;
+                        }
                     }
+                } catch (error) {
+                    console.log('Database API not available, using Firestore:', error.message);
                 }
-            } catch (error) {
-                console.log('Database not available, trying Firestore:', error.message);
+            } else {
+                console.log('Static hosting detected, using Firestore for notifications');
             }
             
-            // Fallback: Try to load from Firestore
+            // Load from Firestore (works on all hosting including GitHub Pages)
             try {
                 const firestore = getFirestore();
                 if (firestore) {
@@ -922,7 +949,7 @@
                     
                     if (!snapshot.empty) {
                         // Clear existing dynamic notifications
-                        const existingStored = Array.from(notificationsContainer.querySelectorAll('.notification-item.firebase-notif'));
+                        const existingStored = Array.from(notificationsContainer.querySelectorAll('.notification-item.firebase-notif, .notification-item[data-firestore-id]'));
                         existingStored.forEach(item => item.remove());
                         
                         snapshot.forEach(doc => {
