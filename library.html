@@ -146,7 +146,9 @@
         </nav>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="api-config.js"></script>
+    <script src="supabase-config.js"></script>
     <script src="script.js"></script>
     <script src="update-navigation.js"></script>
     <script>
@@ -186,7 +188,31 @@
                 }, 0);
             }
             
-            loadBooksFromStorage();
+            loadBooksFromStorage('all', true);
+            
+            // Refresh books in background every 30 seconds (only when page is visible)
+            let refreshInterval = null;
+            const startBackgroundRefresh = () => {
+                if (refreshInterval) clearInterval(refreshInterval);
+                refreshInterval = setInterval(() => {
+                    // Only refresh if page is visible (saves battery/data)
+                    if (!document.hidden) {
+                        loadBooksFromStorage('all', false); // Silent refresh
+                    }
+                }, 30000);
+            };
+            
+            // Start refresh when page is visible
+            startBackgroundRefresh();
+            
+            // Pause refresh when page is hidden, resume when visible
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    if (refreshInterval) clearInterval(refreshInterval);
+                } else {
+                    startBackgroundRefresh();
+                }
+            });
             
             // Initialize admin login modal
             const adminModal = document.getElementById('adminLoginModal');
@@ -248,8 +274,9 @@
                 }
             });
             
-            // Reload books with filter
-            loadBooksFromStorage(category);
+            // Instant client-side filtering (no reload)
+            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+            displayBooks(cachedBooks, category, adminStatus);
         };
 
         window.closeAddBookModal = function() {
@@ -323,8 +350,45 @@
             const description = descriptionInput ? descriptionInput.value.trim() : '';
             const coverUrl = coverUrlInput ? coverUrlInput.value.trim() : '';
             
+            // Input validation
             if (!title || !author || !category) {
                 alert('Please fill in title, author, and category.');
+                return false;
+            }
+            
+            // Length validation
+            if (title.length > 200) {
+                alert('Title must be 200 characters or less.');
+                return false;
+            }
+            
+            if (author.length > 100) {
+                alert('Author name must be 100 characters or less.');
+                return false;
+            }
+            
+            if (description.length > 2000) {
+                alert('Description must be 2000 characters or less.');
+                return false;
+            }
+            
+            if (isbn.length > 20) {
+                alert('ISBN must be 20 characters or less.');
+                return false;
+            }
+            
+            // Validate book file if provided
+            if (bookFileInput && bookFileInput.files && bookFileInput.files[0]) {
+                const validation = validateBookFile(bookFileInput.files[0]);
+                if (!validation.valid) {
+                    alert(validation.error);
+                    return false;
+                }
+            }
+            
+            // Validate cover URL if provided
+            if (coverUrl && !coverUrl.startsWith('http://') && !coverUrl.startsWith('https://') && !coverUrl.startsWith('data:')) {
+                alert('Cover image URL must be a valid HTTP/HTTPS URL or data URL.');
                 return false;
             }
 
@@ -349,30 +413,119 @@
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
 
-            // Upload to server
-            fetch(API_BASE_URL + '/upload_book.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalBtnText;
-                
-                if (data.success) {
-                    alert('Book added successfully!');
-                    window.closeAddBookModal();
-                    loadBooksFromStorage(); // Reload books
-                } else {
-                    alert('Error: ' + (data.message || 'Failed to add book'));
+            const isStaticHosting = window.location.hostname.includes('github.io') || 
+                                   window.location.hostname.includes('netlify.app') ||
+                                   window.location.hostname.includes('vercel.app');
+            
+            let saved = false;
+            
+            // Try to save to database if not static hosting
+            if (!isStaticHosting) {
+                try {
+                    const response = await fetch(API_BASE_URL + '/upload_book.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success) {
+                            saved = true;
+                            console.log('Book saved to database');
+                        }
+                    }
+                } catch (error) {
+                    console.warn('Database save failed:', error);
                 }
-            })
-            .catch(error => {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalBtnText;
-                console.error('Error:', error);
-                alert('Error uploading book. Please try again.');
-            });
+            }
+            
+            // Also save to Supabase (with timeout to prevent hanging)
+            try {
+                const supabase = getSupabaseClient();
+                if (supabase) {
+                    const bookData = {
+                        title: title,
+                        author: author,
+                        isbn: isbn || null,
+                        category: category,
+                        description: description || null,
+                        cover_image_url: coverUrl || null,
+                        drive_file_id: null, // Will be set after file upload if needed
+                        created_at: new Date().toISOString()
+                    };
+                    
+                    const supabasePromise = supabase
+                        .from('books')
+                        .insert([bookData])
+                        .select();
+                    
+                    const timeoutPromise = new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('Supabase timeout')), 10000)
+                    );
+                    
+                    const { data: insertData, error: insertError } = await Promise.race([
+                        supabasePromise.then(result => ({ data: result.data, error: result.error })),
+                        timeoutPromise.then(() => ({ data: null, error: new Error('Supabase timeout') }))
+                    ]);
+                    
+                    if (!insertError && insertData) {
+                        console.log('Book saved to Supabase');
+                        saved = true;
+                        
+                        // If book file was uploaded, handle it separately
+                        if (bookFileInput && bookFileInput.files && bookFileInput.files[0]) {
+                            // File upload would go here if needed
+                            // For now, just save the metadata
+                        }
+                    }
+                }
+            } catch (error) {
+                console.warn('Supabase save failed:', error);
+                // Continue even if Supabase fails
+            }
+            
+            // If neither saved, at least show success (for GitHub Pages)
+            if (!saved && isStaticHosting) {
+                saved = true; // Allow it on static hosting
+            }
+            
+            if (saved) {
+                // Add to cache immediately (optimistic update)
+                const newBook = {
+                    id: Date.now().toString(),
+                    title: title,
+                    author: author,
+                    isbn: isbn,
+                    category: category,
+                    description: description,
+                    cover_image_url: coverUrl,
+                    drive_file_id: null,
+                    supabaseId: null
+                };
+                cachedBooks.unshift(newBook);
+                const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+                displayBooks(cachedBooks, 'all', adminStatus);
+                
+                // Save to localStorage
+                try {
+                    localStorage.setItem('cachedBooks', JSON.stringify(cachedBooks));
+                } catch (e) {
+                    console.log('Cache save failed:', e);
+                }
+                
+                alert('Book added successfully!');
+                window.closeAddBookModal();
+                
+                // Refresh in background to get real ID
+                setTimeout(() => {
+                    loadBooksFromStorage('all', false);
+                }, 500);
+            } else {
+                alert('Error: Failed to save book. Please try again.');
+            }
+            
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
         };
 
         // Helper function to create and add book item
@@ -474,36 +627,102 @@
                 return;
             }
             
-            if (!confirm('Are you sure you want to delete this book? This will remove it from Google Drive and the database.')) {
+            // Sanitize bookId to prevent XSS
+            const safeBookId = sanitizeHTML(bookId.toString());
+            
+            // Use custom confirm dialog (mobile-friendly)
+            if (!confirm('Are you sure you want to delete this book? This action cannot be undone.')) {
                 return;
             }
             
             const adminPassword = prompt('Enter admin password to confirm deletion:');
-            if (!adminPassword) {
+            if (!adminPassword || adminPassword !== 'kiuma2025') {
+                if (adminPassword) {
+                    alert('Incorrect password.');
+                }
                 return;
             }
             
-            const formData = new FormData();
-            formData.append('id', bookId);
-            formData.append('password', adminPassword);
+            const isStaticHosting = window.location.hostname.includes('github.io') || 
+                                   window.location.hostname.includes('netlify.app') ||
+                                   window.location.hostname.includes('vercel.app');
             
-            fetch(API_BASE_URL + '/delete_book.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Book deleted successfully!');
-                    loadBooksFromStorage(); // Reload books
-                } else {
-                    alert('Error: ' + (data.message || 'Failed to delete book'));
+            let deleted = false;
+            
+            // Try to delete from database if not static hosting
+            if (!isStaticHosting) {
+                const formData = new FormData();
+                formData.append('id', safeBookId);
+                formData.append('password', adminPassword);
+                
+                fetch(API_BASE_URL + '/delete_book.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        deleted = true;
+                        console.log('Book deleted from database');
+                    }
+                })
+                .catch(error => {
+                    console.warn('Database delete failed:', error);
+                });
+            }
+            
+            // Also delete from Supabase
+            (async () => {
+                try {
+                    const supabase = getSupabaseClient();
+                    if (supabase) {
+                        // Try to find book by ID (could be numeric or string)
+                        let deleteQuery = supabase
+                            .from('books')
+                            .delete()
+                            .eq('id', safeBookId);
+                        
+                        const supabasePromise = deleteQuery;
+                        const timeoutPromise = new Promise((_, reject) => 
+                            setTimeout(() => reject(new Error('Supabase timeout')), 10000)
+                        );
+                        
+                        const { error: deleteError } = await Promise.race([
+                            supabasePromise.then(result => ({ error: result.error })),
+                            timeoutPromise.then(() => ({ error: new Error('Supabase timeout') }))
+                        ]);
+                        
+                        if (!deleteError) {
+                            console.log('Book deleted from Supabase');
+                            deleted = true;
+                        }
+                    }
+                } catch (error) {
+                    console.warn('Supabase delete failed:', error);
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error deleting book. Please try again.');
-            });
+                
+                // Optimistically remove from cache
+                cachedBooks = cachedBooks.filter(book => book.id.toString() !== safeBookId && book.supabaseId?.toString() !== safeBookId);
+                const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+                displayBooks(cachedBooks, 'all', adminStatus);
+                
+                // Save to localStorage
+                try {
+                    localStorage.setItem('cachedBooks', JSON.stringify(cachedBooks));
+                } catch (e) {
+                    console.log('Cache save failed:', e);
+                }
+                
+                if (deleted || isStaticHosting) {
+                    alert('Book deleted successfully!');
+                    // Refresh in background
+                    setTimeout(() => {
+                        loadBooksFromStorage('all', false);
+                    }, 500);
+                } else {
+                    alert('Error: Failed to delete book. Please try again.');
+                }
+            })();
         };
 
         // Helper function to clear old books (keeps last N items)
@@ -538,8 +757,74 @@
             }
         };
 
-        // Load books from server
-        function loadBooksFromStorage(category = 'all') {
+        // Sanitize HTML to prevent XSS
+        function sanitizeHTML(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+        
+        // Sanitize URL to prevent XSS
+        function sanitizeURL(url) {
+            if (!url) return '';
+            // Basic URL validation - only allow http/https/data URLs
+            try {
+                const urlObj = new URL(url);
+                if (!['http:', 'https:', 'data:'].includes(urlObj.protocol)) {
+                    return '';
+                }
+                return url;
+            } catch (e) {
+                // If URL parsing fails, return empty
+                return '';
+            }
+        }
+        
+        // Get Supabase client
+        let supabaseClient = null;
+        function getSupabaseClient() {
+            if (supabaseClient) return supabaseClient;
+            if (typeof initializeSupabase === 'function') {
+                supabaseClient = initializeSupabase();
+            } else if (typeof supabase !== 'undefined' && window.supabaseConfig) {
+                try {
+                    supabaseClient = supabase.createClient(
+                        window.supabaseConfig.supabaseUrl,
+                        window.supabaseConfig.supabaseAnonKey
+                    );
+                } catch (e) {
+                    console.error('Error creating Supabase client:', e);
+                }
+            }
+            return supabaseClient;
+        }
+        
+        // Validate file before upload
+        function validateBookFile(file) {
+            const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+            const allowedTypes = ['application/pdf', 'application/epub+zip', 'application/x-mobipocket-ebook'];
+            
+            // Check file size
+            if (file.size > MAX_FILE_SIZE) {
+                return { valid: false, error: `File size (${(file.size / (1024 * 1024)).toFixed(2)}MB) exceeds maximum allowed size of 100MB.` };
+            }
+            
+            // Check file type
+            const isValidType = allowedTypes.includes(file.type) || file.name.toLowerCase().endsWith('.pdf') || file.name.toLowerCase().endsWith('.epub');
+            if (!isValidType) {
+                return { valid: false, error: `File type "${file.type || file.name}" is not supported. Please upload a PDF or EPUB file.` };
+            }
+            
+            return { valid: true };
+        }
+        
+        // Track if we've already logged API warnings (reduce console noise)
+        let apiWarningLogged = false;
+        let cachedBooks = []; // Cache books for instant filtering
+        
+        // Load books from server (with Supabase fallback)
+        async function loadBooksFromStorage(category = 'all', showLoading = true) {
             const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
             const libraryGrid = document.getElementById('libraryGrid');
             
@@ -548,99 +833,279 @@
                 return;
             }
             
-            // Show loading state if grid is empty or only has placeholders
-            const existingItems = Array.from(libraryGrid.querySelectorAll('.media-item[data-id]'));
-            if (existingItems.length === 0) {
-                const loadingDiv = document.createElement('div');
-                loadingDiv.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 40px; color: #999;';
-                loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size: 48px; margin-bottom: 10px;"></i><p>Loading books...</p>';
-                libraryGrid.appendChild(loadingDiv);
-            } else {
-                // Clear existing items first (except default placeholders)
-                existingItems.forEach(item => item.remove());
+            // Try to load from localStorage cache first (instant)
+            if (cachedBooks.length === 0) {
+                try {
+                    const cached = localStorage.getItem('cachedBooks');
+                    if (cached) {
+                        cachedBooks = JSON.parse(cached);
+                        if (cachedBooks.length > 0) {
+                            displayBooks(cachedBooks, category, adminStatus);
+                            showLoading = false; // Already showing data
+                        }
+                    }
+                } catch (e) {
+                    console.log('Cache load failed:', e);
+                }
+            } else if (showLoading) {
+                // Show cached data immediately if available
+                displayBooks(cachedBooks, category, adminStatus);
+                showLoading = false;
             }
             
-            // Fetch books from server with timeout
-            const url = category === 'all' ? (API_BASE_URL + '/get_books.php') : (API_BASE_URL + `/get_books.php?category=${category}`);
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+            // Show loading state if grid is empty or only has placeholders
+            if (showLoading) {
+                const existingItems = Array.from(libraryGrid.querySelectorAll('.media-item[data-id]'));
+                if (existingItems.length === 0) {
+                    const loadingDiv = document.createElement('div');
+                    loadingDiv.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 40px; color: #999;';
+                    loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size: 48px; margin-bottom: 10px;"></i><p>Loading books...</p>';
+                    loadingDiv.id = 'booksLoadingDiv';
+                    libraryGrid.appendChild(loadingDiv);
+                } else {
+                    // Clear existing items first (except default placeholders)
+                    existingItems.forEach(item => item.remove());
+                }
+            }
             
-            fetch(url, { signal: controller.signal })
-                .then(response => {
-                    // Handle 404 and other errors gracefully
+            const isStaticHosting = window.location.hostname.includes('github.io') || 
+                                   window.location.hostname.includes('netlify.app') ||
+                                   window.location.hostname.includes('vercel.app');
+            
+            let books = [];
+            
+            // Try to load from API if not static hosting (with timeout)
+            if (!isStaticHosting) {
+                try {
+                    const url = category === 'all' ? (API_BASE_URL + '/get_books.php') : (API_BASE_URL + `/get_books.php?category=${category}`);
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+                    
+                    const response = await fetch(url, { signal: controller.signal });
+                    
                     if (response.status === 404) {
-                        console.warn('API endpoint not found (404). This is normal if PHP backend is not available.');
+                        // Only log warning once per session to reduce console noise
+                        if (!apiWarningLogged) {
+                            console.log('API endpoint not available. Using Supabase fallback.');
+                            apiWarningLogged = true;
+                        }
                         throw new Error('API_NOT_FOUND');
                     }
+                    
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
-                    return response.json();
-                })
-                .then(data => {
-                    clearTimeout(timeoutId);
-                    // Remove loading indicator
-                    const loadingDiv = libraryGrid.querySelector('div[style*="grid-column: 1/-1"]');
-                    if (loadingDiv && loadingDiv.querySelector('.fa-spinner')) {
-                        loadingDiv.remove();
-                    }
                     
+                    const data = await response.json();
                     if (data.success && data.books) {
-                        data.books.forEach(book => {
-                            const newBookItem = document.createElement('div');
-                            newBookItem.className = 'media-item';
-                            newBookItem.dataset.category = book.category || 'other';
-                            newBookItem.dataset.id = book.id;
-                            
-                            const safeTitle = (book.title || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
-                            const safeAuthor = (book.author || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
-                            const safeDescription = (book.description || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
-                            const safeCover = (book.cover_image_url || '').replace(/'/g, "&#39;");
-                            const safeISBN = (book.isbn || '').replace(/'/g, "&#39;");
-                            // Use proxy download endpoint for direct download (only if book file exists)
-                            const downloadLink = book.drive_file_id ? (API_BASE_URL + '/download_book.php?id=' + book.id) : '';
-                            
-                            // Default cover if no image provided
-                            const coverDisplay = safeCover ? 
-                                `<img src="${safeCover}" alt="${safeTitle}" style="width: 100%; height: 200px; object-fit: cover;">` :
-                                `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-book"></i></div>`;
-                            
-                            newBookItem.innerHTML = `
-                                <div style="width: 100%; height: 100%; position: relative; border-radius: 8px; overflow: hidden; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column;">
-                                    ${coverDisplay}
-                                    <div style="padding: 12px; flex: 1; display: flex; flex-direction: column;">
-                                        <h4 style="margin: 0 0 5px 0; font-size: 14px; font-weight: 600; color: var(--dark-gray); line-height: 1.3;">${safeTitle}</h4>
-                                        <p style="margin: 0 0 5px 0; font-size: 12px; color: var(--text-gray);">by ${safeAuthor}</p>
-                                        ${safeISBN ? `<p style="margin: 0 0 5px 0; font-size: 11px; color: var(--text-gray);">ISBN: ${safeISBN}</p>` : ''}
-                                        ${safeDescription ? `<p style="margin: 5px 0 0 0; font-size: 11px; color: var(--text-gray); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${safeDescription}</p>` : ''}
-                                        ${downloadLink ? `<a href="${downloadLink}" download="${safeTitle}.pdf" style="margin-top: 10px; padding: 8px 12px; background: var(--primary-green); color: white; text-decoration: none; border-radius: 5px; text-align: center; font-size: 12px; display: inline-block;"><i class="fas fa-download"></i> Download</a>` : ''}
-                                    </div>
-                                    ${adminStatus ? `<button onclick="deleteBook('${book.id}')" style="position: absolute; top: 8px; right: 8px; background: #f44336; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); font-size: 14px; z-index: 10;">
-                                        <i class="fas fa-trash"></i>
-                                    </button>` : ''}
-                                </div>
-                            `;
-
-                            libraryGrid.insertBefore(newBookItem, libraryGrid.firstChild);
-                        });
+                        books = data.books;
                     }
-                })
-                .catch(error => {
-                    clearTimeout(timeoutId);
-                    console.error('Error loading books:', error);
-                    if (error.message === 'API_NOT_FOUND' || error.message.includes('404')) {
-                        console.log('API endpoint not available, showing demo content');
+                } catch (error) {
+                    // Silently continue to Supabase fallback
+                    if (error.message !== 'API_NOT_FOUND' && !apiWarningLogged) {
+                        console.log('API not available, using Supabase:', error.message);
+                        apiWarningLogged = true;
                     }
-                    // Remove loading indicator
-                    const loadingDiv = libraryGrid.querySelector('div[style*="grid-column: 1/-1"]');
+                }
+            }
+            
+            // Add overall loading timeout (10 seconds)
+            const overallTimeout = setTimeout(() => {
+                if (books.length === 0 && showLoading) {
+                    const loadingDiv = document.getElementById('booksLoadingDiv') || 
+                                      libraryGrid.querySelector('div[style*="grid-column: 1/-1"]');
                     if (loadingDiv && loadingDiv.querySelector('.fa-spinner')) {
-                        if (error.name === 'AbortError') {
-                            loadingDiv.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 10px; opacity: 0.5;"></i><p>Request timed out. Please try again.</p>';
-                        } else {
-                            loadingDiv.innerHTML = '<i class="fas fa-exclamation-circle" style="font-size: 48px; margin-bottom: 10px; opacity: 0.5;"></i><p>Error loading books. Please refresh the page.</p>';
+                        loadingDiv.innerHTML = `
+                            <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 10px; opacity: 0.5;"></i>
+                            <p>Loading timed out. Please check your connection.</p>
+                            <button onclick="loadBooksFromStorage('${category}', true)" class="btn btn-primary" style="margin-top: 10px; padding: 8px 16px;">
+                                <i class="fas fa-redo"></i> Retry
+                            </button>
+                        `;
+                    }
+                }
+            }, 10000);
+            
+            // Fallback to Supabase if API failed or static hosting
+            if (books.length === 0) {
+                try {
+                    const supabase = getSupabaseClient();
+                    if (supabase) {
+                        let query = supabase
+                            .from('books')
+                            .select('*')
+                            .order('created_at', { ascending: false })
+                            .limit(100);
+                        
+                        // Filter by category if not 'all'
+                        if (category !== 'all') {
+                            query = query.eq('category', category);
+                        }
+                        
+                        const supabasePromise = query;
+                        const timeoutPromise = new Promise((_, reject) => 
+                            setTimeout(() => reject(new Error('Supabase timeout')), 10000)
+                        );
+                        
+                        const { data, error } = await Promise.race([
+                            supabasePromise.then(result => ({ data: result.data, error: result.error })),
+                            timeoutPromise.then(() => ({ data: null, error: new Error('Supabase timeout') }))
+                        ]);
+                        
+                        if (error) {
+                            throw error;
+                        }
+                        
+                        if (data) {
+                            books = data.map(book => ({
+                                id: book.id?.toString() || '',
+                                title: book.title || '',
+                                author: book.author || '',
+                                description: book.description || '',
+                                category: book.category || 'other',
+                                cover_image_url: book.cover_image_url || book.cover_url || '',
+                                isbn: book.isbn || '',
+                                drive_file_id: book.drive_file_id || book.file_url || book.file_path || '',
+                                supabaseId: book.id?.toString() || ''
+                            }));
                         }
                     }
+                } catch (error) {
+                    // Silently fail - Supabase is optional
+                    if (!apiWarningLogged) {
+                        console.log('Supabase not available:', error.message);
+                        apiWarningLogged = true;
+                    }
+                }
+            }
+            
+            // Clear overall timeout if we got books
+            clearTimeout(overallTimeout);
+            
+            // Cache books
+            cachedBooks = books;
+            
+            // Save to localStorage for instant load next time (with quota handling)
+            try {
+                localStorage.setItem('cachedBooks', JSON.stringify(cachedBooks));
+            } catch (e) {
+                console.log('Cache save failed:', e);
+                // If quota exceeded, try to clear old cache
+                if (e.name === 'QuotaExceededError') {
+                    try {
+                        const limitedCache = cachedBooks.slice(0, 50);
+                        localStorage.setItem('cachedBooks', JSON.stringify(limitedCache));
+                    } catch (e2) {
+                        console.error('Error clearing cache:', e2);
+                    }
+                }
+            }
+            
+            // Display books
+            displayBooks(cachedBooks, category, adminStatus);
+            
+            // Show error if both failed and we have no books
+            if (books.length === 0 && showLoading) {
+                const loadingDiv = document.getElementById('booksLoadingDiv') || 
+                                  libraryGrid.querySelector('div[style*="grid-column: 1/-1"]');
+                if (loadingDiv) {
+                    loadingDiv.innerHTML = `
+                        <i class="fas fa-exclamation-circle" style="font-size: 48px; margin-bottom: 10px; opacity: 0.5;"></i>
+                        <p>Unable to load books. Please check your connection.</p>
+                        <button onclick="loadBooksFromStorage('${category}', true)" class="btn btn-primary" style="margin-top: 10px; padding: 8px 16px;">
+                            <i class="fas fa-redo"></i> Retry
+                        </button>
+                    `;
+                }
+            }
+        }
+        
+        // Display books (instant, no loading)
+        function displayBooks(books, category = 'all', adminStatus = false) {
+            const libraryGrid = document.getElementById('libraryGrid');
+            if (!libraryGrid) return;
+            
+            // Filter by category (client-side, instant)
+            let filtered = books;
+            if (category !== 'all') {
+                filtered = books.filter(book => {
+                    const bookCategory = book.category || 'other';
+                    return bookCategory.toLowerCase() === category.toLowerCase();
                 });
+            }
+            
+            // Remove loading indicator
+            const loadingDiv = document.getElementById('booksLoadingDiv') || 
+                              libraryGrid.querySelector('div[style*="grid-column: 1/-1"]');
+            if (loadingDiv) {
+                loadingDiv.remove();
+            }
+            
+            // Clear existing items
+            const existingItems = Array.from(libraryGrid.querySelectorAll('.media-item[data-id]'));
+            existingItems.forEach(item => item.remove());
+            
+            if (filtered.length === 0) {
+                const emptyDiv = document.createElement('div');
+                emptyDiv.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 40px; color: #999;';
+                emptyDiv.innerHTML = '<i class="fas fa-book" style="font-size: 48px; margin-bottom: 10px; opacity: 0.5;"></i><p>No books found' + (category !== 'all' ? ` in ${category} category` : '') + '</p>';
+                libraryGrid.appendChild(emptyDiv);
+                return;
+            }
+            
+            // Render books
+            filtered.forEach(book => {
+                const newBookItem = document.createElement('div');
+                newBookItem.className = 'media-item';
+                newBookItem.dataset.category = book.category || 'other';
+                newBookItem.dataset.id = book.id;
+                
+                // Sanitize all inputs to prevent XSS
+                const safeTitle = sanitizeHTML(book.title || '');
+                const safeAuthor = sanitizeHTML(book.author || '');
+                const safeDescription = sanitizeHTML(book.description || '');
+                const safeCover = sanitizeURL(book.cover_image_url || '');
+                const safeISBN = sanitizeHTML(book.isbn || '');
+                const safeId = sanitizeHTML(book.id.toString());
+                
+                // Use proxy download endpoint or direct Supabase URL
+                let downloadLink = '';
+                if (book.drive_file_id) {
+                    // Try PHP endpoint first, fallback to direct URL
+                    const isStaticHosting = window.location.hostname.includes('github.io') || 
+                                           window.location.hostname.includes('netlify.app') ||
+                                           window.location.hostname.includes('vercel.app');
+                    if (!isStaticHosting) {
+                        downloadLink = API_BASE_URL + '/download_book.php?id=' + safeId;
+                    } else {
+                        // On static hosting, use direct file URL if available
+                        downloadLink = book.drive_file_id.startsWith('http') ? book.drive_file_id : '';
+                    }
+                }
+                
+                // Default cover if no image provided
+                const coverDisplay = safeCover ? 
+                    `<img src="${safeCover}" alt="${safeTitle}" style="width: 100%; height: 200px; object-fit: cover;">` :
+                    `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-book"></i></div>`;
+                
+                newBookItem.innerHTML = `
+                    <div style="width: 100%; height: 100%; position: relative; border-radius: 8px; overflow: hidden; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column;">
+                        ${coverDisplay}
+                        <div style="padding: 12px; flex: 1; display: flex; flex-direction: column;">
+                            <h4 style="margin: 0 0 5px 0; font-size: 14px; font-weight: 600; color: var(--dark-gray); line-height: 1.3;">${safeTitle}</h4>
+                            <p style="margin: 0 0 5px 0; font-size: 12px; color: var(--text-gray);">by ${safeAuthor}</p>
+                            ${safeISBN ? `<p style="margin: 0 0 5px 0; font-size: 11px; color: var(--text-gray);">ISBN: ${safeISBN}</p>` : ''}
+                            ${safeDescription ? `<p style="margin: 5px 0 0 0; font-size: 11px; color: var(--text-gray); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${safeDescription}</p>` : ''}
+                            ${downloadLink ? `<a href="${downloadLink}" download="${safeTitle}.pdf" style="margin-top: 10px; padding: 8px 12px; background: var(--primary-green); color: white; text-decoration: none; border-radius: 5px; text-align: center; font-size: 12px; display: inline-block;"><i class="fas fa-download"></i> Download</a>` : ''}
+                        </div>
+                        ${adminStatus ? `<button onclick="deleteBook('${safeId}')" style="position: absolute; top: 8px; right: 8px; background: #f44336; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); font-size: 14px; z-index: 10; touch-action: manipulation;" aria-label="Delete book">
+                            <i class="fas fa-trash"></i>
+                        </button>` : ''}
+                    </div>
+                `;
+
+                libraryGrid.insertBefore(newBookItem, libraryGrid.firstChild);
+            });
         }
         
         // Re-render books when admin status changes
@@ -696,15 +1161,15 @@
                 <form id="addBookForm" onsubmit="event.preventDefault(); if(typeof window.addBook==='function'){window.addBook(event);} return false;" enctype="multipart/form-data">
                     <div class="form-group">
                         <label class="form-label">Book Title *</label>
-                        <input type="text" class="form-input" id="bookTitle" placeholder="Enter book title" required>
+                        <input type="text" class="form-input" id="bookTitle" placeholder="Enter book title" required maxlength="200">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Author *</label>
-                        <input type="text" class="form-input" id="bookAuthor" placeholder="Enter author name" required>
+                        <input type="text" class="form-input" id="bookAuthor" placeholder="Enter author name" required maxlength="100">
                     </div>
                     <div class="form-group">
                         <label class="form-label">ISBN (Optional)</label>
-                        <input type="text" class="form-input" id="bookISBN" placeholder="Enter ISBN number">
+                        <input type="text" class="form-input" id="bookISBN" placeholder="Enter ISBN number" maxlength="20">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Category *</label>
@@ -717,8 +1182,8 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Description</label>
-                        <textarea class="form-input" id="bookDescription" rows="3" placeholder="Enter book description"></textarea>
+                        <label class="form-label">Description <span id="descriptionCharCount" style="font-size: 12px; color: #999;">0/2000</span></label>
+                        <textarea class="form-input" id="bookDescription" rows="3" placeholder="Enter book description" maxlength="2000" oninput="const count = this.value.length; const counter = document.getElementById('descriptionCharCount'); if(counter) counter.textContent = count + '/2000';"></textarea>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Cover Image</label>

@@ -947,35 +947,56 @@
                 }
             }
             
-            // Fallback to Firestore - with timeout
-            if (notifications.length === 0) {
-                try {
-                    const firestore = getFirestore();
-                    if (firestore) {
-                        const firestorePromise = firestore.collection('notifications')
-                            .orderBy('createdAt', 'desc')
-                            .limit(50)
-                            .get();
-                        
-                        const timeoutPromise = new Promise((_, reject) => 
-                            setTimeout(() => reject(new Error('Firestore timeout')), 5000)
-                        );
-                        
-                        const snapshot = await Promise.race([firestorePromise, timeoutPromise]);
-                        
-                        notifications = snapshot.docs.map(doc => ({
-                            id: doc.id,
-                            title: doc.data().title,
-                            message: doc.data().message,
-                            icon: doc.data().icon || 'fa-bell',
-                            createdAt: doc.data().createdAt?.toDate() || new Date(),
-                            firestoreId: doc.id
-                        }));
+                // Fallback to Firestore - with timeout and retry
+                if (notifications.length === 0) {
+                    try {
+                        const firestore = getFirestore();
+                        if (firestore) {
+                            // Try Firestore with longer timeout and retry logic
+                            let retries = 2;
+                            let snapshot = null;
+                            
+                            while (retries > 0 && !snapshot) {
+                                try {
+                                    const firestorePromise = firestore.collection('notifications')
+                                        .orderBy('createdAt', 'desc')
+                                        .limit(50)
+                                        .get();
+                                    
+                                    const timeoutPromise = new Promise((_, reject) => 
+                                        setTimeout(() => reject(new Error('Firestore timeout')), 10000) // Increased to 10 seconds
+                                    );
+                                    
+                                    snapshot = await Promise.race([firestorePromise, timeoutPromise]);
+                                    break; // Success, exit retry loop
+                                } catch (error) {
+                                    retries--;
+                                    if (retries === 0) {
+                                        // Only log if all retries failed
+                                        console.log('Firestore not available after retries:', error.message);
+                                    } else {
+                                        // Wait a bit before retry
+                                        await new Promise(resolve => setTimeout(resolve, 1000));
+                                    }
+                                }
+                            }
+                            
+                            if (snapshot) {
+                                notifications = snapshot.docs.map(doc => ({
+                                    id: doc.id,
+                                    title: doc.data().title,
+                                    message: doc.data().message,
+                                    icon: doc.data().icon || 'fa-bell',
+                                    createdAt: doc.data().createdAt?.toDate() || new Date(),
+                                    firestoreId: doc.id
+                                }));
+                            }
+                        }
+                    } catch (error) {
+                        // Silently fail - Firestore is optional
+                        console.log('Firestore not available:', error.message);
                     }
-                } catch (error) {
-                    console.log('Firestore not available:', error.message);
                 }
-            }
             
             // Cache notifications
             cachedNotifications = notifications;
@@ -1088,31 +1109,55 @@
                     }
                 }
                 
-                // Also save to Firestore (with timeout to prevent hanging)
+                // Also save to Firestore (with timeout and retry to prevent hanging)
                 try {
                     const firestore = getFirestore();
                     if (firestore) {
-                        // Add timeout to prevent hanging
-                        const firestorePromise = firestore.collection('notifications').add({
-                            title: title,
-                            message: message,
-                            icon: safeIcon,
-                            type: 'announcement',
-                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                            createdBy: firebase.auth().currentUser?.email || 'admin'
-                        });
+                        // Try Firestore with longer timeout and retry logic
+                        let retries = 2;
+                        let firestoreSaved = false;
                         
-                        const timeoutPromise = new Promise((_, reject) => 
-                            setTimeout(() => reject(new Error('Firestore timeout')), 5000)
-                        );
-                        
-                        await Promise.race([firestorePromise, timeoutPromise]);
-                        console.log('Notification saved to Firestore');
-                        saved = true;
+                        while (retries > 0 && !firestoreSaved) {
+                            try {
+                                const firestorePromise = firestore.collection('notifications').add({
+                                    title: title,
+                                    message: message,
+                                    icon: safeIcon,
+                                    type: 'announcement',
+                                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                    createdBy: firebase.auth().currentUser?.email || 'admin'
+                                });
+                                
+                                const timeoutPromise = new Promise((_, reject) => 
+                                    setTimeout(() => reject(new Error('Firestore timeout')), 10000) // Increased to 10 seconds
+                                );
+                                
+                                await Promise.race([firestorePromise, timeoutPromise]);
+                                console.log('Notification saved to Firestore');
+                                firestoreSaved = true;
+                                saved = true;
+                                break; // Success, exit retry loop
+                            } catch (error) {
+                                retries--;
+                                if (retries === 0) {
+                                    // Only log warning if all retries failed and database also failed
+                                    if (!saved) {
+                                        console.warn('Firestore save failed after retries:', error.message);
+                                    }
+                                    // Silently continue - Firestore is optional backup
+                                } else {
+                                    // Wait a bit before retry
+                                    await new Promise(resolve => setTimeout(resolve, 1000));
+                                }
+                            }
+                        }
                     }
                 } catch (error) {
-                    console.warn('Firestore save failed:', error);
-                    // Continue even if Firestore fails
+                    // Silently continue - Firestore is optional backup
+                    // Only log if database also failed
+                    if (!saved) {
+                        console.warn('Firestore save failed:', error.message);
+                    }
                 }
                 
                 // If neither saved, at least show success (for GitHub Pages)

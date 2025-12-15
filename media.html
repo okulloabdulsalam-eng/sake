@@ -481,8 +481,8 @@
                     </div>
                 </div>
                 <div class="mobile-form-group">
-                    <label class="mobile-form-label">Description (Optional)</label>
-                    <textarea class="mobile-form-textarea" id="mediaDescription" placeholder="Add a description..."></textarea>
+                    <label class="mobile-form-label">Description (Optional) <span id="descCharCount" style="font-size: 12px; color: #999; font-weight: normal;">(0/500)</span></label>
+                    <textarea class="mobile-form-textarea" id="mediaDescription" placeholder="Add a description..." maxlength="500"></textarea>
                 </div>
                 <button type="submit" class="mobile-submit-btn">
                     <i class="fas fa-upload"></i> Upload Media
@@ -660,10 +660,16 @@
             
             // Display media
             if (filtered.length === 0) {
+                // Check if we have media but they're all filtered out
+                const hasMedia = mediaItems.length > 0;
+                const message = hasMedia && filter !== 'all' 
+                    ? `No ${filter} media found` 
+                    : 'No media found';
+                
                 mediaGrid.innerHTML = `
                     <div class="mobile-empty-state">
                         <i class="fas fa-photo-video"></i>
-                        <p>No media found</p>
+                        <p>${message}</p>
                     </div>
                 `;
                 return;
@@ -710,6 +716,22 @@
             }
             
             isLoadingMedia = true;
+            
+            // Add timeout to prevent infinite loading
+            let loadingTimeoutId = setTimeout(() => {
+                if (isLoadingMedia && cachedMedia.length === 0) {
+                    isLoadingMedia = false;
+                    mediaGrid.innerHTML = `
+                        <div class="mobile-empty-state">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>Loading timeout. Please check your connection and refresh.</p>
+                            <button class="btn btn-primary mobile-btn" onclick="loadMediaFromStorage('${filter}', true)" style="margin-top: 16px;">
+                                <i class="fas fa-redo"></i> Retry
+                            </button>
+                        </div>
+                    `;
+                }
+            }, 10000); // 10 second timeout
             
             try {
                 const API_BASE_URL = window.API_BASE_URL || '/api';
@@ -779,11 +801,27 @@
                 cachedMedia = mediaItems;
                 isLoadingMedia = false;
                 
-                // Save to localStorage for instant load next time
+                // Clear loading timeout
+                if (loadingTimeoutId) {
+                    clearTimeout(loadingTimeoutId);
+                    loadingTimeoutId = null;
+                }
+                
+                // Save to localStorage for instant load next time (with quota handling)
                 try {
                     localStorage.setItem('cachedMedia', JSON.stringify(cachedMedia));
                 } catch (e) {
                     console.log('Cache save failed:', e);
+                    // If quota exceeded, try to clear old cache
+                    if (e.name === 'QuotaExceededError') {
+                        try {
+                            // Keep only last 50 media items in cache
+                            const limitedCache = cachedMedia.slice(0, 50);
+                            localStorage.setItem('cachedMedia', JSON.stringify(limitedCache));
+                        } catch (e2) {
+                            console.error('Error clearing cache:', e2);
+                        }
+                    }
                 }
                 
                 // Display with current filter (instant)
@@ -792,68 +830,132 @@
             } catch (error) {
                 console.error('Error loading media:', error);
                 isLoadingMedia = false;
+                
+                // Clear loading timeout
+                if (loadingTimeoutId) {
+                    clearTimeout(loadingTimeoutId);
+                    loadingTimeoutId = null;
+                }
+                
                 if (cachedMedia.length === 0) {
                     mediaGrid.innerHTML = `
                         <div class="mobile-empty-state">
                             <i class="fas fa-exclamation-triangle"></i>
-                            <p>Error loading media</p>
+                            <p>Error loading media: ${error.message || 'Unknown error'}</p>
+                            <button class="btn btn-primary mobile-btn" onclick="loadMediaFromStorage('${filter}', true)" style="margin-top: 16px;">
+                                <i class="fas fa-redo"></i> Retry
+                            </button>
                         </div>
                     `;
                 }
             }
         }
         
-        // Create media item element
+        // Create media item element (with XSS protection)
         function createMediaItem(item) {
             const div = document.createElement('div');
             div.className = 'mobile-media-item';
             div.dataset.id = item.id;
             div.dataset.type = item.type || item.file_type || 'unknown';
             
-            const url = item.url || item.drive_file_id || item.storage_url || '';
+            // Sanitize URL
+            const rawUrl = item.url || item.drive_file_id || item.storage_url || '';
+            const url = sanitizeURL(rawUrl);
+            const safeDescription = sanitizeHTML(item.description || 'Media');
+            const safeId = sanitizeHTML(item.id.toString());
             const isAuth = isMediaAdminAuthenticated();
             
             if (item.type === 'video' || (item.file_type && item.file_type.includes('video'))) {
-                div.innerHTML = `
-                    <video src="${url}" preload="metadata"></video>
-                    <div class="play-icon"><i class="fas fa-play"></i></div>
-                    ${isAuth ? `<button class="delete-btn" onclick="deleteMedia(${item.id}, event)" aria-label="Delete"><i class="fas fa-trash"></i></button>` : ''}
-                `;
+                const video = document.createElement('video');
+                video.src = url;
+                video.preload = 'metadata';
+                video.addEventListener('error', () => {
+                    div.innerHTML = '<div style="width: 100%; height: 100%; background: linear-gradient(135deg, #f44336, #d32f2f); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-exclamation-triangle"></i></div>';
+                });
+                div.appendChild(video);
+                
+                const playIcon = document.createElement('div');
+                playIcon.className = 'play-icon';
+                playIcon.innerHTML = '<i class="fas fa-play"></i>';
+                div.appendChild(playIcon);
+                
+                if (isAuth) {
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'delete-btn';
+                    deleteBtn.setAttribute('aria-label', 'Delete');
+                    deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                    deleteBtn.onclick = (e) => deleteMedia(safeId, e);
+                    div.appendChild(deleteBtn);
+                }
+                
                 div.addEventListener('click', () => {
                     if (url) window.open(url, '_blank');
                 });
             } else if (item.type === 'audio' || (item.file_type && item.file_type.includes('audio'))) {
-                div.innerHTML = `
-                    <div style="width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;">
-                        <i class="fas fa-music"></i>
-                    </div>
-                    ${isAuth ? `<button class="delete-btn" onclick="deleteMedia(${item.id}, event)" aria-label="Delete"><i class="fas fa-trash"></i></button>` : ''}
-                `;
+                const audioDiv = document.createElement('div');
+                audioDiv.style.cssText = 'width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;';
+                audioDiv.innerHTML = '<i class="fas fa-music"></i>';
+                div.appendChild(audioDiv);
+                
+                if (isAuth) {
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'delete-btn';
+                    deleteBtn.setAttribute('aria-label', 'Delete');
+                    deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                    deleteBtn.onclick = (e) => deleteMedia(safeId, e);
+                    div.appendChild(deleteBtn);
+                }
+                
                 div.addEventListener('click', () => {
                     if (url) window.open(url, '_blank');
                 });
             } else {
-                div.innerHTML = `
-                    <img src="${url}" alt="${item.description || 'Media'}" loading="lazy" onerror="this.parentElement.innerHTML='<div style=\\'width: 100%; height: 100%; background: linear-gradient(135deg, #2196F3, #1976D2); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;\\'><i class=\\'fas fa-image\\'></i></div>'">
-                    ${isAuth ? `<button class="delete-btn" onclick="deleteMedia(${item.id}, event)" aria-label="Delete"><i class="fas fa-trash"></i></button>` : ''}
-                `;
+                const img = document.createElement('img');
+                img.src = url;
+                img.alt = safeDescription;
+                img.loading = 'lazy';
+                img.addEventListener('error', () => {
+                    div.innerHTML = '<div style="width: 100%; height: 100%; background: linear-gradient(135deg, #2196F3, #1976D2); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-image"></i></div>';
+                });
+                div.appendChild(img);
+                
+                if (isAuth) {
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'delete-btn';
+                    deleteBtn.setAttribute('aria-label', 'Delete');
+                    deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                    deleteBtn.onclick = (e) => deleteMedia(safeId, e);
+                    div.appendChild(deleteBtn);
+                }
+                
                 div.addEventListener('click', () => {
                     if (url) {
-                        const img = div.querySelector('img');
-                        if (img) {
-                            // Open in fullscreen view
-                            const modal = document.createElement('div');
-                            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 10000; display: flex; align-items: center; justify-content: center;';
-                            modal.innerHTML = `<img src="${url}" style="max-width: 100%; max-height: 100%; object-fit: contain;"><button onclick="this.parentElement.remove(); document.body.style.overflow='';" style="position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 20px;"><i class="fas fa-times"></i></button>`;
-                            document.body.style.overflow = 'hidden';
-                            document.body.appendChild(modal);
-                            modal.addEventListener('click', (e) => {
-                                if (e.target === modal) {
-                                    modal.remove();
-                                    document.body.style.overflow = '';
-                                }
-                            });
-                        }
+                        // Open in fullscreen view (with sanitized URL)
+                        const modal = document.createElement('div');
+                        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+                        
+                        const modalImg = document.createElement('img');
+                        modalImg.src = url;
+                        modalImg.style.cssText = 'max-width: 100%; max-height: 100%; object-fit: contain;';
+                        modal.appendChild(modalImg);
+                        
+                        const closeBtn = document.createElement('button');
+                        closeBtn.style.cssText = 'position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 20px;';
+                        closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+                        closeBtn.onclick = () => {
+                            modal.remove();
+                            document.body.style.overflow = '';
+                        };
+                        modal.appendChild(closeBtn);
+                        
+                        document.body.style.overflow = 'hidden';
+                        document.body.appendChild(modal);
+                        modal.addEventListener('click', (e) => {
+                            if (e.target === modal) {
+                                modal.remove();
+                                document.body.style.overflow = '';
+                            }
+                        });
                     }
                 });
             }
@@ -882,6 +984,14 @@
             }
             
             const file = fileInput.files[0];
+            
+            // Validate file before upload
+            const validation = validateFile(file);
+            if (!validation.valid) {
+                alert(validation.error);
+                return false;
+            }
+            
             const description = descriptionInput ? descriptionInput.value.trim() : '';
             const fileType = getFileTypeCategory(file.type);
             const folder = `media/${fileType}s`;
@@ -892,6 +1002,11 @@
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
             
             try {
+                // Check if upload function exists
+                if (typeof uploadToSupabaseStorage !== 'function') {
+                    throw new Error('Upload service not available. Please refresh the page.');
+                }
+                
                 // Upload to Supabase Storage
                 const uploadResult = await uploadToSupabaseStorage(file, folder, (progress) => {
                     submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Uploading... ${Math.round(progress)}%`;
@@ -985,11 +1100,20 @@
                     cachedMedia.unshift(newMedia); // Add to beginning
                     displayMedia(cachedMedia, currentFilter);
                     
-                    // Save to localStorage
+                    // Save to localStorage (with quota handling)
                     try {
                         localStorage.setItem('cachedMedia', JSON.stringify(cachedMedia));
                     } catch (e) {
                         console.log('Cache save failed:', e);
+                        // If quota exceeded, try to clear old cache
+                        if (e.name === 'QuotaExceededError') {
+                            try {
+                                const limitedCache = cachedMedia.slice(0, 50);
+                                localStorage.setItem('cachedMedia', JSON.stringify(limitedCache));
+                            } catch (e2) {
+                                console.error('Error clearing cache:', e2);
+                            }
+                        }
                     }
                     
                     closeAddMediaModal();
@@ -1027,7 +1151,9 @@
                 }
             }
             
-            if (!confirm('Are you sure you want to delete this media file?')) {
+            // Mobile-friendly confirmation
+            const confirmed = confirm('Are you sure you want to delete this media file?');
+            if (!confirmed) {
                 return;
             }
             
@@ -1099,14 +1225,35 @@
                 setTimeout(() => {
                     loadMediaFromStorage(currentFilter, false);
                 }, 500);
-                } else {
-                    throw new Error('Delete failed');
-                }
             } catch (error) {
                 console.error('Delete error:', error);
                 alert('Error deleting media: ' + error.message);
             }
         };
+        
+        // Sanitize HTML to prevent XSS
+        function sanitizeHTML(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+        
+        // Sanitize URL to prevent XSS
+        function sanitizeURL(url) {
+            if (!url) return '';
+            // Basic URL validation - only allow http/https/data URLs
+            try {
+                const urlObj = new URL(url);
+                if (!['http:', 'https:', 'data:'].includes(urlObj.protocol)) {
+                    return '';
+                }
+                return url;
+            } catch (e) {
+                // If URL parsing fails, return empty
+                return '';
+            }
+        }
         
         // Get file type category
         function getFileTypeCategory(mimeType) {
@@ -1116,17 +1263,53 @@
             return 'other';
         }
         
+        // Validate file before upload
+        function validateFile(file) {
+            const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
+            const allowedTypes = ['image/', 'video/', 'audio/'];
+            
+            // Check file size
+            if (file.size > MAX_FILE_SIZE) {
+                return { valid: false, error: `File size (${(file.size / (1024 * 1024)).toFixed(2)}MB) exceeds maximum allowed size of 500MB.` };
+            }
+            
+            // Check file type
+            const isValidType = allowedTypes.some(type => file.type.startsWith(type));
+            if (!isValidType) {
+                return { valid: false, error: `File type "${file.type}" is not supported. Please upload an image, video, or audio file.` };
+            }
+            
+            return { valid: true };
+        }
+        
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             updateUploadButtonVisibility();
             loadMediaFromStorage('all', true);
             
-            // Refresh media in background every 30 seconds
-            setInterval(() => {
-                if (!isLoadingMedia) {
-                    loadMediaFromStorage(currentFilter, false); // Silent refresh
+            // Refresh media in background every 30 seconds (only when page is visible)
+            let refreshInterval = null;
+            const startBackgroundRefresh = () => {
+                if (refreshInterval) clearInterval(refreshInterval);
+                refreshInterval = setInterval(() => {
+                    // Only refresh if page is visible (saves battery/data)
+                    if (!document.hidden && !isLoadingMedia) {
+                        loadMediaFromStorage(currentFilter, false); // Silent refresh
+                    }
+                }, 30000);
+            };
+            
+            // Start refresh when page is visible
+            startBackgroundRefresh();
+            
+            // Pause refresh when page is hidden, resume when visible
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    if (refreshInterval) clearInterval(refreshInterval);
+                } else {
+                    startBackgroundRefresh();
                 }
-            }, 30000);
+            });
             
             // File input change handler
             const fileInput = document.getElementById('mediaFile');
@@ -1149,6 +1332,42 @@
                 modal.addEventListener('click', (e) => {
                     if (e.target === modal) {
                         closeAddMediaModal();
+                    }
+                });
+            }
+            
+            // Character counter for description
+            const descInput = document.getElementById('mediaDescription');
+            const descCounter = document.getElementById('descCharCount');
+            if (descInput && descCounter) {
+                descInput.addEventListener('input', () => {
+                    const length = descInput.value.length;
+                    descCounter.textContent = `(${length}/500)`;
+                    descCounter.style.color = length > 450 ? '#f44336' : '#999';
+                });
+            }
+            
+            // File size warning
+            const fileInput = document.getElementById('mediaFile');
+            if (fileInput) {
+                fileInput.addEventListener('change', () => {
+                    if (fileInput.files && fileInput.files[0]) {
+                        const file = fileInput.files[0];
+                        const fileSizeMB = file.size / (1024 * 1024);
+                        const MAX_SIZE_MB = 500;
+                        
+                        if (fileSizeMB > MAX_SIZE_MB) {
+                            alert(`Warning: File size (${fileSizeMB.toFixed(2)}MB) exceeds the maximum allowed size of ${MAX_SIZE_MB}MB. Upload may fail.`);
+                        } else if (fileSizeMB > MAX_SIZE_MB * 0.9) {
+                            // Warn if close to limit
+                            const wrapper = document.getElementById('fileInputWrapper');
+                            if (wrapper) {
+                                wrapper.style.borderColor = '#ff9800';
+                                setTimeout(() => {
+                                    wrapper.style.borderColor = '';
+                                }, 3000);
+                            }
+                        }
                     }
                 });
             }
