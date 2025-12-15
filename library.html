@@ -190,6 +190,11 @@
             
             loadBooksFromStorage('all', true);
             
+            // Setup real-time subscription for live updates
+            setTimeout(() => {
+                setupBooksRealtimeSubscription();
+            }, 2000); // Wait 2 seconds for initial load to complete
+            
             // Refresh books in background every 30 seconds (only when page is visible)
             let refreshInterval = null;
             const startBackgroundRefresh = () => {
@@ -320,7 +325,7 @@
         };
 
 
-        window.addBook = function(e) {
+        window.addBook = async function(e) {
             if (e) {
                 e.preventDefault();
             }
@@ -783,6 +788,7 @@
         
         // Get Supabase client
         let supabaseClient = null;
+        let booksSubscription = null; // Real-time subscription
         function getSupabaseClient() {
             if (supabaseClient) return supabaseClient;
             if (typeof initializeSupabase === 'function') {
@@ -799,6 +805,133 @@
             }
             return supabaseClient;
         }
+        
+        // Setup real-time subscription for book changes
+        function setupBooksRealtimeSubscription() {
+            const supabase = getSupabaseClient();
+            if (!supabase || booksSubscription) return; // Already set up
+            
+            try {
+                // Subscribe to changes in books table
+                booksSubscription = supabase
+                    .channel('books-changes')
+                    .on('postgres_changes', 
+                        { 
+                            event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+                            schema: 'public',
+                            table: 'books'
+                        }, 
+                        (payload) => {
+                            console.log('Books change detected:', payload);
+                            
+                            if (payload.eventType === 'INSERT') {
+                                // New book added
+                                const newBook = {
+                                    id: payload.new.id?.toString() || '',
+                                    title: payload.new.title || '',
+                                    author: payload.new.author || '',
+                                    description: payload.new.description || '',
+                                    category: payload.new.category || 'other',
+                                    cover_image_url: payload.new.cover_image_url || payload.new.cover_url || '',
+                                    isbn: payload.new.isbn || '',
+                                    drive_file_id: payload.new.drive_file_id || payload.new.file_url || payload.new.file_path || '',
+                                    supabaseId: payload.new.id?.toString() || ''
+                                };
+                                
+                                // Check if already in cache (avoid duplicates)
+                                const exists = cachedBooks.some(b => b.supabaseId === newBook.supabaseId || b.id === newBook.id);
+                                if (!exists) {
+                                    cachedBooks.unshift(newBook);
+                                    // Update localStorage
+                                    try {
+                                        localStorage.setItem('cachedBooks', JSON.stringify(cachedBooks));
+                                    } catch (e) {
+                                        console.log('Cache update failed:', e);
+                                    }
+                                    // Update display
+                                    const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+                                    displayBooks(cachedBooks, 'all', adminStatus);
+                                }
+                            } else if (payload.eventType === 'UPDATE') {
+                                // Book updated
+                                const updatedBook = {
+                                    id: payload.new.id?.toString() || '',
+                                    title: payload.new.title || '',
+                                    author: payload.new.author || '',
+                                    description: payload.new.description || '',
+                                    category: payload.new.category || 'other',
+                                    cover_image_url: payload.new.cover_image_url || payload.new.cover_url || '',
+                                    isbn: payload.new.isbn || '',
+                                    drive_file_id: payload.new.drive_file_id || payload.new.file_url || payload.new.file_path || '',
+                                    supabaseId: payload.new.id?.toString() || ''
+                                };
+                                
+                                // Update in cache
+                                const index = cachedBooks.findIndex(b => b.supabaseId === updatedBook.supabaseId || b.id === updatedBook.id);
+                                if (index !== -1) {
+                                    cachedBooks[index] = updatedBook;
+                                } else {
+                                    cachedBooks.unshift(updatedBook);
+                                }
+                                
+                                // Update localStorage
+                                try {
+                                    localStorage.setItem('cachedBooks', JSON.stringify(cachedBooks));
+                                } catch (e) {
+                                    console.log('Cache update failed:', e);
+                                }
+                                // Update display
+                                const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+                                displayBooks(cachedBooks, 'all', adminStatus);
+                            } else if (payload.eventType === 'DELETE') {
+                                // Book deleted
+                                const deletedId = payload.old.id?.toString() || '';
+                                
+                                // Remove from cache
+                                cachedBooks = cachedBooks.filter(b => b.supabaseId !== deletedId && b.id !== deletedId);
+                                
+                                // Update localStorage
+                                try {
+                                    localStorage.setItem('cachedBooks', JSON.stringify(cachedBooks));
+                                } catch (e) {
+                                    console.log('Cache update failed:', e);
+                                }
+                                // Update display
+                                const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+                                displayBooks(cachedBooks, 'all', adminStatus);
+                            }
+                        }
+                    )
+                    .subscribe((status) => {
+                        if (status === 'SUBSCRIBED') {
+                            console.log('Books real-time subscription active');
+                        } else if (status === 'CHANNEL_ERROR') {
+                            console.warn('Books subscription error, retrying...');
+                            // Retry after 5 seconds
+                            setTimeout(() => {
+                                if (booksSubscription) {
+                                    supabase.removeChannel(booksSubscription);
+                                    booksSubscription = null;
+                                }
+                                setupBooksRealtimeSubscription();
+                            }, 5000);
+                        }
+                    });
+            } catch (error) {
+                console.warn('Could not set up books real-time subscription:', error);
+            }
+        }
+        
+        // Cleanup subscription on page unload
+        window.addEventListener('beforeunload', () => {
+            if (booksSubscription) {
+                const supabase = getSupabaseClient();
+                if (supabase) {
+                    supabase.removeChannel(booksSubscription);
+                }
+                booksSubscription = null;
+            }
+        });
         
         // Validate file before upload
         function validateBookFile(file) {

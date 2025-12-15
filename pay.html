@@ -236,7 +236,27 @@
                     <!-- Amount Input (for Zakat, Charity, Donate, Kisilaahe) -->
                     <div class="form-group" id="customAmountGroup" style="display: none;">
                         <label class="form-label">Amount (UGX) <span style="color: #F44336;">*</span></label>
-                        <input type="number" class="form-input" id="amount" placeholder="Enter amount" min="1" required>
+                        <input type="number" class="form-input" id="amount" placeholder="Enter amount" min="1" max="100000000" step="1" required oninput="formatAmount(this)">
+                        <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">Minimum: 1 UGX | Maximum: 100,000,000 UGX</small>
+                    </div>
+                    
+                    <!-- Payment Reference Field -->
+                    <div class="form-group" id="paymentReferenceGroup" style="display: none;">
+                        <label class="form-label">Payment Reference <span style="color: #F44336;">*</span> <span style="color: #666; font-size: 12px;">(Use this when making payment)</span></label>
+                        <input type="text" class="form-input" id="paymentReference" placeholder="Auto-generated" readonly style="background: #f5f5f5;">
+                        <small style="color: #F44336; font-size: 12px; margin-top: 5px; display: block; font-weight: 600;">⚠️ CRUCIAL: Use this reference when making payment</small>
+                    </div>
+                    
+                    <!-- Payment Method Selection -->
+                    <div class="form-group" id="paymentMethodGroup" style="display: none;">
+                        <label class="form-label">Payment Method <span style="color: #F44336;">*</span></label>
+                        <select class="form-input" id="selectedPaymentMethod" required>
+                            <option value="">Select payment method</option>
+                            <option value="mtn">MTN Mobile Money</option>
+                            <option value="airtel">Airtel Money</option>
+                            <option value="bank">Bank Transfer</option>
+                        </select>
+                        <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">Select the method you will use to make payment</small>
                     </div>
 
                     <!-- WhatsApp Link to Amir -->
@@ -509,11 +529,48 @@
                 };
                 document.getElementById('selectedType').textContent = typeNames[type] || type;
                 
+                // Show payment reference and method selection
+                document.getElementById('paymentReferenceGroup').style.display = 'block';
+                document.getElementById('paymentMethodGroup').style.display = 'block';
+                generatePaymentReference();
+                
                 // Scroll to payment form
                 setTimeout(() => {
                     paymentForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }, 100);
             }
+        }
+        
+        // Generate payment reference
+        function generatePaymentReference() {
+            const userData = JSON.parse(localStorage.getItem('userData') || 'null');
+            const userName = userData ? (userData.name || userData.firstName || 'USER') : 'USER';
+            const timestamp = Date.now().toString().slice(-6);
+            const reference = `${userName.toUpperCase().replace(/\s/g, '')}-${timestamp}`;
+            
+            const refInput = document.getElementById('paymentReference');
+            if (refInput) {
+                refInput.value = reference;
+            }
+        }
+        
+        // Format amount input
+        function formatAmount(input) {
+            // Remove any non-numeric characters
+            let value = input.value.replace(/[^\d]/g, '');
+            
+            // Validate min/max
+            const min = parseInt(input.getAttribute('min')) || 1;
+            const max = parseInt(input.getAttribute('max')) || 100000000;
+            
+            if (value && parseInt(value) < min) {
+                value = min.toString();
+            }
+            if (value && parseInt(value) > max) {
+                value = max.toString();
+            }
+            
+            input.value = value;
         }
 
         function selectPlan(planName, amount) {
@@ -533,6 +590,11 @@
             document.getElementById('reasonGroup').style.display = 'none';
             document.getElementById('amirWhatsAppGroup').style.display = 'none';
             document.getElementById('amirDaawaNotice').style.display = 'none';
+            
+            // Show payment reference and method selection
+            document.getElementById('paymentReferenceGroup').style.display = 'block';
+            document.getElementById('paymentMethodGroup').style.display = 'block';
+            generatePaymentReference();
 
             // Update plan info
             const planNames = {
@@ -595,9 +657,52 @@
             }, 100);
         }
 
+        // Mobile-friendly alert replacement
+        function showMobileAlert(message, title = 'Notice') {
+            // Create custom modal instead of browser alert
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: flex; justify-content: center; align-items: center; padding: 20px;';
+            modal.innerHTML = `
+                <div style="background: white; border-radius: 15px; padding: 25px; max-width: 400px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                    <h3 style="margin: 0 0 15px 0; color: #2c3e50; font-size: 20px;">${title}</h3>
+                    <p style="margin: 0 0 20px 0; color: #555; line-height: 1.6; white-space: pre-line;">${message}</p>
+                    <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" 
+                            style="width: 100%; padding: 12px; background: var(--primary-green); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">
+                        OK
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            // Auto-remove on outside click
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+        
         function processPayment() {
             if (!selectedPaymentType) {
-                alert('Please select a payment type first');
+                showMobileAlert('Please select a payment type first', 'Payment Type Required');
+                return;
+            }
+            
+            // Validate payment method selection
+            const paymentMethodGroup = document.getElementById('paymentMethodGroup');
+            if (paymentMethodGroup && paymentMethodGroup.style.display !== 'none') {
+                const selectedMethod = document.getElementById('selectedPaymentMethod').value;
+                if (!selectedMethod) {
+                    showMobileAlert('Please select a payment method', 'Payment Method Required');
+                    document.getElementById('selectedPaymentMethod').focus();
+                    return;
+                }
+            }
+            
+            // Validate payment reference
+            const paymentReference = document.getElementById('paymentReference').value;
+            if (!paymentReference) {
+                showMobileAlert('Payment reference is missing. Please refresh the page.', 'Error');
                 return;
             }
 
@@ -608,7 +713,7 @@
                     const name = document.getElementById('subscriptionName').value;
                     
                     if (!name || name.trim() === '') {
-                        alert('Please enter your full name');
+                        showMobileAlert('Please enter your full name', 'Name Required');
                         document.getElementById('subscriptionName').focus();
                         return;
                     }
@@ -619,13 +724,13 @@
                         const course = document.getElementById('course').value;
                         
                         if (!regNumber || regNumber.trim() === '') {
-                            alert('Please enter your registration number');
+                            showMobileAlert('Please enter your registration number', 'Registration Number Required');
                             document.getElementById('regNumber').focus();
                             return;
                         }
                         
                         if (!course || course.trim() === '') {
-                            alert('Please enter your course');
+                            showMobileAlert('Please enter your course', 'Course Required');
                             document.getElementById('course').focus();
                             return;
                         }
@@ -636,7 +741,7 @@
                         const faculty = document.getElementById('faculty').value;
                         
                         if (!faculty || faculty.trim() === '') {
-                            alert('Please enter your faculty or department');
+                            showMobileAlert('Please enter your faculty or department', 'Faculty Required');
                             document.getElementById('faculty').focus();
                             return;
                         }
@@ -648,10 +753,20 @@
             if (!amount) {
                 amount = document.getElementById('amount').value;
                 if (!amount || amount <= 0) {
-                    alert('Please enter a valid amount');
+                    showMobileAlert('Please enter a valid amount (minimum 1 UGX)', 'Invalid Amount');
+                    document.getElementById('amount').focus();
                     return;
                 }
             }
+            
+            // Get payment method
+            const paymentMethod = document.getElementById('selectedPaymentMethod')?.value || 'not-selected';
+            const methodNames = {
+                'mtn': 'MTN Mobile Money',
+                'airtel': 'Airtel Money',
+                'bank': 'Bank Transfer',
+                'not-selected': 'Not Selected'
+            };
 
             // Payment confirmation
             const paymentTypeNames = {
@@ -663,30 +778,114 @@
                 'kisilaahe': 'Kisilaahe Subscription'
             };
 
-            // Build confirmation message
-            let message = `Payment Instructions:\n\nAmount: ${amount.toLocaleString()} UGX\nType: ${paymentTypeNames[selectedPaymentType]}\n\n`;
+            // Generate payment ID
+            const paymentId = 'PAY-' + Date.now().toString().slice(-8);
+            
+            // Build payment summary
+            let summary = {
+                id: paymentId,
+                type: paymentTypeNames[selectedPaymentType],
+                amount: parseInt(amount),
+                reference: paymentReference,
+                method: methodNames[paymentMethod],
+                timestamp: new Date().toISOString(),
+                status: 'pending'
+            };
             
             // Add subscription details if applicable
             if (selectedPaymentType === 'semester' || selectedPaymentType === 'monthly') {
                 const name = document.getElementById('subscriptionName').value;
-                
-                message += `Name: ${name}\n`;
+                summary.name = name;
                 
                 if (selectedPlan === 'undergraduate' || selectedPlan === 'postgraduate') {
                     const regNumber = document.getElementById('regNumber').value;
                     const course = document.getElementById('course').value;
-                    message += `Registration Number: ${regNumber}\nCourse: ${course}\n`;
+                    summary.regNumber = regNumber;
+                    summary.course = course;
                 } else if (selectedPlan === 'university-staff') {
                     const faculty = document.getElementById('faculty').value;
-                    message += `Faculty/Department: ${faculty}\n`;
+                    summary.faculty = faculty;
                 }
-                
-                message += `\n`;
+            } else {
+                // For other payment types
+                const donationType = document.getElementById('donationType')?.value;
+                const reason = document.getElementById('donationReason')?.value;
+                if (donationType) summary.donationType = donationType;
+                if (reason) summary.reason = reason;
             }
             
-            message += `Please make payment using one of the recommended methods above.\n\nAfter payment, contact the Finance Minister via WhatsApp to confirm your deposit.`;
-
-            alert(message);
+            // Save payment to localStorage
+            try {
+                let payments = JSON.parse(localStorage.getItem('paymentHistory') || '[]');
+                payments.unshift(summary);
+                // Keep only last 50 payments
+                if (payments.length > 50) payments = payments.slice(0, 50);
+                localStorage.setItem('paymentHistory', JSON.stringify(payments));
+            } catch (e) {
+                console.log('Could not save payment history:', e);
+            }
+            
+            // Show payment confirmation modal
+            showPaymentConfirmation(summary);
+        }
+        
+        // Show payment confirmation modal
+        function showPaymentConfirmation(payment) {
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: flex; justify-content: center; align-items: center; padding: 20px; overflow-y: auto;';
+            
+            const methodDetails = {
+                'mtn': { name: 'MTN Mobile Money', number: '0787749111', account: 'Okullo Abdulsalam' },
+                'airtel': { name: 'Airtel Money', number: '0703268522', account: 'Okullo Abdulsalam' },
+                'bank': { name: 'Bank Transfer', number: '4592430101469919', account: 'KIUMA Finance - Centenary Bank' }
+            };
+            
+            const selectedMethod = methodDetails[payment.method.toLowerCase().replace(' ', '-')] || methodDetails.mtn;
+            
+            modal.innerHTML = `
+                <div style="background: white; border-radius: 15px; padding: 25px; max-width: 500px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <div style="font-size: 64px; margin-bottom: 10px;">✅</div>
+                        <h2 style="margin: 0; color: #2c3e50;">Payment Ready</h2>
+                        <p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">Payment ID: ${payment.id}</p>
+                    </div>
+                    
+                    <div style="background: #f5f5f5; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+                        <div style="margin-bottom: 10px;"><strong>Amount:</strong> ${payment.amount.toLocaleString()} UGX</div>
+                        <div style="margin-bottom: 10px;"><strong>Type:</strong> ${payment.type}</div>
+                        <div style="margin-bottom: 10px;"><strong>Payment Method:</strong> ${payment.method}</div>
+                        <div style="margin-bottom: 10px;"><strong>Reference:</strong> <code style="background: white; padding: 4px 8px; border-radius: 4px; font-weight: bold; color: #F44336;">${payment.reference}</code></div>
+                        ${payment.name ? `<div style="margin-bottom: 10px;"><strong>Name:</strong> ${payment.name}</div>` : ''}
+                        ${payment.regNumber ? `<div style="margin-bottom: 10px;"><strong>Reg Number:</strong> ${payment.regNumber}</div>` : ''}
+                    </div>
+                    
+                    <div style="background: #FFEBEE; border-left: 4px solid #F44336; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+                        <strong style="color: #F44336; display: block; margin-bottom: 5px;">⚠️ IMPORTANT:</strong>
+                        <p style="margin: 0; color: #C62828; font-size: 14px; line-height: 1.6;">
+                            Use payment reference <strong>${payment.reference}</strong> when making payment via ${selectedMethod.name}.
+                        </p>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" 
+                                style="flex: 1; padding: 12px; background: #95a5a6; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">
+                            Close
+                        </button>
+                        <button onclick="window.print(); this.closest('div[style*=\"position: fixed\"]').remove();" 
+                                style="flex: 1; padding: 12px; background: var(--primary-green); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">
+                            Print Receipt
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            // Auto-remove on outside click
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
         }
 
         function copyToClipboard(text) {
@@ -772,11 +971,14 @@ Jazakallahu Khairan.`;
             // Encode message for URL
             const encodedMessage = encodeURIComponent(message);
 
-            // Create WhatsApp link
-            const whatsappLink = `https://wa.me/256768829144?text=${encodedMessage}`;
-
-            // Open WhatsApp
-            window.open(whatsappLink, '_blank');
+            // Open WhatsApp (mobile-friendly)
+            if (typeof window.openWhatsApp === 'function') {
+                window.openWhatsApp('256768829144', message);
+            } else {
+                // Fallback for older browsers
+                const whatsappLink = `https://wa.me/256768829144?text=${encodedMessage}`;
+                window.location.href = whatsappLink;
+            }
 
             // Show notice about Amir Daawa communication
             document.getElementById('amirDaawaNotice').style.display = 'block';
@@ -849,11 +1051,14 @@ Jazakallahu Khairan.`;
             // Encode message for URL
             const encodedMessage = encodeURIComponent(message);
 
-            // Create WhatsApp link (using the same number as the Finance Minister)
-            const whatsappLink = `https://wa.me/256703268522?text=${encodedMessage}`;
-
-            // Open WhatsApp
-            window.open(whatsappLink, '_blank');
+            // Open WhatsApp (mobile-friendly)
+            if (typeof window.openWhatsApp === 'function') {
+                window.openWhatsApp('256703268522', message);
+            } else {
+                // Fallback for older browsers
+                const whatsappLink = `https://wa.me/256703268522?text=${encodedMessage}`;
+                window.location.href = whatsappLink;
+            }
         };
     </script>
 

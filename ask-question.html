@@ -260,10 +260,15 @@ Jazakallahu Khairan`;
             
             // WhatsApp number: 0768829144 (Uganda format, add country code 256)
             const whatsappNumber = '256768829144';
-            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
             
-            // Open WhatsApp
-            window.open(whatsappUrl, '_blank');
+            // Open WhatsApp (mobile-friendly)
+            if (typeof window.openWhatsApp === 'function') {
+                window.openWhatsApp(whatsappNumber, message);
+            } else {
+                // Fallback for older browsers
+                const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+                window.location.href = whatsappUrl;
+            }
             
             // Show confirmation
             alert('Opening WhatsApp to send your question. Please click send in WhatsApp to complete the submission.');

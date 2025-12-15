@@ -846,6 +846,7 @@
         
         // Get Firestore
         let db = null;
+        let notificationsListener = null; // Real-time listener
         function getFirestore() {
             if (db) return db;
             if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
@@ -853,6 +854,123 @@
             }
             return db;
         }
+        
+        // Setup real-time listener for notification changes
+        function setupNotificationsRealtimeListener() {
+            const firestore = getFirestore();
+            if (!firestore || notificationsListener) return; // Already set up
+            
+            try {
+                // Listen for all changes in notifications collection
+                notificationsListener = firestore.collection('notifications')
+                    .orderBy('createdAt', 'desc')
+                    .limit(100)
+                    .onSnapshot((snapshot) => {
+                        // Handle changes
+                        snapshot.docChanges().forEach((change) => {
+                            if (change.type === 'added') {
+                                // New notification added
+                                const data = change.doc.data();
+                                const newNotification = {
+                                    id: change.doc.id,
+                                    firestoreId: change.doc.id,
+                                    title: data.title || '',
+                                    message: data.message || '',
+                                    icon: data.icon || 'fa-bell',
+                                    type: data.type || 'info',
+                                    createdAt: data.createdAt?.toDate() || new Date()
+                                };
+                                
+                                // Check if already in cache (avoid duplicates)
+                                const exists = cachedNotifications.some(n => n.firestoreId === newNotification.firestoreId);
+                                if (!exists) {
+                                    cachedNotifications.unshift(newNotification);
+                                    // Update localStorage
+                                    try {
+                                        localStorage.setItem('cachedNotifications', JSON.stringify(cachedNotifications));
+                                    } catch (e) {
+                                        console.log('Cache update failed:', e);
+                                    }
+                                    // Update display
+                                    displayNotifications(cachedNotifications, currentFilter);
+                                    // Update badge
+                                    updateUnreadBadge();
+                                }
+                            } else if (change.type === 'modified') {
+                                // Notification updated
+                                const data = change.doc.data();
+                                const updatedNotification = {
+                                    id: change.doc.id,
+                                    firestoreId: change.doc.id,
+                                    title: data.title || '',
+                                    message: data.message || '',
+                                    icon: data.icon || 'fa-bell',
+                                    type: data.type || 'info',
+                                    createdAt: data.createdAt?.toDate() || new Date()
+                                };
+                                
+                                // Update in cache
+                                const index = cachedNotifications.findIndex(n => n.firestoreId === updatedNotification.firestoreId);
+                                if (index !== -1) {
+                                    cachedNotifications[index] = updatedNotification;
+                                } else {
+                                    cachedNotifications.unshift(updatedNotification);
+                                }
+                                
+                                // Update localStorage
+                                try {
+                                    localStorage.setItem('cachedNotifications', JSON.stringify(cachedNotifications));
+                                } catch (e) {
+                                    console.log('Cache update failed:', e);
+                                }
+                                // Update display
+                                displayNotifications(cachedNotifications, currentFilter);
+                                // Update badge
+                                updateUnreadBadge();
+                            } else if (change.type === 'removed') {
+                                // Notification deleted
+                                const deletedId = change.doc.id;
+                                
+                                // Remove from cache
+                                cachedNotifications = cachedNotifications.filter(n => n.firestoreId !== deletedId);
+                                
+                                // Update localStorage
+                                try {
+                                    localStorage.setItem('cachedNotifications', JSON.stringify(cachedNotifications));
+                                } catch (e) {
+                                    console.log('Cache update failed:', e);
+                                }
+                                // Update display
+                                displayNotifications(cachedNotifications, currentFilter);
+                                // Update badge
+                                updateUnreadBadge();
+                            }
+                        });
+                    }, (error) => {
+                        console.warn('Notifications real-time listener error:', error);
+                        // Try to reconnect after 5 seconds
+                        setTimeout(() => {
+                            if (notificationsListener) {
+                                notificationsListener(); // Unsubscribe
+                                notificationsListener = null;
+                            }
+                            setupNotificationsRealtimeListener();
+                        }, 5000);
+                    });
+                
+                console.log('Notifications real-time listener set up');
+            } catch (error) {
+                console.warn('Could not set up notifications real-time listener:', error);
+            }
+        }
+        
+        // Cleanup listener on page unload
+        window.addEventListener('beforeunload', () => {
+            if (notificationsListener) {
+                notificationsListener();
+                notificationsListener = null;
+            }
+        });
         
         // Load notifications (with caching and timeout)
         let loadingTimeoutId = null;
@@ -1271,6 +1389,11 @@
             
             // Load notifications immediately (non-blocking)
             loadNotificationsFromStorage(true);
+            
+            // Setup real-time listener for live updates
+            setTimeout(() => {
+                setupNotificationsRealtimeListener();
+            }, 2000); // Wait 2 seconds for initial load to complete
             
             // Refresh notifications in background every 30 seconds (only when page is visible)
             let refreshInterval = null;

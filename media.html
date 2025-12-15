@@ -500,6 +500,46 @@
     <script>
         // Media Admin Password
         const MEDIA_ADMIN_PASSWORD = 'kiuma2025';
+        
+        // Define functions immediately so they're available for onclick handlers
+        window.showMediaPasswordPrompt = function() {
+            const password = prompt('Enter admin password to access media management:');
+            if (password === null) {
+                return; // User cancelled
+            }
+            
+            if (password === MEDIA_ADMIN_PASSWORD) {
+                sessionStorage.setItem('isMediaAdminAuthenticated', 'true');
+                localStorage.setItem('adminPassword', MEDIA_ADMIN_PASSWORD);
+                updateUploadButtonVisibility();
+                alert('Admin access granted!');
+            } else {
+                alert('Incorrect password. Please try again.');
+            }
+        };
+        
+        window.filterMedia = function(type) {
+            if (typeof currentFilter !== 'undefined') {
+                currentFilter = type;
+                
+                // Update button states
+                document.querySelectorAll('.mobile-filter-btn').forEach(btn => {
+                    const filter = btn.dataset.filter;
+                    if (filter === type) {
+                        btn.classList.remove('btn-outline');
+                        btn.classList.add('btn-primary');
+                    } else {
+                        btn.classList.remove('btn-primary');
+                        btn.classList.add('btn-outline');
+                    }
+                });
+                
+                // Instant client-side filtering (no reload)
+                if (typeof cachedMedia !== 'undefined' && typeof displayMedia === 'function') {
+                    displayMedia(cachedMedia, type);
+                }
+            }
+        };
         let currentFilter = 'all';
         let cachedMedia = []; // Cache media for instant filtering
         let isLoadingMedia = false;
@@ -525,20 +565,7 @@
             alert('Logged out successfully.');
         }
         
-        // Show password prompt for media admin (mobile-optimized)
-        function showMediaPasswordPrompt() {
-            const password = prompt('Enter admin password to access media management:');
-            if (password === null) {
-                return; // User cancelled
-            }
-            
-            if (authenticateMediaAdmin(password)) {
-                alert('Access granted!');
-                updateUploadButtonVisibility();
-            } else {
-                alert('Incorrect password. Access denied.');
-            }
-        }
+        // showMediaPasswordPrompt is already defined above as window.showMediaPasswordPrompt
         
         // Update admin button visibility
         function updateUploadButtonVisibility() {
@@ -614,28 +641,11 @@
             }
         }
         
-        // Filter media (instant client-side filtering)
-        window.filterMedia = function(type) {
-            currentFilter = type;
-            
-            // Update button states
-            document.querySelectorAll('.mobile-filter-btn').forEach(btn => {
-                const filter = btn.dataset.filter;
-                if (filter === type) {
-                    btn.classList.remove('btn-outline');
-                    btn.classList.add('btn-primary');
-                } else {
-                    btn.classList.remove('btn-primary');
-                    btn.classList.add('btn-outline');
-                }
-            });
-            
-            // Instant client-side filtering (no reload)
-            displayMedia(cachedMedia, type);
-        };
+        // filterMedia is already defined above as window.filterMedia
         
         // Get Firestore
         let db = null;
+        let mediaListener = null; // Real-time listener
         function getFirestore() {
             if (db) return db;
             if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
@@ -643,6 +653,121 @@
             }
             return db;
         }
+        
+        // Setup real-time listener for media changes
+        function setupMediaRealtimeListener() {
+            const firestore = getFirestore();
+            if (!firestore || mediaListener) return; // Already set up
+            
+            try {
+                // Listen for all changes in media collection
+                mediaListener = firestore.collection('media')
+                    .orderBy('uploaded_date', 'desc')
+                    .limit(100)
+                    .onSnapshot((snapshot) => {
+                        // Handle changes
+                        snapshot.docChanges().forEach((change) => {
+                            if (change.type === 'added') {
+                                // New media added
+                                const data = change.doc.data();
+                                const newMedia = {
+                                    id: change.doc.id,
+                                    firestoreId: change.doc.id,
+                                    url: data.url || data.direct_download_link || '',
+                                    description: data.description || '',
+                                    type: data.type || data.file_type || 'image',
+                                    file_type: data.type || data.file_type || 'image',
+                                    file_name: data.file_name || '',
+                                    file_size: data.file_size || 0,
+                                    uploaded_date: data.uploaded_date?.toDate() || new Date()
+                                };
+                                
+                                // Check if already in cache (avoid duplicates)
+                                const exists = cachedMedia.some(m => m.firestoreId === newMedia.firestoreId);
+                                if (!exists) {
+                                    cachedMedia.unshift(newMedia);
+                                    // Update localStorage
+                                    try {
+                                        localStorage.setItem('cachedMedia', JSON.stringify(cachedMedia));
+                                    } catch (e) {
+                                        console.log('Cache update failed:', e);
+                                    }
+                                    // Update display
+                                    displayMedia(cachedMedia, currentFilter);
+                                }
+                            } else if (change.type === 'modified') {
+                                // Media updated
+                                const data = change.doc.data();
+                                const updatedMedia = {
+                                    id: change.doc.id,
+                                    firestoreId: change.doc.id,
+                                    url: data.url || data.direct_download_link || '',
+                                    description: data.description || '',
+                                    type: data.type || data.file_type || 'image',
+                                    file_type: data.type || data.file_type || 'image',
+                                    file_name: data.file_name || '',
+                                    file_size: data.file_size || 0,
+                                    uploaded_date: data.uploaded_date?.toDate() || new Date()
+                                };
+                                
+                                // Update in cache
+                                const index = cachedMedia.findIndex(m => m.firestoreId === updatedMedia.firestoreId);
+                                if (index !== -1) {
+                                    cachedMedia[index] = updatedMedia;
+                                } else {
+                                    cachedMedia.unshift(updatedMedia);
+                                }
+                                
+                                // Update localStorage
+                                try {
+                                    localStorage.setItem('cachedMedia', JSON.stringify(cachedMedia));
+                                } catch (e) {
+                                    console.log('Cache update failed:', e);
+                                }
+                                // Update display
+                                displayMedia(cachedMedia, currentFilter);
+                            } else if (change.type === 'removed') {
+                                // Media deleted
+                                const deletedId = change.doc.id;
+                                
+                                // Remove from cache
+                                cachedMedia = cachedMedia.filter(m => m.firestoreId !== deletedId);
+                                
+                                // Update localStorage
+                                try {
+                                    localStorage.setItem('cachedMedia', JSON.stringify(cachedMedia));
+                                } catch (e) {
+                                    console.log('Cache update failed:', e);
+                                }
+                                // Update display
+                                displayMedia(cachedMedia, currentFilter);
+                            }
+                        });
+                    }, (error) => {
+                        console.warn('Media real-time listener error:', error);
+                        // Try to reconnect after 5 seconds
+                        setTimeout(() => {
+                            if (mediaListener) {
+                                mediaListener(); // Unsubscribe
+                                mediaListener = null;
+                            }
+                            setupMediaRealtimeListener();
+                        }, 5000);
+                    });
+                
+                console.log('Media real-time listener set up');
+            } catch (error) {
+                console.warn('Could not set up media real-time listener:', error);
+            }
+        }
+        
+        // Cleanup listener on page unload
+        window.addEventListener('beforeunload', () => {
+            if (mediaListener) {
+                mediaListener();
+                mediaListener = null;
+            }
+        });
         
         // Display media (instant, no loading)
         function displayMedia(mediaItems, filter = 'all') {
@@ -1119,10 +1244,8 @@
                     closeAddMediaModal();
                     alert('Media uploaded successfully!');
                     
-                    // Refresh in background to get real ID
-                    setTimeout(() => {
-                        loadMediaFromStorage(currentFilter, false);
-                    }, 500);
+            // Real-time listener will automatically update the UI
+            // No need to manually refresh
                 } else {
                     throw new Error('Failed to save media metadata. Please try again.');
                 }
@@ -1287,6 +1410,11 @@
             updateUploadButtonVisibility();
             loadMediaFromStorage('all', true);
             
+            // Setup real-time listener for live updates
+            setTimeout(() => {
+                setupMediaRealtimeListener();
+            }, 2000); // Wait 2 seconds for initial load to complete
+            
             // Refresh media in background every 30 seconds (only when page is visible)
             let refreshInterval = null;
             const startBackgroundRefresh = () => {
@@ -1311,10 +1439,34 @@
                 }
             });
             
-            // File input change handler
+            // File input change handler (consolidated to avoid duplicate declarations)
             const fileInput = document.getElementById('mediaFile');
             if (fileInput) {
-                fileInput.addEventListener('change', updateFileInputDisplay);
+                // Combined change handler for display update and file size warning
+                fileInput.addEventListener('change', () => {
+                    // Update display
+                    updateFileInputDisplay();
+                    
+                    // File size warning
+                    if (fileInput.files && fileInput.files[0]) {
+                        const file = fileInput.files[0];
+                        const fileSizeMB = file.size / (1024 * 1024);
+                        const MAX_SIZE_MB = 500;
+                        
+                        if (fileSizeMB > MAX_SIZE_MB) {
+                            alert(`Warning: File size (${fileSizeMB.toFixed(2)}MB) exceeds the maximum allowed size of ${MAX_SIZE_MB}MB. Upload may fail.`);
+                        } else if (fileSizeMB > MAX_SIZE_MB * 0.9) {
+                            // Warn if close to limit
+                            const wrapper = document.getElementById('fileInputWrapper');
+                            if (wrapper) {
+                                wrapper.style.borderColor = '#ff9800';
+                                setTimeout(() => {
+                                    wrapper.style.borderColor = '';
+                                }, 3000);
+                            }
+                        }
+                    }
+                });
                 
                 // Mobile touch handlers
                 const fileInputWrapper = document.getElementById('fileInputWrapper');
@@ -1347,30 +1499,7 @@
                 });
             }
             
-            // File size warning
-            const fileInput = document.getElementById('mediaFile');
-            if (fileInput) {
-                fileInput.addEventListener('change', () => {
-                    if (fileInput.files && fileInput.files[0]) {
-                        const file = fileInput.files[0];
-                        const fileSizeMB = file.size / (1024 * 1024);
-                        const MAX_SIZE_MB = 500;
-                        
-                        if (fileSizeMB > MAX_SIZE_MB) {
-                            alert(`Warning: File size (${fileSizeMB.toFixed(2)}MB) exceeds the maximum allowed size of ${MAX_SIZE_MB}MB. Upload may fail.`);
-                        } else if (fileSizeMB > MAX_SIZE_MB * 0.9) {
-                            // Warn if close to limit
-                            const wrapper = document.getElementById('fileInputWrapper');
-                            if (wrapper) {
-                                wrapper.style.borderColor = '#ff9800';
-                                setTimeout(() => {
-                                    wrapper.style.borderColor = '';
-                                }, 3000);
-                            }
-                        }
-                    }
-                });
-            }
+            // File size warning is already handled in the fileInput handler above
         });
     </script>
 </body>
