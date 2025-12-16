@@ -950,6 +950,24 @@
 
         // Filter books function - globally accessible
         window.filterBooks = function(category) {
+            // Clear search bar when category is clicked
+            const searchInput = document.getElementById('librarySearchInput');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+            
+            // Clear search term
+            currentSearchTerm = '';
+            
+            // Hide search suggestions
+            hideSearchSuggestions();
+            
+            // Hide search results info
+            const searchInfo = document.getElementById('searchResultsInfo');
+            if (searchInfo) {
+                searchInfo.style.display = 'none';
+            }
+            
             // Update category card active states
             const categoryCards = document.querySelectorAll('.category-card');
             categoryCards.forEach(card => {
@@ -961,9 +979,9 @@
                 }
             });
             
-            // Instant client-side filtering (no reload)
+            // Instant client-side filtering (no reload) - without search term
             const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
-            displayBooks(cachedBooks, category, adminStatus, currentSearchTerm);
+            displayBooks(cachedBooks, category, adminStatus, ''); // Empty search term
         };
         
         // Update category counts
