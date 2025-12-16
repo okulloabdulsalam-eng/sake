@@ -116,26 +116,62 @@ async function savePrayerTimes(prayers, updatedBy = 'admin') {
             throw new Error('Supabase client not available');
         }
 
-        // AUTH CHECK: Verify user is authenticated with Supabase
+        // STRICT AUTH CHECK: Verify user is authenticated with Supabase (REQUIRED for RLS policies)
+        // This check MUST pass before any database operations
         const { data: { user }, error: authError } = await supabase.auth.getUser();
-        console.log('AUTH CHECK:', user, authError);
+        console.log('[Prayer Times] STRICT AUTH CHECK:', { 
+            user: user ? { id: user.id, email: user.email } : null, 
+            error: authError,
+            timestamp: new Date().toISOString()
+        });
         
+        // Block saving if authentication error exists
+        if (authError) {
+            console.error('[Prayer Times] Authentication error:', authError);
+            throw new Error('Authentication failed. Please log in again before saving prayer times.');
+        }
+        
+        // Block saving if no user object
         if (!user) {
             console.error('[Prayer Times] No authenticated user found. User must be logged in with Supabase.');
-            throw new Error('Authentication required. Please log in before saving prayer times.');
+            throw new Error('Authentication required. Please log in with your admin account before saving prayer times.');
+        }
+        
+        // Block saving if no user ID
+        if (!user.id) {
+            console.error('[Prayer Times] User object exists but has no ID:', user);
+            throw new Error('Invalid authentication. User ID missing. Please log in again.');
         }
 
-        // Check admin status
+        // Verify user ID is valid (strict type check)
+        if (typeof user.id !== 'string' || user.id.trim() === '') {
+            console.error('[Prayer Times] Invalid user ID format:', user.id);
+            throw new Error('Invalid authentication. User ID is invalid. Please log in again.');
+        }
+        
+        // Verify session is still valid (additional check)
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError || !session) {
+            console.error('[Prayer Times] Session check failed:', sessionError);
+            throw new Error('Session expired. Please log in again before saving prayer times.');
+        }
+        
+        console.log('[Prayer Times] STRICT AUTH CHECK PASSED - User ID:', user.id, 'Session valid:', !!session);
+
+        // Check admin status (additional layer of security)
         const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
         if (!adminStatus) {
-            throw new Error('Only admins can update prayer times');
+            console.warn('[Prayer Times] Admin status check failed, but user is authenticated:', user.id);
+            throw new Error('Only administrators can update prayer times. Please log in as admin.');
         }
 
+        console.log('[Prayer Times] Authentication verified. User:', user.id, 'Email:', user.email);
+        console.log('[Prayer Times] ADMIN UID CONFIRMED:', user.id, '- Proceeding with save operation');
+
         // Prepare data for update
-        // NO date field - table schema doesn't include date column
         const prayerNames = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
         
-        // Use UPDATE instead of delete+insert
+        // Always UPDATE existing rows instead of inserting new ones
         // Update each prayer individually
         for (const prayerName of prayerNames) {
             if (!prayers[prayerName] || !prayers[prayerName].adhan || !prayers[prayerName].iqaama) {
@@ -155,16 +191,20 @@ async function savePrayerTimes(prayers, updatedBy = 'admin') {
                 updated_by: updatedBy
             };
 
-            // Try to update existing record
-            const { data: existingData, error: selectError } = await supabase
+            // Check if any records exist for this prayer_name
+            const { data: existingRecords, error: selectError } = await supabase
                 .from('prayer_times')
                 .select('id')
-                .eq('prayer_name', prayerName)
-                .limit(1)
-                .maybeSingle(); // Use maybeSingle() instead of single() to avoid error when no record exists
+                .eq('prayer_name', prayerName);
 
-            if (existingData && existingData.id) {
-                // Record exists, update it
+            if (selectError) {
+                console.error(`[Prayer Times] Select error for ${prayerName}:`, selectError);
+                throw new Error(`Failed to check existing records for ${prayerName}: ${selectError.message}`);
+            }
+
+            // Always try to UPDATE existing rows first
+            if (existingRecords && existingRecords.length > 0) {
+                // Update ALL existing rows for this prayer_name (in case there are multiple dates)
                 const { error: updateError } = await supabase
                     .from('prayer_times')
                     .update(updateData)
@@ -172,23 +212,49 @@ async function savePrayerTimes(prayers, updatedBy = 'admin') {
                 
                 if (updateError) {
                     console.error(`[Prayer Times] Update error for ${prayerName}:`, updateError);
-                    throw updateError;
+                    throw new Error(`Failed to update prayer times for ${prayerName}: ${updateError.message}`);
                 }
+                
+                console.log(`[Prayer Times] Updated ${existingRecords.length} existing record(s) for ${prayerName}`);
             } else {
-                // Record doesn't exist, insert it
+                // Only insert if NO records exist at all (first-time setup)
+                // This should rarely happen, but we handle it as a fallback
+                console.warn(`[Prayer Times] No existing records found for ${prayerName}. Inserting new record.`);
+                
                 const insertData = {
                     prayer_name: prayerName,
                     ...updateData
                 };
                 
+                // If table has a date column, use today's date
+                // Check if date column exists by trying to insert with it
                 const { error: insertError } = await supabase
                     .from('prayer_times')
                     .insert(insertData);
                 
                 if (insertError) {
-                    console.error(`[Prayer Times] Insert error for ${prayerName}:`, insertError);
-                    throw insertError;
+                    // If insert fails due to missing date column, try without it
+                    if (insertError.message && insertError.message.includes('date')) {
+                        console.warn(`[Prayer Times] Date column may be required. Attempting insert with today's date.`);
+                        const insertWithDate = {
+                            ...insertData,
+                            date: new Date().toISOString().split('T')[0] // Today's date in YYYY-MM-DD format
+                        };
+                        const { error: insertWithDateError } = await supabase
+                            .from('prayer_times')
+                            .insert(insertWithDate);
+                        
+                        if (insertWithDateError) {
+                            console.error(`[Prayer Times] Insert error for ${prayerName}:`, insertWithDateError);
+                            throw new Error(`Failed to create prayer time record for ${prayerName}: ${insertWithDateError.message}`);
+                        }
+                    } else {
+                        console.error(`[Prayer Times] Insert error for ${prayerName}:`, insertError);
+                        throw new Error(`Failed to create prayer time record for ${prayerName}: ${insertError.message}`);
+                    }
                 }
+                
+                console.log(`[Prayer Times] Inserted new record for ${prayerName} (first-time setup)`);
             }
         }
 

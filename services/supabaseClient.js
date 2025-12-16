@@ -1,16 +1,23 @@
 /**
- * Supabase Client Service
+ * Supabase Client Service - TRUE SINGLETON
  * 
- * Single instance Supabase client for the entire application
+ * This is the ONLY place where supabase.createClient() should be called.
+ * All other files must import getSupabaseClient() from this module.
+ * 
+ * SINGLETON PATTERN: Only one client instance exists across the entire application
  */
 
 let supabaseClientInstance = null;
 
 /**
- * Get or create Supabase client instance
- * @returns {Object} Supabase client
+ * Get or create Supabase client instance (Singleton Pattern)
+ * Ensures only ONE client instance exists across the entire application
+ * THIS IS THE ONLY PLACE WHERE supabase.createClient() IS CALLED
+ * 
+ * @returns {Object} Supabase client instance
  */
 function getSupabaseClient() {
+    // Return existing instance if already created (synchronous)
     if (supabaseClientInstance) {
         return supabaseClientInstance;
     }
@@ -35,7 +42,7 @@ function getSupabaseClient() {
         throw new Error('Supabase Anon Key not configured. Update supabase-config.js');
     }
 
-    // Create client instance
+    // Create client instance - THIS IS THE ONLY createClient() CALL IN THE ENTIRE CODEBASE
     try {
         supabaseClientInstance = supabase.createClient(
             config.supabaseUrl,
@@ -44,13 +51,28 @@ function getSupabaseClient() {
                 auth: {
                     persistSession: true,
                     autoRefreshToken: true,
-                    detectSessionInUrl: true
+                    detectSessionInUrl: true,
+                    storage: window.localStorage, // Explicitly use localStorage for session persistence
+                    storageKey: 'sb-auth-token' // Default storage key
                 }
             }
         );
+        
+        // Check if there's an existing session on initialization
+        supabaseClientInstance.auth.getSession().then(({ data: { session } }) => {
+            if (session) {
+                console.log('[Supabase Client] ✅ Session restored on initialization:', session.user?.email);
+            } else {
+                console.log('[Supabase Client] No existing session found');
+            }
+        }).catch(err => {
+            console.warn('[Supabase Client] Error checking session on init:', err);
+        });
+        
+        console.log('[Supabase Client] ✅ Singleton client initialized - THIS IS THE ONLY createClient() CALL');
         return supabaseClientInstance;
     } catch (error) {
-        console.error('Error creating Supabase client:', error);
+        console.error('[Supabase Client] ❌ Error creating client:', error);
         throw new Error('Failed to initialize Supabase client: ' + error.message);
     }
 }
@@ -60,6 +82,7 @@ function getSupabaseClient() {
  */
 function resetSupabaseClient() {
     supabaseClientInstance = null;
+    console.log('[Supabase Client] Client instance reset');
 }
 
 // ES6 export
@@ -77,4 +100,3 @@ if (typeof module !== 'undefined' && module.exports) {
         resetSupabaseClient
     };
 }
-

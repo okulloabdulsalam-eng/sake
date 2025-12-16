@@ -430,6 +430,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
+    <!-- Load singleton Supabase client first (as module) -->
+    <script type="module" src="services/supabaseClient.js"></script>
     <script type="module" src="js/library.js"></script>
     <script src="script.js"></script>
     <script src="update-navigation.js"></script>
@@ -507,12 +509,19 @@
             }
             
             // File input change handler - auto-detect file type and update display
-            const bookFileInput = document.getElementById('bookFile');
-            const fileNameDisplay = document.getElementById('fileNameDisplay');
-            const fileTypeDisplay = document.getElementById('fileTypeDisplay');
-            const bookTypeHidden = document.getElementById('bookType');
-            
-            if (bookFileInput && fileNameDisplay && fileTypeDisplay && bookTypeHidden) {
+            // Attached after DOM is fully loaded for mobile compatibility
+            function attachFileInputHandler() {
+                const bookFileInput = document.getElementById('bookFile');
+                const fileNameDisplay = document.getElementById('fileNameDisplay');
+                const fileTypeDisplay = document.getElementById('fileTypeDisplay');
+                const bookTypeHidden = document.getElementById('bookType');
+                
+                if (!bookFileInput || !fileNameDisplay || !fileTypeDisplay || !bookTypeHidden) {
+                    // Elements not ready yet, try again after a short delay
+                    setTimeout(attachFileInputHandler, 100);
+                    return;
+                }
+                
                 bookFileInput.addEventListener('change', function(e) {
                     const file = e.target.files && e.target.files[0];
                     if (file) {
@@ -520,14 +529,25 @@
                         fileNameDisplay.textContent = 'Selected: ' + file.name;
                         fileNameDisplay.style.display = 'block';
                         
-                        // Auto-detect file type
-                        const isAudioFile = file.type.startsWith('audio/') || 
-                                          file.name.toLowerCase().endsWith('.mp3') ||
-                                          file.name.toLowerCase().endsWith('.wav') ||
-                                          file.name.toLowerCase().endsWith('.ogg') ||
-                                          file.name.toLowerCase().endsWith('.m4a');
-                        const isPdfFile = file.type === 'application/pdf' || 
-                                        file.name.toLowerCase().endsWith('.pdf');
+                        // Harden mobile file type detection - use both MIME type AND filename extension
+                        // Handle empty or "application/octet-stream" MIME types
+                        const fileName = file.name.toLowerCase();
+                        const fileMimeType = file.type || '';
+                        
+                        // Audio file detection (check both MIME type and extension)
+                        const audioExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac'];
+                        const isAudioByExtension = audioExtensions.some(ext => fileName.endsWith(ext));
+                        const isAudioByMime = fileMimeType.startsWith('audio/') && 
+                                             fileMimeType !== 'application/octet-stream' &&
+                                             fileMimeType !== '';
+                        const isAudioFile = isAudioByMime || isAudioByExtension;
+                        
+                        // PDF file detection (check both MIME type and extension)
+                        const isPdfByExtension = fileName.endsWith('.pdf');
+                        const isPdfByMime = (fileMimeType === 'application/pdf') && 
+                                          fileMimeType !== 'application/octet-stream' &&
+                                          fileMimeType !== '';
+                        const isPdfFile = isPdfByMime || isPdfByExtension;
                         
                         let detectedType = '';
                         let typeIcon = '';
@@ -556,6 +576,7 @@
                         fileTypeDisplay.style.background = isAudioFile ? '#e8f5e9' : isPdfFile ? '#ffebee' : '#f5f5f5';
                         fileTypeDisplay.style.color = '#212121';
                     } else {
+                        // No file selected - reset all displays
                         fileNameDisplay.style.display = 'none';
                         fileTypeDisplay.innerHTML = '<i class="fas fa-info-circle"></i> Will be detected automatically from file';
                         fileTypeDisplay.style.borderColor = '#e0e0e0';
@@ -565,6 +586,9 @@
                     }
                 });
             }
+            
+            // Attach handler after DOM is fully loaded
+            attachFileInputHandler();
             
             // Allow Enter key to submit password
             const passwordInput = document.getElementById('adminPassword');
@@ -685,14 +709,25 @@
             
             const bookFile = bookFileInput.files[0];
             
-            // Auto-detect file type from file (required)
-            const isAudioFile = bookFile.type.startsWith('audio/') || 
-                               bookFile.name.toLowerCase().endsWith('.mp3') ||
-                               bookFile.name.toLowerCase().endsWith('.wav') ||
-                               bookFile.name.toLowerCase().endsWith('.ogg') ||
-                               bookFile.name.toLowerCase().endsWith('.m4a');
-            const isPdfFile = bookFile.type === 'application/pdf' || 
-                             bookFile.name.toLowerCase().endsWith('.pdf');
+            // Harden mobile file type detection - use both MIME type AND filename extension
+            // Handle empty or "application/octet-stream" MIME types
+            const fileName = bookFile.name.toLowerCase();
+            const fileMimeType = bookFile.type || '';
+            
+            // Audio file detection (check both MIME type and extension)
+            const audioExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac'];
+            const isAudioByExtension = audioExtensions.some(ext => fileName.endsWith(ext));
+            const isAudioByMime = fileMimeType.startsWith('audio/') && 
+                                 fileMimeType !== 'application/octet-stream' &&
+                                 fileMimeType !== '';
+            const isAudioFile = isAudioByMime || isAudioByExtension;
+            
+            // PDF file detection (check both MIME type and extension)
+            const isPdfByExtension = fileName.endsWith('.pdf');
+            const isPdfByMime = (fileMimeType === 'application/pdf') && 
+                              fileMimeType !== 'application/octet-stream' &&
+                              fileMimeType !== '';
+            const isPdfFile = isPdfByMime || isPdfByExtension;
             
             if (!isAudioFile && !isPdfFile) {
                 alert('Please select a PDF or audio file (MP3, WAV, OGG, M4A).');
@@ -1014,23 +1049,27 @@
             }
         }
         
-        // Get Supabase client
-        let supabaseClient = null;
+        // Get Supabase client - Use singleton from services/supabaseClient.js
         function getSupabaseClient() {
-            if (supabaseClient) return supabaseClient;
-            if (typeof initializeSupabase === 'function') {
-                supabaseClient = initializeSupabase();
-            } else if (typeof supabase !== 'undefined' && window.supabaseConfig) {
+            // Use the singleton client if available (preferred method)
+            if (typeof window.getSupabaseClient === 'function') {
                 try {
-                    supabaseClient = supabase.createClient(
-                        window.supabaseConfig.supabaseUrl,
-                        window.supabaseConfig.supabaseAnonKey
-                    );
-                } catch (e) {
-                    console.error('Error creating Supabase client:', e);
+                    return window.getSupabaseClient();
+                } catch (error) {
+                    console.error('[Library] Error getting singleton client:', error);
+                    throw error;
                 }
             }
-            return supabaseClient;
+            
+            // Fallback to deprecated method (for backward compatibility)
+            if (typeof initializeSupabase === 'function') {
+                const client = initializeSupabase();
+                if (client) {
+                    return client;
+                }
+            }
+            
+            throw new Error('Supabase not initialized. Make sure services/supabaseClient.js is loaded with type="module".');
         }
         
         

@@ -120,7 +120,7 @@
             <section class="prayer-times-list" id="prayerTimesList">
                 <div class="prayer-times-header">
                     <h3 style="margin: 0 0 15px 0; color: var(--dark-gray); font-size: 18px;">Prayer Times</h3>
-                    <button class="admin-edit-btn" onclick="showAdminLogin()" id="adminEditBtn">
+                    <button class="admin-edit-btn" onclick="showAdminLogin()" id="adminEditBtn" style="display: none;">
                         <i class="fas fa-edit"></i> Edit Times
                     </button>
                 </div>
@@ -461,6 +461,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
+    <!-- Load singleton Supabase client first (as module) -->
+    <script type="module" src="services/supabaseClient.js"></script>
     <script type="module" src="js/prayer-times.js"></script>
     <script src="script.js"></script>
     <script src="update-navigation.js"></script>

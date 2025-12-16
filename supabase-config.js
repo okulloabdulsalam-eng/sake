@@ -23,33 +23,31 @@ window.supabaseConfig = {
 };
 
 /**
- * Initialize Supabase Client
- * Make sure to include Supabase JS library:
- * <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+ * DEPRECATED: Use getSupabaseClient() from services/supabaseClient.js instead
+ * 
+ * This function is kept for backward compatibility only.
+ * All new code should import getSupabaseClient from services/supabaseClient.js
+ * 
+ * @deprecated Use getSupabaseClient() from services/supabaseClient.js
  */
 function initializeSupabase() {
-    if (typeof supabase === 'undefined') {
-        console.error('Supabase JS library not loaded. Include: <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>');
-        return null;
+    console.warn('[Supabase Config] initializeSupabase() is deprecated. Use getSupabaseClient() from services/supabaseClient.js instead.');
+    
+    // Try to use the singleton client if available
+    if (typeof window.getSupabaseClient === 'function') {
+        try {
+            return window.getSupabaseClient();
+        } catch (error) {
+            console.error('[Supabase Config] Error getting singleton client:', error);
+            return null;
+        }
     }
     
-    if (!window.supabaseConfig.supabaseUrl || window.supabaseConfig.supabaseUrl === 'YOUR_SUPABASE_URL') {
-        console.error('Supabase URL not configured. Update supabase-config.js');
-        return null;
-    }
-    
-    if (!window.supabaseConfig.supabaseAnonKey || window.supabaseConfig.supabaseAnonKey === 'YOUR_SUPABASE_ANON_KEY') {
-        console.error('Supabase Anon Key not configured. Update supabase-config.js');
-        return null;
-    }
-    
-    return supabase.createClient(
-        window.supabaseConfig.supabaseUrl,
-        window.supabaseConfig.supabaseAnonKey
-    );
+    console.error('[Supabase Config] getSupabaseClient not available. Make sure services/supabaseClient.js is loaded.');
+    return null;
 }
 
-// Make initialization function globally available
+// Make initialization function globally available (for backward compatibility)
 if (typeof window !== 'undefined') {
     window.initializeSupabase = initializeSupabase;
 }

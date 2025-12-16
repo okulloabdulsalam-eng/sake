@@ -638,14 +638,8 @@ async function loadPrayerTimes() {
         // Simple next prayer display (no time calculations)
         updateNextPrayerSimple(prayers);
         
-        // If admin is already logged in, enable editing
-        const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
-        if (adminStatus && typeof enableEditing === 'function') {
-            // Small delay to ensure DOM is ready
-            setTimeout(() => {
-                enableEditing();
-            }, 100);
-        }
+        // Check authentication and show/hide edit button
+        updateEditButtonVisibility();
     } catch (error) {
         console.error('Error loading prayer times:', error);
         // Show fail-safe message on error
@@ -1141,6 +1135,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize prayer times editing
     initializePrayerTimesEditing();
+    
+    // Check authentication and update edit button visibility on page load
+    // Also restore Supabase session if user is logged in
+    const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+    if (adminStatus) {
+        console.log('[Page Load] Admin logged in detected, checking Supabase session...');
+        // Small delay to ensure Supabase client is initialized
+        setTimeout(() => {
+            updateEditButtonVisibility();
+        }, 500);
+    } else {
+        updateEditButtonVisibility();
+    }
 });
 
 // Admin Password (in production, this should be stored securely on the backend)
@@ -1228,128 +1235,23 @@ window.verifyAdminPassword = async function() {
         return;
     }
     
-    // Use Firebase Auth
-    if (typeof signInWithEmail === 'function') {
-        try {
-            const result = await signInWithEmail(email, password);
-            if (result.success) {
-                // User is now logged in - sync both systems
-                isAdminLoggedIn = true;
-                localStorage.setItem('isAdminLoggedIn', 'true');
-                
-                // Authenticate with Supabase for RLS policies
-                try {
-                    const { getSupabaseClient } = await import('./services/supabaseClient.js');
-                    const supabase = getSupabaseClient();
-                    if (supabase) {
-                        const { data: supabaseAuth, error: supabaseError } = await supabase.auth.signInWithPassword({
-                            email: email,
-                            password: password
-                        });
-                        
-                        if (supabaseError) {
-                            console.warn('[Admin Login] Supabase auth warning:', supabaseError);
-                            console.warn('[Admin Login] User may not exist in Supabase. Creating user or continuing with Firebase auth only.');
-                            
-                            // Try to sign up if user doesn't exist
-                            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-                                email: email,
-                                password: password
-                            });
-                            
-                            if (signUpError) {
-                                console.error('[Admin Login] Supabase signup error:', signUpError);
-                            } else {
-                                console.log('[Admin Login] Supabase user created:', signUpData);
-                            }
-                        } else {
-                            console.log('[Admin Login] Supabase auth successful:', supabaseAuth);
-                        }
-                    }
-                } catch (supabaseAuthError) {
-                    console.error('[Admin Login] Error authenticating with Supabase:', supabaseAuthError);
-                    // Continue with Firebase auth even if Supabase auth fails
-                }
-                
-                window.closeAdminLogin();
-                
-                // Enable editing if on prayer times page
-                const prayerTimesList = document.getElementById('prayerTimesList');
-                if (prayerTimesList) {
-                    try {
-                        enableEditing();
-                    } catch (error) {
-                        console.error('Error enabling editing:', error);
-                    }
-                }
-                
-                // Update UI
-                if (typeof window.checkAdminStatus === 'function') {
-                    window.checkAdminStatus();
-                }
-                
-                alert('Admin mode enabled. You can now edit content.');
-            } else {
-                const passwordError = document.getElementById('passwordError');
-                if (passwordError) {
-                    passwordError.style.display = 'block';
-                    passwordError.textContent = result.message || 'Authentication failed. Please try again.';
-                }
-                passwordInput.value = '';
-                passwordInput.focus();
-            }
-        } catch (error) {
-            console.error('Auth error:', error);
-            const passwordError = document.getElementById('passwordError');
-            if (passwordError) {
-                passwordError.style.display = 'block';
-                passwordError.textContent = 'Authentication error. Please try again.';
-            }
-            passwordInput.value = '';
-            passwordInput.focus();
-        }
-    } else {
-        // Fallback to password-based auth
-        if (password === ADMIN_PASSWORD) {
+    // Try Supabase authentication first (required for RLS policies)
+    try {
+        const { adminLoginWithSupabase } = await import('./services/supabaseAuth.js');
+        const supabaseResult = await adminLoginWithSupabase(email, password);
+        
+        if (supabaseResult.success) {
+            // Supabase auth successful
             isAdminLoggedIn = true;
             localStorage.setItem('isAdminLoggedIn', 'true');
             
-            // Authenticate with Supabase for RLS policies (if email is provided)
-            if (email) {
+            // Also try Firebase Auth for backward compatibility (optional)
+            if (typeof signInWithEmail === 'function') {
                 try {
-                    const { getSupabaseClient } = await import('./services/supabaseClient.js');
-                    const supabase = getSupabaseClient();
-                    if (supabase) {
-                        const { data: supabaseAuth, error: supabaseError } = await supabase.auth.signInWithPassword({
-                            email: email,
-                            password: password
-                        });
-                        
-                        if (supabaseError) {
-                            console.warn('[Admin Login] Supabase auth warning:', supabaseError);
-                            console.warn('[Admin Login] User may not exist in Supabase. Creating user or continuing with password auth only.');
-                            
-                            // Try to sign up if user doesn't exist
-                            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-                                email: email,
-                                password: password
-                            });
-                            
-                            if (signUpError) {
-                                console.error('[Admin Login] Supabase signup error:', signUpError);
-                            } else {
-                                console.log('[Admin Login] Supabase user created:', signUpData);
-                            }
-                        } else {
-                            console.log('[Admin Login] Supabase auth successful:', supabaseAuth);
-                        }
-                    }
-                } catch (supabaseAuthError) {
-                    console.error('[Admin Login] Error authenticating with Supabase:', supabaseAuthError);
-                    // Continue with password auth even if Supabase auth fails
+                    await signInWithEmail(email, password);
+                } catch (firebaseError) {
+                    console.warn('[Admin Login] Firebase auth optional - continuing with Supabase only:', firebaseError);
                 }
-            } else {
-                console.warn('[Admin Login] No email provided for Supabase auth. RLS policies may fail. Please use email-based login.');
             }
             
             window.closeAdminLogin();
@@ -1369,16 +1271,73 @@ window.verifyAdminPassword = async function() {
                 window.checkAdminStatus();
             }
             
+            // Update edit button visibility after successful login
+            updateEditButtonVisibility();
+            
             alert('Admin mode enabled. You can now edit content.');
+            return;
         } else {
-            const passwordError = document.getElementById('passwordError');
+            // Supabase auth failed - show error
             if (passwordError) {
                 passwordError.style.display = 'block';
-                passwordError.textContent = 'Incorrect password. Please try again.';
+                passwordError.textContent = supabaseResult.message || 'Authentication failed. Please try again.';
             }
             passwordInput.value = '';
             passwordInput.focus();
+            return;
         }
+    } catch (supabaseAuthError) {
+        console.error('[Admin Login] Supabase auth error:', supabaseAuthError);
+        
+        // Fallback to Firebase Auth if Supabase fails
+        if (typeof signInWithEmail === 'function') {
+            try {
+                const result = await signInWithEmail(email, password);
+                if (result.success) {
+                    isAdminLoggedIn = true;
+                    localStorage.setItem('isAdminLoggedIn', 'true');
+                    
+                    window.closeAdminLogin();
+                    
+                    // Enable editing if on prayer times page
+                    const prayerTimesList = document.getElementById('prayerTimesList');
+                    if (prayerTimesList) {
+                        try {
+                            enableEditing();
+                        } catch (error) {
+                            console.error('Error enabling editing:', error);
+                        }
+                    }
+                    
+                    // Update UI
+                    if (typeof window.checkAdminStatus === 'function') {
+                        window.checkAdminStatus();
+                    }
+                    
+                    alert('Admin mode enabled (Firebase auth). Note: Some features may require Supabase authentication.');
+                    return;
+                } else {
+                    if (passwordError) {
+                        passwordError.style.display = 'block';
+                        passwordError.textContent = result.message || 'Authentication failed. Please try again.';
+                    }
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                    return;
+                }
+            } catch (firebaseError) {
+                console.error('[Admin Login] Firebase auth error:', firebaseError);
+            }
+        }
+        
+        // Both failed - show error
+        if (passwordError) {
+            passwordError.style.display = 'block';
+            passwordError.textContent = 'Authentication failed. Please check your email and password.';
+        }
+        passwordInput.value = '';
+        passwordInput.focus();
+        return;
     }
 }
 
@@ -1427,13 +1386,99 @@ window.checkAdminStatus = function() {
     });
 };
 
+/**
+ * Check authentication and update edit button visibility
+ */
+async function updateEditButtonVisibility() {
+    const editBtn = document.getElementById('adminEditBtn');
+    if (!editBtn) {
+        return;
+    }
+
+    try {
+        // Check Supabase authentication
+        const { checkSupabaseAuth } = await import('./services/supabaseAuth.js');
+        const authStatus = await checkSupabaseAuth();
+        
+        // Also check localStorage admin status
+        const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+        
+        console.log('[Edit Button] Auth check result:', {
+            supabaseAuthenticated: authStatus.authenticated,
+            hasUser: !!authStatus.user,
+            adminStatus: adminStatus,
+            error: authStatus.error,
+            needsReauth: authStatus.needsReauth
+        });
+        
+        // Show button only if authenticated with Supabase AND admin status is true
+        if (authStatus.authenticated && authStatus.user && adminStatus) {
+            editBtn.style.display = '';
+            editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Times';
+            editBtn.onclick = enableEditing;
+            console.log('[Edit Button] ✅ Showing edit button for authenticated user:', authStatus.user.email);
+        } else {
+            editBtn.style.display = 'none';
+            
+            // Provide helpful log message
+            if (adminStatus && !authStatus.authenticated) {
+                console.warn('[Edit Button] ⚠️ Admin logged in but Supabase session missing. Please log in again.');
+            } else if (!adminStatus) {
+                console.log('[Edit Button] Hiding edit button - user not logged in as admin');
+            } else {
+                console.log('[Edit Button] Hiding edit button - user not authenticated with Supabase');
+            }
+        }
+    } catch (error) {
+        console.error('[Edit Button] Error checking authentication:', error);
+        // Hide button on error
+        editBtn.style.display = 'none';
+    }
+}
+
 // Also keep the non-window version for backward compatibility
 function checkAdminStatus() {
     window.checkAdminStatus();
+    // Also update edit button visibility
+    updateEditButtonVisibility();
 }
 
-function enableEditing() {
+async function enableEditing() {
     console.log('Enabling prayer times editing...');
+    
+    // Verify authentication before enabling editing
+    try {
+        const { checkSupabaseAuth } = await import('./services/supabaseAuth.js');
+        const authStatus = await checkSupabaseAuth();
+        
+        if (!authStatus.authenticated || !authStatus.user) {
+            console.warn('[Enable Editing] User not authenticated. Showing login modal.');
+            alert('Please log in to edit prayer times.');
+            if (typeof window.showAdminLogin === 'function') {
+                window.showAdminLogin();
+            }
+            return;
+        }
+        
+        const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+        if (!adminStatus) {
+            console.warn('[Enable Editing] Admin status not set. Showing login modal.');
+            alert('Please log in as admin to edit prayer times.');
+            if (typeof window.showAdminLogin === 'function') {
+                window.showAdminLogin();
+            }
+            return;
+        }
+        
+        console.log('[Enable Editing] Authentication verified:', authStatus.user.email);
+    } catch (error) {
+        console.error('[Enable Editing] Auth check error:', error);
+        alert('Authentication check failed. Please log in again.');
+        if (typeof window.showAdminLogin === 'function') {
+            window.showAdminLogin();
+        }
+        return;
+    }
     
     const editableElements = document.querySelectorAll('.editable');
     console.log('Found editable elements:', editableElements.length);
@@ -1461,12 +1506,13 @@ function enableEditing() {
     if (editBtn) {
         editBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
         editBtn.onclick = savePrayerTimes;
+        editBtn.style.display = ''; // Ensure button is visible
         console.log('Edit button updated');
     } else {
         console.error('Edit button not found');
     }
     
-    // Add save/cancel buttons
+    // Add save/cancel buttons (only if authenticated)
     const prayerTimesList = document.getElementById('prayerTimesList');
     if (prayerTimesList && !document.getElementById('saveCancelBtns')) {
         const btnContainer = document.createElement('div');
@@ -1500,10 +1546,8 @@ function cancelEditing() {
         console.error('Failed to reload prayer times:', error);
     });
     
-    // Update edit button
-    const editBtn = document.getElementById('adminEditBtn');
-    editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Times';
-    editBtn.onclick = showAdminLogin;
+    // Update edit button visibility based on authentication
+    updateEditButtonVisibility();
     
     // Remove save/cancel buttons
     const btnContainer = document.getElementById('saveCancelBtns');
@@ -1511,15 +1555,49 @@ function cancelEditing() {
 }
 
 async function savePrayerTimes() {
-    // Check admin status
+    // VERIFY AUTHENTICATION BEFORE SAVING
+    try {
+        // Check Supabase authentication first (required for RLS)
+        const { checkSupabaseAuth } = await import('./services/supabaseAuth.js');
+        const authStatus = await checkSupabaseAuth();
+        
+        if (!authStatus.authenticated || !authStatus.user) {
+            console.error('[Save Prayer Times] User not authenticated with Supabase');
+            alert('You must be logged in to save prayer times. Please log in as admin first.');
+            
+            // Show admin login modal
+            if (typeof window.showAdminLogin === 'function') {
+                window.showAdminLogin();
+            }
+            return;
+        }
+        
+        console.log('[Save Prayer Times] Authentication verified:', authStatus.user.email);
+        console.log('[Save Prayer Times] ADMIN UID CONFIRMED:', authStatus.user.id, '- Proceeding with save operation');
+    } catch (authCheckError) {
+        console.error('[Save Prayer Times] Auth check error:', authCheckError);
+        alert('Authentication check failed. Please log in again before saving.');
+        
+        // Show admin login modal
+        if (typeof window.showAdminLogin === 'function') {
+            window.showAdminLogin();
+        }
+        return;
+    }
+    
+    // Check admin status (additional check)
     const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
     if (!adminStatus) {
-        alert('Only administrators can update prayer times.');
+        alert('Only administrators can update prayer times. Please log in as admin.');
+        if (typeof window.showAdminLogin === 'function') {
+            window.showAdminLogin();
+        }
         return;
     }
     
     const prayers = {};
     const prayerNames = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+    let hasErrors = false;
     
     prayerNames.forEach(prayer => {
         const adhanEl = document.getElementById(prayer + 'Adhan');
@@ -1533,6 +1611,7 @@ async function savePrayerTimes() {
             
             if (!timeRegex.test(adhanTime) || !timeRegex.test(iqaamaTime)) {
                 alert(`Invalid time format for ${prayer}. Please use HH:MM format (e.g., 05:30)`);
+                hasErrors = true;
                 return;
             }
             
@@ -1543,7 +1622,17 @@ async function savePrayerTimes() {
         }
     });
     
+    if (hasErrors) {
+        return;
+    }
+    
     try {
+        // Get admin UID for logging
+        const { checkSupabaseAuth } = await import('./services/supabaseAuth.js');
+        const authStatus = await checkSupabaseAuth();
+        const adminUID = authStatus.authenticated && authStatus.user ? authStatus.user.id : 'UNKNOWN';
+        console.log('[Save Prayer Times] Saving with ADMIN UID:', adminUID);
+        
         // Save to Supabase database
         if (window.prayerTimesService && window.prayerTimesService.savePrayerTimes) {
             await window.prayerTimesService.savePrayerTimes(prayers, 'admin');
@@ -1552,6 +1641,8 @@ async function savePrayerTimes() {
             const { savePrayerTimes: saveToDB } = await import('./services/prayerTimesService.js');
             await saveToDB(prayers, 'admin');
         }
+        
+        console.log('[Save Prayer Times] Save completed successfully for ADMIN UID:', adminUID);
         
         // Disable editing
         cancelEditing();
@@ -1562,7 +1653,22 @@ async function savePrayerTimes() {
         alert('Prayer times saved successfully!');
     } catch (error) {
         console.error('Error saving prayer times:', error);
-        alert('Error: Failed to save prayer times. ' + (error.message || 'Please try again.'));
+        
+        // Check if error is authentication-related
+        if (error.message && (
+            error.message.includes('Authentication') || 
+            error.message.includes('auth') ||
+            error.message.includes('logged in') ||
+            error.message.includes('RLS') ||
+            error.message.includes('row-level security')
+        )) {
+            alert('Authentication error: ' + error.message + '\n\nPlease log in again and try saving.');
+            if (typeof window.showAdminLogin === 'function') {
+                window.showAdminLogin();
+            }
+        } else {
+            alert('Error: Failed to save prayer times. ' + (error.message || 'Please try again.'));
+        }
     }
 }
 

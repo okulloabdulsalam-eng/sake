@@ -7,33 +7,29 @@
 
 /**
  * Get Supabase client instance
+ * Uses the singleton client from services/supabaseClient.js
+ * This function delegates to the singleton to ensure only one client exists
  */
 function getSupabaseClient() {
-    if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient) {
-        return window.supabaseClient;
-    }
-    
-    if (typeof initializeSupabase === 'function') {
-        window.supabaseClient = initializeSupabase();
-        if (window.supabaseClient) {
-            return window.supabaseClient;
-        }
-    }
-    
-    // Try to initialize directly if config is available
-    if (typeof supabase !== 'undefined' && window.supabaseConfig) {
+    // Use the singleton client if available (preferred method)
+    if (typeof window.getSupabaseClient === 'function') {
         try {
-            window.supabaseClient = supabase.createClient(
-                window.supabaseConfig.supabaseUrl,
-                window.supabaseConfig.supabaseAnonKey
-            );
-            return window.supabaseClient;
-        } catch (e) {
-            console.error('Error creating Supabase client:', e);
+            return window.getSupabaseClient();
+        } catch (error) {
+            console.error('[Supabase Storage] Error getting singleton client:', error);
+            throw error;
         }
     }
     
-    throw new Error('Supabase not initialized. Make sure supabase-config.js is loaded and configured.');
+    // Fallback to deprecated method (for backward compatibility)
+    if (typeof initializeSupabase === 'function') {
+        const client = initializeSupabase();
+        if (client) {
+            return client;
+        }
+    }
+    
+    throw new Error('Supabase not initialized. Make sure services/supabaseClient.js is loaded with type="module".');
 }
 
 // Auto-initialize Supabase client when script loads
@@ -197,7 +193,7 @@ async function deleteFromSupabaseStorage(storagePath) {
  * @param {string} storagePath - Path to file in Supabase Storage
  * @returns {string} Public URL
  */
-function getSupabaseStorageUrl(storagePath) {
+async function getSupabaseStorageUrl(storagePath) {
     try {
         const supabase = getSupabaseClient();
         if (!supabase) {
