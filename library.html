@@ -213,15 +213,6 @@
                         <div style="color: white; font-size: 16px; font-weight: 600;">Yasaruna</div>
                     </div>
                     
-                    <!-- Hadith Category Card -->
-                    <div class="category-card" data-category="hadith" onclick="if(typeof window.filterBooks==='function')window.filterBooks('hadith')" style="background: linear-gradient(135deg, #FF9800, #F57C00); border-radius: 12px; padding: 16px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; touch-action: manipulation;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                            <i class="fas fa-book-reader" style="font-size: 24px; color: white;"></i>
-                            <span class="category-badge" style="background: rgba(255,255,255,0.3); color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;" id="count-hadith">0</span>
-                        </div>
-                        <div style="color: white; font-size: 16px; font-weight: 600;">Hadith</div>
-                    </div>
-                    
                     <!-- Tauheed Category Card -->
                     <div class="category-card" data-category="tauheed" onclick="if(typeof window.filterBooks==='function')window.filterBooks('tauheed')" style="background: linear-gradient(135deg, #9C27B0, #7B1FA2); border-radius: 12px; padding: 16px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; touch-action: manipulation;">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
@@ -985,7 +976,7 @@
         
         // Update category counts
         function updateCategoryCounts(books) {
-            const categories = ['all', 'quran', 'yasaruna', 'hadith', 'tauheed', 'swalah', 'others'];
+            const categories = ['all', 'quran', 'yasaruna', 'tauheed', 'swalah', 'others'];
             
             categories.forEach(cat => {
                 const badge = document.getElementById(`count-${cat}`);
@@ -2321,7 +2312,6 @@
                             <option value="">Select category</option>
                             <option value="quran">Quran</option>
                             <option value="yasaruna">Yasaruna</option>
-                            <option value="hadith">Hadith</option>
                             <option value="tauheed">Tauheed</option>
                             <option value="swalah">Swalah</option>
                             <option value="others">Others</option>
