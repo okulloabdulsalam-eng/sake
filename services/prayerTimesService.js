@@ -8,45 +8,83 @@
 import { getSupabaseClient } from './supabaseClient.js';
 
 /**
- * Get today's prayer times from Supabase
+ * Get prayer times from Supabase (all records, no date filter)
  * @returns {Promise<Object|null>} Prayer times object or null if not found
  */
 async function getPrayerTimes() {
     try {
         const supabase = getSupabaseClient();
         if (!supabase) {
+            console.error('[Prayer Times] Supabase client not available');
             throw new Error('Supabase client not available');
         }
 
-        // Get today's date in YYYY-MM-DD format (no timezone conversion)
-        const today = getTodayDateString();
+        console.log('[Prayer Times] Fetching from Supabase...');
+        console.log('[Prayer Times] Supabase URL:', window.supabaseConfig?.supabaseUrl);
+        console.log('[Prayer Times] Using anon key:', window.supabaseConfig?.supabaseAnonKey ? 'Present' : 'Missing');
 
-        // Fetch prayer times for today from database
+        // Fetch ALL prayer times from database (NO filters)
+        // Use exact query: select('*').order('id')
+        // NO date filters, NO prayer_name filters - fetch everything
         const { data, error } = await supabase
             .from('prayer_times')
             .select('*')
-            .eq('date', today)
-            .order('prayer_name', { ascending: true });
+            .order('id', { ascending: true });
+
+        // Log the raw response
+        console.log('[Prayer Times] Raw Supabase response:', { data, error });
 
         if (error) {
-            console.error('Error fetching prayer times:', error);
+            console.error('[Prayer Times] Supabase query error:', error);
+            console.error('[Prayer Times] Error code:', error.code);
+            console.error('[Prayer Times] Error message:', error.message);
+            console.error('[Prayer Times] Error details:', error.details);
+            console.error('[Prayer Times] Error hint:', error.hint);
             return null;
         }
 
+        // Log actual data returned
+        console.log('[Prayer Times] Data returned from Supabase:', data);
+        console.log('[Prayer Times] Data length:', data ? data.length : 0);
+
         // If no data, return null
         if (!data || data.length === 0) {
+            console.warn('[Prayer Times] No data returned from Supabase - table may be empty');
             return null;
+        }
+
+        // Log first row structure for debugging
+        if (data.length > 0) {
+            console.log('[Prayer Times] Sample row structure:', data[0]);
+            console.log('[Prayer Times] Available fields:', Object.keys(data[0]));
         }
 
         // Convert database format to display format
         // Database: { prayer_name: 'fajr', adhan_time: '05:30:00', iqaama_time: '05:40:00' }
         // Display: { fajr: { adhan: '05:30', iqaama: '05:40' } }
+        // Since we order by id ascending, later rows (higher id) will overwrite earlier ones
+        // This ensures we use the most recent entry for each prayer_name
         const prayers = {};
+        
         data.forEach(row => {
             const prayerName = row.prayer_name;
-            // Extract HH:mm from TIME format (HH:mm:ss)
-            const adhanTime = row.adhan_time.substring(0, 5); // '05:30:00' -> '05:30'
-            const iqaamaTime = row.iqaama_time.substring(0, 5); // '05:40:00' -> '05:40'
+            
+            // Handle different possible field names
+            const adhanTimeRaw = row.adhan_time || row.adhanTime || row.adhan;
+            const iqaamaTimeRaw = row.iqaama_time || row.iqaamaTime || row.iqaama || row.iqama_time || row.iqama;
+            
+            if (!adhanTimeRaw || !iqaamaTimeRaw) {
+                console.warn('[Prayer Times] Missing time fields in row:', row);
+                return;
+            }
+            
+            // Extract HH:mm from TIME format (HH:mm:ss) or use as-is if already HH:mm
+            const adhanTime = typeof adhanTimeRaw === 'string' && adhanTimeRaw.length > 5 
+                ? adhanTimeRaw.substring(0, 5) 
+                : adhanTimeRaw;
+            const iqaamaTime = typeof iqaamaTimeRaw === 'string' && iqaamaTimeRaw.length > 5 
+                ? iqaamaTimeRaw.substring(0, 5) 
+                : iqaamaTimeRaw;
             
             prayers[prayerName] = {
                 adhan: adhanTime,
@@ -54,9 +92,13 @@ async function getPrayerTimes() {
             };
         });
 
+        console.log('[Prayer Times] Converted prayers object:', prayers);
+        console.log('[Prayer Times] Prayer count:', Object.keys(prayers).length);
+
         return prayers;
     } catch (error) {
-        console.error('Error in getPrayerTimes:', error);
+        console.error('[Prayer Times] Exception in getPrayerTimes:', error);
+        console.error('[Prayer Times] Error stack:', error.stack);
         return null;
     }
 }

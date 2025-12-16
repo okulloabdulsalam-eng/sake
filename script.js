@@ -584,8 +584,15 @@ async function loadPrayerTimes() {
             prayers = await getPrayerTimes();
         }
         
+        // Log what we received
+        console.log('[Load Prayer Times] Received prayers:', prayers);
+        console.log('[Load Prayer Times] Prayers keys:', prayers ? Object.keys(prayers) : 'null');
+        console.log('[Load Prayer Times] Prayers count:', prayers ? Object.keys(prayers).length : 0);
+        
         // If no prayer times in database, show fail-safe message
+        // ONLY show message if data.length === 0 (truly empty)
         if (!prayers || Object.keys(prayers).length === 0) {
+            console.warn('[Load Prayer Times] No prayer times found - showing fail-safe message');
             const prayerTimesList = document.getElementById('prayerTimesList');
             if (prayerTimesList) {
                 const failSafeMsg = document.createElement('div');
@@ -605,6 +612,8 @@ async function loadPrayerTimes() {
             }
             return;
         }
+        
+        console.log('[Load Prayer Times] Prayer times found, rendering...');
         
         // Remove fail-safe message if prayers exist
         const failSafeMsg = document.querySelector('.prayer-times-failsafe');
