@@ -9,8 +9,15 @@
     <script>
         // Define showAddBookModal immediately in head so it's available for onclick handlers
         window.showAddBookModal = function() {
-            // Security check removed - button visibility is controlled by updateAdminUI()
-            // and addBook() function has the actual security check
+            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+            if (!adminStatus) {
+                if (typeof window.showAdminLogin === 'function') {
+                    window.showAdminLogin();
+                } else {
+                    alert('Please login as admin first. Click the "Admin Login" button.');
+                }
+                return;
+            }
             const modal = document.getElementById('addBookModal');
             if (modal) {
                 modal.style.display = 'flex';
@@ -419,13 +426,6 @@
                         box-shadow: 0 2px 6px rgba(244, 67, 54, 0.3);
                     }
                     
-                    .document-btn-download {
-                        background: linear-gradient(135deg, #2196F3, #1976D2);
-                        color: white;
-                        box-shadow: 0 2px 6px rgba(33, 150, 243, 0.3);
-                        text-decoration: none;
-                    }
-                    
                     @media (max-width: 767px) {
                         .document-actions {
                             flex-direction: column;
@@ -465,7 +465,6 @@
     <script src="supabase-config.js"></script>
     <!-- Load singleton Supabase client first (as module) -->
     <script type="module" src="services/supabaseClient.js"></script>
-    <script type="module" src="services/adminRoleService.js"></script>
     <script type="module" src="js/library.js"></script>
     <script src="script.js"></script>
     <script src="update-navigation.js"></script>
@@ -848,40 +847,13 @@
                 e.preventDefault();
             }
             
-            // Check admin status using Supabase Auth
-            try {
-                const supabase = getSupabaseClient();
-                if (!supabase) {
-                    throw new Error('Supabase client not available');
-                }
-
-                // Check if user is authenticated
-                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-                if (sessionError || !session || !session.user) {
-                    alert('Please login to add books.');
+            // Check admin login status
+            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+            if (!adminStatus) {
+                alert('You must be logged in as admin to add books.');
                 if (typeof window.showAdminLogin === 'function') {
                     window.showAdminLogin();
                 }
-                    return false;
-                }
-
-                // Check if user is admin
-                const { data: profile, error: profileError } = await supabase
-                    .from('profiles')
-                    .select('role')
-                    .eq('id', session.user.id)
-                    .single();
-
-                if (profileError || !profile || profile.role !== 'admin') {
-                    alert('Only admins can add books. Please contact an administrator.');
-                    console.error('[Add Book] User is not admin. Role:', profile?.role || 'not found');
-                    return false;
-                }
-
-                console.log('[Add Book] Admin verified:', session.user.email);
-            } catch (error) {
-                console.error('[Add Book] Auth check error:', error);
-                alert('Error verifying admin status. Please try again.');
                 return false;
             }
 
@@ -1319,15 +1291,13 @@
          * Uses books table exclusively
          */
         async function loadBooksFromStorage(category = 'all', showLoading = true) {
+            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
             const libraryGrid = document.getElementById('libraryGrid');
             
             if (!libraryGrid) {
                 console.error('Library grid not found');
                 return;
             }
-            
-            // Check admin status using Supabase Auth
-            const isAdmin = await checkAdminStatus();
             
             // Try to load from localStorage cache first (instant display)
             if (cachedBooks.length === 0) {
@@ -1336,7 +1306,7 @@
                     if (cached) {
                         cachedBooks = JSON.parse(cached);
                         if (cachedBooks.length > 0) {
-                            displayBooks(cachedBooks, category, isAdmin);
+                            displayBooks(cachedBooks, category, adminStatus);
                             showLoading = false; // Already showing cached data
                         }
                     }
@@ -1345,7 +1315,7 @@
                 }
             } else if (showLoading) {
                 // Show cached data immediately if available
-                displayBooks(cachedBooks, category, isAdmin);
+                displayBooks(cachedBooks, category, adminStatus);
                 showLoading = false;
             }
             
@@ -1446,9 +1416,6 @@
             const existingItems = Array.from(libraryGrid.querySelectorAll('.media-item[data-id]'));
             existingItems.forEach(item => item.remove());
             
-            // Check admin status using Supabase Auth
-            const isAdmin = await checkAdminStatus();
-            
             // Handle states: success, empty, or error
             if (fetchError) {
                 // Error state: show ONE user-friendly message
@@ -1465,10 +1432,10 @@
                 libraryGrid.appendChild(errorDiv);
             } else if (books.length === 0) {
                 // Empty state: no books available - let displayBooks handle it
-                displayBooks([], category, isAdmin);
+                displayBooks([], category, adminStatus);
             } else {
                 // Success state: display books
-                displayBooks(cachedBooks, category, isAdmin);
+                displayBooks(cachedBooks, category, adminStatus);
             }
         }
         
@@ -1617,11 +1584,8 @@
                 // Card click handler - opens file if available (mobile-safe)
                 const cardClickHandler = fileUrl ? `onclick="openBookFileMobile('${fileUrl}', '${fileType}')"` : '';
                 
-                // Get file name from URL or title
-                const fileName = fileUrl ? (fileUrl.split('/').pop().split('?')[0] || safeTitle) : safeTitle;
-                
                 newBookItem.innerHTML = `
-                    <div class="document-card" ${cardClickHandler} data-id="${safeId}" data-url="${fileUrl || ''}" data-name="${fileName}">
+                    <div class="document-card" ${cardClickHandler}>
                         <div class="document-header">
                             <div class="document-icon ${fileTypeClass}">
                                 <i class="fas ${fileType === 'audio' ? 'fa-headphones' : fileType === 'pdf' ? 'fa-file-pdf' : 'fa-file'}"></i>
@@ -1637,11 +1601,7 @@
                                     <i class="fas fa-external-link-alt"></i>
                                     <span>Open</span>
                                 </button>` : ''}
-                                ${fileUrl ? `<a href="${fileUrl}" download="${fileName}" class="document-btn document-btn-download" onclick="event.stopPropagation(); handleDownloadDocument('${fileUrl}', '${fileName}'); return false;" aria-label="Download document">
-                                    <i class="fas fa-download"></i>
-                                    <span>Download</span>
-                                </a>` : ''}
-                                ${adminStatus ? `<button class="document-btn document-btn-delete" data-document-id="${safeId}" data-document-url="${fileUrl || ''}" aria-label="Delete document">
+                                ${adminStatus ? `<button class="document-btn document-btn-delete" onclick="event.stopPropagation(); deleteBook('${safeId}')" aria-label="Delete document">
                                     <i class="fas fa-trash"></i>
                                     ${window.innerWidth > 767 ? '<span>Delete</span>' : ''}
                                 </button>` : ''}
@@ -1654,324 +1614,12 @@
             });
         }
         
-        // Check if current user is admin (using Supabase Auth)
-        async function checkAdminStatus() {
-            try {
-                const supabase = getSupabaseClient();
-                if (!supabase) {
-                    return false;
-                }
-
-                // Check if user is authenticated
-                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-                if (sessionError || !session || !session.user) {
-                    return false;
-                }
-
-                // Check if user is admin
-                const { data: profile, error: profileError } = await supabase
-                    .from('profiles')
-                    .select('role')
-                    .eq('id', session.user.id)
-                    .single();
-
-                // If profiles table doesn't exist or user profile doesn't exist, return false
-                if (profileError) {
-                    // Check if it's a "table doesn't exist" error
-                    if (profileError.code === '42P01' || profileError.message?.includes('does not exist')) {
-                        console.warn('[Admin Check] Profiles table does not exist. Please run the SQL script first.');
-                        return false;
-                    }
-                    // Profile not found - user is not admin
-                    return false;
-                }
-
-                if (!profile) {
-                    return false;
-                }
-
-                return profile.role === 'admin';
-            } catch (error) {
-                console.error('[Admin Check] Error checking admin status:', error);
-                // If profiles table doesn't exist, fail gracefully
-                if (error.message?.includes('does not exist') || error.code === '42P01') {
-                    console.warn('[Admin Check] Profiles table does not exist. Please run database/library_admin_rls.sql first.');
-                }
-                return false;
-            }
-        }
-
-        // Update UI based on admin status
-        async function updateAdminUI() {
-            const isAdmin = await checkAdminStatus();
-            
-            // Show/hide "Add Book" button (multiple selectors for reliability)
-            const addBookBtn = document.querySelector('[onclick*="showAddBookModal"]') || 
-                               document.querySelector('.admin-only[onclick*="showAddBookModal"]') ||
-                               document.querySelector('button[onclick*="showAddBookModal"]');
-            if (addBookBtn) {
-                if (isAdmin) {
-                    addBookBtn.style.display = '';
-                    addBookBtn.style.visibility = 'visible';
-                } else {
-                    addBookBtn.style.display = 'none';
-                    addBookBtn.style.visibility = 'hidden';
-                }
-                console.log('[Update Admin UI] Add Book button visibility:', isAdmin ? 'shown' : 'hidden');
-            } else {
-                console.warn('[Update Admin UI] Add Book button not found');
-            }
-
-            // Reload books to show/hide delete buttons
-            const currentCategory = document.querySelector('.category-card.active')?.dataset.category || 'all';
-            await loadBooksFromStorage(currentCategory, false);
-        }
-
-        // Set up Supabase auth state listener
-        function setupAuthListener() {
-            setTimeout(function() {
-                try {
-                    const supabase = getSupabaseClient();
-                    if (supabase && supabase.auth && typeof supabase.auth.onAuthStateChange === 'function') {
-                        console.log('[Library] Setting up Supabase auth state listener...');
-                        
-                        supabase.auth.onAuthStateChange(async function(event, session) {
-                            console.log('[Library] Auth state changed:', event, session ? 'User: ' + session.user.email : 'No session');
-                            
-                            // Update UI when auth state changes
-                            await updateAdminUI();
-                        });
-                        
-                        console.log('[Library] ✅ Auth state listener set up successfully');
-                    } else {
-                        console.warn('[Library] Supabase client not available, retrying...');
-                        setTimeout(setupAuthListener, 2000);
-                    }
-                } catch (error) {
-                    console.error('[Library] Error setting up auth listener:', error);
-                }
-            }, 1000);
-        }
-
-        // Initialize auth listener on page load
-        setupAuthListener();
-
-        // Also check on page load
-        updateAdminUI();
-
-        // Re-render books when admin status changes (legacy support)
+        // Re-render books when admin status changes
         window.addEventListener('storage', function(e) {
             if (e.key === 'isAdminLoggedIn') {
-                updateAdminUI();
+                loadBooksFromStorage();
             }
         });
-        
-        // Event delegation for delete button (works for dynamically added cards)
-        document.addEventListener('click', async function(e) {
-            // Check if delete button was clicked
-            if (e.target.closest('.document-btn-delete')) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                const deleteBtn = e.target.closest('.document-btn-delete');
-                const documentId = deleteBtn.getAttribute('data-document-id');
-                const documentUrl = deleteBtn.getAttribute('data-document-url') || '';
-                
-                if (!documentId) {
-                    console.error('[Delete] Document ID not found');
-                    return;
-                }
-                
-                // Get document card for additional data
-                const documentCard = deleteBtn.closest('.document-card');
-                const documentName = documentCard ? (documentCard.getAttribute('data-name') || 'this document') : 'this document';
-                
-                // Call delete handler
-                await handleDeleteDocument(documentId, documentUrl, documentName, documentCard);
-            }
-        });
-        
-        // Handle delete document
-        window.handleDeleteDocument = async function(documentId, fileUrl, documentName, documentCard) {
-            console.log('[Delete] Starting delete process for document:', documentId);
-            
-            // Check admin status using Supabase Auth
-            try {
-                const supabase = getSupabaseClient();
-                if (!supabase) {
-                    throw new Error('Supabase client not available');
-                }
-
-                // Check if user is authenticated
-                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-                if (sessionError || !session || !session.user) {
-                    alert('Please login to delete documents.');
-                    if (typeof window.showAdminLogin === 'function') {
-                        window.showAdminLogin();
-                    }
-                    return;
-                }
-
-                // Check if user is admin
-                const { data: profile, error: profileError } = await supabase
-                    .from('profiles')
-                    .select('role')
-                    .eq('id', session.user.id)
-                    .single();
-
-                if (profileError || !profile || profile.role !== 'admin') {
-                    alert('Only admins can delete documents. Please contact an administrator.');
-                    console.error('[Delete] User is not admin. Role:', profile?.role || 'not found');
-                    return;
-                }
-
-                console.log('[Delete] Admin verified:', session.user.email);
-            } catch (error) {
-                console.error('[Delete] Auth check error:', error);
-                alert('Error verifying admin status. Please try again.');
-                return;
-            }
-            
-            // Confirm deletion
-            if (!confirm(`Are you sure you want to delete "${documentName}"? This action cannot be undone.`)) {
-                console.log('[Delete] User cancelled deletion');
-                return;
-            }
-            
-            try {
-                // Get Supabase client
-                const supabase = getSupabaseClient();
-                if (!supabase) {
-                    throw new Error('Supabase client not available');
-                }
-                
-                // Step 1: Delete file from storage if URL exists
-                if (fileUrl && fileUrl.startsWith('http')) {
-                    try {
-                        // Extract storage path from Supabase public URL
-                        // Format: https://[project].supabase.co/storage/v1/object/public/[bucket]/[path]
-                        const urlMatch = fileUrl.match(/\/storage\/v1\/object\/public\/([^\/]+)\/(.+)$/);
-                        if (urlMatch) {
-                            const bucket = urlMatch[1];
-                            const filePath = decodeURIComponent(urlMatch[2]); // Decode URL-encoded path
-                            
-                            console.log('[Delete] Deleting file from storage:', { bucket, filePath });
-                            
-                            // Try to delete from storage
-                            const { error: storageError } = await supabase.storage
-                                .from(bucket)
-                                .remove([filePath]);
-                            
-                            if (storageError) {
-                                // Check if error is "file not found" - that's okay
-                                if (storageError.message && storageError.message.includes('not found')) {
-                                    console.log('[Delete] File not found in storage (may have been deleted already)');
-                                } else {
-                                    console.warn('[Delete] Storage deletion warning (continuing):', storageError);
-                                }
-                                // Continue to database deletion even if storage deletion fails
-                            } else {
-                                console.log('[Delete] File deleted from storage successfully');
-                            }
-                        } else {
-                            console.warn('[Delete] Could not extract storage path from URL. URL format:', fileUrl);
-                            // Continue to database deletion
-                        }
-                    } catch (storageError) {
-                        console.warn('[Delete] Storage deletion error (continuing to database deletion):', storageError);
-                        // Continue to database deletion even if storage deletion fails
-                    }
-                } else {
-                    console.log('[Delete] No file URL provided, skipping storage deletion');
-                }
-                
-                // Step 2: Delete record from database
-                console.log('[Delete] Deleting record from database:', documentId);
-                const { data, error } = await supabase
-                    .from('books')
-                    .delete()
-                    .eq('id', documentId)
-                    .select();
-                
-                if (error) {
-                    console.error('[Delete] Database deletion error:', error);
-                    throw error;
-                }
-                
-                console.log('[Delete] Document deleted successfully from database:', data);
-                
-                // Step 3: Remove card from DOM
-                if (documentCard) {
-                    documentCard.style.transition = 'opacity 0.3s, transform 0.3s';
-                    documentCard.style.opacity = '0';
-                    documentCard.style.transform = 'scale(0.95)';
-                    
-                    setTimeout(() => {
-                        const mediaItem = documentCard.closest('.media-item');
-                        if (mediaItem && mediaItem.parentNode) {
-                            mediaItem.parentNode.removeChild(mediaItem);
-                            console.log('[Delete] Card removed from DOM');
-                        }
-                    }, 300);
-                }
-                
-                // Step 4: Refresh book list
-                const currentCategory = document.querySelector('.category-card.active')?.dataset.category || 'all';
-                setTimeout(() => {
-                    loadBooksFromStorage(currentCategory, false);
-                }, 500);
-                
-                console.log('[Delete] Delete process completed successfully');
-                
-            } catch (error) {
-                console.error('[Delete] Error deleting document:', error);
-                alert('Error: Failed to delete document. ' + (error.message || 'Please try again.'));
-            }
-        };
-        
-        // Handle download document
-        window.handleDownloadDocument = function(fileUrl, fileName) {
-            console.log('[Download] Starting download:', { fileUrl, fileName });
-            
-            if (!fileUrl) {
-                console.error('[Download] File URL not provided');
-                alert('File URL not available for download.');
-                return false;
-            }
-            
-            try {
-                // Create a temporary anchor element for download
-                const link = document.createElement('a');
-                link.href = fileUrl;
-                link.download = fileName || 'document';
-                link.target = '_blank'; // Open in new tab for mobile compatibility
-                link.rel = 'noopener noreferrer';
-                
-                // For mobile, ensure the link is properly styled
-                link.style.display = 'none';
-                
-                // Append to body, click, then remove
-                document.body.appendChild(link);
-                link.click();
-                
-                // Remove link after a short delay
-                setTimeout(() => {
-                    if (link.parentNode) {
-                        link.parentNode.removeChild(link);
-                    }
-                }, 100);
-                
-                console.log('[Download] Download initiated successfully');
-                
-                // Return false to prevent default behavior if called from onclick
-                return false;
-            } catch (error) {
-                console.error('[Download] Error initiating download:', error);
-                // Fallback: open in new tab
-                window.open(fileUrl, '_blank', 'noopener,noreferrer');
-                return false;
-            }
-        };
     </script>
 
     <!-- Admin Login Modal -->
