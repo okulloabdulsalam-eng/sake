@@ -609,24 +609,56 @@ function initFastingReminderChecker() {
 
 // Load prayer times from Supabase database (NO auto-calculation - admin-defined only)
 async function loadPrayerTimes() {
+    let prayers = null;
+    let source = 'none';
+    
     try {
-        // Fetch from Supabase database
-        let prayers = null;
-        if (window.prayerTimesService && window.prayerTimesService.getPrayerTimes) {
-            prayers = await window.prayerTimesService.getPrayerTimes();
-        } else if (typeof getPrayerTimes === 'function') {
-            // Fallback if service not loaded yet
-            const { getPrayerTimes } = await import('./services/prayerTimesService.js');
-            prayers = await getPrayerTimes();
+        // STEP 1: Try to fetch from Supabase first
+        // Check if user is online
+        if (navigator.onLine) {
+            try {
+                if (window.prayerTimesService && window.prayerTimesService.getPrayerTimes) {
+                    prayers = await window.prayerTimesService.getPrayerTimes();
+                    source = 'supabase';
+                } else if (typeof getPrayerTimes === 'function') {
+                    // Fallback if service not loaded yet
+                    const { getPrayerTimes } = await import('./services/prayerTimesService.js');
+                    prayers = await getPrayerTimes();
+                    source = 'supabase';
+                }
+            } catch (supabaseError) {
+                console.warn('[Load Prayer Times] Supabase fetch failed:', supabaseError);
+                console.log('[Load Prayer Times] Falling back to localStorage cache...');
+                // Continue to localStorage fallback
+            }
+        } else {
+            console.log('[Load Prayer Times] User is offline, loading from localStorage cache...');
+        }
+        
+        // STEP 2: If Supabase failed or user is offline, try localStorage cache
+        if (!prayers || Object.keys(prayers).length === 0) {
+            try {
+                const cachedData = localStorage.getItem('cached_prayer_times');
+                if (cachedData) {
+                    prayers = JSON.parse(cachedData);
+                    source = 'cache';
+                    console.log('[Load Prayer Times] Loaded from localStorage cache');
+                } else {
+                    console.log('[Load Prayer Times] No cache found in localStorage');
+                }
+            } catch (cacheError) {
+                console.error('[Load Prayer Times] Error reading from cache:', cacheError);
+                // Continue with empty prayers
+            }
         }
         
         // Log what we received
+        console.log('[Load Prayer Times] Source:', source);
         console.log('[Load Prayer Times] Received prayers:', prayers);
         console.log('[Load Prayer Times] Prayers keys:', prayers ? Object.keys(prayers) : 'null');
         console.log('[Load Prayer Times] Prayers count:', prayers ? Object.keys(prayers).length : 0);
         
-        // If no prayer times in database, show fail-safe message
-        // ONLY show message if data.length === 0 (truly empty)
+        // STEP 3: If no prayer times found (neither Supabase nor cache), show fail-safe message
         if (!prayers || Object.keys(prayers).length === 0) {
             console.warn('[Load Prayer Times] No prayer times found - showing fail-safe message');
             const prayerTimesList = document.getElementById('prayerTimesList');
@@ -649,7 +681,7 @@ async function loadPrayerTimes() {
             return;
         }
         
-        console.log('[Load Prayer Times] Prayer times found, rendering...');
+        console.log('[Load Prayer Times] Prayer times found, rendering... (source: ' + source + ')');
         
         // Remove fail-safe message if prayers exist
         const failSafeMsg = document.querySelector('.prayer-times-failsafe');
@@ -685,9 +717,65 @@ async function loadPrayerTimes() {
         
         // Check authentication and show/hide edit button
         updateEditButtonVisibility();
+        
     } catch (error) {
-        console.error('Error loading prayer times:', error);
-        // Show fail-safe message on error
+        console.error('[Load Prayer Times] Error loading prayer times:', error);
+        
+        // Last resort: Try to load from cache even on error
+        try {
+            const cachedData = localStorage.getItem('cached_prayer_times');
+            if (cachedData) {
+                const cachedPrayers = JSON.parse(cachedData);
+                if (cachedPrayers && Object.keys(cachedPrayers).length > 0) {
+                    console.log('[Load Prayer Times] Using cached data after error');
+                    prayers = cachedPrayers;
+                    source = 'cache';
+                    
+                    // Render cached data
+                    console.log('[Load Prayer Times] Rendering cached prayer times...');
+                    
+                    // Remove fail-safe message if prayers exist
+                    const failSafeMsg = document.querySelector('.prayer-times-failsafe');
+                    if (failSafeMsg) failSafeMsg.remove();
+                    
+                    // Show prayer items
+                    const existingItems = document.querySelectorAll('.prayer-item, .prayer-table-header, .prayer-times-header');
+                    existingItems.forEach(item => item.style.display = '');
+                    
+                    // Update prayer times display
+                    Object.keys(prayers).forEach(prayer => {
+                        const adhanEl = document.getElementById(prayer + 'Adhan');
+                        const iqaamaEl = document.getElementById(prayer + 'Iqaama');
+                        if (adhanEl && prayers[prayer].adhan) {
+                            adhanEl.textContent = prayers[prayer].adhan;
+                        }
+                        if (iqaamaEl && prayers[prayer].iqaama) {
+                            iqaamaEl.textContent = prayers[prayer].iqaama;
+                        }
+                    });
+                    
+                    // Calculate and display the actual next prayer
+                    updateNextPrayerSimple(prayers);
+                    
+                    // Update next prayer every minute
+                    if (window.nextPrayerInterval) {
+                        clearInterval(window.nextPrayerInterval);
+                    }
+                    window.nextPrayerInterval = setInterval(() => {
+                        updateNextPrayerSimple(prayers);
+                    }, 60000);
+                    
+                    // Check authentication and show/hide edit button
+                    updateEditButtonVisibility();
+                    
+                    return; // Successfully loaded from cache
+                }
+            }
+        } catch (cacheError) {
+            console.error('[Load Prayer Times] Cache fallback also failed:', cacheError);
+        }
+        
+        // If we still don't have prayers, show fail-safe message
         const prayerTimesList = document.getElementById('prayerTimesList');
         if (prayerTimesList) {
             const failSafeMsg = document.createElement('div');
@@ -1273,6 +1361,138 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         updateEditButtonVisibility();
     }
+    
+    // Listen for online/offline events to update button states
+    window.addEventListener('online', () => {
+        console.log('[Network] Connection restored');
+        updateEditButtonVisibility();
+        // Re-enable save button if in edit mode
+        const editBtn = document.getElementById('adminEditBtn');
+        if (editBtn && editBtn.innerHTML.includes('Save')) {
+            editBtn.disabled = false;
+            editBtn.style.opacity = '1';
+            editBtn.style.cursor = 'pointer';
+        }
+        // Re-enable save button in save/cancel container
+        const saveBtn = document.querySelector('#saveCancelBtns .btn-primary');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.style.opacity = '1';
+            saveBtn.style.cursor = 'pointer';
+        }
+    });
+    
+    window.addEventListener('offline', () => {
+        console.log('[Network] Connection lost');
+        console.log('Offline — edit disabled');
+        updateEditButtonVisibility();
+        // Disable save button if in edit mode
+        const editBtn = document.getElementById('adminEditBtn');
+        if (editBtn && editBtn.innerHTML.includes('Save')) {
+            editBtn.disabled = true;
+            editBtn.style.opacity = '0.5';
+            editBtn.style.cursor = 'not-allowed';
+        }
+        // Disable save button in save/cancel container
+        const saveBtn = document.querySelector('#saveCancelBtns .btn-primary');
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.style.opacity = '0.5';
+            saveBtn.style.cursor = 'not-allowed';
+        }
+    });
+    
+    // Set up Supabase auth state listener (plain JavaScript only)
+    // Wait a bit for Supabase client to be initialized
+    setTimeout(function() {
+        try {
+            // Get Supabase client - use window.getSupabaseClient if available
+            var supabase = null;
+            if (typeof window.getSupabaseClient === 'function') {
+                try {
+                    supabase = window.getSupabaseClient();
+                } catch (err) {
+                    console.warn('[Auth Listener] Error getting Supabase client:', err);
+                }
+            }
+            
+            // If client is available, set up listener
+            if (supabase && supabase.auth && typeof supabase.auth.onAuthStateChange === 'function') {
+                console.log('[Auth Listener] Setting up Supabase auth state listener...');
+                
+                // Set up onAuthStateChange listener (plain JavaScript)
+                supabase.auth.onAuthStateChange(function(event, session) {
+                    console.log('[Auth Listener] Auth state changed:', event, session ? 'User: ' + session.user.email : 'No session');
+                    
+                    if (event === 'SIGNED_IN' && session && session.user) {
+                        // User logged in - show Edit button
+                        console.log('[Auth Listener] User signed in - showing Edit button');
+                        updateEditButtonVisibility();
+                    } else if (event === 'SIGNED_OUT' || !session || !session.user) {
+                        // User logged out - hide Edit button
+                        console.log('[Auth Listener] User signed out - hiding Edit button');
+                        updateEditButtonVisibility();
+                        
+                        // Also cancel editing if in progress
+                        var editBtn = document.getElementById('adminEditBtn');
+                        if (editBtn && editBtn.innerHTML.indexOf('Save') !== -1) {
+                            // User was editing, cancel it
+                            if (typeof cancelEditing === 'function') {
+                                cancelEditing();
+                            }
+                        }
+                    } else if (event === 'TOKEN_REFRESHED' && session && session.user) {
+                        // Token refreshed - update button visibility
+                        console.log('[Auth Listener] Token refreshed - updating Edit button');
+                        updateEditButtonVisibility();
+                    }
+                });
+                
+                console.log('[Auth Listener] ✅ Auth state listener set up successfully');
+            } else {
+                console.warn('[Auth Listener] Supabase client not available yet, will retry...');
+                // Retry after a longer delay
+                setTimeout(function() {
+                    if (typeof window.getSupabaseClient === 'function') {
+                        try {
+                            supabase = window.getSupabaseClient();
+                            if (supabase && supabase.auth && typeof supabase.auth.onAuthStateChange === 'function') {
+                                console.log('[Auth Listener] Retrying - setting up Supabase auth state listener...');
+                                
+                                supabase.auth.onAuthStateChange(function(event, session) {
+                                    console.log('[Auth Listener] Auth state changed:', event, session ? 'User: ' + session.user.email : 'No session');
+                                    
+                                    if (event === 'SIGNED_IN' && session && session.user) {
+                                        console.log('[Auth Listener] User signed in - showing Edit button');
+                                        updateEditButtonVisibility();
+                                    } else if (event === 'SIGNED_OUT' || !session || !session.user) {
+                                        console.log('[Auth Listener] User signed out - hiding Edit button');
+                                        updateEditButtonVisibility();
+                                        
+                                        var editBtn = document.getElementById('adminEditBtn');
+                                        if (editBtn && editBtn.innerHTML.indexOf('Save') !== -1) {
+                                            if (typeof cancelEditing === 'function') {
+                                                cancelEditing();
+                                            }
+                                        }
+                                    } else if (event === 'TOKEN_REFRESHED' && session && session.user) {
+                                        console.log('[Auth Listener] Token refreshed - updating Edit button');
+                                        updateEditButtonVisibility();
+                                    }
+                                });
+                                
+                                console.log('[Auth Listener] ✅ Auth state listener set up successfully (retry)');
+                            }
+                        } catch (err) {
+                            console.warn('[Auth Listener] Retry failed:', err);
+                        }
+                    }
+                }, 2000);
+            }
+        } catch (error) {
+            console.error('[Auth Listener] Error setting up auth state listener:', error);
+        }
+    }, 1000);
 });
 
 // Admin Password (in production, this should be stored securely on the backend)
@@ -1520,38 +1740,67 @@ async function updateEditButtonVisibility() {
         return;
     }
 
+    // Check if offline - hide edit button if offline
+    if (!navigator.onLine) {
+        editBtn.style.display = 'none';
+        console.log('Offline — edit disabled');
+        return;
+    }
+
     try {
-        // Check Supabase authentication
-        const { checkSupabaseAuth } = await import('./services/supabaseAuth.js');
-        const authStatus = await checkSupabaseAuth();
+        // Check Supabase session using getSession() directly
+        let supabase;
+        try {
+            if (window.getSupabaseClient) {
+                supabase = window.getSupabaseClient();
+            } else {
+                const { getSupabaseClient } = await import('./services/supabaseClient.js');
+                supabase = getSupabaseClient();
+            }
+        } catch (clientError) {
+            console.error('[Edit Button] Failed to get Supabase client:', clientError);
+            editBtn.style.display = 'none';
+            return;
+        }
+        
+        if (!supabase) {
+            editBtn.style.display = 'none';
+            return;
+        }
+        
+        // Check session using supabase.auth.getSession()
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        // If no authenticated user, hide Edit button
+        if (sessionError || !session || !session.user) {
+            editBtn.style.display = 'none';
+            console.log('[Edit Button] No authenticated session - hiding edit button');
+            return;
+        }
         
         // Also check localStorage admin status
         const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
         
-        console.log('[Edit Button] Auth check result:', {
-            supabaseAuthenticated: authStatus.authenticated,
-            hasUser: !!authStatus.user,
-            adminStatus: adminStatus,
-            error: authStatus.error,
-            needsReauth: authStatus.needsReauth
+        console.log('[Edit Button] Session check result:', {
+            hasSession: !!session,
+            hasUser: !!session.user,
+            userEmail: session.user?.email,
+            adminStatus: adminStatus
         });
         
-        // Show button only if authenticated with Supabase AND admin status is true
-        if (authStatus.authenticated && authStatus.user && adminStatus) {
+        // Show button only if authenticated session exists AND admin status is true
+        if (session && session.user && adminStatus) {
             editBtn.style.display = '';
             editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Times';
             editBtn.onclick = enableEditing;
-            console.log('[Edit Button] ✅ Showing edit button for authenticated user:', authStatus.user.email);
+            console.log('[Edit Button] ✅ Showing edit button for authenticated user:', session.user.email);
         } else {
             editBtn.style.display = 'none';
             
-            // Provide helpful log message
-            if (adminStatus && !authStatus.authenticated) {
-                console.warn('[Edit Button] ⚠️ Admin logged in but Supabase session missing. Please log in again.');
-            } else if (!adminStatus) {
+            if (!adminStatus) {
                 console.log('[Edit Button] Hiding edit button - user not logged in as admin');
             } else {
-                console.log('[Edit Button] Hiding edit button - user not authenticated with Supabase');
+                console.log('[Edit Button] Hiding edit button - no authenticated session');
             }
         }
     } catch (error) {
@@ -1571,29 +1820,70 @@ function checkAdminStatus() {
 async function enableEditing() {
     console.log('Enabling prayer times editing...');
     
-    // Verify authentication before enabling editing
+    // Check if offline - prevent editing when offline
+    if (!navigator.onLine) {
+        console.log('Offline — edit disabled');
+        alert('You are offline. Editing is disabled. Please check your internet connection.');
+        return;
+    }
+    
+    // Check Supabase session using getSession() before enabling editing
     try {
-        const { checkSupabaseAuth } = await import('./services/supabaseAuth.js');
-        const authStatus = await checkSupabaseAuth();
-        
-        if (!authStatus.authenticated || !authStatus.user) {
-            console.warn('[Enable Editing] User not authenticated. Showing login modal.');
-            alert('Please log in to edit prayer times.');
+        let supabase;
+        try {
+            if (window.getSupabaseClient) {
+                supabase = window.getSupabaseClient();
+            } else {
+                const { getSupabaseClient } = await import('./services/supabaseClient.js');
+                supabase = getSupabaseClient();
+            }
+        } catch (clientError) {
+            console.error('[Enable Editing] Failed to get Supabase client:', clientError);
+            alert('Please login to edit prayer times');
             if (typeof window.showAdminLogin === 'function') {
                 window.showAdminLogin();
             }
             return;
         }
         
+        if (!supabase) {
+            alert('Please login to edit prayer times');
+            if (typeof window.showAdminLogin === 'function') {
+                window.showAdminLogin();
+            }
+            return;
+        }
+        
+        // Check session using supabase.auth.getSession()
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        // If no authenticated user, prevent editing
+        if (sessionError || !session || !session.user) {
+            console.warn('[Enable Editing] No authenticated session found');
+            alert('Please login to edit prayer times');
+            if (typeof window.showAdminLogin === 'function') {
+                window.showAdminLogin();
+            }
+            // Hide edit button
+            const editBtn = document.getElementById('adminEditBtn');
+            if (editBtn) {
+                editBtn.style.display = 'none';
+            }
+            return;
+        }
+        
+        // Also check localStorage admin status
         const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
         if (!adminStatus) {
             console.warn('[Enable Editing] Admin status not set. Showing login modal.');
-            alert('Please log in as admin to edit prayer times.');
+            alert('Please login to edit prayer times');
             if (typeof window.showAdminLogin === 'function') {
                 window.showAdminLogin();
             }
             return;
         }
+        
+        console.log('[Enable Editing] Session verified:', session.user.email);
         
         console.log('[Enable Editing] Authentication verified:', authStatus.user.email);
     } catch (error) {
@@ -1632,6 +1922,19 @@ async function enableEditing() {
         editBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
         editBtn.onclick = savePrayerTimes;
         editBtn.style.display = ''; // Ensure button is visible
+        
+        // Disable save button if offline
+        if (!navigator.onLine) {
+            editBtn.disabled = true;
+            editBtn.style.opacity = '0.5';
+            editBtn.style.cursor = 'not-allowed';
+            console.log('Offline — edit disabled');
+        } else {
+            editBtn.disabled = false;
+            editBtn.style.opacity = '1';
+            editBtn.style.cursor = 'pointer';
+        }
+        
         console.log('Edit button updated');
     } else {
         console.error('Edit button not found');
@@ -1643,14 +1946,29 @@ async function enableEditing() {
         const btnContainer = document.createElement('div');
         btnContainer.id = 'saveCancelBtns';
         btnContainer.style.cssText = 'display: flex; gap: 10px; margin-top: 15px;';
-        btnContainer.innerHTML = `
-            <button class="btn btn-primary" onclick="savePrayerTimes()" style="flex: 1;">
-                <i class="fas fa-save"></i> Save
-            </button>
-            <button class="btn btn-secondary" onclick="cancelEditing()" style="flex: 1;">
-                <i class="fas fa-times"></i> Cancel
-            </button>
-        `;
+        const saveBtn = document.createElement('button');
+        saveBtn.className = 'btn btn-primary';
+        saveBtn.style.cssText = 'flex: 1;';
+        saveBtn.innerHTML = '<i class="fas fa-save"></i> Save';
+        saveBtn.onclick = savePrayerTimes;
+        
+        // Disable save button if offline
+        if (!navigator.onLine) {
+            saveBtn.disabled = true;
+            saveBtn.style.opacity = '0.5';
+            saveBtn.style.cursor = 'not-allowed';
+            console.log('Offline — edit disabled');
+        }
+        
+        btnContainer.appendChild(saveBtn);
+        
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'btn btn-secondary';
+        cancelBtn.style.cssText = 'flex: 1;';
+        cancelBtn.innerHTML = '<i class="fas fa-times"></i> Cancel';
+        cancelBtn.onclick = cancelEditing;
+        btnContainer.appendChild(cancelBtn);
+        
         prayerTimesList.appendChild(btnContainer);
         console.log('Save/Cancel buttons added');
     }
@@ -1680,28 +1998,58 @@ function cancelEditing() {
 }
 
 async function savePrayerTimes() {
-    // VERIFY AUTHENTICATION BEFORE SAVING
+    // Check if offline - prevent saving when offline
+    if (!navigator.onLine) {
+        console.log('Offline — edit disabled');
+        alert('You are offline. Cannot save prayer times. Please check your internet connection and try again.');
+        return;
+    }
+    
+    // Check Supabase session using getSession() before saving
     try {
-        // Check Supabase authentication first (required for RLS)
-        const { checkSupabaseAuth } = await import('./services/supabaseAuth.js');
-        const authStatus = await checkSupabaseAuth();
-        
-        if (!authStatus.authenticated || !authStatus.user) {
-            console.error('[Save Prayer Times] User not authenticated with Supabase');
-            alert('You must be logged in to save prayer times. Please log in as admin first.');
-            
-            // Show admin login modal
+        let supabase;
+        try {
+            if (window.getSupabaseClient) {
+                supabase = window.getSupabaseClient();
+            } else {
+                const { getSupabaseClient } = await import('./services/supabaseClient.js');
+                supabase = getSupabaseClient();
+            }
+        } catch (clientError) {
+            console.error('[Save Prayer Times] Failed to get Supabase client:', clientError);
+            alert('Please login to edit prayer times');
             if (typeof window.showAdminLogin === 'function') {
                 window.showAdminLogin();
             }
             return;
         }
         
-        console.log('[Save Prayer Times] Authentication verified:', authStatus.user.email);
-        console.log('[Save Prayer Times] ADMIN UID CONFIRMED:', authStatus.user.id, '- Proceeding with save operation');
+        if (!supabase) {
+            alert('Please login to edit prayer times');
+            if (typeof window.showAdminLogin === 'function') {
+                window.showAdminLogin();
+            }
+            return;
+        }
+        
+        // Check session using supabase.auth.getSession()
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        // If no authenticated user, prevent saving
+        if (sessionError || !session || !session.user) {
+            console.error('[Save Prayer Times] No authenticated session found');
+            alert('Please login to edit prayer times');
+            if (typeof window.showAdminLogin === 'function') {
+                window.showAdminLogin();
+            }
+            return;
+        }
+        
+        console.log('[Save Prayer Times] Session verified:', session.user.email);
+        console.log('[Save Prayer Times] ADMIN UID CONFIRMED:', session.user.id, '- Proceeding with save operation');
     } catch (authCheckError) {
         console.error('[Save Prayer Times] Auth check error:', authCheckError);
-        alert('Authentication check failed. Please log in again before saving.');
+        alert('Please login to edit prayer times');
         
         // Show admin login modal
         if (typeof window.showAdminLogin === 'function') {

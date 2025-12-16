@@ -491,6 +491,15 @@
                 modal.style.visibility = 'visible';
                 modal.style.zIndex = '9999';
                 console.log('Add Book modal opened');
+                
+                // Re-attach file input handlers when modal opens (fixes timing issues)
+                setTimeout(function() {
+                    if (typeof window.attachFileInputHandler === 'function') {
+                        window.attachFileInputHandler();
+                    } else if (typeof attachFileInputHandler === 'function') {
+                        attachFileInputHandler();
+                    }
+                }, 100);
             } else {
                 console.error('Add Book modal not found');
                 alert('Error: Add Book form not found. Please refresh the page.');
@@ -548,7 +557,8 @@
             
             // File input change handler - auto-detect file type and update display
             // Attached after DOM is fully loaded for mobile compatibility
-            function attachFileInputHandler() {
+            // Make it globally accessible so it can be called when modal opens
+            window.attachFileInputHandler = function attachFileInputHandler() {
                 const bookFileInput = document.getElementById('bookFile');
                 const fileNameDisplay = document.getElementById('fileNameDisplay');
                 const fileTypeDisplay = document.getElementById('fileTypeDisplay');
@@ -560,38 +570,126 @@
                     return;
                 }
                 
-                // Mobile touch handler for better responsiveness
+                // Get wrapper element
                 const bookFileWrapper = document.getElementById('bookFileWrapper');
-                if (bookFileWrapper) {
-                    // Touch handler to trigger file input
-                    bookFileWrapper.addEventListener('touchstart', function(e) {
-                        // Prevent double-tap zoom and other default behaviors
-                        e.preventDefault();
-                        // Trigger file input click
+                if (!bookFileWrapper) {
+                    console.warn('[File Upload] bookFileWrapper not found');
+                    return;
+                }
+                
+                // Remove any existing event listeners by cloning the wrapper (clean slate)
+                // This prevents duplicate listeners from accumulating
+                const newWrapper = bookFileWrapper.cloneNode(true);
+                bookFileWrapper.parentNode.replaceChild(newWrapper, bookFileWrapper);
+                const wrapper = document.getElementById('bookFileWrapper');
+                
+                // Function to trigger file input click
+                function triggerFileInput() {
+                    try {
                         if (bookFileInput) {
                             bookFileInput.click();
+                            console.log('[File Upload] File input clicked');
+                        } else {
+                            console.error('[File Upload] File input element not found');
                         }
-                    }, { passive: false });
-                    
-                    // Visual feedback on touch
-                    bookFileWrapper.addEventListener('touchstart', function() {
+                    } catch (error) {
+                        console.error('[File Upload] Error triggering file input:', error);
+                    }
+                }
+                
+                // Combined touch handler (mobile) - handles both click trigger and visual feedback
+                wrapper.addEventListener('touchstart', function(e) {
+                    try {
+                        // Visual feedback immediately
                         this.style.background = '#e8f5e9';
                         this.style.borderColor = '#388E3C';
                         this.style.transform = 'scale(0.98)';
-                    });
-                    bookFileWrapper.addEventListener('touchend', function() {
+                        
+                        // Only prevent default if we're on a touch device and it's safe to do so
+                        // Some browsers need the click to propagate naturally
+                        if (e.cancelable) {
+                            e.preventDefault();
+                        }
+                        
+                        // Trigger file input click
+                        triggerFileInput();
+                    } catch (error) {
+                        console.error('[File Upload] Error in touchstart handler:', error);
+                    }
+                }, { passive: false });
+                
+                // Touch end handler - reset visual feedback
+                wrapper.addEventListener('touchend', function() {
+                    try {
                         setTimeout(() => {
                             this.style.background = '#f0f8f0';
                             this.style.borderColor = '#4CAF50';
                             this.style.transform = 'scale(1)';
                         }, 150);
-                    });
-                    bookFileWrapper.addEventListener('touchcancel', function() {
+                    } catch (error) {
+                        console.error('[File Upload] Error in touchend handler:', error);
+                    }
+                });
+                
+                // Touch cancel handler - reset visual feedback
+                wrapper.addEventListener('touchcancel', function() {
+                    try {
                         this.style.background = '#f0f8f0';
                         this.style.borderColor = '#4CAF50';
                         this.style.transform = 'scale(1)';
-                    });
-                }
+                    } catch (error) {
+                        console.error('[File Upload] Error in touchcancel handler:', error);
+                    }
+                });
+                
+                // Click handler for desktop browsers
+                wrapper.addEventListener('click', function(e) {
+                    try {
+                        // Only trigger if this is a mouse click (not from touch event)
+                        if (e.pointerType === 'mouse' || !e.touches) {
+                            triggerFileInput();
+                        }
+                    } catch (error) {
+                        console.error('[File Upload] Error in click handler:', error);
+                    }
+                });
+                
+                // Mouse down handler for desktop visual feedback
+                wrapper.addEventListener('mousedown', function() {
+                    try {
+                        this.style.background = '#e8f5e9';
+                        this.style.borderColor = '#388E3C';
+                        this.style.transform = 'scale(0.98)';
+                    } catch (error) {
+                        console.error('[File Upload] Error in mousedown handler:', error);
+                    }
+                });
+                
+                // Mouse up handler for desktop visual feedback
+                wrapper.addEventListener('mouseup', function() {
+                    try {
+                        setTimeout(() => {
+                            this.style.background = '#f0f8f0';
+                            this.style.borderColor = '#4CAF50';
+                            this.style.transform = 'scale(1)';
+                        }, 150);
+                    } catch (error) {
+                        console.error('[File Upload] Error in mouseup handler:', error);
+                    }
+                });
+                
+                // Mouse leave handler - reset if user moves mouse away
+                wrapper.addEventListener('mouseleave', function() {
+                    try {
+                        this.style.background = '#f0f8f0';
+                        this.style.borderColor = '#4CAF50';
+                        this.style.transform = 'scale(1)';
+                    } catch (error) {
+                        console.error('[File Upload] Error in mouseleave handler:', error);
+                    }
+                });
+                
+                console.log('[File Upload] Event handlers attached successfully');
                 
                 bookFileInput.addEventListener('change', function(e) {
                     const file = e.target.files && e.target.files[0];

@@ -95,6 +95,15 @@ async function getPrayerTimes() {
         console.log('[Prayer Times] Converted prayers object:', prayers);
         console.log('[Prayer Times] Prayer count:', Object.keys(prayers).length);
 
+        // Cache the prayer times in localStorage
+        try {
+            localStorage.setItem('cached_prayer_times', JSON.stringify(prayers));
+            console.log('[Prayer Times] Cached prayer times to localStorage');
+        } catch (cacheError) {
+            console.warn('[Prayer Times] Failed to cache prayer times:', cacheError);
+            // Don't fail the function if caching fails
+        }
+
         return prayers;
     } catch (error) {
         console.error('[Prayer Times] Exception in getPrayerTimes:', error);
