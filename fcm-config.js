@@ -1,11 +1,12 @@
 /**
- * Firebase Cloud Messaging (FCM) Configuration
+ * Firebase Authentication Configuration
  * 
  * IMPORTANT: Replace these values with your Firebase project credentials
  * Get these from: Firebase Console > Project Settings > General > Your apps > Web app
  * 
  * @fileoverview
- * This file contains all Firebase configuration values needed for FCM.
+ * This file contains Firebase configuration values for Authentication ONLY.
+ * FCM/Messaging has been removed. This file is now Auth-only.
  * Keep this file secure and never commit it to public repositories.
  * Use environment variables in production.
  */
@@ -22,24 +23,14 @@ const firebaseConfig = {
     // Your Firebase project ID
     projectId: "kiuma-mob-app",
     
-    // Your Firebase Storage Bucket (NOTE: Not used for storage - we use Supabase for storage)
+    // Your Firebase Storage Bucket (NOTE: Not used - we use Supabase for storage)
     // Kept for Firebase initialization compatibility
     storageBucket: "kiuma-mob-app.firebasestorage.app",
     
-    // Your Firebase Messaging Sender ID
-    messagingSenderId: "69327390212",
-    
     // Your Firebase App ID
-    appId: "1:69327390212:web:10a7f8b52d5ea93d549751",
+    appId: "1:69327390212:web:10a7f8b52d5ea93d549751"
     
-    // Measurement ID (for Analytics - optional)
-    measurementId: "G-5CDL6J3L5B",
-    
-    // VAPID Key (Web Push Key) - REQUIRED for FCM
-    // Get this from: Firebase Console > Project Settings > Cloud Messaging > Web Push certificates
-    // If you don't have one, click "Generate key pair" in Firebase Console
-    // Format: "BKxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-    vapidKey: "ocNXqAVLS_FglgCge2uMD7K1Jyozz24xoDXX2198yDo"
+    // NOTE: messagingSenderId, vapidKey, and measurementId removed - FCM no longer used
 };
 
 /**
@@ -70,9 +61,7 @@ function validateFirebaseConfig() {
         'authDomain',
         'projectId',
         'storageBucket',
-        'messagingSenderId',
-        'appId',
-        'vapidKey'
+        'appId'
     ];
     
     const missingFields = [];

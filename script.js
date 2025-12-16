@@ -1171,7 +1171,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Admin Password (in production, this should be stored securely on the backend)
-const ADMIN_PASSWORD = 'kiuma2024'; // Change this to your desired password
+const ADMIN_PASSWORD = 'kiuma2025'; // Updated to match media and notifications admin password
 
 // Check if admin is logged in from localStorage
 let isAdminLoggedIn = localStorage.getItem('isAdminLoggedIn') === 'true' || false;
@@ -1496,27 +1496,7 @@ window.updateNotificationBadge = async function() {
     try {
         let unreadCount = 0;
         
-        // Try to get from Firestore
-        if (typeof firebase !== 'undefined' && firebase.firestore) {
-            try {
-                const firestore = firebase.firestore();
-                const readNotifications = JSON.parse(localStorage.getItem('readNotifications') || '[]');
-                const snapshot = await firestore.collection('notifications')
-                    .orderBy('createdAt', 'desc')
-                    .limit(100)
-                    .get();
-                
-                snapshot.forEach(doc => {
-                    if (!readNotifications.includes(doc.id)) {
-                        unreadCount++;
-                    }
-                });
-            } catch (e) {
-                console.log('Firestore not available for badge:', e.message);
-            }
-        }
-        
-        // Fallback to localStorage
+        // Get from localStorage (Firestore removed)
         if (unreadCount === 0) {
             const notificationsData = JSON.parse(localStorage.getItem('notificationsData') || '[]');
             const readNotifications = JSON.parse(localStorage.getItem('readNotifications') || '[]');

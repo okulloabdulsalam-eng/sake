@@ -14,11 +14,8 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-messaging-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore-compat.js"></script>
     <script src="fcm-config.js"></script>
     <script src="firebase-auth.js"></script>
-    <script src="fcm-init.js"></script>
     
     <style>
         /* Mobile-First Styles */
@@ -706,8 +703,6 @@
                 const safeMessage = sanitizeHTML(notif.message);
                 const safeNotifId = sanitizeHTML(notifId);
                 const safeDatabaseId = sanitizeHTML(notif.databaseId || '');
-                const safeFirestoreId = sanitizeHTML(notif.firestoreId || '');
-                
                 item.innerHTML = `
                     <div class="mobile-notification-icon">
                         <i class="fas ${iconClass}"></i>
@@ -717,7 +712,7 @@
                         <p>${safeMessage}</p>
                         <span class="mobile-notification-time">${formatTimeAgo(notif.createdAt || notif.created_date || new Date())}</span>
                     </div>
-                    ${isAuth ? `<button class="mobile-notification-delete" onclick="deleteNotification('${safeNotifId}', '${safeDatabaseId}', '${safeFirestoreId}', event)" aria-label="Delete"><i class="fas fa-trash"></i></button>` : ''}
+                    ${isAuth ? `<button class="mobile-notification-delete" onclick="deleteNotification('${safeNotifId}', '${safeDatabaseId}', event)" aria-label="Delete"><i class="fas fa-trash"></i></button>` : ''}
                 `;
                 
                 // Mark as read on click
@@ -844,127 +839,7 @@
             }
         }
         
-        // Get Firestore
-        let db = null;
-        let notificationsListener = null; // Real-time listener
-        function getFirestore() {
-            if (db) return db;
-            if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
-                db = firebase.firestore();
-            }
-            return db;
-        }
-        
-        // Setup real-time listener for notification changes
-        function setupNotificationsRealtimeListener() {
-            const firestore = getFirestore();
-            if (!firestore || notificationsListener) return; // Already set up
-            
-            try {
-                // Listen for all changes in notifications collection
-                notificationsListener = firestore.collection('notifications')
-                    .orderBy('createdAt', 'desc')
-                    .limit(100)
-                    .onSnapshot((snapshot) => {
-                        // Handle changes
-                        snapshot.docChanges().forEach((change) => {
-                            if (change.type === 'added') {
-                                // New notification added
-                                const data = change.doc.data();
-                                const newNotification = {
-                                    id: change.doc.id,
-                                    firestoreId: change.doc.id,
-                                    title: data.title || '',
-                                    message: data.message || '',
-                                    icon: data.icon || 'fa-bell',
-                                    type: data.type || 'info',
-                                    createdAt: data.createdAt?.toDate() || new Date()
-                                };
-                                
-                                // Check if already in cache (avoid duplicates)
-                                const exists = cachedNotifications.some(n => n.firestoreId === newNotification.firestoreId);
-                                if (!exists) {
-                                    cachedNotifications.unshift(newNotification);
-                                    // Update localStorage
-                                    try {
-                                        localStorage.setItem('cachedNotifications', JSON.stringify(cachedNotifications));
-                                    } catch (e) {
-                                        console.log('Cache update failed:', e);
-                                    }
-                                    // Update display
-                                    displayNotifications(cachedNotifications, currentFilter);
-                                    // Update badge
-                                    updateUnreadBadge();
-                                }
-                            } else if (change.type === 'modified') {
-                                // Notification updated
-                                const data = change.doc.data();
-                                const updatedNotification = {
-                                    id: change.doc.id,
-                                    firestoreId: change.doc.id,
-                                    title: data.title || '',
-                                    message: data.message || '',
-                                    icon: data.icon || 'fa-bell',
-                                    type: data.type || 'info',
-                                    createdAt: data.createdAt?.toDate() || new Date()
-                                };
-                                
-                                // Update in cache
-                                const index = cachedNotifications.findIndex(n => n.firestoreId === updatedNotification.firestoreId);
-                                if (index !== -1) {
-                                    cachedNotifications[index] = updatedNotification;
-                                } else {
-                                    cachedNotifications.unshift(updatedNotification);
-                                }
-                                
-                                // Update localStorage
-                                try {
-                                    localStorage.setItem('cachedNotifications', JSON.stringify(cachedNotifications));
-                                } catch (e) {
-                                    console.log('Cache update failed:', e);
-                                }
-                                // Update display
-                                displayNotifications(cachedNotifications, currentFilter);
-                                // Update badge
-                                updateUnreadBadge();
-                            } else if (change.type === 'removed') {
-                                // Notification deleted
-                                const deletedId = change.doc.id;
-                                
-                                // Remove from cache
-                                cachedNotifications = cachedNotifications.filter(n => n.firestoreId !== deletedId);
-                                
-                                // Update localStorage
-                                try {
-                                    localStorage.setItem('cachedNotifications', JSON.stringify(cachedNotifications));
-                                } catch (e) {
-                                    console.log('Cache update failed:', e);
-                                }
-                                // Update display
-                                displayNotifications(cachedNotifications, currentFilter);
-                                // Update badge
-                                updateUnreadBadge();
-                            }
-                        });
-                    }, (error) => {
-                        console.warn('Notifications real-time listener error:', error);
-                        // Try to reconnect after 5 seconds
-                        setTimeout(() => {
-                            if (notificationsListener) {
-                                notificationsListener(); // Unsubscribe
-                                notificationsListener = null;
-                            }
-                            setupNotificationsRealtimeListener();
-                        }, 5000);
-                    });
-                
-                console.log('Notifications real-time listener set up');
-            } catch (error) {
-                console.warn('Could not set up notifications real-time listener:', error);
-            }
-        }
-        
-        // Cleanup listener on page unload
+        // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
             if (notificationsListener) {
                 notificationsListener();
@@ -1061,60 +936,9 @@
                         }
                     }
                 } catch (error) {
-                    console.log('Database not available, using Firestore:', error.message);
+                    console.log('Database not available:', error.message);
                 }
             }
-            
-                // Fallback to Firestore - with timeout and retry
-                if (notifications.length === 0) {
-                    try {
-                        const firestore = getFirestore();
-                        if (firestore) {
-                            // Try Firestore with longer timeout and retry logic
-                            let retries = 2;
-                            let snapshot = null;
-                            
-                            while (retries > 0 && !snapshot) {
-                                try {
-                                    const firestorePromise = firestore.collection('notifications')
-                                        .orderBy('createdAt', 'desc')
-                                        .limit(50)
-                                        .get();
-                                    
-                                    const timeoutPromise = new Promise((_, reject) => 
-                                        setTimeout(() => reject(new Error('Firestore timeout')), 10000) // Increased to 10 seconds
-                                    );
-                                    
-                                    snapshot = await Promise.race([firestorePromise, timeoutPromise]);
-                                    break; // Success, exit retry loop
-                                } catch (error) {
-                                    retries--;
-                                    if (retries === 0) {
-                                        // Only log if all retries failed
-                                        console.log('Firestore not available after retries:', error.message);
-                                    } else {
-                                        // Wait a bit before retry
-                                        await new Promise(resolve => setTimeout(resolve, 1000));
-                                    }
-                                }
-                            }
-                            
-                            if (snapshot) {
-                                notifications = snapshot.docs.map(doc => ({
-                                    id: doc.id,
-                                    title: doc.data().title,
-                                    message: doc.data().message,
-                                    icon: doc.data().icon || 'fa-bell',
-                                    createdAt: doc.data().createdAt?.toDate() || new Date(),
-                                    firestoreId: doc.id
-                                }));
-                            }
-                        }
-                    } catch (error) {
-                        // Silently fail - Firestore is optional
-                        console.log('Firestore not available:', error.message);
-                    }
-                }
             
             // Cache notifications
             cachedNotifications = notifications;
@@ -1227,57 +1051,6 @@
                     }
                 }
                 
-                // Also save to Firestore (with timeout and retry to prevent hanging)
-                try {
-                    const firestore = getFirestore();
-                    if (firestore) {
-                        // Try Firestore with longer timeout and retry logic
-                        let retries = 2;
-                        let firestoreSaved = false;
-                        
-                        while (retries > 0 && !firestoreSaved) {
-                            try {
-                                const firestorePromise = firestore.collection('notifications').add({
-                                    title: title,
-                                    message: message,
-                                    icon: safeIcon,
-                                    type: 'announcement',
-                                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                                    createdBy: firebase.auth().currentUser?.email || 'admin'
-                                });
-                                
-                                const timeoutPromise = new Promise((_, reject) => 
-                                    setTimeout(() => reject(new Error('Firestore timeout')), 10000) // Increased to 10 seconds
-                                );
-                                
-                                await Promise.race([firestorePromise, timeoutPromise]);
-                                console.log('Notification saved to Firestore');
-                                firestoreSaved = true;
-                                saved = true;
-                                break; // Success, exit retry loop
-                            } catch (error) {
-                                retries--;
-                                if (retries === 0) {
-                                    // Only log warning if all retries failed and database also failed
-                                    if (!saved) {
-                                        console.warn('Firestore save failed after retries:', error.message);
-                                    }
-                                    // Silently continue - Firestore is optional backup
-                                } else {
-                                    // Wait a bit before retry
-                                    await new Promise(resolve => setTimeout(resolve, 1000));
-                                }
-                            }
-                        }
-                    }
-                } catch (error) {
-                    // Silently continue - Firestore is optional backup
-                    // Only log if database also failed
-                    if (!saved) {
-                        console.warn('Firestore save failed:', error.message);
-                    }
-                }
-                
                 // If neither saved, at least show success (for GitHub Pages)
                 if (!saved && isStaticHosting) {
                     saved = true; // Allow it on static hosting
@@ -1291,7 +1064,6 @@
                         message: message,
                         icon: safeIcon,
                         createdAt: new Date(),
-                        firestoreId: null
                     };
                     cachedNotifications.unshift(newNotif); // Add to beginning
                     displayNotifications(cachedNotifications, currentFilter);
@@ -1320,7 +1092,7 @@
         };
         
         // Delete notification
-        async function deleteNotification(notificationId, databaseId, firestoreId, event) {
+        async function deleteNotification(notificationId, databaseId, event) {
             if (event) {
                 event.stopPropagation();
                 event.preventDefault();
@@ -1355,14 +1127,6 @@
                     });
                 }
                 
-                // Delete from Firestore
-                if (firestoreId) {
-                    const firestore = getFirestore();
-                    if (firestore) {
-                        await firestore.collection('notifications').doc(firestoreId).delete();
-                    }
-                }
-                
                 // Remove from cache immediately (optimistic update)
                 cachedNotifications = cachedNotifications.filter(n => {
                     const notifId = n.id.toString();
@@ -1390,10 +1154,6 @@
             // Load notifications immediately (non-blocking)
             loadNotificationsFromStorage(true);
             
-            // Setup real-time listener for live updates
-            setTimeout(() => {
-                setupNotificationsRealtimeListener();
-            }, 2000); // Wait 2 seconds for initial load to complete
             
             // Refresh notifications in background every 30 seconds (only when page is visible)
             let refreshInterval = null;

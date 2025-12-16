@@ -546,13 +546,13 @@
         
         // Check if media admin is authenticated
         function isMediaAdminAuthenticated() {
-            return sessionStorage.getItem('mediaAdminAuthenticated') === 'true';
+            return sessionStorage.getItem('isMediaAdminAuthenticated') === 'true';
         }
         
         // Authenticate media admin with password
         function authenticateMediaAdmin(password) {
             if (password === MEDIA_ADMIN_PASSWORD) {
-                sessionStorage.setItem('mediaAdminAuthenticated', 'true');
+                sessionStorage.setItem('isMediaAdminAuthenticated', 'true');
                 return true;
             }
             return false;
@@ -560,7 +560,7 @@
         
         // Logout media admin
         function logoutMediaAdmin() {
-            sessionStorage.removeItem('mediaAdminAuthenticated');
+            sessionStorage.removeItem('isMediaAdminAuthenticated');
             updateUploadButtonVisibility();
             alert('Logged out successfully.');
         }
@@ -643,125 +643,7 @@
         
         // filterMedia is already defined above as window.filterMedia
         
-        // Get Firestore
-        let db = null;
-        let mediaListener = null; // Real-time listener
-        function getFirestore() {
-            if (db) return db;
-            if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
-                db = firebase.firestore();
-            }
-            return db;
-        }
-        
-        // Setup real-time listener for media changes
-        function setupMediaRealtimeListener() {
-            const firestore = getFirestore();
-            if (!firestore || mediaListener) return; // Already set up
-            
-            try {
-                // Listen for all changes in media collection
-                mediaListener = firestore.collection('media')
-                    .orderBy('uploaded_date', 'desc')
-                    .limit(100)
-                    .onSnapshot((snapshot) => {
-                        // Handle changes
-                        snapshot.docChanges().forEach((change) => {
-                            if (change.type === 'added') {
-                                // New media added
-                                const data = change.doc.data();
-                                const newMedia = {
-                                    id: change.doc.id,
-                                    firestoreId: change.doc.id,
-                                    url: data.url || data.direct_download_link || '',
-                                    description: data.description || '',
-                                    type: data.type || data.file_type || 'image',
-                                    file_type: data.type || data.file_type || 'image',
-                                    file_name: data.file_name || '',
-                                    file_size: data.file_size || 0,
-                                    uploaded_date: data.uploaded_date?.toDate() || new Date()
-                                };
-                                
-                                // Check if already in cache (avoid duplicates)
-                                const exists = cachedMedia.some(m => m.firestoreId === newMedia.firestoreId);
-                                if (!exists) {
-                                    cachedMedia.unshift(newMedia);
-                                    // Update localStorage
-                                    try {
-                                        localStorage.setItem('cachedMedia', JSON.stringify(cachedMedia));
-                                    } catch (e) {
-                                        console.log('Cache update failed:', e);
-                                    }
-                                    // Update display
-                                    displayMedia(cachedMedia, currentFilter);
-                                }
-                            } else if (change.type === 'modified') {
-                                // Media updated
-                                const data = change.doc.data();
-                                const updatedMedia = {
-                                    id: change.doc.id,
-                                    firestoreId: change.doc.id,
-                                    url: data.url || data.direct_download_link || '',
-                                    description: data.description || '',
-                                    type: data.type || data.file_type || 'image',
-                                    file_type: data.type || data.file_type || 'image',
-                                    file_name: data.file_name || '',
-                                    file_size: data.file_size || 0,
-                                    uploaded_date: data.uploaded_date?.toDate() || new Date()
-                                };
-                                
-                                // Update in cache
-                                const index = cachedMedia.findIndex(m => m.firestoreId === updatedMedia.firestoreId);
-                                if (index !== -1) {
-                                    cachedMedia[index] = updatedMedia;
-                                } else {
-                                    cachedMedia.unshift(updatedMedia);
-                                }
-                                
-                                // Update localStorage
-                                try {
-                                    localStorage.setItem('cachedMedia', JSON.stringify(cachedMedia));
-                                } catch (e) {
-                                    console.log('Cache update failed:', e);
-                                }
-                                // Update display
-                                displayMedia(cachedMedia, currentFilter);
-                            } else if (change.type === 'removed') {
-                                // Media deleted
-                                const deletedId = change.doc.id;
-                                
-                                // Remove from cache
-                                cachedMedia = cachedMedia.filter(m => m.firestoreId !== deletedId);
-                                
-                                // Update localStorage
-                                try {
-                                    localStorage.setItem('cachedMedia', JSON.stringify(cachedMedia));
-                                } catch (e) {
-                                    console.log('Cache update failed:', e);
-                                }
-                                // Update display
-                                displayMedia(cachedMedia, currentFilter);
-                            }
-                        });
-                    }, (error) => {
-                        console.warn('Media real-time listener error:', error);
-                        // Try to reconnect after 5 seconds
-                        setTimeout(() => {
-                            if (mediaListener) {
-                                mediaListener(); // Unsubscribe
-                                mediaListener = null;
-                            }
-                            setupMediaRealtimeListener();
-                        }, 5000);
-                    });
-                
-                console.log('Media real-time listener set up');
-            } catch (error) {
-                console.warn('Could not set up media real-time listener:', error);
-            }
-        }
-        
-        // Cleanup listener on page unload
+        // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
             if (mediaListener) {
                 mediaListener();
@@ -882,43 +764,7 @@
                             }
                         }
                     } catch (error) {
-                        console.log('API not available, using Firestore:', error.message);
-                    }
-                }
-                
-                // Fallback to Firestore (with timeout)
-                if (mediaItems.length === 0) {
-                    try {
-                        const firestore = getFirestore();
-                        if (firestore) {
-                            const firestorePromise = firestore.collection('media')
-                                .orderBy('uploaded_date', 'desc')
-                                .limit(100)
-                                .get();
-                            
-                            const timeoutPromise = new Promise((_, reject) => 
-                                setTimeout(() => reject(new Error('Firestore timeout')), 5000)
-                            );
-                            
-                            const snapshot = await Promise.race([firestorePromise, timeoutPromise]);
-                            
-                            mediaItems = snapshot.docs.map(doc => {
-                                const data = doc.data();
-                                return {
-                                    id: doc.id,
-                                    url: data.url || data.storage_url || '',
-                                    description: data.description || '',
-                                    type: data.type || data.file_type || 'other',
-                                    file_type: data.file_type || data.type || 'other',
-                                    file_name: data.file_name || '',
-                                    file_size: data.file_size || 0,
-                                    uploaded_date: data.uploaded_date?.toDate() || new Date(),
-                                    firestoreId: doc.id
-                                };
-                            });
-                        }
-                    } catch (error) {
-                        console.log('Firestore not available:', error.message);
+                        console.log('API not available:', error.message);
                     }
                 }
                 
@@ -1176,34 +1022,6 @@
                     }
                 }
                 
-                // Also save to Firestore (with timeout to prevent hanging)
-                try {
-                    const firestore = getFirestore();
-                    if (firestore) {
-                        const firestorePromise = firestore.collection('media').add({
-                            url: uploadResult.url,
-                            description: description,
-                            type: fileType,
-                            file_type: fileType,
-                            file_name: file.name,
-                            file_size: file.size,
-                            uploaded_date: firebase.firestore.FieldValue.serverTimestamp(),
-                            createdBy: firebase.auth().currentUser?.email || 'admin'
-                        });
-                        
-                        const timeoutPromise = new Promise((_, reject) => 
-                            setTimeout(() => reject(new Error('Firestore timeout')), 5000)
-                        );
-                        
-                        await Promise.race([firestorePromise, timeoutPromise]);
-                        console.log('Media saved to Firestore');
-                        saved = true;
-                    }
-                } catch (error) {
-                    console.warn('Firestore save failed:', error);
-                    // Continue even if Firestore fails
-                }
-                
                 // If neither saved, at least show success (for GitHub Pages)
                 if (!saved && isStaticHosting) {
                     saved = true; // Allow it on static hosting
@@ -1219,8 +1037,7 @@
                         file_type: fileType,
                         file_name: file.name,
                         file_size: file.size,
-                        uploaded_date: new Date(),
-                        firestoreId: null
+                        uploaded_date: new Date()
                     };
                     cachedMedia.unshift(newMedia); // Add to beginning
                     displayMedia(cachedMedia, currentFilter);
@@ -1312,22 +1129,6 @@
                     }
                 }
                 
-                // Also delete from Firestore
-                try {
-                    // Find the media item to get Firestore ID
-                    const mediaItem = cachedMedia.find(m => m.id.toString() === mediaId.toString() || m.firestoreId === mediaId.toString());
-                    if (mediaItem && mediaItem.firestoreId) {
-                        const firestore = getFirestore();
-                        if (firestore) {
-                            await firestore.collection('media').doc(mediaItem.firestoreId).delete();
-                            console.log('Media deleted from Firestore');
-                            deleted = true;
-                        }
-                    }
-                } catch (error) {
-                    console.warn('Firestore delete failed:', error);
-                }
-                
                 // Remove from cache immediately (optimistic update)
                 cachedMedia = cachedMedia.filter(m => {
                     const mId = m.id.toString();
@@ -1410,10 +1211,6 @@
             updateUploadButtonVisibility();
             loadMediaFromStorage('all', true);
             
-            // Setup real-time listener for live updates
-            setTimeout(() => {
-                setupMediaRealtimeListener();
-            }, 2000); // Wait 2 seconds for initial load to complete
             
             // Refresh media in background every 30 seconds (only when page is visible)
             let refreshInterval = null;
