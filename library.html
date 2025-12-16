@@ -128,6 +128,46 @@
             </section>
 
             <section class="page-content">
+                <!-- Search Bar -->
+                <div style="margin-bottom: 20px;">
+                    <div style="position: relative;">
+                        <input 
+                            type="text" 
+                            id="librarySearchInput" 
+                            placeholder="Search books by name..." 
+                            style="
+                                width: 100%;
+                                padding: 14px 50px 14px 16px;
+                                font-size: 16px;
+                                border: 2px solid #e0e0e0;
+                                border-radius: 12px;
+                                background: white;
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                                transition: all 0.2s ease;
+                                box-sizing: border-box;
+                            "
+                            oninput="handleLibrarySearch(this.value)"
+                            onfocus="this.style.borderColor='#4CAF50'; this.style.boxShadow='0 2px 12px rgba(76, 175, 80, 0.2)'"
+                            onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.05)'"
+                        />
+                        <i class="fas fa-search" style="
+                            position: absolute;
+                            right: 18px;
+                            top: 50%;
+                            transform: translateY(-50%);
+                            color: #9e9e9e;
+                            font-size: 18px;
+                            pointer-events: none;
+                        "></i>
+                    </div>
+                    <div id="searchResultsInfo" style="
+                        margin-top: 8px;
+                        font-size: 13px;
+                        color: #757575;
+                        display: none;
+                    "></div>
+                </div>
+                
                 <!-- Category Cards Grid -->
                 <div class="category-cards-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px;">
                     <!-- All Category Card -->
@@ -281,8 +321,8 @@
                     .document-card {
                         width: 100%;
                         background: white;
-                        border-radius: 16px;
-                        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+                        border-radius: 12px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
                         overflow: visible;
                         transition: all 0.3s ease;
                         -webkit-tap-highlight-color: transparent;
@@ -294,30 +334,30 @@
                     }
                     
                     .document-card:hover {
-                        box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-                        transform: translateY(-2px);
+                        box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+                        transform: translateY(-1px);
                     }
                     
                     .document-header {
                         display: flex;
                         align-items: flex-start;
-                        gap: 16px;
-                        padding: 18px 20px;
+                        gap: 12px;
+                        padding: 12px 14px;
                         background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-                        border-bottom: 2px solid #f0f0f0;
+                        border-bottom: 1px solid #f0f0f0;
                         position: relative;
                     }
                     
                     .document-icon {
-                        width: 56px;
-                        height: 56px;
-                        border-radius: 12px;
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 8px;
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        font-size: 28px;
+                        font-size: 20px;
                         flex-shrink: 0;
-                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
                     }
                     
                     .document-icon.pdf {
@@ -341,11 +381,11 @@
                     }
                     
                     .document-title {
-                        font-size: 18px;
-                        font-weight: 700;
+                        font-size: 15px;
+                        font-weight: 600;
                         color: #212121;
-                        line-height: 1.4;
-                        margin: 0 0 8px 0;
+                        line-height: 1.3;
+                        margin: 0 0 6px 0;
                         display: -webkit-box;
                         -webkit-line-clamp: 2;
                         -webkit-box-orient: vertical;
@@ -355,19 +395,19 @@
                     
                     .document-category-badge {
                         display: inline-block;
-                        padding: 4px 12px;
-                        border-radius: 12px;
-                        font-size: 11px;
+                        padding: 3px 8px;
+                        border-radius: 8px;
+                        font-size: 10px;
                         font-weight: 600;
                         text-transform: uppercase;
-                        letter-spacing: 0.5px;
+                        letter-spacing: 0.3px;
                         background: linear-gradient(135deg, #4CAF50, #388E3C);
                         color: white;
-                        box-shadow: 0 2px 4px rgba(76, 175, 80, 0.2);
+                        box-shadow: 0 1px 3px rgba(76, 175, 80, 0.2);
                     }
                     
                     .document-body {
-                        padding: 18px 20px;
+                        padding: 12px 14px;
                         flex: 1;
                         display: flex;
                         flex-direction: column;
@@ -376,25 +416,25 @@
                     .document-meta {
                         display: flex;
                         align-items: center;
-                        gap: 12px;
-                        font-size: 13px;
+                        gap: 8px;
+                        font-size: 11px;
                         color: #757575;
-                        margin-bottom: 14px;
+                        margin-bottom: 10px;
                         flex-wrap: wrap;
                     }
                     
                     .document-meta-item {
                         display: flex;
                         align-items: center;
-                        gap: 6px;
-                        padding: 6px 10px;
+                        gap: 4px;
+                        padding: 4px 8px;
                         background: #f5f5f5;
-                        border-radius: 8px;
+                        border-radius: 6px;
                         font-weight: 500;
                     }
                     
                     .document-meta-item i {
-                        font-size: 12px;
+                        font-size: 10px;
                         opacity: 0.7;
                     }
                     
@@ -404,27 +444,27 @@
                     }
                     
                     .document-description {
-                        font-size: 14px;
+                        font-size: 12px;
                         color: #616161;
-                        line-height: 1.6;
-                        margin: 0 0 16px 0;
+                        line-height: 1.5;
+                        margin: 0 0 10px 0;
                         display: -webkit-box;
-                        -webkit-line-clamp: 3;
+                        -webkit-line-clamp: 2;
                         -webkit-box-orient: vertical;
                         overflow: hidden;
                         text-overflow: ellipsis;
-                        padding: 12px;
+                        padding: 8px;
                         background: #fafafa;
-                        border-radius: 8px;
-                        border-left: 3px solid #4CAF50;
+                        border-radius: 6px;
+                        border-left: 2px solid #4CAF50;
                     }
                     
                     .document-menu-button {
                         position: absolute;
-                        top: 18px;
-                        right: 20px;
-                        width: 40px;
-                        height: 40px;
+                        top: 12px;
+                        right: 14px;
+                        width: 32px;
+                        height: 32px;
                         border-radius: 50%;
                         border: none;
                         background: #f5f5f5;
@@ -436,7 +476,7 @@
                         transition: all 0.2s ease;
                         z-index: 10;
                         touch-action: manipulation;
-                        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
                     }
                     
                     .document-menu-button:hover {
@@ -451,7 +491,7 @@
                     }
                     
                     .document-menu-button i {
-                        font-size: 18px;
+                        font-size: 14px;
                     }
                     
                     .document-menu-button.active {
@@ -462,12 +502,12 @@
                     
                     .document-dropdown {
                         position: absolute;
-                        top: 50px;
-                        right: 20px;
+                        top: 44px;
+                        right: 14px;
                         background: white;
-                        border-radius: 12px;
-                        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-                        min-width: 200px;
+                        border-radius: 10px;
+                        box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+                        min-width: 180px;
                         z-index: 1000;
                         opacity: 0;
                         visibility: hidden;
@@ -486,13 +526,13 @@
                     .document-dropdown-item {
                         display: flex;
                         align-items: center;
-                        gap: 12px;
-                        padding: 14px 18px;
+                        gap: 10px;
+                        padding: 12px 16px;
                         cursor: pointer;
                         transition: all 0.2s ease;
                         border-bottom: 1px solid #f5f5f5;
                         color: #212121;
-                        font-size: 14px;
+                        font-size: 13px;
                         font-weight: 500;
                         text-decoration: none;
                     }
@@ -510,8 +550,8 @@
                     }
                     
                     .document-dropdown-item i {
-                        font-size: 16px;
-                        width: 20px;
+                        font-size: 14px;
+                        width: 18px;
                         text-align: center;
                     }
                     
@@ -531,21 +571,21 @@
                         display: flex;
                         align-items: center;
                         justify-content: flex-start;
-                        padding-top: 14px;
+                        padding-top: 10px;
                         margin-top: auto;
                         border-top: 1px solid #f0f0f0;
                     }
                     
                     .document-date {
-                        font-size: 12px;
+                        font-size: 11px;
                         color: #9e9e9e;
                         display: flex;
                         align-items: center;
-                        gap: 6px;
+                        gap: 4px;
                     }
                     
                     .document-date i {
-                        font-size: 11px;
+                        font-size: 10px;
                     }
                     
                     @media (max-width: 767px) {
@@ -672,7 +712,7 @@
                                 pdfWindow.location.href = fileUrl;
                                 // Focus the new window
                                 pdfWindow.focus();
-                            } else {
+                } else {
                                 // Popup blocked, try direct navigation
                                 window.location.href = fileUrl;
                             }
@@ -731,7 +771,7 @@
                         // Final fallback: direct navigation
                         window.location.href = fileUrl;
                     }
-                } else {
+            } else {
                     // For non-PDF files (audio, etc.) on mobile
                     try {
                         // Use window.open for audio files
@@ -1013,7 +1053,7 @@
             
             // Instant client-side filtering (no reload)
             const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
-            displayBooks(cachedBooks, category, adminStatus);
+            displayBooks(cachedBooks, category, adminStatus, currentSearchTerm);
         };
         
         // Update category counts
@@ -1625,7 +1665,7 @@
                     if (cached) {
                         cachedBooks = JSON.parse(cached);
                         if (cachedBooks.length > 0) {
-                            displayBooks(cachedBooks, category, adminStatus);
+                            displayBooks(cachedBooks, category, adminStatus, currentSearchTerm);
                             showLoading = false; // Already showing cached data
                         }
                     }
@@ -1634,7 +1674,7 @@
                 }
             } else if (showLoading) {
                 // Show cached data immediately if available
-                displayBooks(cachedBooks, category, adminStatus);
+                displayBooks(cachedBooks, category, adminStatus, currentSearchTerm);
                 showLoading = false;
             }
             
@@ -1751,15 +1791,47 @@
                 libraryGrid.appendChild(errorDiv);
             } else if (books.length === 0) {
                 // Empty state: no books available - let displayBooks handle it
-                displayBooks([], category, adminStatus);
+                displayBooks([], category, adminStatus, currentSearchTerm);
             } else {
                 // Success state: display books
-                displayBooks(cachedBooks, category, adminStatus);
+                displayBooks(cachedBooks, category, adminStatus, currentSearchTerm);
             }
         }
         
+        // Store current search term globally
+        let currentSearchTerm = '';
+        
+        // Handle library search
+        window.handleLibrarySearch = function(searchTerm) {
+            currentSearchTerm = searchTerm.trim().toLowerCase();
+            const searchInfo = document.getElementById('searchResultsInfo');
+            
+            // Get current category
+            const currentCategory = document.querySelector('.category-card.active')?.dataset.category || 'all';
+            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+            
+            // Refresh display with search
+            displayBooks(cachedBooks, currentCategory, adminStatus, currentSearchTerm);
+            
+            // Update search info
+            if (currentSearchTerm) {
+                const filteredCount = cachedBooks.filter(book => {
+                    const title = (book.title || '').toLowerCase();
+                    const matchesSearch = title.includes(currentSearchTerm);
+                    const bookCategory = (book.category || 'others').toLowerCase();
+                    const matchesCategory = currentCategory === 'all' || bookCategory === currentCategory.toLowerCase();
+                    return matchesSearch && matchesCategory;
+                }).length;
+                
+                searchInfo.style.display = 'block';
+                searchInfo.innerHTML = `<i class="fas fa-search"></i> Found ${filteredCount} book${filteredCount !== 1 ? 's' : ''} matching "${searchTerm}"`;
+            } else {
+                searchInfo.style.display = 'none';
+            }
+        };
+        
         // Display books (instant, no loading)
-        function displayBooks(books, category = 'all', adminStatus = false) {
+        function displayBooks(books, category = 'all', adminStatus = false, searchTerm = '') {
             const libraryGrid = document.getElementById('libraryGrid');
             if (!libraryGrid) return;
             
@@ -1772,6 +1844,14 @@
                 filtered = books.filter(book => {
                     const bookCategory = (book.category || 'others').toLowerCase();
                     return bookCategory === category.toLowerCase();
+                });
+            }
+            
+            // Filter by search term (by book title/name)
+            if (searchTerm) {
+                filtered = filtered.filter(book => {
+                    const title = (book.title || '').toLowerCase();
+                    return title.includes(searchTerm.toLowerCase());
                 });
             }
             
@@ -1795,13 +1875,21 @@
                 emptyDiv.innerHTML = '<i class="fas fa-book" style="font-size: 64px; margin-bottom: 16px; opacity: 0.3; color: #bdbdbd;"></i><p style="font-size: 16px; margin: 0; color: #757575;">No documents available yet</p>';
                 libraryGrid.appendChild(emptyDiv);
                 return;
-            } else if (filtered.length === 0 && category !== 'all' && books.length > 0) {
+            } else if (filtered.length === 0 && category !== 'all' && books.length > 0 && !searchTerm) {
                 // Category filter active, but no books in that category (other books exist)
                 const emptyDiv = document.createElement('div');
                 emptyDiv.id = 'booksEmptyState';
                 emptyDiv.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 60px 20px; color: #999;';
                 const categoryName = category.charAt(0).toUpperCase() + category.slice(1);
                 emptyDiv.innerHTML = '<i class="fas fa-folder-open" style="font-size: 64px; margin-bottom: 16px; opacity: 0.3; color: #bdbdbd;"></i><p style="font-size: 16px; margin: 0; color: #757575;">No documents in ' + categoryName + ' category</p>';
+                libraryGrid.appendChild(emptyDiv);
+                return;
+            } else if (filtered.length === 0 && searchTerm) {
+                // Search active but no results
+                const emptyDiv = document.createElement('div');
+                emptyDiv.id = 'booksEmptyState';
+                emptyDiv.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 60px 20px; color: #999;';
+                emptyDiv.innerHTML = '<i class="fas fa-search" style="font-size: 64px; margin-bottom: 16px; opacity: 0.3; color: #bdbdbd;"></i><p style="font-size: 16px; margin: 0; color: #757575;">No books found matching "' + searchTerm + '"</p>';
                 libraryGrid.appendChild(emptyDiv);
                 return;
             }
@@ -1908,9 +1996,9 @@
                                 <i class="fas ${fileType === 'audio' ? 'fa-headphones' : fileType === 'pdf' ? 'fa-file-pdf' : 'fa-file'}"></i>
                             </div>
                             <div class="document-title-section">
-                                <h3 class="document-title">${safeTitle}</h3>
+                            <h3 class="document-title">${safeTitle}</h3>
                                 ${safeCategory ? `<span class="document-category-badge">${safeCategory}</span>` : ''}
-                            </div>
+                        </div>
                             ${(fileUrl || adminStatus) ? `<button class="document-menu-button" onclick="event.stopPropagation(); toggleBookMenu('${safeId}')" aria-label="Book options" title="Options">
                                 <i class="fas fa-ellipsis-v"></i>
                             </button>
@@ -1928,7 +2016,7 @@
                                     <span>Delete</span>
                                 </a>` : ''}
                             </div>` : ''}
-                        </div>
+                            </div>
                         <div class="document-body">
                             ${safeDescription ? `<p class="document-description">${safeDescription}</p>` : ''}
                             <div class="document-meta">
