@@ -560,13 +560,58 @@
                     return;
                 }
                 
+                // Mobile touch handler for better responsiveness
+                const bookFileWrapper = document.getElementById('bookFileWrapper');
+                if (bookFileWrapper) {
+                    // Touch handler to trigger file input
+                    bookFileWrapper.addEventListener('touchstart', function(e) {
+                        // Prevent double-tap zoom and other default behaviors
+                        e.preventDefault();
+                        // Trigger file input click
+                        if (bookFileInput) {
+                            bookFileInput.click();
+                        }
+                    }, { passive: false });
+                    
+                    // Visual feedback on touch
+                    bookFileWrapper.addEventListener('touchstart', function() {
+                        this.style.background = '#e8f5e9';
+                        this.style.borderColor = '#388E3C';
+                        this.style.transform = 'scale(0.98)';
+                    });
+                    bookFileWrapper.addEventListener('touchend', function() {
+                        setTimeout(() => {
+                            this.style.background = '#f0f8f0';
+                            this.style.borderColor = '#4CAF50';
+                            this.style.transform = 'scale(1)';
+                        }, 150);
+                    });
+                    bookFileWrapper.addEventListener('touchcancel', function() {
+                        this.style.background = '#f0f8f0';
+                        this.style.borderColor = '#4CAF50';
+                        this.style.transform = 'scale(1)';
+                    });
+                }
+                
                 bookFileInput.addEventListener('change', function(e) {
                     const file = e.target.files && e.target.files[0];
                     if (file) {
                         // Show file name
                         fileNameDisplay.textContent = 'Selected: ' + file.name;
                         fileNameDisplay.style.display = 'block';
-                        fileNameDisplay.style.marginTop = '12px';
+                        
+                        // Update wrapper visual state when file is selected
+                        const wrapper = document.getElementById('bookFileWrapper');
+                        if (wrapper) {
+                            wrapper.style.background = '#e8f5e9';
+                            wrapper.style.borderColor = '#388E3C';
+                            
+                            // Hide label, show file name
+                            const bookFileLabel = document.getElementById('bookFileLabel');
+                            if (bookFileLabel) {
+                                bookFileLabel.style.display = 'none';
+                            }
+                        }
                         
                         // Harden mobile file type detection - use both MIME type AND filename extension
                         // Handle empty or "application/octet-stream" MIME types
@@ -617,6 +662,20 @@
                     } else {
                         // No file selected - reset all displays
                         fileNameDisplay.style.display = 'none';
+                        
+                        // Reset wrapper visual state
+                        const wrapperReset = document.getElementById('bookFileWrapper');
+                        if (wrapperReset) {
+                            wrapperReset.style.background = '#f0f8f0';
+                            wrapperReset.style.borderColor = '#4CAF50';
+                            
+                            // Show label again
+                            const bookFileLabel = document.getElementById('bookFileLabel');
+                            if (bookFileLabel) {
+                                bookFileLabel.style.display = 'block';
+                            }
+                        }
+                        
                         fileTypeDisplay.innerHTML = '<i class="fas fa-info-circle"></i> Will be detected automatically from file';
                         fileTypeDisplay.style.borderColor = '#e0e0e0';
                         fileTypeDisplay.style.background = '#f5f5f5';
@@ -783,6 +842,24 @@
             const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
             if (bookFile.size > MAX_FILE_SIZE) {
                 alert(`File size (${(bookFile.size / (1024 * 1024)).toFixed(2)}MB) exceeds maximum of 100MB.`);
+                return false;
+            }
+            
+            // Mobile-specific: Check network connection before upload
+            if (!navigator.onLine) {
+                alert('No internet connection. Please check your network and try again.');
+                return false;
+            }
+            
+            // Mobile-specific: Check if file is accessible (some mobile browsers have issues)
+            try {
+                if (!bookFile.size || bookFile.size === 0) {
+                    alert('File appears to be empty or corrupted. Please select a valid file.');
+                    return false;
+                }
+            } catch (err) {
+                console.error('Error reading file:', err);
+                alert('Unable to read file. Please try selecting the file again.');
                 return false;
             }
             
@@ -1548,17 +1625,23 @@
                         <textarea class="form-input" id="bookDescription" rows="4" placeholder="Enter book description" maxlength="2000" style="width: 100%; padding: 16px; font-size: 16px; border: 2px solid #ddd; border-radius: 12px; resize: vertical; box-sizing: border-box; font-family: inherit; min-height: 100px;"></textarea>
                     </div>
                     
-                    <!-- File Upload (Mobile-Safe) -->
+                    <!-- File Upload (Mobile-First) -->
                     <div class="form-group" style="margin-bottom: 24px;">
-                        <label class="form-label">Upload File *</label>
-
-                        <div style="
+                        <label class="form-label" style="font-size: 16px; font-weight: 600; margin-bottom: 10px; display: block; color: var(--dark-gray, #333);">Upload File *</label>
+                        
+                        <div id="bookFileWrapper" style="
                             position: relative;
+                            width: 100%;
+                            min-height: 140px;
                             border: 3px dashed #4CAF50;
                             border-radius: 16px;
                             background: #f0f8f0;
-                            padding: 24px;
+                            padding: 20px;
                             text-align: center;
+                            box-sizing: border-box;
+                            touch-action: manipulation;
+                            -webkit-tap-highlight-color: transparent;
+                            transition: all 0.2s ease;
                         ">
                             <input
                                 type="file"
@@ -1568,27 +1651,54 @@
                                 required
                                 style="
                                     position: absolute;
-                                    inset: 0;
+                                    top: 0;
+                                    left: 0;
                                     width: 100%;
                                     height: 100%;
                                     opacity: 0;
                                     cursor: pointer;
+                                    z-index: 10;
+                                    font-size: 16px;
+                                    -webkit-appearance: none;
+                                    appearance: none;
                                 "
                             />
-
-                            <div style="pointer-events: none;">
-                                <i class="fas fa-cloud-upload-alt"
-                                   style="font-size:48px;color:#4CAF50;"></i>
-                                <div style="font-size:18px;font-weight:600;margin-top:8px;">
-                                    Tap to add file
-                                </div>
-                                <div style="font-size:14px;color:#666;">
-                                    PDF or Audio (max 100MB)
-                                </div>
-                                <div id="fileNameDisplay"
-                                     style="display:none;margin-top:12px;font-weight:600;color:#2e7d32;">
-                                </div>
+                            
+                            <div id="bookFileLabel" style="
+                                pointer-events: none;
+                                z-index: 1;
+                                position: relative;
+                            ">
+                                <i class="fas fa-cloud-upload-alt" style="
+                                    font-size: 48px;
+                                    color: #4CAF50;
+                                    display: block;
+                                    margin-bottom: 12px;
+                                "></i>
+                                <div style="
+                                    font-size: 18px;
+                                    font-weight: 600;
+                                    color: #212121;
+                                    margin-bottom: 6px;
+                                ">Tap to Choose File</div>
+                                <div style="
+                                    font-size: 14px;
+                                    color: #666;
+                                ">PDF or Audio (max 100MB)</div>
                             </div>
+                            
+                            <div id="fileNameDisplay" style="
+                                display: none;
+                                margin-top: 16px;
+                                padding: 12px 16px;
+                                background: white;
+                                border-radius: 8px;
+                                border: 2px solid #4CAF50;
+                                font-weight: 600;
+                                color: #2e7d32;
+                                font-size: 14px;
+                                word-break: break-word;
+                            "></div>
                         </div>
                     </div>
                 </form>

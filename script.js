@@ -671,8 +671,17 @@ async function loadPrayerTimes() {
             }
         });
         
-        // Simple next prayer display (no time calculations)
+        // Calculate and display the actual next prayer
         updateNextPrayerSimple(prayers);
+        
+        // Update next prayer every minute to keep it current
+        // Clear any existing interval first
+        if (window.nextPrayerInterval) {
+            clearInterval(window.nextPrayerInterval);
+        }
+        window.nextPrayerInterval = setInterval(() => {
+            updateNextPrayerSimple(prayers);
+        }, 60000); // Update every minute
         
         // Check authentication and show/hide edit button
         updateEditButtonVisibility();
@@ -697,27 +706,117 @@ async function loadPrayerTimes() {
     }
 }
 
-// Simple next prayer display (NO time calculations - just show first prayer)
+// Calculate and display the actual next prayer based on current time
 function updateNextPrayerSimple(prayers) {
     if (!prayers || Object.keys(prayers).length === 0) {
         return;
     }
     
-    // Simply show first prayer (Fajr) as next prayer
-    // No automatic calculations or time comparisons
-    const nextPrayerTime = document.getElementById('nextPrayerTime');
-    if (nextPrayerTime && prayers.fajr) {
-        nextPrayerTime.textContent = `Fajr (${prayers.fajr.adhan})`;
+    const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes(); // Current time in minutes
+    
+    // Prayer order: Fajr, Dhuhr, Asr, Maghrib, Isha
+    const prayerOrder = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+    
+    // Convert prayer times to minutes for comparison
+    function timeToMinutes(timeStr) {
+        if (!timeStr) return null;
+        const parts = timeStr.split(':');
+        if (parts.length < 2) return null;
+        const hours = parseInt(parts[0], 10);
+        const minutes = parseInt(parts[1], 10);
+        if (isNaN(hours) || isNaN(minutes)) return null;
+        return hours * 60 + minutes;
     }
     
-    // Highlight first prayer item
+    // Find the next prayer
+    let nextPrayer = null;
+    let nextPrayerTime = null;
+    let nextPrayerMinutes = null;
+    
+    // Check each prayer in order
+    for (const prayer of prayerOrder) {
+        if (!prayers[prayer] || !prayers[prayer].adhan) continue;
+        
+        const prayerMinutes = timeToMinutes(prayers[prayer].adhan);
+        if (prayerMinutes === null) continue;
+        
+        // If this prayer time hasn't passed today, it's the next one
+        if (prayerMinutes > currentTime) {
+            nextPrayer = prayer;
+            nextPrayerTime = prayers[prayer].adhan;
+            nextPrayerMinutes = prayerMinutes;
+            break;
+        }
+    }
+    
+    // If no prayer found for today, the next prayer is Fajr tomorrow (first prayer)
+    if (!nextPrayer) {
+        nextPrayer = 'fajr';
+        nextPrayerTime = prayers.fajr?.adhan || '';
+    }
+    
+    // Update the next prayer display
+    const nextPrayerTimeEl = document.getElementById('nextPrayerTime');
+    if (nextPrayerTimeEl) {
+        const prayerNames = {
+            'fajr': 'Fajr',
+            'dhuhr': 'Dhuhr',
+            'asr': 'Asr',
+            'maghrib': 'Maghrib',
+            'isha': 'Isha'
+        };
+        const prayerName = prayerNames[nextPrayer] || nextPrayer;
+        if (nextPrayerTime) {
+            nextPrayerTimeEl.textContent = `${prayerName} (${nextPrayerTime})`;
+        } else {
+            nextPrayerTimeEl.textContent = prayerName;
+        }
+    }
+    
+    // Highlight the next prayer in the list
     document.querySelectorAll('.prayer-item').forEach(item => {
         item.classList.remove('active');
     });
     
-    const firstPrayerItem = document.querySelector('.prayer-item');
-    if (firstPrayerItem) {
-        firstPrayerItem.classList.add('active');
+    // Map prayer keys to display names
+    const prayerNameMap = {
+        'fajr': 'Fajr',
+        'dhuhr': 'Dhuhr',
+        'asr': 'Asr',
+        'maghrib': 'Maghrib',
+        'isha': 'Isha'
+    };
+    
+    // Find and highlight the prayer item by matching the prayer name
+    const prayerItems = document.querySelectorAll('.prayer-item');
+    const nextPrayerDisplayName = prayerNameMap[nextPrayer] || nextPrayer;
+    
+    prayerItems.forEach(item => {
+        const prayerNameEl = item.querySelector('.prayer-name');
+        if (prayerNameEl) {
+            const prayerNameText = prayerNameEl.textContent.trim();
+            
+            // Match by display name (case-insensitive)
+            if (prayerNameText.toLowerCase() === nextPrayerDisplayName.toLowerCase()) {
+                item.classList.add('active');
+            }
+        }
+    });
+    
+    // Fallback: If no item was found by name, find by data attribute or position
+    if (!document.querySelector('.prayer-item.active')) {
+        // Try to find by data-prayer attribute
+        const prayerItemByData = document.querySelector(`.prayer-item [data-prayer="${nextPrayer}"]`);
+        if (prayerItemByData) {
+            prayerItemByData.closest('.prayer-item')?.classList.add('active');
+        } else {
+            // Last resort: find by position in prayer order
+            const prayerIndex = prayerOrder.indexOf(nextPrayer);
+            if (prayerIndex >= 0 && prayerIndex < prayerItems.length) {
+                prayerItems[prayerIndex].classList.add('active');
+            }
+        }
     }
 }
 
