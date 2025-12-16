@@ -122,10 +122,8 @@ async function savePrayerTimes(prayers, updatedBy = 'admin') {
             throw new Error('Only admins can update prayer times');
         }
 
-        // Get today's date
-        const today = getTodayDateString();
-
-        // Prepare data for insert/update
+        // Prepare data for insert
+        // NO date field - table schema doesn't include date column
         const prayerNames = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
         const records = prayerNames.map(prayerName => {
             if (!prayers[prayerName] || !prayers[prayerName].adhan || !prayers[prayerName].iqaama) {
@@ -141,17 +139,25 @@ async function savePrayerTimes(prayers, updatedBy = 'admin') {
             return {
                 prayer_name: prayerName,
                 adhan_time: prayers[prayerName].adhan + ':00', // Convert to TIME format
-                iqaama_time: prayers[prayerName].iqaama + ':00',
-                date: today,
+                iqama_time: prayers[prayerName].iqaama + ':00', // Note: column name is iqama_time (single 'a')
                 updated_by: updatedBy
             };
         });
 
-        // Delete existing records for today (upsert pattern)
-        await supabase
-            .from('prayer_times')
-            .delete()
-            .eq('date', today);
+        // Delete ALL existing records by prayer_name (no date filter - date column doesn't exist)
+        // This ensures we have only the latest admin-defined set
+        // Delete each prayer individually to avoid RLS issues
+        for (const prayerName of prayerNames) {
+            const { error: deleteError } = await supabase
+                .from('prayer_times')
+                .delete()
+                .eq('prayer_name', prayerName);
+            
+            if (deleteError) {
+                console.warn(`[Prayer Times] Delete error for ${prayerName} (may be expected if not exists):`, deleteError);
+                // Continue with insert even if delete fails
+            }
+        }
 
         // Insert new records
         const { error } = await supabase
@@ -167,18 +173,6 @@ async function savePrayerTimes(prayers, updatedBy = 'admin') {
         console.error('Error saving prayer times:', error);
         throw error;
     }
-}
-
-/**
- * Get today's date as YYYY-MM-DD string (no timezone conversion)
- * Uses local date only - no automatic adjustments
- */
-function getTodayDateString() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
 }
 
 // ES6 export
