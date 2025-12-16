@@ -203,6 +203,35 @@
                         padding: 0;
                     }
                     
+                    /* Mobile form styles */
+                    @media (max-width: 767px) {
+                        .modal-content {
+                            max-width: 100% !important;
+                            width: 100% !important;
+                            margin: 0 !important;
+                            border-radius: 0 !important;
+                        }
+                        
+                        .form-input,
+                        .form-group textarea,
+                        select.form-input {
+                            font-size: 16px !important; /* Prevents zoom on iOS */
+                            padding: 16px !important;
+                            min-height: 44px !important; /* Large tap target */
+                        }
+                        
+                        .file-upload-button {
+                            min-height: 120px !important;
+                            padding: 24px 20px !important;
+                        }
+                        
+                        #submitBookBtn {
+                            min-height: 52px !important;
+                            font-size: 18px !important;
+                            padding: 16px !important;
+                        }
+                    }
+                    
                     @media (min-width: 768px) {
                         .media-grid {
                             grid-template-columns: repeat(2, 1fr);
@@ -477,6 +506,66 @@
                 });
             }
             
+            // File input change handler - auto-detect file type and update display
+            const bookFileInput = document.getElementById('bookFile');
+            const fileNameDisplay = document.getElementById('fileNameDisplay');
+            const fileTypeDisplay = document.getElementById('fileTypeDisplay');
+            const bookTypeHidden = document.getElementById('bookType');
+            
+            if (bookFileInput && fileNameDisplay && fileTypeDisplay && bookTypeHidden) {
+                bookFileInput.addEventListener('change', function(e) {
+                    const file = e.target.files && e.target.files[0];
+                    if (file) {
+                        // Show file name
+                        fileNameDisplay.textContent = 'Selected: ' + file.name;
+                        fileNameDisplay.style.display = 'block';
+                        
+                        // Auto-detect file type
+                        const isAudioFile = file.type.startsWith('audio/') || 
+                                          file.name.toLowerCase().endsWith('.mp3') ||
+                                          file.name.toLowerCase().endsWith('.wav') ||
+                                          file.name.toLowerCase().endsWith('.ogg') ||
+                                          file.name.toLowerCase().endsWith('.m4a');
+                        const isPdfFile = file.type === 'application/pdf' || 
+                                        file.name.toLowerCase().endsWith('.pdf');
+                        
+                        let detectedType = '';
+                        let typeIcon = '';
+                        let typeColor = '#666';
+                        
+                        if (isAudioFile) {
+                            detectedType = 'Audio';
+                            typeIcon = '🎧';
+                            typeColor = '#2e7d32';
+                            bookTypeHidden.value = 'audio';
+                        } else if (isPdfFile) {
+                            detectedType = 'PDF';
+                            typeIcon = '📄';
+                            typeColor = '#c62828';
+                            bookTypeHidden.value = 'pdf';
+                        } else {
+                            detectedType = 'Unknown';
+                            typeIcon = '📁';
+                            typeColor = '#666';
+                            bookTypeHidden.value = '';
+                        }
+                        
+                        // Update file type display
+                        fileTypeDisplay.innerHTML = `<i class="fas fa-${isAudioFile ? 'headphones' : isPdfFile ? 'file-pdf' : 'file'}" style="color: ${typeColor};"></i> ${detectedType} (auto-detected)`;
+                        fileTypeDisplay.style.borderColor = typeColor;
+                        fileTypeDisplay.style.background = isAudioFile ? '#e8f5e9' : isPdfFile ? '#ffebee' : '#f5f5f5';
+                        fileTypeDisplay.style.color = '#212121';
+                    } else {
+                        fileNameDisplay.style.display = 'none';
+                        fileTypeDisplay.innerHTML = '<i class="fas fa-info-circle"></i> Will be detected automatically from file';
+                        fileTypeDisplay.style.borderColor = '#e0e0e0';
+                        fileTypeDisplay.style.background = '#f5f5f5';
+                        fileTypeDisplay.style.color = '#666';
+                        bookTypeHidden.value = '';
+                    }
+                });
+            }
+            
             // Allow Enter key to submit password
             const passwordInput = document.getElementById('adminPassword');
             if (passwordInput) {
@@ -573,19 +662,18 @@
 
             // Get form inputs
             const nameInput = document.getElementById('bookName');
-            const typeInput = document.getElementById('bookType');
+            const typeInput = document.getElementById('bookType'); // Hidden input, auto-filled
             const categoryInput = document.getElementById('bookCategory');
             const descriptionInput = document.getElementById('bookDescription');
             const bookFileInput = document.getElementById('bookFile');
             
             const title = nameInput ? nameInput.value.trim() : '';
-            const bookType = typeInput ? typeInput.value : '';
             const category = categoryInput ? categoryInput.value : '';
             const description = descriptionInput ? descriptionInput.value.trim() : '';
             
             // Validation: Required fields
-            if (!title || !bookType || !category) {
-                alert('Please fill in book name, book type, and category.');
+            if (!title || !category) {
+                alert('Please fill in book name and category.');
                 return false;
             }
             
@@ -597,22 +685,24 @@
             
             const bookFile = bookFileInput.files[0];
             
-            // Validate book file type matches selected type
+            // Auto-detect file type from file (required)
             const isAudioFile = bookFile.type.startsWith('audio/') || 
                                bookFile.name.toLowerCase().endsWith('.mp3') ||
                                bookFile.name.toLowerCase().endsWith('.wav') ||
-                               bookFile.name.toLowerCase().endsWith('.ogg');
+                               bookFile.name.toLowerCase().endsWith('.ogg') ||
+                               bookFile.name.toLowerCase().endsWith('.m4a');
             const isPdfFile = bookFile.type === 'application/pdf' || 
                              bookFile.name.toLowerCase().endsWith('.pdf');
             
-            if (bookType === 'audio' && !isAudioFile) {
-                alert('Please select an audio file (MP3, WAV, or OGG).');
+            if (!isAudioFile && !isPdfFile) {
+                alert('Please select a PDF or audio file (MP3, WAV, OGG, M4A).');
                 return false;
             }
             
-            if (bookType === 'pdf' && !isPdfFile) {
-                alert('Please select a PDF file.');
-                return false;
+            // Set file type (auto-detected)
+            const bookType = isAudioFile ? 'audio' : 'pdf';
+            if (typeInput) {
+                typeInput.value = bookType;
             }
             
             // Validate file size (max 100MB)
@@ -638,8 +728,14 @@
             
             try {
                 // STEP 1: Upload book file to Supabase Storage
+                // Ensure correct content type for PDFs
+                const uploadOptions = {};
+                if (isPdfFile) {
+                    uploadOptions.contentType = 'application/pdf';
+                }
+                
                 if (window.uploadService && window.uploadService.uploadFile) {
-                    const uploadResult = await window.uploadService.uploadFile(bookFile, 'books');
+                    const uploadResult = await window.uploadService.uploadFile(bookFile, 'books', uploadOptions);
                     if (uploadResult && uploadResult.success) {
                         fileUrl = uploadResult.url;
                         console.log('Book file uploaded:', fileUrl);
@@ -1345,14 +1441,13 @@
                         <input type="text" class="form-input" id="bookName" placeholder="Enter book name" required maxlength="200" style="width: 100%; padding: 16px; font-size: 16px; border: 2px solid #ddd; border-radius: 12px; box-sizing: border-box; -webkit-appearance: none; appearance: none;">
                     </div>
                     
-                    <!-- Book Type -->
+                    <!-- File Type (Auto-detected, read-only display) -->
                     <div class="form-group" style="margin-bottom: 24px;">
-                        <label class="form-label" style="font-size: 16px; font-weight: 600; margin-bottom: 10px; display: block; color: var(--dark-gray, #333);">Book Type *</label>
-                        <select class="form-input" id="bookType" required style="width: 100%; padding: 16px; font-size: 16px; border: 2px solid #ddd; border-radius: 12px; box-sizing: border-box; -webkit-appearance: none; appearance: none; background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E&quot;); background-repeat: no-repeat; background-position: right 12px center; background-size: 20px; padding-right: 40px;">
-                            <option value="">Select type</option>
-                            <option value="pdf">PDF</option>
-                            <option value="audio">Audio</option>
-                        </select>
+                        <label class="form-label" style="font-size: 16px; font-weight: 600; margin-bottom: 10px; display: block; color: var(--dark-gray, #333);">File Type</label>
+                        <div id="fileTypeDisplay" style="width: 100%; padding: 16px; font-size: 16px; border: 2px solid #e0e0e0; border-radius: 12px; box-sizing: border-box; background: #f5f5f5; color: #666;">
+                            <i class="fas fa-info-circle"></i> Will be detected automatically from file
+                        </div>
+                        <input type="hidden" id="bookType" value="">
                     </div>
                     
                     <!-- Category -->
@@ -1375,46 +1470,30 @@
                         <textarea class="form-input" id="bookDescription" rows="4" placeholder="Enter book description" maxlength="2000" style="width: 100%; padding: 16px; font-size: 16px; border: 2px solid #ddd; border-radius: 12px; resize: vertical; box-sizing: border-box; font-family: inherit; min-height: 100px;"></textarea>
                     </div>
                     
-                    <!-- File Upload -->
+                    <!-- File Upload (Mobile-Safe) -->
                     <div class="form-group" style="margin-bottom: 24px;">
                         <label class="form-label" style="font-size: 16px; font-weight: 600; margin-bottom: 10px; display: block; color: var(--dark-gray, #333);">Upload File *</label>
-                        <label for="bookFile" style="display: block; width: 100%; cursor: pointer; touch-action: manipulation;">
-                            <input type="file" id="bookFile" name="bookFile" accept=".pdf,.mp3,.wav,.ogg,audio/*,application/pdf" required style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;">
-                            <div class="file-upload-button" style="width: 100%; padding: 20px; font-size: 16px; border: 2px dashed #ddd; border-radius: 12px; background: #f9f9f9; text-align: center; transition: all 0.2s; box-sizing: border-box;">
-                                <i class="fas fa-cloud-upload-alt" style="font-size: 32px; color: var(--primary-green, #4CAF50); margin-bottom: 8px; display: block;"></i>
-                                <span class="file-upload-text" style="color: var(--dark-gray, #333); font-weight: 600; display: block; margin-bottom: 4px;">Tap to select file</span>
-                                <span class="file-upload-hint" style="color: #666; font-size: 14px; display: block;">PDF, MP3, WAV, or OGG (max 100MB)</span>
-                                <span class="file-name-display" id="fileNameDisplay" style="display: none; margin-top: 8px; padding: 8px; background: white; border-radius: 6px; color: var(--primary-green, #4CAF50); font-size: 14px; font-weight: 600;"></span>
+                        <label for="bookFile" style="display: block; width: 100%; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;">
+                            <!-- File input positioned off-screen (mobile-safe, no display:none) -->
+                            <input type="file" id="bookFile" name="bookFile" accept=".pdf,.mp3,.wav,.ogg,.m4a,audio/*,application/pdf" required style="position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; overflow: hidden;">
+                            <div class="file-upload-button" style="width: 100%; min-height: 120px; padding: 24px 20px; font-size: 16px; border: 3px dashed #4CAF50; border-radius: 16px; background: #f0f8f0; text-align: center; transition: all 0.2s; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;">
+                                <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #4CAF50; display: block;"></i>
+                                <span class="file-upload-text" style="color: #212121; font-weight: 600; font-size: 18px; display: block;">Tap to add file</span>
+                                <span class="file-upload-hint" style="color: #666; font-size: 14px; display: block;">PDF, MP3, WAV, OGG, or M4A (max 100MB)</span>
+                                <span class="file-name-display" id="fileNameDisplay" style="display: none; margin-top: 12px; padding: 12px 16px; background: white; border-radius: 8px; color: #4CAF50; font-size: 14px; font-weight: 600; border: 2px solid #4CAF50;"></span>
                             </div>
                         </label>
                         <style>
-                            label[for="bookFile"]:hover .file-upload-button,
                             label[for="bookFile"]:active .file-upload-button {
-                                border-color: var(--primary-green, #4CAF50);
-                                background: #f0f8f0;
+                                border-color: #388E3C;
+                                background: #e8f5e9;
+                                transform: scale(0.98);
                             }
                             #bookFile:focus + .file-upload-button {
-                                outline: 2px solid var(--primary-green, #4CAF50);
+                                outline: 3px solid #4CAF50;
                                 outline-offset: 2px;
                             }
                         </style>
-                        <script>
-                            // Update file name display when file is selected (non-intrusive)
-                            (function() {
-                                const fileInput = document.getElementById('bookFile');
-                                const fileNameDisplay = document.getElementById('fileNameDisplay');
-                                if (fileInput && fileNameDisplay) {
-                                    fileInput.addEventListener('change', function(e) {
-                                        if (e.target.files && e.target.files[0]) {
-                                            fileNameDisplay.textContent = 'Selected: ' + e.target.files[0].name;
-                                            fileNameDisplay.style.display = 'block';
-                                        } else {
-                                            fileNameDisplay.style.display = 'none';
-                                        }
-                                    });
-                                }
-                            })();
-                        </script>
                     </div>
                 </form>
             </div>

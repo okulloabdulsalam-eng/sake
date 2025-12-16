@@ -12,10 +12,11 @@ import { log } from '../utils/logger.js';
  * Upload file to Supabase Storage
  * @param {File} file - File to upload
  * @param {string} folder - Folder path in storage (e.g., 'books', 'media/images')
- * @param {Function} onProgress - Progress callback (optional)
+ * @param {Object|Function} optionsOrProgress - Options object {contentType} or progress callback (optional)
+ * @param {Function} onProgress - Progress callback (optional, if options provided)
  * @returns {Promise<Object>} Upload result with public URL
  */
-async function uploadFile(file, folder = 'media', onProgress = null) {
+async function uploadFile(file, folder = 'media', optionsOrProgress = null, onProgress = null) {
     try {
         const supabase = getSupabaseClient();
         
@@ -29,13 +30,28 @@ async function uploadFile(file, folder = 'media', onProgress = null) {
         // Get storage bucket from config or use default
         const bucket = window.supabaseConfig?.storageBucket || 'media';
 
-        // Upload file
+        // Parse options - handle both {options} and onProgress callback patterns
+        let options = {
+            cacheControl: '3600',
+            upsert: false
+        };
+        let progressCallback = null;
+        
+        if (optionsOrProgress) {
+            if (typeof optionsOrProgress === 'function') {
+                // Old pattern: uploadFile(file, folder, onProgress)
+                progressCallback = optionsOrProgress;
+            } else if (typeof optionsOrProgress === 'object') {
+                // New pattern: uploadFile(file, folder, {contentType}, onProgress)
+                options = { ...options, ...optionsOrProgress };
+                progressCallback = onProgress;
+            }
+        }
+
+        // Upload file with options
         const { data, error } = await supabase.storage
             .from(bucket)
-            .upload(filePath, file, {
-                cacheControl: '3600',
-                upsert: false
-            });
+            .upload(filePath, file, options);
 
         if (error) {
             throw error;
