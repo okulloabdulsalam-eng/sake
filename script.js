@@ -61,7 +61,7 @@ async function updateDates() {
     const now = new Date();
     const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     
-    // Display Gregorian date (below Hijri)
+    // Display Gregorian date (below Hijri) - Show immediately
     const dateDisplay = document.getElementById('dateDisplay');
     if (dateDisplay) {
         dateDisplay.textContent = now.toLocaleDateString('en-US', dateOptions);
@@ -70,6 +70,34 @@ async function updateDates() {
     // Fetch and display Hijri date from Ummah API (main date, shown first)
     const hijriDate = document.getElementById('hijriDate');
     if (hijriDate) {
+        // Show approximate date immediately (fast client-side calculation)
+        const gregorianYear = now.getFullYear();
+        const gregorianMonth = now.getMonth();
+        const gregorianDay = now.getDate();
+        
+        // Quick approximate calculation for immediate display
+        const daysSinceEpoch = Math.floor((now - new Date(622, 6, 16)) / (24 * 60 * 60 * 1000));
+        const hijriYear = Math.floor(daysSinceEpoch / 354.37) + 1;
+        const hijriMonths = ['Muharram', 'Safar', 'Rabi\' al-awwal', 'Rabi\' al-thani', 
+                           'Jumada al-awwal', 'Jumada al-thani', 'Rajab', 'Sha\'ban', 
+                           'Ramadan', 'Shawwal', 'Dhu al-Qi\'dah', 'Dhu al-Hijjah'];
+        const remainingDays = daysSinceEpoch % 354.37;
+        const hijriMonthIndex = Math.min(Math.floor(remainingDays / 29.5), 11);
+        const hijriDay = Math.max(1, Math.floor(remainingDays % 29.5) + 1);
+        
+        // Display approximate date immediately
+        hijriDate.textContent = `${hijriDay} ${hijriMonths[hijriMonthIndex]}, ${hijriYear} AH (approx)`;
+        
+        // Check cache for today's accurate date
+        const todayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+        const cachedDate = localStorage.getItem(`hijriDate_${todayKey}`);
+        
+        if (cachedDate) {
+            // Use cached accurate date immediately
+            hijriDate.textContent = cachedDate;
+            console.log('[Dates] Using cached Hijri date');
+        }
+        
         try {
             // Get current date in YYYY-MM-DD format
             const yyyy = now.getFullYear();
@@ -151,7 +179,13 @@ async function updateDates() {
                     hijriMonth = parseInt(todayData.hijri.month.number);
                     hijriYear = parseInt(todayData.hijri.year);
                     if (hijriDay && hijriMonth && hijriYear) {
-                        hijriDate.textContent = formatHijriDate(hijriDay, hijriMonth, hijriYear);
+                        const accurateDate = formatHijriDate(hijriDay, hijriMonth, hijriYear);
+                    hijriDate.textContent = accurateDate;
+                    
+                    // Cache the accurate date for today
+                    const todayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+                    localStorage.setItem(`hijriDate_${todayKey}`, accurateDate);
+                    console.log('[Dates] ✅ Accurate Hijri date loaded and cached');
                     }
                 }
             } else if (data.data && data.data.hijri) {
@@ -189,7 +223,13 @@ async function updateDates() {
                     const monthName = typeof hijriMonth === 'number' 
                         ? hijriMonths[hijriMonth - 1] 
                         : hijriMonth;
-                    hijriDate.textContent = `${hijriDay} ${monthName}, ${hijriYear} AH`;
+                    const accurateDate = `${hijriDay} ${monthName}, ${hijriYear} AH`;
+                    hijriDate.textContent = accurateDate;
+                    
+                    // Cache the accurate date for today
+                    const todayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+                    localStorage.setItem(`hijriDate_${todayKey}`, accurateDate);
+                    console.log('[Dates] ✅ Accurate Hijri date loaded and cached');
                 } else if (data.hijri.date) {
                     // Try to parse and reformat if needed
                     const dateStr = data.hijri.date;
@@ -228,27 +268,23 @@ async function updateDates() {
                 checkAndCreateWhiteDaysNotification(hijriDay, hijriMonth, hijriYear, hijriMonths);
             }
         } catch (error) {
-            // Silently fallback to approximate calculation if all APIs fail
-            // Don't show error to user, just use calculation
-            const gregorianYear = now.getFullYear();
-            const gregorianMonth = now.getMonth();
-            const gregorianDay = now.getDate();
+            // If API fails, keep the approximate date that was already shown
+            // Don't change it again - it's already displayed at the start of the function
+            console.warn('[Dates] API failed, using approximate date:', error.message);
             
-            // More accurate Hijri date calculation
+            // Only check for white days if we have the approximate date values
+            // The approximate date is already displayed, so we just need to check notifications
             const daysSinceEpoch = Math.floor((now - new Date(622, 6, 16)) / (24 * 60 * 60 * 1000));
-            const hijriYear = Math.floor(daysSinceEpoch / 354.37) + 1;
-            const hijriMonths = ['Muharram', 'Safar', 'Rabi\' al-awwal', 'Rabi\' al-thani', 
-                               'Jumada al-awwal', 'Jumada al-thani', 'Rajab', 'Sha\'ban', 
-                               'Ramadan', 'Shawwal', 'Dhu al-Qi\'dah', 'Dhu al-Hijjah'];
             const remainingDays = daysSinceEpoch % 354.37;
             const hijriMonthIndex = Math.min(Math.floor(remainingDays / 29.5), 11);
             const hijriDay = Math.max(1, Math.floor(remainingDays % 29.5) + 1);
             
-            // Use consistent format: "16 Jumada al-thani, 1447 AH (approx)"
-            hijriDate.textContent = `${hijriDay} ${hijriMonths[hijriMonthIndex]}, ${hijriYear} AH (approx)`;
-            
             // Check for white days with approximate date
             if (hijriDay >= 10 && hijriDay <= 12) {
+                const hijriYear = Math.floor(daysSinceEpoch / 354.37) + 1;
+                const hijriMonths = ['Muharram', 'Safar', 'Rabi\' al-awwal', 'Rabi\' al-thani', 
+                                   'Jumada al-awwal', 'Jumada al-thani', 'Rajab', 'Sha\'ban', 
+                                   'Ramadan', 'Shawwal', 'Dhu al-Qi\'dah', 'Dhu al-Hijjah'];
                 checkAndCreateWhiteDaysNotification(hijriDay, hijriMonthIndex + 1, hijriYear, hijriMonths);
             }
         }
@@ -694,6 +730,7 @@ function startPrayerTimesUpdater() {
 }
 
 // Update dates on load and continuously (auto-update)
+// Call immediately to show approximate date right away
 updateDates();
 // Load prayer times from database (async)
 loadPrayerTimes().catch(error => {
