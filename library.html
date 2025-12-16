@@ -617,167 +617,56 @@
                     return;
                 }
                 
-                // Get wrapper element
+                // Get wrapper element (now a label element)
                 const bookFileWrapper = document.getElementById('bookFileWrapper');
-                if (!bookFileWrapper) {
-                    console.warn('[File Upload] bookFileWrapper not found');
+                const bookFileInput = document.getElementById('bookFile');
+                
+                if (!bookFileWrapper || !bookFileInput) {
+                    console.warn('[File Upload] Elements not found');
                     return;
                 }
                 
-                // Remove any existing event listeners by cloning the wrapper (clean slate)
-                // This prevents duplicate listeners from accumulating
-                const newWrapper = bookFileWrapper.cloneNode(true);
-                bookFileWrapper.parentNode.replaceChild(newWrapper, bookFileWrapper);
-                const wrapper = document.getElementById('bookFileWrapper');
+                // With label pattern, clicking the label automatically triggers the input
+                // We only need to add visual feedback and file handling
+                // No need for complex event handling or cloning!
                 
-                // IMPORTANT: Get fresh reference to file input after cloning
-                // The old reference is invalid after cloning
-                const freshFileInput = document.getElementById('bookFile');
-                if (!freshFileInput) {
-                    console.error('[File Upload] File input not found after cloning');
-                    return;
-                }
-                
-                // Function to trigger file input click
-                function triggerFileInput() {
-                    try {
-                        // Use fresh reference to file input
-                        const currentFileInput = document.getElementById('bookFile');
-                        if (currentFileInput) {
-                            // Ensure input is visible and accessible
-                            currentFileInput.style.position = 'absolute';
-                            currentFileInput.style.opacity = '0';
-                            currentFileInput.style.width = '100%';
-                            currentFileInput.style.height = '100%';
-                            currentFileInput.style.top = '0';
-                            currentFileInput.style.left = '0';
-                            currentFileInput.style.zIndex = '10';
-                            currentFileInput.style.cursor = 'pointer';
-                            
-                            // Trigger click
-                            currentFileInput.click();
-                            console.log('[File Upload] File input clicked successfully');
-                        } else {
-                            console.error('[File Upload] File input element not found');
-                        }
-                    } catch (error) {
-                        console.error('[File Upload] Error triggering file input:', error);
-                        // Fallback: try direct click on wrapper's file input child
-                        try {
-                            const fallbackInput = wrapper.querySelector('input[type="file"]');
-                            if (fallbackInput) {
-                                fallbackInput.click();
-                                console.log('[File Upload] Used fallback method to click file input');
-                            }
-                        } catch (fallbackError) {
-                            console.error('[File Upload] Fallback method also failed:', fallbackError);
-                        }
-                    }
-                }
-                
-                // Combined touch handler (mobile) - handles both click trigger and visual feedback
-                wrapper.addEventListener('touchstart', function(e) {
-                    try {
-                        // Visual feedback immediately
-                        this.style.background = '#e8f5e9';
-                        this.style.borderColor = '#388E3C';
-                        this.style.transform = 'scale(0.98)';
-                        
-                        // Only prevent default if we're on a touch device and it's safe to do so
-                        // Some browsers need the click to propagate naturally
-                        if (e.cancelable) {
-                            e.preventDefault();
-                        }
-                        
-                        // Trigger file input click
-                        triggerFileInput();
-                    } catch (error) {
-                        console.error('[File Upload] Error in touchstart handler:', error);
-                    }
-                }, { passive: false });
-                
-                // Touch end handler - reset visual feedback
-                wrapper.addEventListener('touchend', function() {
-                    try {
-                        setTimeout(() => {
-                            this.style.background = '#f0f8f0';
-                            this.style.borderColor = '#4CAF50';
-                            this.style.transform = 'scale(1)';
-                        }, 150);
-                    } catch (error) {
-                        console.error('[File Upload] Error in touchend handler:', error);
-                    }
+                // Visual feedback on interaction (optional enhancement)
+                bookFileWrapper.addEventListener('mousedown', function() {
+                    this.style.background = '#e8f5e9';
+                    this.style.borderColor = '#388E3C';
+                    this.style.transform = 'scale(0.98)';
                 });
                 
-                // Touch cancel handler - reset visual feedback
-                wrapper.addEventListener('touchcancel', function() {
-                    try {
+                bookFileWrapper.addEventListener('mouseup', function() {
+                    setTimeout(() => {
                         this.style.background = '#f0f8f0';
                         this.style.borderColor = '#4CAF50';
                         this.style.transform = 'scale(1)';
-                    } catch (error) {
-                        console.error('[File Upload] Error in touchcancel handler:', error);
-                    }
+                    }, 150);
                 });
                 
-                // Click handler for desktop browsers and mobile fallback
-                wrapper.addEventListener('click', function(e) {
-                    try {
-                        // Prevent default to avoid double-triggering
-                        e.preventDefault();
-                        e.stopPropagation();
-                        
-                        // Trigger file input for all clicks (mobile and desktop)
-                        triggerFileInput();
-                    } catch (error) {
-                        console.error('[File Upload] Error in click handler:', error);
-                    }
+                bookFileWrapper.addEventListener('mouseleave', function() {
+                    this.style.background = '#f0f8f0';
+                    this.style.borderColor = '#4CAF50';
+                    this.style.transform = 'scale(1)';
                 });
                 
-                // Also add direct click handler to file input itself (mobile fallback)
-                if (freshFileInput) {
-                    freshFileInput.addEventListener('click', function(e) {
-                        // Allow the click to propagate naturally
-                        console.log('[File Upload] File input clicked directly');
-                    }, true); // Use capture phase to ensure it fires
-                }
+                // Touch feedback for mobile
+                bookFileWrapper.addEventListener('touchstart', function() {
+                    this.style.background = '#e8f5e9';
+                    this.style.borderColor = '#388E3C';
+                    this.style.transform = 'scale(0.98)';
+                }, { passive: true });
                 
-                // Mouse down handler for desktop visual feedback
-                wrapper.addEventListener('mousedown', function() {
-                    try {
-                        this.style.background = '#e8f5e9';
-                        this.style.borderColor = '#388E3C';
-                        this.style.transform = 'scale(0.98)';
-                    } catch (error) {
-                        console.error('[File Upload] Error in mousedown handler:', error);
-                    }
-                });
-                
-                // Mouse up handler for desktop visual feedback
-                wrapper.addEventListener('mouseup', function() {
-                    try {
-                        setTimeout(() => {
-                            this.style.background = '#f0f8f0';
-                            this.style.borderColor = '#4CAF50';
-                            this.style.transform = 'scale(1)';
-                        }, 150);
-                    } catch (error) {
-                        console.error('[File Upload] Error in mouseup handler:', error);
-                    }
-                });
-                
-                // Mouse leave handler - reset if user moves mouse away
-                wrapper.addEventListener('mouseleave', function() {
-                    try {
+                bookFileWrapper.addEventListener('touchend', function() {
+                    setTimeout(() => {
                         this.style.background = '#f0f8f0';
                         this.style.borderColor = '#4CAF50';
                         this.style.transform = 'scale(1)';
-                    } catch (error) {
-                        console.error('[File Upload] Error in mouseleave handler:', error);
-                    }
-                });
+                    }, 150);
+                }, { passive: true });
                 
-                console.log('[File Upload] Event handlers attached successfully');
+                console.log('[File Upload] Label pattern initialized - works on all devices!');
                 
                 bookFileInput.addEventListener('change', function(e) {
                     const file = e.target.files && e.target.files[0];
@@ -1811,11 +1700,13 @@
                         <textarea class="form-input" id="bookDescription" rows="4" placeholder="Enter book description" maxlength="2000" style="width: 100%; padding: 16px; font-size: 16px; border: 2px solid #ddd; border-radius: 12px; resize: vertical; box-sizing: border-box; font-family: inherit; min-height: 100px;"></textarea>
                     </div>
                     
-                    <!-- File Upload (Mobile-First) -->
+                    <!-- File Upload (Mobile-First) - Using Label Pattern (Industry Standard) -->
                     <div class="form-group" style="margin-bottom: 24px;">
                         <label class="form-label" style="font-size: 16px; font-weight: 600; margin-bottom: 10px; display: block; color: var(--dark-gray, #333);">Upload File *</label>
                         
-                        <div id="bookFileWrapper" style="
+                        <!-- Label Pattern: Most reliable method used by Dropbox, Google Drive, etc. -->
+                        <label for="bookFile" id="bookFileWrapper" style="
+                            display: block;
                             position: relative;
                             width: 100%;
                             min-height: 140px;
@@ -1828,6 +1719,7 @@
                             touch-action: manipulation;
                             -webkit-tap-highlight-color: transparent;
                             transition: all 0.2s ease;
+                            cursor: pointer;
                         ">
                             <input
                                 type="file"
@@ -1837,24 +1729,16 @@
                                 required
                                 style="
                                     position: absolute;
-                                    top: 0;
-                                    left: 0;
-                                    width: 100%;
-                                    height: 100%;
                                     opacity: 0;
-                                    cursor: pointer;
-                                    z-index: 10;
+                                    width: 0;
+                                    height: 0;
+                                    overflow: hidden;
                                     font-size: 16px;
-                                    -webkit-appearance: none;
-                                    appearance: none;
-                                    touch-action: manipulation;
-                                    -webkit-tap-highlight-color: transparent;
                                 "
                             />
                             
                             <div id="bookFileLabel" style="
                                 pointer-events: none;
-                                z-index: 1;
                                 position: relative;
                             ">
                                 <i class="fas fa-cloud-upload-alt" style="

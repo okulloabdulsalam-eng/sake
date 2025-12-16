@@ -166,22 +166,73 @@
                         <p><strong>Type:</strong> <span id="selectedType"></span></p>
                     </div>
 
-                    <!-- Subscription Form (for Semester/Monthly Subscriptions) -->
-                    <div id="subscriptionForm" style="display: none;">
-                        <h3 class="section-title" style="margin-bottom: 20px;">Subscription Details</h3>
+                    <!-- Unified Payment Form (for ALL payment types) -->
+                    <div id="unifiedPaymentForm" style="display: none;">
+                        <h3 class="section-title" style="margin-bottom: 20px;">Payment Details</h3>
 
-                        <!-- Name Input -->
+                        <!-- Name Input (Autofill, Optional) -->
                         <div class="form-group">
-                            <label class="form-label">Full Name <span style="color: #F44336;">*</span></label>
-                            <input type="text" class="form-input" id="subscriptionName" placeholder="Enter your full name" required>
+                            <label class="form-label">Name <span style="color: #666; font-size: 12px;">(Optional)</span></label>
+                            <input type="text" class="form-input" id="paymentName" placeholder="Enter your name (will auto-fill if logged in)">
                         </div>
 
-                        <!-- Registration Number (for Students) -->
-                        <div class="form-group" id="regNumberGroup" style="display: none;">
-                            <label class="form-label">Registration Number <span style="color: #F44336;">*</span></label>
-                            <input type="text" class="form-input" id="regNumber" placeholder="Enter your registration number" required>
+                        <!-- Registration Number (Optional) -->
+                        <div class="form-group">
+                            <label class="form-label">Registration Number <span style="color: #666; font-size: 12px;">(Optional)</span></label>
+                            <input type="text" class="form-input" id="paymentRegNumber" placeholder="Enter your registration number (if applicable)">
                         </div>
 
+                        <!-- Amount Input (Required for non-subscriptions, shown for subscriptions as info) -->
+                        <div class="form-group" id="paymentAmountGroup">
+                            <label class="form-label">Amount (UGX) <span id="amountRequired" style="color: #F44336;">*</span></label>
+                            <input type="number" class="form-input" id="paymentAmount" placeholder="Enter amount" min="1" max="100000000" step="1" oninput="formatAmount(this)">
+                            <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">Minimum: 1 UGX | Maximum: 100,000,000 UGX</small>
+                        </div>
+
+                        <!-- Payment Method Selection (Required) -->
+                        <div class="form-group">
+                            <label class="form-label">Payment Method <span style="color: #F44336;">*</span></label>
+                            <select class="form-input" id="paymentMethod" required>
+                                <option value="">Select payment method</option>
+                                <option value="mtn">MTN Mobile Money</option>
+                                <option value="airtel">Airtel Money</option>
+                                <option value="bank">Bank Transfer</option>
+                            </select>
+                            <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">Select the method you will use to make payment</small>
+                        </div>
+
+                        <!-- Payment Reason (Required for non-subscriptions, hidden for subscriptions) -->
+                        <div class="form-group" id="paymentReasonGroup" style="display: none;">
+                            <label class="form-label">Payment Reason <span style="color: #F44336;">*</span></label>
+                            <select class="form-input" id="paymentReason" required>
+                                <option value="">Select payment reason</option>
+                                <option value="general-donation">General Donation</option>
+                                <option value="iftar">Iftar</option>
+                                <option value="bananas">Bananas</option>
+                                <option value="mosque-building-fund">Mosque Building Fund</option>
+                                <option value="kizumu-tahfiz-charity-visit">Kizumu Tahfiz Charity Visit</option>
+                                <option value="tuition-for-brothers">Tuition for Brothers</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+
+                        <!-- Payment Notes (Optional) -->
+                        <div class="form-group">
+                            <label class="form-label">Notes <span style="color: #666; font-size: 12px;">(Optional)</span></label>
+                            <textarea class="form-input" id="paymentNotes" rows="3" placeholder="Add any notes about your payment (e.g., 'I want you to use this for bananas this week')"></textarea>
+                            <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">Any additional information about your payment</small>
+                        </div>
+
+                        <!-- WhatsApp Link to Amir (for ALL payment types) -->
+                        <div class="form-group" style="margin-top: 20px;">
+                            <button type="button" class="btn btn-primary" id="contactAmirBtn" onclick="sendPaymentToAmir()" style="width: 100%; background: #25D366; border: none; padding: 15px; font-size: 16px; font-weight: 600;">
+                                <i class="fab fa-whatsapp"></i> Send Payment Details to Amir
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Subscription Form (for Semester/Monthly Subscriptions - Legacy fields) -->
+                    <div id="subscriptionForm" style="display: none;">
                         <!-- Course (for Students) -->
                         <div class="form-group" id="courseGroup" style="display: none;">
                             <label class="form-label">Course <span style="color: #F44336;">*</span></label>
@@ -193,77 +244,13 @@
                             <label class="form-label">Faculty/Department <span style="color: #F44336;">*</span></label>
                             <input type="text" class="form-input" id="faculty" placeholder="Enter your faculty or department" required>
                         </div>
-
-                        <!-- WhatsApp Link to Amir Finance -->
-                        <div class="form-group" style="margin-top: 20px;">
-                            <button type="button" class="btn btn-primary" onclick="contactAmirFinance()" style="width: 100%; background: #25D366; border: none; padding: 15px; font-size: 16px; font-weight: 600;">
-                                <i class="fab fa-whatsapp"></i> Contact Amir Finance via WhatsApp
-                            </button>
-                        </div>
                     </div>
 
-                    <!-- Notice for Amir Communication -->
-                    <div class="info-card" id="amirNotice" style="display: none; background: #E3F2FD; border-left: 4px solid #2196F3; margin-bottom: 20px;">
-                        <h4 style="color: #1976D2; margin-bottom: 10px;">
-                            <i class="fas fa-info-circle"></i> Important Notice
-                        </h4>
-                        <p style="color: #1565C0; margin: 0; font-weight: 500;">
-                            These payment types require direct communication with the Amir (Finance Minister). Please fill in the details below and send a WhatsApp message to the Amir.
-                        </p>
-                    </div>
-
-                    <!-- Payment Reason Dropdown (for Zakat, Charity, Donate, Kisilaahe) -->
-                    <div class="form-group" id="donationTypeGroup" style="display: none;">
-                        <label class="form-label">Payment Reason <span style="color: #F44336;">*</span></label>
-                        <select class="form-input" id="donationType" required>
-                            <option value="">Select payment reason</option>
-                            <option value="general-donation">General Donation</option>
-                            <option value="iftar">Iftar</option>
-                            <option value="bananas">Bananas</option>
-                            <option value="mosque-building-fund">Mosque Building Fund</option>
-                            <option value="kizumu-tahfiz-charity-visit">Kizumu Tahfiz Charity Visit</option>
-                            <option value="tuition-for-brothers">Tuition for Brothers</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
-
-                    <!-- Reason Description Field -->
-                    <div class="form-group" id="reasonGroup" style="display: none;">
-                        <label class="form-label">Reason for Payment <span style="color: #F44336;">*</span></label>
-                        <textarea class="form-input" id="donationReason" rows="3" placeholder="Please provide additional details about your payment..." required></textarea>
-                    </div>
-
-                    <!-- Amount Input (for Zakat, Charity, Donate, Kisilaahe) -->
-                    <div class="form-group" id="customAmountGroup" style="display: none;">
-                        <label class="form-label">Amount (UGX) <span style="color: #F44336;">*</span></label>
-                        <input type="number" class="form-input" id="amount" placeholder="Enter amount" min="1" max="100000000" step="1" required oninput="formatAmount(this)">
-                        <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">Minimum: 1 UGX | Maximum: 100,000,000 UGX</small>
-                    </div>
-                    
                     <!-- Payment Reference Field -->
                     <div class="form-group" id="paymentReferenceGroup" style="display: none;">
                         <label class="form-label">Payment Reference <span style="color: #F44336;">*</span> <span style="color: #666; font-size: 12px;">(Use this when making payment)</span></label>
                         <input type="text" class="form-input" id="paymentReference" placeholder="Auto-generated" readonly style="background: #f5f5f5;">
                         <small style="color: #F44336; font-size: 12px; margin-top: 5px; display: block; font-weight: 600;">⚠️ CRUCIAL: Use this reference when making payment</small>
-                    </div>
-                    
-                    <!-- Payment Method Selection -->
-                    <div class="form-group" id="paymentMethodGroup" style="display: none;">
-                        <label class="form-label">Payment Method <span style="color: #F44336;">*</span></label>
-                        <select class="form-input" id="selectedPaymentMethod" required>
-                            <option value="">Select payment method</option>
-                            <option value="mtn">MTN Mobile Money</option>
-                            <option value="airtel">Airtel Money</option>
-                            <option value="bank">Bank Transfer</option>
-                        </select>
-                        <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">Select the method you will use to make payment</small>
-                    </div>
-
-                    <!-- WhatsApp Link to Amir -->
-                    <div class="form-group" id="amirWhatsAppGroup" style="display: none;">
-                        <button type="button" class="btn btn-primary" id="contactAmirBtn" onclick="contactAmir()" style="width: 100%; background: #25D366; border: none; padding: 15px; font-size: 16px; font-weight: 600;">
-                            <i class="fab fa-whatsapp"></i> Send Payment Details to Amir
-                        </button>
                     </div>
 
                     <!-- Notice about Amir Daawa Communication -->
@@ -488,50 +475,43 @@
                 setTimeout(() => {
                     membershipPlans.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }, 100);
-            } else if (type === 'kisilaahe') {
+            } else {
+                // For all other payment types (zakat, charity, donate, kisilaahe)
                 membershipPlans.style.display = 'none';
                 paymentForm.style.display = 'block';
-                customAmountGroup.style.display = 'block';
+                const unifiedForm = document.getElementById('unifiedPaymentForm');
+                if (unifiedForm) unifiedForm.style.display = 'block';
                 selectedPlanInfo.style.display = 'none';
-                document.getElementById('amirNotice').style.display = 'block';
-                document.getElementById('donationTypeGroup').style.display = 'block';
-                document.getElementById('reasonGroup').style.display = 'block';
-                document.getElementById('amirWhatsAppGroup').style.display = 'block';
                 document.getElementById('amirDaawaNotice').style.display = 'none';
+                
+                // Show payment reason (required for non-subscriptions)
+                const paymentReasonGroup = document.getElementById('paymentReasonGroup');
+                const paymentReason = document.getElementById('paymentReason');
+                if (paymentReasonGroup) paymentReasonGroup.style.display = 'block';
+                if (paymentReason) paymentReason.required = true;
+                
+                // Amount is required
+                const amountInput = document.getElementById('paymentAmount');
+                const amountRequired = document.getElementById('amountRequired');
+                if (amountInput) {
+                    amountInput.required = true;
+                    amountInput.readOnly = false;
+                    amountInput.style.background = '';
+                }
+                if (amountRequired) amountRequired.style.display = 'inline';
                 
                 // Set default amount for Kisilaahe
-                document.getElementById('amount').value = '1500000';
-                selectedAmount = 1500000;
-                selectedPlan = 'kisilaahe';
+                if (type === 'kisilaahe' && amountInput) {
+                    amountInput.value = '1500000';
+                    selectedAmount = 1500000;
+                    selectedPlan = 'kisilaahe';
+                }
                 
-                // Scroll to payment form
-                setTimeout(() => {
-                    paymentForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }, 100);
-            } else {
-                // Zakat, Charity, Donate - all need Amir communication
-                membershipPlans.style.display = 'none';
-                paymentForm.style.display = 'block';
-                customAmountGroup.style.display = 'block';
-                selectedPlanInfo.style.display = 'none';
-                document.getElementById('amirNotice').style.display = 'block';
-                document.getElementById('donationTypeGroup').style.display = 'block';
-                document.getElementById('reasonGroup').style.display = 'block';
-                document.getElementById('amirWhatsAppGroup').style.display = 'block';
-                document.getElementById('amirDaawaNotice').style.display = 'none';
+                // Autofill name if user is logged in
+                autofillPaymentName();
                 
-                // Set payment type info
-                const typeNames = {
-                    'zakat': 'Zakat',
-                    'charity': 'Charity',
-                    'donate': 'Donation',
-                    'kisilaahe': 'Kisilaahe Subscription'
-                };
-                document.getElementById('selectedType').textContent = typeNames[type] || type;
-                
-                // Show payment reference and method selection
+                // Show payment reference
                 document.getElementById('paymentReferenceGroup').style.display = 'block';
-                document.getElementById('paymentMethodGroup').style.display = 'block';
                 generatePaymentReference();
                 
                 // Scroll to payment form
@@ -572,6 +552,22 @@
             
             input.value = value;
         }
+        
+        // Autofill payment name from userData
+        function autofillPaymentName() {
+            try {
+                const userData = JSON.parse(localStorage.getItem('userData') || 'null');
+                const nameInput = document.getElementById('paymentName');
+                if (userData && nameInput) {
+                    const userName = userData.name || userData.firstName || userData.email || '';
+                    if (userName) {
+                        nameInput.value = userName;
+                    }
+                }
+            } catch (error) {
+                console.error('Error autofilling name:', error);
+            }
+        }
 
         function selectPlan(planName, amount) {
             selectedPlan = planName;
@@ -580,20 +576,32 @@
             // Show payment form
             document.getElementById('membershipPlans').style.display = 'none';
             document.getElementById('paymentForm').style.display = 'block';
-            document.getElementById('customAmountGroup').style.display = 'none';
+            document.getElementById('unifiedPaymentForm').style.display = 'block';
             document.getElementById('selectedPlanInfo').style.display = 'block';
             document.getElementById('subscriptionForm').style.display = 'block';
             
-            // Hide other form groups
-            document.getElementById('amirNotice').style.display = 'none';
-            document.getElementById('donationTypeGroup').style.display = 'none';
-            document.getElementById('reasonGroup').style.display = 'none';
-            document.getElementById('amirWhatsAppGroup').style.display = 'none';
-            document.getElementById('amirDaawaNotice').style.display = 'none';
+            // Hide payment reason for subscriptions
+            document.getElementById('paymentReasonGroup').style.display = 'none';
+            document.getElementById('paymentReason').required = false;
+            
+            // Set amount from plan (read-only for subscriptions)
+            const amountInput = document.getElementById('paymentAmount');
+            const amountRequired = document.getElementById('amountRequired');
+            if (amountInput) {
+                amountInput.value = amount;
+                amountInput.required = false;
+                amountInput.readOnly = true;
+                amountInput.style.background = '#f5f5f5';
+            }
+            if (amountRequired) {
+                amountRequired.style.display = 'none';
+            }
+            
+            // Autofill name if user is logged in
+            autofillPaymentName();
             
             // Show payment reference and method selection
             document.getElementById('paymentReferenceGroup').style.display = 'block';
-            document.getElementById('paymentMethodGroup').style.display = 'block';
             generatePaymentReference();
 
             // Update plan info
@@ -1058,6 +1066,128 @@ Jazakallahu Khairan.`;
                 // Fallback for older browsers
                 const whatsappLink = `https://wa.me/256703268522?text=${encodedMessage}`;
                 window.location.href = whatsappLink;
+            }
+        };
+
+        // Unified function to send payment details to Amir (for ALL payment types)
+        window.sendPaymentToAmir = function() {
+            // Get payment type
+            const paymentType = selectedPaymentType;
+            const isSubscription = (paymentType === 'semester' || paymentType === 'monthly');
+            
+            // Get unified form values
+            const name = document.getElementById('paymentName')?.value?.trim() || '';
+            const regNumber = document.getElementById('paymentRegNumber')?.value?.trim() || '';
+            const amount = isSubscription ? selectedAmount : (document.getElementById('paymentAmount')?.value || '');
+            const paymentMethod = document.getElementById('paymentMethod')?.value || '';
+            const paymentReason = document.getElementById('paymentReason')?.value || '';
+            const notes = document.getElementById('paymentNotes')?.value?.trim() || '';
+            
+            // Validate required fields
+            if (!isSubscription) {
+                // For non-subscriptions, amount and payment reason are required
+                if (!amount || amount <= 0) {
+                    alert('Please enter a valid amount');
+                    document.getElementById('paymentAmount')?.focus();
+                    return;
+                }
+                
+                if (!paymentReason) {
+                    alert('Please select a payment reason');
+                    document.getElementById('paymentReason')?.focus();
+                    return;
+                }
+            }
+            
+            if (!paymentMethod) {
+                alert('Please select a payment method');
+                document.getElementById('paymentMethod')?.focus();
+                return;
+            }
+            
+            // Get payment type names
+            const typeNames = {
+                'semester': 'Semester Subscription',
+                'monthly': 'Monthly Subscription',
+                'zakat': 'Zakat',
+                'charity': 'Charity',
+                'donate': 'Donation',
+                'kisilaahe': 'Kisilaahe Subscription'
+            };
+            
+            // Get payment reason names
+            const reasonNames = {
+                'general-donation': 'General Donation',
+                'iftar': 'Iftar',
+                'bananas': 'Bananas',
+                'mosque-building-fund': 'Mosque Building Fund',
+                'kizumu-tahfiz-charity-visit': 'Kizumu Tahfiz Charity Visit',
+                'tuition-for-brothers': 'Tuition for Brothers',
+                'other': 'Other'
+            };
+            
+            // Get payment method names
+            const methodNames = {
+                'mtn': 'MTN Mobile Money',
+                'airtel': 'Airtel Money',
+                'bank': 'Bank Transfer'
+            };
+            
+            // Build WhatsApp message
+            let message = `Assalam Alaikum Amir,\n\n`;
+            message += `I would like to make a payment:\n\n`;
+            message += `Payment Type: ${typeNames[paymentType] || paymentType}\n`;
+            
+            if (isSubscription && selectedPlan) {
+                const planNames = {
+                    'undergraduate': 'Undergraduate Plan',
+                    'postgraduate': 'Postgraduate Plan',
+                    'university-staff': 'University Staff Plan',
+                    'elders': 'Elders Plan'
+                };
+                message += `Plan: ${planNames[selectedPlan] || selectedPlan}\n`;
+                
+                // Add subscription-specific fields
+                const course = document.getElementById('course')?.value?.trim() || '';
+                const faculty = document.getElementById('faculty')?.value?.trim() || '';
+                if (course) message += `Course: ${course}\n`;
+                if (faculty) message += `Faculty/Department: ${faculty}\n`;
+            }
+            
+            if (name) message += `Name: ${name}\n`;
+            if (regNumber) message += `Registration Number: ${regNumber}\n`;
+            message += `Amount: ${parseInt(amount).toLocaleString()} UGX\n`;
+            message += `Payment Method: ${methodNames[paymentMethod] || paymentMethod}\n`;
+            
+            if (paymentReason) {
+                message += `Payment Reason: ${reasonNames[paymentReason] || paymentReason}\n`;
+            }
+            
+            if (notes) {
+                message += `Notes: ${notes}\n`;
+            }
+            
+            message += `\nPlease confirm the payment details and provide further instructions.\n\nJazakallahu Khairan.`;
+            
+            // Encode message for URL
+            const encodedMessage = encodeURIComponent(message);
+            
+            // Open WhatsApp (mobile-friendly) - Use Amir's number: 256703268522
+            if (typeof window.openWhatsApp === 'function') {
+                window.openWhatsApp('256703268522', message);
+            } else {
+                // Fallback for older browsers
+                const whatsappLink = `https://wa.me/256703268522?text=${encodedMessage}`;
+                window.location.href = whatsappLink;
+            }
+            
+            // Show success notice
+            const notice = document.getElementById('amirDaawaNotice');
+            if (notice) {
+                notice.style.display = 'block';
+                setTimeout(() => {
+                    notice.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 500);
             }
         };
     </script>
