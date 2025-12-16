@@ -571,168 +571,123 @@ function initFastingReminderChecker() {
     setInterval(checkAndCreateFastingReminder, 60000); // 1 minute = 60000ms
 }
 
-// Load prayer times from localStorage (NO auto-calculation - only manual admin updates)
-function loadPrayerTimes() {
-    const defaultPrayers = {
-        fajr: { adhan: '05:30', iqaama: '05:40' },
-        dhuhr: { adhan: '12:15', iqaama: '12:25' },
-        asr: { adhan: '15:45', iqaama: '15:55' },
-        maghrib: { adhan: '18:20', iqaama: '18:25' },
-        isha: { adhan: '19:45', iqaama: '19:55' }
-    };
-    
-    // Only load from localStorage - no calculation
-    const storedPrayers = JSON.parse(localStorage.getItem('prayerTimes'));
-    const prayers = storedPrayers || defaultPrayers;
-    
-    // If no stored prayers, save defaults once
-    if (!storedPrayers) {
-        localStorage.setItem('prayerTimes', JSON.stringify(defaultPrayers));
+// Load prayer times from Supabase database (NO auto-calculation - admin-defined only)
+async function loadPrayerTimes() {
+    try {
+        // Fetch from Supabase database
+        let prayers = null;
+        if (window.prayerTimesService && window.prayerTimesService.getPrayerTimes) {
+            prayers = await window.prayerTimesService.getPrayerTimes();
+        } else if (typeof getPrayerTimes === 'function') {
+            // Fallback if service not loaded yet
+            const { getPrayerTimes } = await import('./services/prayerTimesService.js');
+            prayers = await getPrayerTimes();
+        }
+        
+        // If no prayer times in database, show fail-safe message
+        if (!prayers || Object.keys(prayers).length === 0) {
+            const prayerTimesList = document.getElementById('prayerTimesList');
+            if (prayerTimesList) {
+                const failSafeMsg = document.createElement('div');
+                failSafeMsg.style.cssText = 'text-align: center; padding: 40px 20px; color: #999;';
+                failSafeMsg.innerHTML = '<i class="fas fa-info-circle" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i><p style="font-size: 16px; margin: 0;">Prayer times not set by administrator</p>';
+                
+                // Clear existing content and show message
+                const existingItems = prayerTimesList.querySelectorAll('.prayer-item, .prayer-table-header, .prayer-times-header');
+                existingItems.forEach(item => item.style.display = 'none');
+                
+                // Remove existing fail-safe if present
+                const existingFailSafe = prayerTimesList.querySelector('.prayer-times-failsafe');
+                if (existingFailSafe) existingFailSafe.remove();
+                
+                failSafeMsg.className = 'prayer-times-failsafe';
+                prayerTimesList.appendChild(failSafeMsg);
+            }
+            return;
+        }
+        
+        // Remove fail-safe message if prayers exist
+        const failSafeMsg = document.querySelector('.prayer-times-failsafe');
+        if (failSafeMsg) failSafeMsg.remove();
+        
+        // Show prayer items
+        const existingItems = document.querySelectorAll('.prayer-item, .prayer-table-header, .prayer-times-header');
+        existingItems.forEach(item => item.style.display = '');
+        
+        // Update prayer times display (exactly as stored - no modification)
+        Object.keys(prayers).forEach(prayer => {
+            const adhanEl = document.getElementById(prayer + 'Adhan');
+            const iqaamaEl = document.getElementById(prayer + 'Iqaama');
+            if (adhanEl && prayers[prayer].adhan) {
+                adhanEl.textContent = prayers[prayer].adhan;
+            }
+            if (iqaamaEl && prayers[prayer].iqaama) {
+                iqaamaEl.textContent = prayers[prayer].iqaama;
+            }
+        });
+        
+        // Simple next prayer display (no time calculations)
+        updateNextPrayerSimple(prayers);
+    } catch (error) {
+        console.error('Error loading prayer times:', error);
+        // Show fail-safe message on error
+        const prayerTimesList = document.getElementById('prayerTimesList');
+        if (prayerTimesList) {
+            const failSafeMsg = document.createElement('div');
+            failSafeMsg.style.cssText = 'text-align: center; padding: 40px 20px; color: #999;';
+            failSafeMsg.innerHTML = '<i class="fas fa-info-circle" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i><p style="font-size: 16px; margin: 0;">Prayer times not set by administrator</p>';
+            
+            const existingItems = prayerTimesList.querySelectorAll('.prayer-item, .prayer-table-header, .prayer-times-header');
+            existingItems.forEach(item => item.style.display = 'none');
+            
+            const existingFailSafe = prayerTimesList.querySelector('.prayer-times-failsafe');
+            if (existingFailSafe) existingFailSafe.remove();
+            
+            failSafeMsg.className = 'prayer-times-failsafe';
+            prayerTimesList.appendChild(failSafeMsg);
+        }
+    }
+}
+
+// Simple next prayer display (NO time calculations - just show first prayer)
+function updateNextPrayerSimple(prayers) {
+    if (!prayers || Object.keys(prayers).length === 0) {
+        return;
     }
     
-    // Update prayer times display (from stored values only)
-    Object.keys(prayers).forEach(prayer => {
-        const adhanEl = document.getElementById(prayer + 'Adhan');
-        const iqaamaEl = document.getElementById(prayer + 'Iqaama');
-        if (adhanEl) adhanEl.textContent = prayers[prayer].adhan;
-        if (iqaamaEl) iqaamaEl.textContent = prayers[prayer].iqaama;
+    // Simply show first prayer (Fajr) as next prayer
+    // No automatic calculations or time comparisons
+    const nextPrayerTime = document.getElementById('nextPrayerTime');
+    if (nextPrayerTime && prayers.fajr) {
+        nextPrayerTime.textContent = `Fajr (${prayers.fajr.adhan})`;
+    }
+    
+    // Highlight first prayer item
+    document.querySelectorAll('.prayer-item').forEach(item => {
+        item.classList.remove('active');
     });
     
-    // Find next prayer and highlight it
-    updateNextPrayerAndHighlight(prayers);
-}
-
-// Update next prayer display and highlight the next/current prayer
-function updateNextPrayerAndHighlight(prayers) {
-    const now = new Date();
-    const currentHours = now.getHours();
-    const currentMinutes = now.getMinutes();
-    const currentTime = currentHours * 60 + currentMinutes;
-    
-    const prayerTimes = [
-        { name: 'Fajr', key: 'fajr', adhan: prayers.fajr.adhan, iqaama: prayers.fajr.iqaama },
-        { name: 'Dhuhr', key: 'dhuhr', adhan: prayers.dhuhr.adhan, iqaama: prayers.dhuhr.iqaama },
-        { name: 'Asr', key: 'asr', adhan: prayers.asr.adhan, iqaama: prayers.asr.iqaama },
-        { name: 'Maghrib', key: 'maghrib', adhan: prayers.maghrib.adhan, iqaama: prayers.maghrib.iqaama },
-        { name: 'Isha', key: 'isha', adhan: prayers.isha.adhan, iqaama: prayers.isha.iqaama }
-    ];
-    
-    // Find current prayer (if we're between adhan and iqaama)
-    let currentPrayer = null;
-    let nextPrayer = null;
-    
-    for (let i = 0; i < prayerTimes.length; i++) {
-        const prayer = prayerTimes[i];
-        const [adhanHours, adhanMins] = prayer.adhan.split(':').map(Number);
-        const [iqaamaHours, iqaamaMins] = prayer.iqaama.split(':').map(Number);
-        const adhanTime = adhanHours * 60 + adhanMins;
-        const iqaamaTime = iqaamaHours * 60 + iqaamaMins;
-        
-        // Check if we're currently in this prayer time (between adhan and iqaama)
-        if (currentTime >= adhanTime && currentTime < iqaamaTime) {
-            currentPrayer = prayer;
-            // Next prayer is the one after this
-            if (i + 1 < prayerTimes.length) {
-                nextPrayer = prayerTimes[i + 1];
-            } else {
-                // If this is Isha, next is tomorrow's Fajr
-                nextPrayer = prayerTimes[0];
-            }
-            break;
-        }
-    }
-    
-    // If no current prayer, find the next upcoming prayer
-    if (!currentPrayer) {
-        for (let prayer of prayerTimes) {
-            const [hours, minutes] = prayer.adhan.split(':').map(Number);
-            const prayerTime = hours * 60 + minutes;
-            if (prayerTime > currentTime) {
-                nextPrayer = prayer;
-                break;
-            }
-        }
-        
-        // If all prayers have passed, next is tomorrow's Fajr
-        if (!nextPrayer) {
-            nextPrayer = prayerTimes[0];
-        }
-    }
-    
-    // Update next prayer display
-    const nextPrayerTime = document.getElementById('nextPrayerTime');
-    if (nextPrayerTime && nextPrayer) {
-        const [hours, minutes] = nextPrayer.adhan.split(':').map(Number);
-        const nextPrayerTimeMinutes = hours * 60 + minutes;
-        
-        // Calculate time until next prayer
-        let minutesUntil = nextPrayerTimeMinutes - currentTime;
-        if (minutesUntil < 0) {
-            // Next prayer is tomorrow
-            minutesUntil = (24 * 60) - currentTime + nextPrayerTimeMinutes;
-        }
-        
-        const hoursUntil = Math.floor(minutesUntil / 60);
-        const minsUntil = minutesUntil % 60;
-        
-        let timeString = '';
-        if (hoursUntil > 0) {
-            timeString = `${hoursUntil}h ${minsUntil}m`;
-        } else {
-            timeString = `${minsUntil}m`;
-        }
-        
-        nextPrayerTime.textContent = `${nextPrayer.name} (${nextPrayer.adhan}) - in ${timeString}`;
-    }
-    
-    // Highlight the next prayer (or current if we're in prayer time)
-    const prayerToHighlight = currentPrayer || nextPrayer;
-    if (prayerToHighlight) {
-        // Remove active class from all prayer items
-        document.querySelectorAll('.prayer-item').forEach(item => {
-            item.classList.remove('active');
-        });
-        
-        // Find prayer item by prayer name
-        const prayerItems = document.querySelectorAll('.prayer-item');
-        prayerItems.forEach(item => {
-            const prayerName = item.querySelector('.prayer-name')?.textContent.trim();
-            if (prayerName === prayerToHighlight.name) {
-                item.classList.add('active');
-            }
-        });
+    const firstPrayerItem = document.querySelector('.prayer-item');
+    if (firstPrayerItem) {
+        firstPrayerItem.classList.add('active');
     }
 }
 
-// Update prayer times and next prayer continuously
+// DISABLED: No automatic prayer time updates
+// Prayer times are fetched from database on page load only
+// Admin must update times manually in database
 function startPrayerTimesUpdater() {
-    // Update immediately
-    const prayers = JSON.parse(localStorage.getItem('prayerTimes')) || {
-        fajr: { adhan: '05:30', iqaama: '05:40' },
-        dhuhr: { adhan: '12:15', iqaama: '12:25' },
-        asr: { adhan: '15:45', iqaama: '15:55' },
-        maghrib: { adhan: '18:20', iqaama: '18:25' },
-        isha: { adhan: '19:45', iqaama: '19:55' }
-    };
-    updateNextPrayerAndHighlight(prayers);
-    
-    // Update every minute
-    setInterval(() => {
-        const prayers = JSON.parse(localStorage.getItem('prayerTimes')) || {
-            fajr: { adhan: '05:30', iqaama: '05:40' },
-            dhuhr: { adhan: '12:15', iqaama: '12:25' },
-            asr: { adhan: '15:45', iqaama: '15:55' },
-            maghrib: { adhan: '18:20', iqaama: '18:25' },
-            isha: { adhan: '19:45', iqaama: '19:55' }
-        };
-        updateNextPrayerAndHighlight(prayers);
-    }, 60000); // Update every minute
+    // Function kept for compatibility but does nothing
+    // All automatic time calculations removed
 }
 
 // Update dates on load and continuously (auto-update)
 updateDates();
-loadPrayerTimes();
-startPrayerTimesUpdater();
+// Load prayer times from database (async)
+loadPrayerTimes().catch(error => {
+    console.error('Failed to load prayer times:', error);
+});
+// Automatic updater disabled - no time calculations
 
 // Initialize fasting reminder checker (checks every minute for Sunday/Wednesday at 2pm, 6pm, 7:40pm)
 initFastingReminderChecker();
@@ -1410,8 +1365,10 @@ function cancelEditing() {
         el.classList.remove('editing');
     });
     
-    // Reload prayer times (from storage, no calculation)
-    loadPrayerTimes();
+    // Reload prayer times from database
+    loadPrayerTimes().catch(error => {
+        console.error('Failed to reload prayer times:', error);
+    });
     
     // Update edit button
     const editBtn = document.getElementById('adminEditBtn');
@@ -1423,7 +1380,14 @@ function cancelEditing() {
     if (btnContainer) btnContainer.remove();
 }
 
-function savePrayerTimes() {
+async function savePrayerTimes() {
+    // Check admin status
+    const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+    if (!adminStatus) {
+        alert('Only administrators can update prayer times.');
+        return;
+    }
+    
     const prayers = {};
     const prayerNames = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
     
@@ -1449,13 +1413,27 @@ function savePrayerTimes() {
         }
     });
     
-    // Save to localStorage
-    localStorage.setItem('prayerTimes', JSON.stringify(prayers));
-    
-    // Disable editing
-    cancelEditing();
-    
-    alert('Prayer times saved successfully!');
+    try {
+        // Save to Supabase database
+        if (window.prayerTimesService && window.prayerTimesService.savePrayerTimes) {
+            await window.prayerTimesService.savePrayerTimes(prayers, 'admin');
+        } else {
+            // Fallback if service not loaded
+            const { savePrayerTimes: saveToDB } = await import('./services/prayerTimesService.js');
+            await saveToDB(prayers, 'admin');
+        }
+        
+        // Disable editing
+        cancelEditing();
+        
+        // Reload prayer times from database
+        await loadPrayerTimes();
+        
+        alert('Prayer times saved successfully!');
+    } catch (error) {
+        console.error('Error saving prayer times:', error);
+        alert('Error: Failed to save prayer times. ' + (error.message || 'Please try again.'));
+    }
 }
 
 function initializePrayerTimesEditing() {

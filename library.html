@@ -95,39 +95,88 @@
             </section>
 
             <section class="page-content">
-                <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
-                    <button class="btn btn-primary" style="flex: 1; min-width: calc(50% - 5px); padding: 12px;" onclick="if(typeof window.filterBooks==='function')window.filterBooks('all')">All</button>
-                    <button class="btn btn-outline" style="flex: 1; min-width: calc(50% - 5px); padding: 12px;" onclick="if(typeof window.filterBooks==='function')window.filterBooks('islamic')">Islamic</button>
-                    <button class="btn btn-outline" style="flex: 1; min-width: calc(50% - 5px); padding: 12px;" onclick="if(typeof window.filterBooks==='function')window.filterBooks('educational')">Educational</button>
-                    <button class="btn btn-outline" style="flex: 1; min-width: calc(50% - 5px); padding: 12px;" onclick="if(typeof window.filterBooks==='function')window.filterBooks('quran')">Quran</button>
+                <!-- Category Cards Grid -->
+                <div class="category-cards-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px;">
+                    <!-- All Category Card -->
+                    <div class="category-card active" data-category="all" onclick="if(typeof window.filterBooks==='function')window.filterBooks('all')" style="background: linear-gradient(135deg, #4CAF50, #388E3C); border-radius: 12px; padding: 16px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; touch-action: manipulation;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <i class="fas fa-th" style="font-size: 24px; color: white;"></i>
+                            <span class="category-badge" style="background: rgba(255,255,255,0.3); color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;" id="count-all">0</span>
+                        </div>
+                        <div style="color: white; font-size: 16px; font-weight: 600;">All</div>
+                    </div>
+                    
+                    <!-- Quran Category Card -->
+                    <div class="category-card" data-category="quran" onclick="if(typeof window.filterBooks==='function')window.filterBooks('quran')" style="background: linear-gradient(135deg, #4CAF50, #388E3C); border-radius: 12px; padding: 16px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; touch-action: manipulation;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <i class="fas fa-quran" style="font-size: 24px; color: white;"></i>
+                            <span class="category-badge" style="background: rgba(255,255,255,0.3); color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;" id="count-quran">0</span>
+                        </div>
+                        <div style="color: white; font-size: 16px; font-weight: 600;">Quran</div>
+                    </div>
+                    
+                    <!-- Yasaruna Category Card -->
+                    <div class="category-card" data-category="yasaruna" onclick="if(typeof window.filterBooks==='function')window.filterBooks('yasaruna')" style="background: linear-gradient(135deg, #2196F3, #1976D2); border-radius: 12px; padding: 16px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; touch-action: manipulation;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <i class="fas fa-book-open" style="font-size: 24px; color: white;"></i>
+                            <span class="category-badge" style="background: rgba(255,255,255,0.3); color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;" id="count-yasaruna">0</span>
+                        </div>
+                        <div style="color: white; font-size: 16px; font-weight: 600;">Yasaruna</div>
+                    </div>
+                    
+                    <!-- Hadith Category Card -->
+                    <div class="category-card" data-category="hadith" onclick="if(typeof window.filterBooks==='function')window.filterBooks('hadith')" style="background: linear-gradient(135deg, #FF9800, #F57C00); border-radius: 12px; padding: 16px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; touch-action: manipulation;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <i class="fas fa-book-reader" style="font-size: 24px; color: white;"></i>
+                            <span class="category-badge" style="background: rgba(255,255,255,0.3); color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;" id="count-hadith">0</span>
+                        </div>
+                        <div style="color: white; font-size: 16px; font-weight: 600;">Hadith</div>
+                    </div>
+                    
+                    <!-- Tauheed Category Card -->
+                    <div class="category-card" data-category="tauheed" onclick="if(typeof window.filterBooks==='function')window.filterBooks('tauheed')" style="background: linear-gradient(135deg, #9C27B0, #7B1FA2); border-radius: 12px; padding: 16px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; touch-action: manipulation;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <i class="fas fa-star-and-crescent" style="font-size: 24px; color: white;"></i>
+                            <span class="category-badge" style="background: rgba(255,255,255,0.3); color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;" id="count-tauheed">0</span>
+                        </div>
+                        <div style="color: white; font-size: 16px; font-weight: 600;">Tauheed</div>
+                    </div>
+                    
+                    <!-- Swalah Category Card -->
+                    <div class="category-card" data-category="swalah" onclick="if(typeof window.filterBooks==='function')window.filterBooks('swalah')" style="background: linear-gradient(135deg, #009688, #00796B); border-radius: 12px; padding: 16px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; touch-action: manipulation;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <i class="fas fa-mosque" style="font-size: 24px; color: white;"></i>
+                            <span class="category-badge" style="background: rgba(255,255,255,0.3); color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;" id="count-swalah">0</span>
+                        </div>
+                        <div style="color: white; font-size: 16px; font-weight: 600;">Swalah</div>
+                    </div>
+                    
+                    <!-- Others Category Card -->
+                    <div class="category-card" data-category="others" onclick="if(typeof window.filterBooks==='function')window.filterBooks('others')" style="background: linear-gradient(135deg, #757575, #616161); border-radius: 12px; padding: 16px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; touch-action: manipulation;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <i class="fas fa-folder" style="font-size: 24px; color: white;"></i>
+                            <span class="category-badge" style="background: rgba(255,255,255,0.3); color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;" id="count-others">0</span>
+                        </div>
+                        <div style="color: white; font-size: 16px; font-weight: 600;">Others</div>
+                    </div>
                 </div>
+                
+                <style>
+                    .category-card:hover {
+                        transform: translateY(-2px);
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+                    }
+                    .category-card:active {
+                        transform: translateY(0);
+                    }
+                    .category-card.active {
+                        box-shadow: 0 4px 16px rgba(0,0,0,0.2) !important;
+                        transform: scale(1.02);
+                    }
+                </style>
 
                 <div class="media-grid" id="libraryGrid">
-                    <!-- Default book placeholders -->
-                    <div class="media-item" data-category="islamic">
-                        <div style="background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 15px;">
-                            <i class="fas fa-quran" style="font-size: 48px; margin-bottom: 10px;"></i>
-                            <div style="font-size: 12px; text-align: center;">Quran & Tafsir</div>
-                        </div>
-                    </div>
-                    <div class="media-item" data-category="islamic">
-                        <div style="background: linear-gradient(135deg, #4CAF50, #388E3C); width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 15px;">
-                            <i class="fas fa-book" style="font-size: 48px; margin-bottom: 10px;"></i>
-                            <div style="font-size: 12px; text-align: center;">Islamic Studies</div>
-                        </div>
-                    </div>
-                    <div class="media-item" data-category="educational">
-                        <div style="background: linear-gradient(135deg, #2196F3, #1976D2); width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 15px;">
-                            <i class="fas fa-graduation-cap" style="font-size: 48px; margin-bottom: 10px;"></i>
-                            <div style="font-size: 12px; text-align: center;">Educational</div>
-                        </div>
-                    </div>
-                    <div class="media-item" data-category="quran">
-                        <div style="background: linear-gradient(135deg, #9C27B0, #7B1FA2); width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 15px;">
-                            <i class="fas fa-book-open" style="font-size: 48px; margin-bottom: 10px;"></i>
-                            <div style="font-size: 12px; text-align: center;">Quran Study</div>
-                        </div>
-                    </div>
+                    <!-- Books will be loaded here dynamically -->
                 </div>
 
                 <div class="info-card" style="margin-top: 20px;">
@@ -251,26 +300,14 @@
 
         // Filter books function - globally accessible
         window.filterBooks = function(category) {
-            const filterButtons = document.querySelectorAll('.page-content > div:first-child button');
-            
-            // Update button styles based on selected filter
-            filterButtons.forEach(btn => {
-                const btnText = btn.textContent.trim().toLowerCase();
-                const isActive = (category === 'all' && btnText === 'all') ||
-                                (category === 'islamic' && btnText === 'islamic') ||
-                                (category === 'educational' && btnText === 'educational') ||
-                                (category === 'quran' && btnText === 'quran');
-                
-                if (isActive) {
-                    btn.className = 'btn btn-primary';
-                    btn.style.flex = '1';
-                    btn.style.minWidth = 'calc(50% - 5px)';
-                    btn.style.padding = '12px';
+            // Update category card active states
+            const categoryCards = document.querySelectorAll('.category-card');
+            categoryCards.forEach(card => {
+                const cardCategory = card.dataset.category || '';
+                if (cardCategory === category) {
+                    card.classList.add('active');
                 } else {
-                    btn.className = 'btn btn-outline';
-                    btn.style.flex = '1';
-                    btn.style.minWidth = 'calc(50% - 5px)';
-                    btn.style.padding = '12px';
+                    card.classList.remove('active');
                 }
             });
             
@@ -278,6 +315,27 @@
             const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
             displayBooks(cachedBooks, category, adminStatus);
         };
+        
+        // Update category counts
+        function updateCategoryCounts(books) {
+            const categories = ['all', 'quran', 'yasaruna', 'hadith', 'tauheed', 'swalah', 'others'];
+            
+            categories.forEach(cat => {
+                const badge = document.getElementById(`count-${cat}`);
+                if (badge) {
+                    let count = 0;
+                    if (cat === 'all') {
+                        count = books.length;
+                    } else {
+                        count = books.filter(book => {
+                            const bookCategory = (book.category || 'others').toLowerCase();
+                            return bookCategory === cat.toLowerCase();
+                        }).length;
+                    }
+                    badge.textContent = count;
+                }
+            });
+        }
 
         window.closeAddBookModal = function() {
             const modal = document.getElementById('addBookModal');
@@ -389,10 +447,12 @@
                 }
                 
                 // STEP 2: Insert record into books table
+                // Normalize category to lowercase for consistency
+                const normalizedCategory = category ? category.toLowerCase() : 'others';
                 const bookData = {
                     title: title,
                     author: '', // No author field in new form
-                    category: category,
+                    category: normalizedCategory,
                     description: description || null,
                     cover_url: null, // No cover image in new form
                     file_url: fileUrl,
@@ -438,7 +498,7 @@
 
 
         // Delete book function - admin only
-        window.deleteBook = function(bookId) {
+        window.deleteBook = async function(bookId) {
             const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
             if (!adminStatus) {
                 alert('You must be logged in as admin to delete books.');
@@ -461,86 +521,57 @@
                 return;
             }
             
-            const isStaticHosting = window.location.hostname.includes('github.io') || 
-                                   window.location.hostname.includes('netlify.app') ||
-                                   window.location.hostname.includes('vercel.app');
-            
-            let deleted = false;
-            
-            // Try to delete from database if not static hosting
-            if (!isStaticHosting) {
-                const formData = new FormData();
-                formData.append('id', safeBookId);
-                formData.append('password', adminPassword);
-                
-                fetch(API_BASE_URL + '/delete_book.php', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        deleted = true;
-                        console.log('Book deleted from database');
-                    }
-                })
-                .catch(error => {
-                    console.warn('Database delete failed:', error);
-                });
-            }
-            
-            // Also delete from Supabase
-            (async () => {
-                try {
-                    const supabase = getSupabaseClient();
-                    if (supabase) {
-                        // Try to find book by ID (could be numeric or string)
-                        let deleteQuery = supabase
-                            .from('books')
-                            .delete()
-                            .eq('id', safeBookId);
-                        
-                        const supabasePromise = deleteQuery;
-                        const timeoutPromise = new Promise((_, reject) => 
-                            setTimeout(() => reject(new Error('Supabase timeout')), 10000)
-                        );
-                        
-                        const { error: deleteError } = await Promise.race([
-                            supabasePromise.then(result => ({ error: result.error })),
-                            timeoutPromise.then(() => ({ error: new Error('Supabase timeout') }))
-                        ]);
-                        
-                        if (!deleteError) {
-                            console.log('Book deleted from Supabase');
-                            deleted = true;
-                        }
-                    }
-                } catch (error) {
-                    console.warn('Supabase delete failed:', error);
+            try {
+                const supabase = getSupabaseClient();
+                if (!supabase) {
+                    throw new Error('Supabase client not available');
                 }
                 
-                // Optimistically remove from cache
-                cachedBooks = cachedBooks.filter(book => book.id.toString() !== safeBookId && book.supabaseId?.toString() !== safeBookId);
-                const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
-                displayBooks(cachedBooks, 'all', adminStatus);
+                console.log('Attempting to delete book with ID:', safeBookId);
                 
-                // Save to localStorage
+                // Delete from Supabase - simple and direct
+                const { data, error } = await supabase
+                    .from('books')
+                    .delete()
+                    .eq('id', safeBookId)
+                    .select();
+                
+                if (error) {
+                    console.error('Supabase delete error:', error);
+                    throw error;
+                }
+                
+                console.log('Book deleted successfully from Supabase:', data);
+                
+                // Remove from cache immediately
+                cachedBooks = cachedBooks.filter(book => {
+                    const bookIdStr = book.id?.toString() || '';
+                    const supabaseIdStr = book.supabaseId?.toString() || '';
+                    return bookIdStr !== safeBookId && supabaseIdStr !== safeBookId;
+                });
+                
+                // Update localStorage cache
                 try {
                     localStorage.setItem('cachedBooks', JSON.stringify(cachedBooks));
                 } catch (e) {
                     console.log('Cache save failed:', e);
                 }
                 
-                if (deleted || isStaticHosting) {
-                    alert('Book deleted successfully!');
-                    // Refresh in background
-                    setTimeout(() => {
-                        loadBooksFromStorage('all', false);
-                    }, 500);
-                } else {
-                    alert('Error: Failed to delete book. Please try again.');
-                }
-            })();
+                // Update UI immediately
+                const currentCategory = document.querySelector('.category-card.active')?.dataset.category || 'all';
+                const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+                displayBooks(cachedBooks, currentCategory, adminStatus);
+                
+                // Refresh from database in background
+                setTimeout(() => {
+                    loadBooksFromStorage(currentCategory, false);
+                }, 500);
+                
+                alert('Book deleted successfully!');
+            } catch (error) {
+                console.error('Error deleting book:', error);
+                alert('Error: Failed to delete book. ' + (error.message || 'Please try again.'));
+            }
         };
 
         // Helper function to clear old books (keeps last N items)
@@ -700,15 +731,11 @@
                 }
                 
                 // Build query: select all from books, ordered by created_at DESC
+                // DO NOT filter by category here - fetch all books and filter client-side
                 let query = supabase
                     .from('books')
                     .select('*')
                     .order('created_at', { ascending: false });
-                
-                // Filter by category if not 'all'
-                if (category !== 'all') {
-                    query = query.eq('category', category);
-                }
                 
                 // Execute query with timeout protection
                 const timeoutPromise = new Promise((_, reject) => 
@@ -801,12 +828,15 @@
             const libraryGrid = document.getElementById('libraryGrid');
             if (!libraryGrid) return;
             
+            // Update category counts
+            updateCategoryCounts(books);
+            
             // Filter by category (client-side, instant)
             let filtered = books;
             if (category !== 'all') {
                 filtered = books.filter(book => {
-                    const bookCategory = book.category || 'other';
-                    return bookCategory.toLowerCase() === category.toLowerCase();
+                    const bookCategory = (book.category || 'others').toLowerCase();
+                    return bookCategory === category.toLowerCase();
                 });
             }
             
@@ -824,7 +854,8 @@
             if (filtered.length === 0) {
                 const emptyDiv = document.createElement('div');
                 emptyDiv.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 40px; color: #999;';
-                emptyDiv.innerHTML = '<i class="fas fa-book" style="font-size: 48px; margin-bottom: 10px; opacity: 0.5;"></i><p>No books available yet' + (category !== 'all' ? ` in ${category} category` : '') + '</p>';
+                const categoryName = category === 'all' ? '' : category.charAt(0).toUpperCase() + category.slice(1);
+                emptyDiv.innerHTML = '<i class="fas fa-book" style="font-size: 48px; margin-bottom: 10px; opacity: 0.5;"></i><p>No books available yet' + (category !== 'all' ? ` in ${categoryName} category` : '') + '</p>';
                 libraryGrid.appendChild(emptyDiv);
                 return;
             }
@@ -833,7 +864,7 @@
             filtered.forEach(book => {
                 const newBookItem = document.createElement('div');
                 newBookItem.className = 'media-item';
-                newBookItem.dataset.category = book.category || 'other';
+                newBookItem.dataset.category = (book.category || 'others').toLowerCase();
                 newBookItem.dataset.id = book.id;
                 
                 // Sanitize all inputs to prevent XSS
@@ -950,10 +981,12 @@
                         <label class="form-label" style="font-size: 16px; font-weight: 600; margin-bottom: 10px; display: block; color: var(--dark-gray, #333);">Category *</label>
                         <select class="form-input" id="bookCategory" required style="width: 100%; padding: 16px; font-size: 16px; border: 2px solid #ddd; border-radius: 12px; box-sizing: border-box; -webkit-appearance: none; appearance: none; background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E&quot;); background-repeat: no-repeat; background-position: right 12px center; background-size: 20px; padding-right: 40px;">
                             <option value="">Select category</option>
-                            <option value="islamic">Islamic</option>
                             <option value="quran">Quran</option>
-                            <option value="educational">Educational</option>
-                            <option value="other">Other</option>
+                            <option value="yasaruna">Yasaruna</option>
+                            <option value="hadith">Hadith</option>
+                            <option value="tauheed">Tauheed</option>
+                            <option value="swalah">Swalah</option>
+                            <option value="others">Others</option>
                         </select>
                     </div>
                     
@@ -966,8 +999,43 @@
                     <!-- File Upload -->
                     <div class="form-group" style="margin-bottom: 24px;">
                         <label class="form-label" style="font-size: 16px; font-weight: 600; margin-bottom: 10px; display: block; color: var(--dark-gray, #333);">Upload File *</label>
-                        <input type="file" class="form-input" id="bookFile" accept=".pdf,.mp3,.wav,.ogg,audio/*,application/pdf" required style="width: 100%; padding: 16px; font-size: 16px; border: 2px solid #ddd; border-radius: 12px; box-sizing: border-box;">
-                        <p style="font-size: 14px; color: #666; margin-top: 8px; line-height: 1.4;">PDF, MP3, WAV, or OGG (max 100MB)</p>
+                        <label for="bookFile" style="display: block; width: 100%; cursor: pointer; touch-action: manipulation;">
+                            <input type="file" id="bookFile" name="bookFile" accept=".pdf,.mp3,.wav,.ogg,audio/*,application/pdf" required style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;">
+                            <div class="file-upload-button" style="width: 100%; padding: 20px; font-size: 16px; border: 2px dashed #ddd; border-radius: 12px; background: #f9f9f9; text-align: center; transition: all 0.2s; box-sizing: border-box;">
+                                <i class="fas fa-cloud-upload-alt" style="font-size: 32px; color: var(--primary-green, #4CAF50); margin-bottom: 8px; display: block;"></i>
+                                <span class="file-upload-text" style="color: var(--dark-gray, #333); font-weight: 600; display: block; margin-bottom: 4px;">Tap to select file</span>
+                                <span class="file-upload-hint" style="color: #666; font-size: 14px; display: block;">PDF, MP3, WAV, or OGG (max 100MB)</span>
+                                <span class="file-name-display" id="fileNameDisplay" style="display: none; margin-top: 8px; padding: 8px; background: white; border-radius: 6px; color: var(--primary-green, #4CAF50); font-size: 14px; font-weight: 600;"></span>
+                            </div>
+                        </label>
+                        <style>
+                            label[for="bookFile"]:hover .file-upload-button,
+                            label[for="bookFile"]:active .file-upload-button {
+                                border-color: var(--primary-green, #4CAF50);
+                                background: #f0f8f0;
+                            }
+                            #bookFile:focus + .file-upload-button {
+                                outline: 2px solid var(--primary-green, #4CAF50);
+                                outline-offset: 2px;
+                            }
+                        </style>
+                        <script>
+                            // Update file name display when file is selected (non-intrusive)
+                            (function() {
+                                const fileInput = document.getElementById('bookFile');
+                                const fileNameDisplay = document.getElementById('fileNameDisplay');
+                                if (fileInput && fileNameDisplay) {
+                                    fileInput.addEventListener('change', function(e) {
+                                        if (e.target.files && e.target.files[0]) {
+                                            fileNameDisplay.textContent = 'Selected: ' + e.target.files[0].name;
+                                            fileNameDisplay.style.display = 'block';
+                                        } else {
+                                            fileNameDisplay.style.display = 'none';
+                                        }
+                                    });
+                                }
+                            })();
+                        </script>
                     </div>
                 </form>
             </div>
