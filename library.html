@@ -6,6 +6,39 @@
     <title>Library - KIUMA</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        // Define showAddBookModal immediately in head so it's available for onclick handlers
+        window.showAddBookModal = function() {
+            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+            if (!adminStatus) {
+                if (typeof window.showAdminLogin === 'function') {
+                    window.showAdminLogin();
+                } else {
+                    alert('Please login as admin first. Click the "Admin Login" button.');
+                }
+                return;
+            }
+            const modal = document.getElementById('addBookModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                modal.style.visibility = 'visible';
+                modal.style.zIndex = '9999';
+                console.log('Add Book modal opened');
+                
+                // Re-attach file input handlers when modal opens (fixes timing issues)
+                setTimeout(function() {
+                    if (typeof window.attachFileInputHandler === 'function') {
+                        window.attachFileInputHandler();
+                    } else if (typeof attachFileInputHandler === 'function') {
+                        attachFileInputHandler();
+                    }
+                }, 100);
+            } else {
+                console.error('Add Book modal not found');
+                alert('Error: Add Book form not found. Please refresh the page.');
+            }
+        };
+    </script>
 </head>
 <body>
     <nav class="nav-menu" id="navMenu">
@@ -521,38 +554,6 @@
             }
         };
 
-        // Define showAddBookModal immediately so it's available for onclick handlers
-        window.showAddBookModal = function() {
-            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
-            if (!adminStatus) {
-                if (typeof window.showAdminLogin === 'function') {
-                    window.showAdminLogin();
-                } else {
-                    alert('Please login as admin first. Click the "Admin Login" button.');
-                }
-                return;
-            }
-            const modal = document.getElementById('addBookModal');
-            if (modal) {
-                modal.style.display = 'flex';
-                modal.style.visibility = 'visible';
-                modal.style.zIndex = '9999';
-                console.log('Add Book modal opened');
-                
-                // Re-attach file input handlers when modal opens (fixes timing issues)
-                setTimeout(function() {
-                    if (typeof window.attachFileInputHandler === 'function') {
-                        window.attachFileInputHandler();
-                    } else if (typeof attachFileInputHandler === 'function') {
-                        attachFileInputHandler();
-                    }
-                }, 100);
-            } else {
-                console.error('Add Book modal not found');
-                alert('Error: Add Book form not found. Please refresh the page.');
-            }
-        };
-
         // Check admin status on page load
         window.addEventListener('DOMContentLoaded', function() {
             // Check admin status in background (non-blocking)
@@ -619,10 +620,9 @@
                 
                 // Get wrapper element (now a label element)
                 const bookFileWrapper = document.getElementById('bookFileWrapper');
-                const bookFileInput = document.getElementById('bookFile');
                 
-                if (!bookFileWrapper || !bookFileInput) {
-                    console.warn('[File Upload] Elements not found');
+                if (!bookFileWrapper) {
+                    console.warn('[File Upload] bookFileWrapper not found');
                     return;
                 }
                 
