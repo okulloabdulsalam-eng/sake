@@ -1884,8 +1884,6 @@ async function enableEditing() {
         }
         
         console.log('[Enable Editing] Session verified:', session.user.email);
-        
-        console.log('[Enable Editing] Authentication verified:', authStatus.user.email);
     } catch (error) {
         console.error('[Enable Editing] Auth check error:', error);
         alert('Authentication check failed. Please log in again.');
