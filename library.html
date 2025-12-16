@@ -436,6 +436,44 @@
     <script src="script.js"></script>
     <script src="update-navigation.js"></script>
     <script>
+        // Mobile-safe function to open book files
+        window.openBookFileMobile = function(fileUrl, fileType) {
+            if (!fileUrl) {
+                alert('File URL not available');
+                return;
+            }
+            
+            // For mobile devices, use a more reliable method
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+                // On mobile, create a temporary link and click it
+                // This works better than window.open() for PDFs and audio files
+                const link = document.createElement('a');
+                link.href = fileUrl;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                
+                // For PDFs, try to open in browser viewer
+                if (fileType === 'pdf' || fileUrl.toLowerCase().endsWith('.pdf')) {
+                    link.setAttribute('download', ''); // Allow download if can't open
+                }
+                
+                // For audio files, open directly (browser will handle playback)
+                if (fileType === 'audio' || /\.(mp3|wav|ogg|m4a|aac)$/i.test(fileUrl)) {
+                    // Audio files - open in new tab for playback
+                    link.target = '_blank';
+                }
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else {
+                // Desktop - use window.open
+                window.open(fileUrl, '_blank', 'noopener,noreferrer');
+            }
+        };
+
         // Define showAddBookModal immediately so it's available for onclick handlers
         window.showAddBookModal = function() {
             const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
@@ -528,6 +566,7 @@
                         // Show file name
                         fileNameDisplay.textContent = 'Selected: ' + file.name;
                         fileNameDisplay.style.display = 'block';
+                        fileNameDisplay.style.marginTop = '12px';
                         
                         // Harden mobile file type detection - use both MIME type AND filename extension
                         // Handle empty or "application/octet-stream" MIME types
@@ -881,7 +920,7 @@
                                 <p style="margin: 0; font-size: 15px; color: var(--text-gray); line-height: 1.6;">${safeDescription}</p>
                             </div>
                             
-                            ${book.file_url ? `<button onclick="window.open('${book.file_url}', '_blank'); closeBookDetailsModal();" style="width: 100%; padding: 14px; background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3); transition: all 0.2s; touch-action: manipulation; display: flex; align-items: center; justify-content: center; gap: 8px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(76, 175, 80, 0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(76, 175, 80, 0.3)';">
+                            ${book.file_url ? `<button onclick="openBookFileMobile('${book.file_url}', '${book.type || 'pdf'}'); closeBookDetailsModal();" style="width: 100%; padding: 14px; background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3); transition: all 0.2s; touch-action: manipulation; display: flex; align-items: center; justify-content: center; gap: 8px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(76, 175, 80, 0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(76, 175, 80, 0.3)';">
                                 <i class="fas fa-external-link-alt"></i> Open Book
                             </button>` : ''}
                         </div>
@@ -1390,8 +1429,8 @@
                 if (fileSizeDisplay) metaItems.push(fileSizeDisplay);
                 const metaLine = metaItems.join(' • ');
                 
-                // Card click handler - opens file if available
-                const cardClickHandler = fileUrl ? `onclick="window.open('${fileUrl}', '_blank')"` : '';
+                // Card click handler - opens file if available (mobile-safe)
+                const cardClickHandler = fileUrl ? `onclick="openBookFileMobile('${fileUrl}', '${fileType}')"` : '';
                 
                 newBookItem.innerHTML = `
                     <div class="document-card" ${cardClickHandler}>
@@ -1406,7 +1445,7 @@
                             ${safeDescription ? `<p class="document-description">${safeDescription}</p>` : ''}
                             ${dateDisplay ? `<div class="document-date">Uploaded ${dateDisplay}</div>` : ''}
                             <div class="document-actions">
-                                ${fileUrl ? `<button class="document-btn document-btn-open" onclick="event.stopPropagation(); window.open('${fileUrl}', '_blank')" aria-label="Open document">
+                                ${fileUrl ? `<button class="document-btn document-btn-open" onclick="event.stopPropagation(); openBookFileMobile('${fileUrl}', '${fileType}')" aria-label="Open document">
                                     <i class="fas fa-external-link-alt"></i>
                                     <span>Open</span>
                                 </button>` : ''}
@@ -1511,28 +1550,46 @@
                     
                     <!-- File Upload (Mobile-Safe) -->
                     <div class="form-group" style="margin-bottom: 24px;">
-                        <label class="form-label" style="font-size: 16px; font-weight: 600; margin-bottom: 10px; display: block; color: var(--dark-gray, #333);">Upload File *</label>
-                        <label for="bookFile" style="display: block; width: 100%; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;">
-                            <!-- File input positioned off-screen (mobile-safe, no display:none) -->
-                            <input type="file" id="bookFile" name="bookFile" accept=".pdf,.mp3,.wav,.ogg,.m4a,audio/*,application/pdf" required style="position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; overflow: hidden;">
-                            <div class="file-upload-button" style="width: 100%; min-height: 120px; padding: 24px 20px; font-size: 16px; border: 3px dashed #4CAF50; border-radius: 16px; background: #f0f8f0; text-align: center; transition: all 0.2s; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;">
-                                <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #4CAF50; display: block;"></i>
-                                <span class="file-upload-text" style="color: #212121; font-weight: 600; font-size: 18px; display: block;">Tap to add file</span>
-                                <span class="file-upload-hint" style="color: #666; font-size: 14px; display: block;">PDF, MP3, WAV, OGG, or M4A (max 100MB)</span>
-                                <span class="file-name-display" id="fileNameDisplay" style="display: none; margin-top: 12px; padding: 12px 16px; background: white; border-radius: 8px; color: #4CAF50; font-size: 14px; font-weight: 600; border: 2px solid #4CAF50;"></span>
+                        <label class="form-label">Upload File *</label>
+
+                        <div style="
+                            position: relative;
+                            border: 3px dashed #4CAF50;
+                            border-radius: 16px;
+                            background: #f0f8f0;
+                            padding: 24px;
+                            text-align: center;
+                        ">
+                            <input
+                                type="file"
+                                id="bookFile"
+                                name="bookFile"
+                                accept=".pdf,.mp3,.wav,.ogg,.m4a,audio/*,application/pdf"
+                                required
+                                style="
+                                    position: absolute;
+                                    inset: 0;
+                                    width: 100%;
+                                    height: 100%;
+                                    opacity: 0;
+                                    cursor: pointer;
+                                "
+                            />
+
+                            <div style="pointer-events: none;">
+                                <i class="fas fa-cloud-upload-alt"
+                                   style="font-size:48px;color:#4CAF50;"></i>
+                                <div style="font-size:18px;font-weight:600;margin-top:8px;">
+                                    Tap to add file
+                                </div>
+                                <div style="font-size:14px;color:#666;">
+                                    PDF or Audio (max 100MB)
+                                </div>
+                                <div id="fileNameDisplay"
+                                     style="display:none;margin-top:12px;font-weight:600;color:#2e7d32;">
+                                </div>
                             </div>
-                        </label>
-                        <style>
-                            label[for="bookFile"]:active .file-upload-button {
-                                border-color: #388E3C;
-                                background: #e8f5e9;
-                                transform: scale(0.98);
-                            }
-                            #bookFile:focus + .file-upload-button {
-                                outline: 3px solid #4CAF50;
-                                outline-offset: 2px;
-                            }
-                        </style>
+                        </div>
                     </div>
                 </form>
             </div>

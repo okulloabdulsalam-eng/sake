@@ -179,9 +179,9 @@
 
             <!-- Search Bar -->
             <section class="search-section">
-                <div class="search-bar">
+                <div class="search-bar" onclick="window.location.href='search.html'">
                     <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Search here..." id="searchInput">
+                    <input type="text" placeholder="Search here..." id="searchInput" readonly>
                 </div>
             </section>
 
@@ -464,6 +464,7 @@
     <!-- Load singleton Supabase client first (as module) -->
     <script type="module" src="services/supabaseClient.js"></script>
     <script type="module" src="js/prayer-times.js"></script>
+    <script src="js/index-search.js"></script>
     <script src="script.js"></script>
     <script src="update-navigation.js"></script>
     <script>

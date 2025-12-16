@@ -1079,19 +1079,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Search functionality
-const searchInput = document.getElementById('searchInput');
-if (searchInput) {
-    searchInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            const query = searchInput.value;
-            if (query.trim()) {
-                // Simple search - can be enhanced
-                alert('Searching for: ' + query);
-            }
-        }
-    });
-}
+// Search functionality is now handled by services/searchService.js and js/search.js
+// Old search implementation removed - see search.html for full search interface
 
 // Notifications button
 const notificationsBtn = document.getElementById('notificationsBtn');

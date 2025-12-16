@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="description" content="Search KIUMA - Find books, events, activities, and more">
+    <title>Search - KIUMA</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="css/search.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="search-page">
+    <!-- Navigation Menu -->
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="library.html" class="nav-link"><i class="fas fa-book-open"></i> Library</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <div class="logo-container">
+                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='block';" onload="this.style.display='block'; if(this.nextElementSibling) this.nextElementSibling.style.display='none';">
+                    <span class="header-text">KIUMA</span>
+                </div>
+                <div class="header-actions">
+                    <a href="notifications.html" class="header-icon-btn" id="notificationsBtn">
+                        <i class="fas fa-bell"></i>
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Search Section -->
+        <main class="main-content">
+            <section class="search-section-full">
+                <div class="search-header">
+                    <h1><i class="fas fa-search"></i> Search</h1>
+                    <p>Find books, events, activities, and more</p>
+                </div>
+                
+                <div class="search-bar-container">
+                    <div class="search-bar-large">
+                        <i class="fas fa-search"></i>
+                        <input 
+                            type="text" 
+                            placeholder="Search here..." 
+                            id="searchInput"
+                            autocomplete="off"
+                            autofocus
+                        >
+                        <button class="search-clear-btn" id="searchClear" style="display: none;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Search Results Container -->
+                <div id="searchContainer" style="display: none;">
+                    <div id="searchLoading" class="search-loading" style="display: none;">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Searching...</p>
+                    </div>
+                    
+                    <div id="searchResults" class="search-results"></div>
+                    
+                    <div id="searchPagination" class="search-pagination-container"></div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="searchEmptyState" class="search-empty-state">
+                    <i class="fas fa-search"></i>
+                    <h2>Start Searching</h2>
+                    <p>Enter a search term above to find content across the site</p>
+                    <div class="search-suggestions">
+                        <h3>Popular Searches:</h3>
+                        <div class="search-tags">
+                            <span class="search-tag" onclick="document.getElementById('searchInput').value='Quran'; document.getElementById('searchInput').dispatchEvent(new Event('input'))">Quran</span>
+                            <span class="search-tag" onclick="document.getElementById('searchInput').value='Hadith'; document.getElementById('searchInput').dispatchEvent(new Event('input'))">Hadith</span>
+                            <span class="search-tag" onclick="document.getElementById('searchInput').value='Prayer'; document.getElementById('searchInput').dispatchEvent(new Event('input'))">Prayer</span>
+                            <span class="search-tag" onclick="document.getElementById('searchInput').value='Events'; document.getElementById('searchInput').dispatchEvent(new Event('input'))">Events</span>
+                            <span class="search-tag" onclick="document.getElementById('searchInput').value='Programs'; document.getElementById('searchInput').dispatchEvent(new Event('input'))">Programs</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script type="module" src="services/supabaseClient.js"></script>
+    <script type="module" src="js/search.js"></script>
+    <script src="update-navigation.js"></script>
+    <script>
+        // Navigation toggle
+        document.getElementById('menuToggle')?.addEventListener('click', () => {
+            document.getElementById('navMenu').classList.add('active');
+        });
+        document.getElementById('navClose')?.addEventListener('click', () => {
+            document.getElementById('navMenu').classList.remove('active');
+        });
+
+        // Update empty state visibility
+        const searchInput = document.getElementById('searchInput');
+        const searchContainer = document.getElementById('searchContainer');
+        const searchEmptyState = document.getElementById('searchEmptyState');
+        
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                const hasValue = searchInput.value.trim().length > 0;
+                if (hasValue) {
+                    searchEmptyState.style.display = 'none';
+                } else {
+                    searchEmptyState.style.display = 'block';
+                    searchContainer.style.display = 'none';
+                }
+            });
+        }
+
+        // Handle URL query parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const query = urlParams.get('q');
+        if (query && searchInput) {
+            searchInput.value = query;
+            searchInput.dispatchEvent(new Event('input'));
+        }
+    </script>
+</body>
+</html>
+
