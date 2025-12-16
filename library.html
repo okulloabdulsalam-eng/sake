@@ -9,15 +9,8 @@
     <script>
         // Define showAddBookModal immediately in head so it's available for onclick handlers
         window.showAddBookModal = function() {
-            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
-            if (!adminStatus) {
-                if (typeof window.showAdminLogin === 'function') {
-                    window.showAdminLogin();
-                } else {
-                    alert('Please login as admin first. Click the "Admin Login" button.');
-                }
-                return;
-            }
+            // Security check removed - button visibility is controlled by updateAdminUI()
+            // and addBook() function has the actual security check
             const modal = document.getElementById('addBookModal');
             if (modal) {
                 modal.style.display = 'flex';
@@ -1682,13 +1675,28 @@
                     .eq('id', session.user.id)
                     .single();
 
-                if (profileError || !profile) {
+                // If profiles table doesn't exist or user profile doesn't exist, return false
+                if (profileError) {
+                    // Check if it's a "table doesn't exist" error
+                    if (profileError.code === '42P01' || profileError.message?.includes('does not exist')) {
+                        console.warn('[Admin Check] Profiles table does not exist. Please run the SQL script first.');
+                        return false;
+                    }
+                    // Profile not found - user is not admin
+                    return false;
+                }
+
+                if (!profile) {
                     return false;
                 }
 
                 return profile.role === 'admin';
             } catch (error) {
                 console.error('[Admin Check] Error checking admin status:', error);
+                // If profiles table doesn't exist, fail gracefully
+                if (error.message?.includes('does not exist') || error.code === '42P01') {
+                    console.warn('[Admin Check] Profiles table does not exist. Please run database/library_admin_rls.sql first.');
+                }
                 return false;
             }
         }
@@ -1697,14 +1705,21 @@
         async function updateAdminUI() {
             const isAdmin = await checkAdminStatus();
             
-            // Show/hide "Add Book" button
-            const addBookBtn = document.querySelector('[onclick*="showAddBookModal"]');
+            // Show/hide "Add Book" button (multiple selectors for reliability)
+            const addBookBtn = document.querySelector('[onclick*="showAddBookModal"]') || 
+                               document.querySelector('.admin-only[onclick*="showAddBookModal"]') ||
+                               document.querySelector('button[onclick*="showAddBookModal"]');
             if (addBookBtn) {
                 if (isAdmin) {
                     addBookBtn.style.display = '';
+                    addBookBtn.style.visibility = 'visible';
                 } else {
                     addBookBtn.style.display = 'none';
+                    addBookBtn.style.visibility = 'hidden';
                 }
+                console.log('[Update Admin UI] Add Book button visibility:', isAdmin ? 'shown' : 'hidden');
+            } else {
+                console.warn('[Update Admin UI] Add Book button not found');
             }
 
             // Reload books to show/hide delete buttons
