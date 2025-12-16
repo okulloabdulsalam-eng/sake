@@ -116,16 +116,28 @@ async function savePrayerTimes(prayers, updatedBy = 'admin') {
             throw new Error('Supabase client not available');
         }
 
+        // AUTH CHECK: Verify user is authenticated with Supabase
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        console.log('AUTH CHECK:', user, authError);
+        
+        if (!user) {
+            console.error('[Prayer Times] No authenticated user found. User must be logged in with Supabase.');
+            throw new Error('Authentication required. Please log in before saving prayer times.');
+        }
+
         // Check admin status
         const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
         if (!adminStatus) {
             throw new Error('Only admins can update prayer times');
         }
 
-        // Prepare data for insert
+        // Prepare data for update
         // NO date field - table schema doesn't include date column
         const prayerNames = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
-        const records = prayerNames.map(prayerName => {
+        
+        // Use UPDATE instead of delete+insert
+        // Update each prayer individually
+        for (const prayerName of prayerNames) {
             if (!prayers[prayerName] || !prayers[prayerName].adhan || !prayers[prayerName].iqaama) {
                 throw new Error(`Missing prayer time for ${prayerName}`);
             }
@@ -136,36 +148,48 @@ async function savePrayerTimes(prayers, updatedBy = 'admin') {
                 throw new Error(`Invalid time format for ${prayerName}. Use HH:mm format (e.g., 05:30)`);
             }
 
-            return {
-                prayer_name: prayerName,
+            // Prepare update data - only include columns that exist
+            const updateData = {
                 adhan_time: prayers[prayerName].adhan + ':00', // Convert to TIME format
                 iqama_time: prayers[prayerName].iqaama + ':00', // Note: column name is iqama_time (single 'a')
                 updated_by: updatedBy
             };
-        });
 
-        // Delete ALL existing records by prayer_name (no date filter - date column doesn't exist)
-        // This ensures we have only the latest admin-defined set
-        // Delete each prayer individually to avoid RLS issues
-        for (const prayerName of prayerNames) {
-            const { error: deleteError } = await supabase
+            // Try to update existing record
+            const { data: existingData, error: selectError } = await supabase
                 .from('prayer_times')
-                .delete()
-                .eq('prayer_name', prayerName);
-            
-            if (deleteError) {
-                console.warn(`[Prayer Times] Delete error for ${prayerName} (may be expected if not exists):`, deleteError);
-                // Continue with insert even if delete fails
+                .select('id')
+                .eq('prayer_name', prayerName)
+                .limit(1)
+                .maybeSingle(); // Use maybeSingle() instead of single() to avoid error when no record exists
+
+            if (existingData && existingData.id) {
+                // Record exists, update it
+                const { error: updateError } = await supabase
+                    .from('prayer_times')
+                    .update(updateData)
+                    .eq('prayer_name', prayerName);
+                
+                if (updateError) {
+                    console.error(`[Prayer Times] Update error for ${prayerName}:`, updateError);
+                    throw updateError;
+                }
+            } else {
+                // Record doesn't exist, insert it
+                const insertData = {
+                    prayer_name: prayerName,
+                    ...updateData
+                };
+                
+                const { error: insertError } = await supabase
+                    .from('prayer_times')
+                    .insert(insertData);
+                
+                if (insertError) {
+                    console.error(`[Prayer Times] Insert error for ${prayerName}:`, insertError);
+                    throw insertError;
+                }
             }
-        }
-
-        // Insert new records
-        const { error } = await supabase
-            .from('prayer_times')
-            .insert(records);
-
-        if (error) {
-            throw error;
         }
 
         return true;

@@ -39,7 +39,14 @@ function getSupabaseClient() {
     try {
         supabaseClientInstance = supabase.createClient(
             config.supabaseUrl,
-            config.supabaseAnonKey
+            config.supabaseAnonKey,
+            {
+                auth: {
+                    persistSession: true,
+                    autoRefreshToken: true,
+                    detectSessionInUrl: true
+                }
+            }
         );
         return supabaseClientInstance;
     } catch (error) {

@@ -1237,6 +1237,40 @@ window.verifyAdminPassword = async function() {
                 isAdminLoggedIn = true;
                 localStorage.setItem('isAdminLoggedIn', 'true');
                 
+                // Authenticate with Supabase for RLS policies
+                try {
+                    const { getSupabaseClient } = await import('./services/supabaseClient.js');
+                    const supabase = getSupabaseClient();
+                    if (supabase) {
+                        const { data: supabaseAuth, error: supabaseError } = await supabase.auth.signInWithPassword({
+                            email: email,
+                            password: password
+                        });
+                        
+                        if (supabaseError) {
+                            console.warn('[Admin Login] Supabase auth warning:', supabaseError);
+                            console.warn('[Admin Login] User may not exist in Supabase. Creating user or continuing with Firebase auth only.');
+                            
+                            // Try to sign up if user doesn't exist
+                            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+                                email: email,
+                                password: password
+                            });
+                            
+                            if (signUpError) {
+                                console.error('[Admin Login] Supabase signup error:', signUpError);
+                            } else {
+                                console.log('[Admin Login] Supabase user created:', signUpData);
+                            }
+                        } else {
+                            console.log('[Admin Login] Supabase auth successful:', supabaseAuth);
+                        }
+                    }
+                } catch (supabaseAuthError) {
+                    console.error('[Admin Login] Error authenticating with Supabase:', supabaseAuthError);
+                    // Continue with Firebase auth even if Supabase auth fails
+                }
+                
                 window.closeAdminLogin();
                 
                 // Enable editing if on prayer times page
@@ -1279,6 +1313,45 @@ window.verifyAdminPassword = async function() {
         if (password === ADMIN_PASSWORD) {
             isAdminLoggedIn = true;
             localStorage.setItem('isAdminLoggedIn', 'true');
+            
+            // Authenticate with Supabase for RLS policies (if email is provided)
+            if (email) {
+                try {
+                    const { getSupabaseClient } = await import('./services/supabaseClient.js');
+                    const supabase = getSupabaseClient();
+                    if (supabase) {
+                        const { data: supabaseAuth, error: supabaseError } = await supabase.auth.signInWithPassword({
+                            email: email,
+                            password: password
+                        });
+                        
+                        if (supabaseError) {
+                            console.warn('[Admin Login] Supabase auth warning:', supabaseError);
+                            console.warn('[Admin Login] User may not exist in Supabase. Creating user or continuing with password auth only.');
+                            
+                            // Try to sign up if user doesn't exist
+                            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+                                email: email,
+                                password: password
+                            });
+                            
+                            if (signUpError) {
+                                console.error('[Admin Login] Supabase signup error:', signUpError);
+                            } else {
+                                console.log('[Admin Login] Supabase user created:', signUpData);
+                            }
+                        } else {
+                            console.log('[Admin Login] Supabase auth successful:', supabaseAuth);
+                        }
+                    }
+                } catch (supabaseAuthError) {
+                    console.error('[Admin Login] Error authenticating with Supabase:', supabaseAuthError);
+                    // Continue with password auth even if Supabase auth fails
+                }
+            } else {
+                console.warn('[Admin Login] No email provided for Supabase auth. RLS policies may fail. Please use email-based login.');
+            }
+            
             window.closeAdminLogin();
             
             // Enable editing if on prayer times page
