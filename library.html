@@ -128,13 +128,14 @@
             </section>
 
             <section class="page-content">
-                <!-- Search Bar -->
-                <div style="margin-bottom: 20px;">
+                <!-- Search Bar with Dropdown Suggestions -->
+                <div style="margin-bottom: 20px; position: relative;">
                     <div style="position: relative;">
                         <input 
                             type="text" 
                             id="librarySearchInput" 
                             placeholder="Search books by name..." 
+                            autocomplete="off"
                             style="
                                 width: 100%;
                                 padding: 14px 50px 14px 16px;
@@ -147,8 +148,8 @@
                                 box-sizing: border-box;
                             "
                             oninput="handleLibrarySearch(this.value)"
-                            onfocus="this.style.borderColor='#4CAF50'; this.style.boxShadow='0 2px 12px rgba(76, 175, 80, 0.2)'"
-                            onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.05)'"
+                            onfocus="showSearchSuggestions()"
+                            onblur="setTimeout(() => hideSearchSuggestions(), 200)"
                         />
                         <i class="fas fa-search" style="
                             position: absolute;
@@ -160,6 +161,21 @@
                             pointer-events: none;
                         "></i>
                     </div>
+                    <div id="searchSuggestions" style="
+                        position: absolute;
+                        top: 100%;
+                        left: 0;
+                        right: 0;
+                        background: white;
+                        border: 1px solid #e0e0e0;
+                        border-radius: 12px;
+                        box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+                        margin-top: 8px;
+                        max-height: 300px;
+                        overflow-y: auto;
+                        z-index: 1000;
+                        display: none;
+                    "></div>
                     <div id="searchResultsInfo" style="
                         margin-top: 8px;
                         font-size: 13px;
@@ -318,73 +334,47 @@
                         min-height: auto;
                     }
                     
+                    /* New Simple Mobile-First Book Card - Only Name, About, Category */
                     .document-card {
                         width: 100%;
                         background: white;
                         border-radius: 12px;
-                        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
                         overflow: visible;
-                        transition: all 0.3s ease;
+                        transition: all 0.2s ease;
                         -webkit-tap-highlight-color: transparent;
                         cursor: default;
-                        border: 1px solid #f0f0f0;
+                        border: 1px solid #e8e8e8;
                         display: flex;
                         flex-direction: column;
                         position: relative;
+                        margin-bottom: 12px;
                     }
                     
-                    .document-card:hover {
-                        box-shadow: 0 3px 12px rgba(0,0,0,0.1);
-                        transform: translateY(-1px);
+                    .document-card:active {
+                        transform: scale(0.98);
                     }
                     
                     .document-header {
                         display: flex;
-                        align-items: flex-start;
-                        gap: 12px;
-                        padding: 12px 14px;
-                        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+                        align-items: center;
+                        justify-content: space-between;
+                        padding: 14px 16px;
                         border-bottom: 1px solid #f0f0f0;
                         position: relative;
-                    }
-                    
-                    .document-icon {
-                        width: 40px;
-                        height: 40px;
-                        border-radius: 8px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        font-size: 20px;
-                        flex-shrink: 0;
-                        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-                    }
-                    
-                    .document-icon.pdf {
-                        background: linear-gradient(135deg, #ff5252, #d32f2f);
-                        color: white;
-                    }
-                    
-                    .document-icon.audio {
-                        background: linear-gradient(135deg, #4caf50, #388e3c);
-                        color: white;
-                    }
-                    
-                    .document-icon.default {
-                        background: linear-gradient(135deg, #2196f3, #1976d2);
-                        color: white;
                     }
                     
                     .document-title-section {
                         flex: 1;
                         min-width: 0;
+                        padding-right: 12px;
                     }
                     
                     .document-title {
-                        font-size: 15px;
+                        font-size: 16px;
                         font-weight: 600;
                         color: #212121;
-                        line-height: 1.3;
+                        line-height: 1.4;
                         margin: 0 0 6px 0;
                         display: -webkit-box;
                         -webkit-line-clamp: 2;
@@ -395,76 +385,38 @@
                     
                     .document-category-badge {
                         display: inline-block;
-                        padding: 3px 8px;
-                        border-radius: 8px;
-                        font-size: 10px;
+                        padding: 4px 10px;
+                        border-radius: 6px;
+                        font-size: 11px;
                         font-weight: 600;
                         text-transform: uppercase;
-                        letter-spacing: 0.3px;
-                        background: linear-gradient(135deg, #4CAF50, #388E3C);
+                        letter-spacing: 0.5px;
+                        background: #4CAF50;
                         color: white;
-                        box-shadow: 0 1px 3px rgba(76, 175, 80, 0.2);
                     }
                     
                     .document-body {
-                        padding: 12px 14px;
-                        flex: 1;
-                        display: flex;
-                        flex-direction: column;
-                    }
-                    
-                    .document-meta {
-                        display: flex;
-                        align-items: center;
-                        gap: 8px;
-                        font-size: 11px;
-                        color: #757575;
-                        margin-bottom: 10px;
-                        flex-wrap: wrap;
-                    }
-                    
-                    .document-meta-item {
-                        display: flex;
-                        align-items: center;
-                        gap: 4px;
-                        padding: 4px 8px;
-                        background: #f5f5f5;
-                        border-radius: 6px;
-                        font-weight: 500;
-                    }
-                    
-                    .document-meta-item i {
-                        font-size: 10px;
-                        opacity: 0.7;
-                    }
-                    
-                    .document-meta-separator {
-                        color: #bdbdbd;
-                        display: none;
+                        padding: 14px 16px;
                     }
                     
                     .document-description {
-                        font-size: 12px;
+                        font-size: 14px;
                         color: #616161;
                         line-height: 1.5;
-                        margin: 0 0 10px 0;
+                        margin: 0;
                         display: -webkit-box;
-                        -webkit-line-clamp: 2;
+                        -webkit-line-clamp: 3;
                         -webkit-box-orient: vertical;
                         overflow: hidden;
                         text-overflow: ellipsis;
-                        padding: 8px;
-                        background: #fafafa;
-                        border-radius: 6px;
-                        border-left: 2px solid #4CAF50;
                     }
                     
                     .document-menu-button {
                         position: absolute;
-                        top: 12px;
-                        right: 14px;
-                        width: 32px;
-                        height: 32px;
+                        top: 14px;
+                        right: 16px;
+                        width: 36px;
+                        height: 36px;
                         border-radius: 50%;
                         border: none;
                         background: #f5f5f5;
@@ -476,38 +428,31 @@
                         transition: all 0.2s ease;
                         z-index: 10;
                         touch-action: manipulation;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-                    }
-                    
-                    .document-menu-button:hover {
-                        background: #e0e0e0;
-                        color: #424242;
-                        transform: scale(1.1);
-                        box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+                        flex-shrink: 0;
                     }
                     
                     .document-menu-button:active {
+                        background: #e0e0e0;
                         transform: scale(0.95);
                     }
                     
                     .document-menu-button i {
-                        font-size: 14px;
+                        font-size: 16px;
                     }
                     
                     .document-menu-button.active {
                         background: #2196F3;
                         color: white;
-                        box-shadow: 0 3px 12px rgba(33, 150, 243, 0.4);
                     }
                     
                     .document-dropdown {
                         position: absolute;
-                        top: 44px;
-                        right: 14px;
+                        top: 50px;
+                        right: 16px;
                         background: white;
                         border-radius: 10px;
-                        box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-                        min-width: 180px;
+                        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+                        min-width: 160px;
                         z-index: 1000;
                         opacity: 0;
                         visibility: hidden;
@@ -526,32 +471,29 @@
                     .document-dropdown-item {
                         display: flex;
                         align-items: center;
-                        gap: 10px;
-                        padding: 12px 16px;
+                        gap: 12px;
+                        padding: 14px 16px;
                         cursor: pointer;
                         transition: all 0.2s ease;
                         border-bottom: 1px solid #f5f5f5;
                         color: #212121;
-                        font-size: 13px;
+                        font-size: 14px;
                         font-weight: 500;
                         text-decoration: none;
+                        touch-action: manipulation;
                     }
                     
                     .document-dropdown-item:last-child {
                         border-bottom: none;
                     }
                     
-                    .document-dropdown-item:hover {
+                    .document-dropdown-item:active {
                         background: #f5f5f5;
                     }
                     
-                    .document-dropdown-item:active {
-                        background: #e0e0e0;
-                    }
-                    
                     .document-dropdown-item i {
-                        font-size: 14px;
-                        width: 18px;
+                        font-size: 16px;
+                        width: 20px;
                         text-align: center;
                     }
                     
@@ -567,87 +509,55 @@
                         color: #f44336;
                     }
                     
-                    .document-footer {
-                        display: flex;
-                        align-items: center;
-                        justify-content: flex-start;
-                        padding-top: 10px;
-                        margin-top: auto;
-                        border-top: 1px solid #f0f0f0;
-                    }
-                    
-                    .document-date {
-                        font-size: 11px;
-                        color: #9e9e9e;
-                        display: flex;
-                        align-items: center;
-                        gap: 4px;
-                    }
-                    
-                    .document-date i {
-                        font-size: 10px;
-                    }
-                    
                     @media (max-width: 767px) {
+                        .document-card {
+                            border-radius: 10px;
+                            margin-bottom: 10px;
+                        }
+                        
+                        .document-header {
+                            padding: 12px 14px;
+                        }
+                        
+                        .document-title {
+                            font-size: 15px;
+                            padding-right: 50px;
+                        }
+                        
+                        .document-body {
+                            padding: 12px 14px;
+                        }
+                        
+                        .document-description {
+                            font-size: 13px;
+                        }
+                        
                         .document-menu-button {
-                            width: 44px;
-                            height: 44px;
-                            top: 16px;
-                            right: 16px;
+                            width: 40px;
+                            height: 40px;
+                            top: 12px;
+                            right: 14px;
                         }
                         
                         .document-menu-button i {
-                            font-size: 20px;
+                            font-size: 18px;
                         }
                         
                         .document-dropdown {
-                            top: 60px;
-                            right: 16px;
-                            left: 16px;
+                            top: 54px;
+                            right: 14px;
+                            left: 14px;
                             min-width: auto;
-                            width: auto;
                         }
                         
                         .document-dropdown-item {
-                            padding: 16px 20px;
+                            padding: 16px;
                             font-size: 15px;
                         }
                         
                         .document-dropdown-item i {
                             font-size: 18px;
                             width: 24px;
-                        }
-                        
-                        .document-footer {
-                            padding-top: 12px;
-                        }
-                        
-                        .document-date {
-                            width: 100%;
-                            justify-content: center;
-                            padding: 10px;
-                            background: #f5f5f5;
-                            border-radius: 10px;
-                            font-size: 13px;
-                        }
-                        
-                        .document-header {
-                            padding: 16px;
-                            padding-right: 70px;
-                        }
-                        
-                        .document-body {
-                            padding: 16px;
-                        }
-                        
-                        .document-icon {
-                            width: 48px;
-                            height: 48px;
-                            font-size: 24px;
-                        }
-                        
-                        .document-title {
-                            font-size: 16px;
                         }
                     }
                 </style>
@@ -1801,10 +1711,84 @@
         // Store current search term globally
         let currentSearchTerm = '';
         
+        // Show search suggestions dropdown
+        window.showSearchSuggestions = function() {
+            const searchInput = document.getElementById('librarySearchInput');
+            const suggestionsDiv = document.getElementById('searchSuggestions');
+            const searchTerm = (searchInput.value || '').trim().toLowerCase();
+            
+            if (!suggestionsDiv) return;
+            
+            // Get current category
+            const currentCategory = document.querySelector('.category-card.active')?.dataset.category || 'all';
+            
+            // Filter books for suggestions
+            let suggestions = cachedBooks.filter(book => {
+                const title = (book.title || '').toLowerCase();
+                const bookCategory = (book.category || 'others').toLowerCase();
+                const matchesCategory = currentCategory === 'all' || bookCategory === currentCategory.toLowerCase();
+                
+                if (searchTerm) {
+                    return title.includes(searchTerm) && matchesCategory;
+                } else {
+                    // Show recent/popular books when no search term
+                    return matchesCategory;
+                }
+            });
+            
+            // Limit to 5 suggestions
+            suggestions = suggestions.slice(0, 5);
+            
+            if (suggestions.length > 0) {
+                suggestionsDiv.innerHTML = suggestions.map(book => {
+                    const safeTitle = sanitizeHTML(book.title || 'Untitled');
+                    const safeCategory = sanitizeHTML((book.category || 'others').toUpperCase());
+                    return `
+                        <div class="search-suggestion-item" onclick="selectSearchSuggestion('${safeTitle}')" style="
+                            padding: 12px 16px;
+                            cursor: pointer;
+                            border-bottom: 1px solid #f5f5f5;
+                            transition: background 0.2s;
+                        " onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='white'">
+                            <div style="font-weight: 600; color: #212121; font-size: 14px; margin-bottom: 4px;">${safeTitle}</div>
+                            <div style="font-size: 12px; color: #757575;">
+                                <span style="background: #4CAF50; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">${safeCategory}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                suggestionsDiv.style.display = 'block';
+            } else {
+                suggestionsDiv.style.display = 'none';
+            }
+        };
+        
+        // Hide search suggestions
+        window.hideSearchSuggestions = function() {
+            const suggestionsDiv = document.getElementById('searchSuggestions');
+            if (suggestionsDiv) {
+                suggestionsDiv.style.display = 'none';
+            }
+        };
+        
+        // Select search suggestion
+        window.selectSearchSuggestion = function(bookTitle) {
+            const searchInput = document.getElementById('librarySearchInput');
+            if (searchInput) {
+                searchInput.value = bookTitle;
+                handleLibrarySearch(bookTitle);
+                hideSearchSuggestions();
+                searchInput.blur();
+            }
+        };
+        
         // Handle library search
         window.handleLibrarySearch = function(searchTerm) {
             currentSearchTerm = searchTerm.trim().toLowerCase();
             const searchInfo = document.getElementById('searchResultsInfo');
+            
+            // Update suggestions
+            showSearchSuggestions();
             
             // Get current category
             const currentCategory = document.querySelector('.category-card.active')?.dataset.category || 'all';
@@ -1988,17 +1972,14 @@
                 if (fileSizeDisplay) metaItems.push(fileSizeDisplay);
                 const metaLine = metaItems.join(' • ');
                 
-                // Card is no longer clickable - all actions are in dropdown menu
+                // Simple card design - Only Name, About, Category
                 newBookItem.innerHTML = `
                     <div class="document-card">
                         <div class="document-header">
-                            <div class="document-icon ${fileTypeClass}">
-                                <i class="fas ${fileType === 'audio' ? 'fa-headphones' : fileType === 'pdf' ? 'fa-file-pdf' : 'fa-file'}"></i>
-                            </div>
                             <div class="document-title-section">
-                            <h3 class="document-title">${safeTitle}</h3>
+                                <h3 class="document-title">${safeTitle}</h3>
                                 ${safeCategory ? `<span class="document-category-badge">${safeCategory}</span>` : ''}
-                        </div>
+                            </div>
                             ${(fileUrl || adminStatus) ? `<button class="document-menu-button" onclick="event.stopPropagation(); toggleBookMenu('${safeId}')" aria-label="Book options" title="Options">
                                 <i class="fas fa-ellipsis-v"></i>
                             </button>
@@ -2016,25 +1997,9 @@
                                     <span>Delete</span>
                                 </a>` : ''}
                             </div>` : ''}
-                            </div>
+                        </div>
                         <div class="document-body">
-                            ${safeDescription ? `<p class="document-description">${safeDescription}</p>` : ''}
-                            <div class="document-meta">
-                                ${fileSizeDisplay ? `<div class="document-meta-item">
-                                    <i class="fas fa-hdd"></i>
-                                    <span>${fileSizeDisplay}</span>
-                                </div>` : ''}
-                                ${fileType ? `<div class="document-meta-item">
-                                    <i class="fas ${fileType === 'audio' ? 'fa-music' : 'fa-file-alt'}"></i>
-                                    <span>${fileType.toUpperCase()}</span>
-                                </div>` : ''}
-                            </div>
-                            <div class="document-footer">
-                                ${dateDisplay ? `<div class="document-date">
-                                    <i class="fas fa-calendar-alt"></i>
-                                    <span>${dateDisplay}</span>
-                                </div>` : ''}
-                            </div>
+                            ${safeDescription ? `<p class="document-description">${safeDescription}</p>` : '<p class="document-description" style="color: #999; font-style: italic;">No description available</p>'}
                         </div>
                     </div>
                 `;
@@ -2127,7 +2092,7 @@
             });
         }, true);
         
-        // Handle download book/document - Mobile & Web App Compatible
+        // Handle download book/document - With delay and no tab opening
         window.handleDownloadBook = async function(fileUrl, fileName) {
             console.log('[Download] Starting download:', { fileUrl, fileName });
             
@@ -2165,15 +2130,21 @@
                     }
                 }
                 
-                // Method 1: Use Fetch API with Blob (works in web apps and mobile browsers)
+                // Show loading indicator
+                const loadingMsg = document.createElement('div');
+                loadingMsg.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.85); color: white; padding: 24px 32px; border-radius: 12px; z-index: 10000; font-size: 16px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+                loadingMsg.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size: 24px; display: block; margin-bottom: 12px;"></i><div>Preparing download...</div>';
+                document.body.appendChild(loadingMsg);
+                
+                // Add delay before starting download (500ms)
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Method: Use Fetch API with Blob (prevents tab opening)
                 try {
                     console.log('[Download] Fetching file as blob...');
                     
-                    // Show loading indicator
-                    const loadingMsg = document.createElement('div');
-                    loadingMsg.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 20px 30px; border-radius: 12px; z-index: 10000; font-size: 16px;';
-                    loadingMsg.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
-                    document.body.appendChild(loadingMsg);
+                    // Update loading message
+                    loadingMsg.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size: 24px; display: block; margin-bottom: 12px;"></i><div>Downloading file...</div>';
                     
                     // Fetch the file as blob
                     const response = await fetch(fileUrl, {
@@ -2193,38 +2164,56 @@
                     // Create blob URL
                     const blobUrl = window.URL.createObjectURL(blob);
                     
-                    // Create download link
+                    // Create download link (NO target attribute to prevent tab opening)
                     const link = document.createElement('a');
                     link.href = blobUrl;
                     link.download = downloadFileName;
                     link.style.display = 'none';
+                    // DO NOT set target - this prevents opening new tab
                     
                     // Append to body and trigger download
                     document.body.appendChild(link);
+                    
+                    // Small delay before clicking to ensure link is ready
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    
                     link.click();
                     
-                    // Cleanup
+                    // Update loading message
+                    loadingMsg.innerHTML = '<i class="fas fa-check-circle" style="font-size: 24px; display: block; margin-bottom: 12px; color: #4CAF50;"></i><div>Download started!</div>';
+                    
+                    // Cleanup after delay
                     setTimeout(() => {
-                        document.body.removeChild(link);
+                        if (link.parentNode) {
+                            document.body.removeChild(link);
+                        }
                         window.URL.revokeObjectURL(blobUrl);
                         if (loadingMsg.parentNode) {
                             document.body.removeChild(loadingMsg);
                         }
                         console.log('[Download] Download completed:', downloadFileName);
-                    }, 100);
+                    }, 1000);
                     
                 } catch (fetchError) {
-                    console.warn('[Download] Fetch method failed, trying fallback:', fetchError);
+                    console.error('[Download] Fetch method failed:', fetchError);
                     
-                    // Method 2: Fallback - Direct link download (for browsers that support it)
+                    // Remove loading message
+                    if (loadingMsg.parentNode) {
+                        document.body.removeChild(loadingMsg);
+                    }
+                    
+                    // Fallback: Try direct download without opening tab
                     const link = document.createElement('a');
                     link.href = fileUrl;
                     link.download = downloadFileName;
-                    link.target = '_self'; // Use _self instead of _blank to avoid new tab
-                    link.rel = 'noopener noreferrer';
+                    // DO NOT set target - prevents tab opening
                     link.style.display = 'none';
                     
                     document.body.appendChild(link);
+                    
+                    // Small delay
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    
                     link.click();
                     
                     setTimeout(() => {
@@ -2238,7 +2227,14 @@
                 
             } catch (error) {
                 console.error('[Download] Error initiating download:', error);
-                alert('Download failed. Please try again or open the file directly.');
+                
+                // Remove loading message if still present
+                const loadingMsg = document.querySelector('div[style*="z-index: 10000"]');
+                if (loadingMsg && loadingMsg.parentNode) {
+                    document.body.removeChild(loadingMsg);
+                }
+                
+                alert('Download failed. Please try again.');
             }
         };
     </script>
