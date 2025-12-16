@@ -628,6 +628,15 @@ async function loadPrayerTimes() {
         
         // Simple next prayer display (no time calculations)
         updateNextPrayerSimple(prayers);
+        
+        // If admin is already logged in, enable editing
+        const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+        if (adminStatus && typeof enableEditing === 'function') {
+            // Small delay to ensure DOM is ready
+            setTimeout(() => {
+                enableEditing();
+            }, 100);
+        }
     } catch (error) {
         console.error('Error loading prayer times:', error);
         // Show fail-safe message on error
@@ -1262,9 +1271,22 @@ window.verifyAdminPassword = async function() {
             isAdminLoggedIn = true;
             localStorage.setItem('isAdminLoggedIn', 'true');
             window.closeAdminLogin();
+            
+            // Enable editing if on prayer times page
+            const prayerTimesList = document.getElementById('prayerTimesList');
+            if (prayerTimesList) {
+                try {
+                    enableEditing();
+                } catch (error) {
+                    console.error('Error enabling editing:', error);
+                }
+            }
+            
+            // Update UI
             if (typeof window.checkAdminStatus === 'function') {
                 window.checkAdminStatus();
             }
+            
             alert('Admin mode enabled. You can now edit content.');
         } else {
             const passwordError = document.getElementById('passwordError');
@@ -1329,7 +1351,24 @@ function checkAdminStatus() {
 }
 
 function enableEditing() {
+    console.log('Enabling prayer times editing...');
+    
     const editableElements = document.querySelectorAll('.editable');
+    console.log('Found editable elements:', editableElements.length);
+    
+    if (editableElements.length === 0) {
+        console.warn('No editable elements found. Prayer times may not be loaded yet.');
+        // Retry after a short delay
+        setTimeout(() => {
+            const retryElements = document.querySelectorAll('.editable');
+            if (retryElements.length > 0) {
+                console.log('Retrying enableEditing after delay...');
+                enableEditing();
+            }
+        }, 500);
+        return;
+    }
+    
     editableElements.forEach(el => {
         el.contentEditable = 'true';
         el.classList.add('editing');
@@ -1337,11 +1376,17 @@ function enableEditing() {
     
     // Update edit button
     const editBtn = document.getElementById('adminEditBtn');
-    editBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
-    editBtn.onclick = savePrayerTimes;
+    if (editBtn) {
+        editBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+        editBtn.onclick = savePrayerTimes;
+        console.log('Edit button updated');
+    } else {
+        console.error('Edit button not found');
+    }
     
     // Add save/cancel buttons
-    if (!document.getElementById('saveCancelBtns')) {
+    const prayerTimesList = document.getElementById('prayerTimesList');
+    if (prayerTimesList && !document.getElementById('saveCancelBtns')) {
         const btnContainer = document.createElement('div');
         btnContainer.id = 'saveCancelBtns';
         btnContainer.style.cssText = 'display: flex; gap: 10px; margin-top: 15px;';
@@ -1353,8 +1398,11 @@ function enableEditing() {
                 <i class="fas fa-times"></i> Cancel
             </button>
         `;
-        document.getElementById('prayerTimesList').appendChild(btnContainer);
+        prayerTimesList.appendChild(btnContainer);
+        console.log('Save/Cancel buttons added');
     }
+    
+    console.log('Prayer times editing enabled successfully');
 }
 
 function cancelEditing() {

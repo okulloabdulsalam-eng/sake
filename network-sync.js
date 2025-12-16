@@ -5,6 +5,23 @@
  */
 
 // ============================================
+// STATIC HOSTING DETECTION
+// ============================================
+
+/**
+ * Detect if running on static hosting (GitHub Pages, Netlify, Vercel)
+ * @returns {boolean} True if on static hosting
+ */
+function isStaticHosting() {
+    const hostname = window.location.hostname;
+    return hostname.includes('github.io') || 
+           hostname.includes('netlify.app') || 
+           hostname.includes('vercel.app') ||
+           hostname.includes('pages.dev') ||
+           hostname.includes('surge.sh');
+}
+
+// ============================================
 // SYNC MANAGER STATE
 // ============================================
 
@@ -13,6 +30,7 @@ const SyncManager = {
     isSyncing: false,
     lastSyncTime: null,
     syncQueue: [],
+    isStaticHost: isStaticHosting(),
     
     // Callbacks for UI updates
     onSyncStart: null,
@@ -29,6 +47,11 @@ const SyncManager = {
  * Sync prayer times from API
  */
 async function syncPrayerTimes() {
+    // Skip PHP API on static hosting - use Supabase only
+    if (isStaticHosting()) {
+        return { success: true, skipped: true, reason: 'Static hosting - using Supabase only' };
+    }
+    
     if (!window.PrayerTimesDB) {
         return { success: false, reason: 'IndexedDB not available' };
     }
@@ -76,7 +99,10 @@ async function syncPrayerTimes() {
         return { success: true, skipped: true, reason: 'API not configured' };
         
     } catch (error) {
-        console.error('[Sync] Prayer times sync error:', error);
+        // Silently handle errors on static hosting
+        if (isStaticHosting()) {
+            return { success: true, skipped: true, reason: 'Static hosting - using Supabase only' };
+        }
         return { success: false, error: error.message };
     }
 }
@@ -85,6 +111,11 @@ async function syncPrayerTimes() {
  * Sync notifications from API
  */
 async function syncNotifications() {
+    // Skip PHP API on static hosting - use Supabase only
+    if (isStaticHosting()) {
+        return { success: true, skipped: true, reason: 'Static hosting - using Supabase only' };
+    }
+    
     try {
         const API_BASE_URL = window.API_BASE_URL || '/api';
         const response = await fetch(`${API_BASE_URL}/get_notifications.php`, {
@@ -121,7 +152,10 @@ async function syncNotifications() {
         return { success: false, reason: 'Invalid response' };
         
     } catch (error) {
-        console.error('[Sync] Notifications sync error:', error);
+        // Silently handle errors on static hosting
+        if (isStaticHosting()) {
+            return { success: true, skipped: true, reason: 'Static hosting - using Supabase only' };
+        }
         return { success: false, error: error.message };
     }
 }
@@ -130,6 +164,11 @@ async function syncNotifications() {
  * Sync books from API
  */
 async function syncBooks() {
+    // Skip PHP API on static hosting - use Supabase only
+    if (isStaticHosting()) {
+        return { success: true, skipped: true, reason: 'Static hosting - using Supabase only' };
+    }
+    
     try {
         const API_BASE_URL = window.API_BASE_URL || '/api';
         const response = await fetch(`${API_BASE_URL}/get_books.php`, {
@@ -156,7 +195,10 @@ async function syncBooks() {
         return { success: false, reason: 'Invalid response' };
         
     } catch (error) {
-        console.error('[Sync] Books sync error:', error);
+        // Silently handle errors on static hosting
+        if (isStaticHosting()) {
+            return { success: true, skipped: true, reason: 'Static hosting - using Supabase only' };
+        }
         return { success: false, error: error.message };
     }
 }
@@ -165,6 +207,11 @@ async function syncBooks() {
  * Sync media from API
  */
 async function syncMedia() {
+    // Skip PHP API on static hosting - use Supabase only
+    if (isStaticHosting()) {
+        return { success: true, skipped: true, reason: 'Static hosting - using Supabase only' };
+    }
+    
     try {
         const API_BASE_URL = window.API_BASE_URL || '/api';
         const response = await fetch(`${API_BASE_URL}/get_media.php`, {
@@ -191,7 +238,10 @@ async function syncMedia() {
         return { success: false, reason: 'Invalid response' };
         
     } catch (error) {
-        console.error('[Sync] Media sync error:', error);
+        // Silently handle errors on static hosting
+        if (isStaticHosting()) {
+            return { success: true, skipped: true, reason: 'Static hosting - using Supabase only' };
+        }
         return { success: false, error: error.message };
     }
 }
@@ -240,10 +290,17 @@ async function performSync() {
             media: results[3].status === 'fulfilled' ? results[3].value : { success: false }
         };
         
-        const successCount = Object.values(summary).filter(r => r.success).length;
-        const totalCount = Object.keys(summary).length;
+        // Count only non-skipped syncs for reporting
+        const activeSyncs = Object.values(summary).filter(r => !r.skipped);
+        const successCount = activeSyncs.filter(r => r.success).length;
+        const totalActive = activeSyncs.length;
         
-        console.log(`[Sync] Complete: ${successCount}/${totalCount} successful`);
+        // Only log if there are active syncs (not all skipped)
+        if (totalActive > 0) {
+            console.log(`[Sync] Complete: ${successCount}/${totalActive} successful`);
+        } else if (isStaticHosting()) {
+            // Silent on static hosting - all syncs are skipped (expected behavior)
+        }
         
         // Notify UI that sync completed
         if (SyncManager.onSyncComplete) {
@@ -254,12 +311,21 @@ async function performSync() {
         return summary;
         
     } catch (error) {
-        console.error('[Sync] Sync error:', error);
+        // Don't log errors on static hosting (expected behavior)
+        if (!isStaticHosting()) {
+            console.error('[Sync] Sync error:', error);
+        }
         
         if (SyncManager.onSyncError) {
             SyncManager.onSyncError(error);
         }
-        updateSyncIndicator('error');
+        
+        // On static hosting, show online status (Supabase works)
+        if (isStaticHosting()) {
+            updateSyncIndicator('online');
+        } else {
+            updateSyncIndicator('error');
+        }
         
         return { success: false, error: error.message };
         
