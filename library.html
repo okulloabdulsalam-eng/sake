@@ -147,9 +147,12 @@
                                 transition: all 0.2s ease;
                                 box-sizing: border-box;
                             "
-                            oninput="handleLibrarySearch(this.value)"
+                            oninput="handleLibrarySearchDebounced(this.value)"
                             onfocus="showSearchSuggestions()"
-                            onblur="setTimeout(() => hideSearchSuggestions(), 200)"
+                            onblur="setTimeout(() => hideSearchSuggestions(), 300)"
+                            aria-label="Search books by name"
+                            aria-autocomplete="list"
+                            role="searchbox"
                         />
                         <i class="fas fa-search" style="
                             position: absolute;
@@ -161,7 +164,10 @@
                             pointer-events: none;
                         "></i>
                     </div>
-                    <div id="searchSuggestions" style="
+                    <div id="searchSuggestions" 
+                         role="listbox" 
+                         aria-label="Search suggestions"
+                         style="
                         position: absolute;
                         top: 100%;
                         left: 0;
@@ -414,8 +420,10 @@
                         position: absolute;
                         top: 8px;
                         right: 10px;
-                        width: 28px;
-                        height: 28px;
+                        width: 32px;
+                        height: 32px;
+                        min-width: 32px;
+                        min-height: 32px;
                         border-radius: 50%;
                         border: none;
                         background: #f5f5f5;
@@ -592,7 +600,7 @@
         // Mobile-safe function to open book files
         window.openBookFileMobile = function(fileUrl, fileType) {
             if (!fileUrl) {
-                alert('File URL not available');
+                showMobileAlert('File URL not available');
                 return;
             }
             
@@ -621,7 +629,7 @@
                                 pdfWindow.location.href = fileUrl;
                                 // Focus the new window
                                 pdfWindow.focus();
-                } else {
+                            } else {
                                 // Popup blocked, try direct navigation
                                 window.location.href = fileUrl;
                             }
@@ -1288,7 +1296,7 @@
         window.deleteBook = async function(bookId) {
             const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
             if (!adminStatus) {
-                alert('You must be logged in as admin to delete books.');
+                showMobileAlert('You must be logged in as admin to delete books.');
                 return;
             }
             
@@ -1300,10 +1308,31 @@
                 return;
             }
             
-            const adminPassword = prompt('Enter admin password to confirm deletion:');
-            if (!adminPassword || adminPassword !== 'kiuma2025') {
-                if (adminPassword) {
-                    alert('Incorrect password.');
+            // Verify admin session with Supabase (secure, no hardcoded password)
+            try {
+                const supabase = getSupabaseClient();
+                if (supabase) {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (!session || !session.user) {
+                        alert('Session expired. Please login again.');
+                        if (typeof window.showAdminLogin === 'function') {
+                            window.showAdminLogin();
+                        }
+                        return;
+                    }
+                } else {
+                    // Fallback: Require re-authentication
+                    alert('Please verify your admin credentials to delete this book.');
+                    if (typeof window.showAdminLogin === 'function') {
+                        window.showAdminLogin();
+                    }
+                    return;
+                }
+            } catch (authError) {
+                console.error('Auth verification error:', authError);
+                alert('Unable to verify admin session. Please login again.');
+                if (typeof window.showAdminLogin === 'function') {
+                    window.showAdminLogin();
                 }
                 return;
             }
@@ -1727,6 +1756,7 @@
         
         // Store current search term globally
         let currentSearchTerm = '';
+        let searchDebounceTimer = null;
         
         // Show search suggestions dropdown
         window.showSearchSuggestions = function() {
@@ -1757,16 +1787,28 @@
             suggestions = suggestions.slice(0, 5);
             
             if (suggestions.length > 0) {
-                suggestionsDiv.innerHTML = suggestions.map(book => {
+                suggestionsDiv.innerHTML = suggestions.map((book, index) => {
                     const safeTitle = sanitizeHTML(book.title || 'Untitled');
                     const safeCategory = sanitizeHTML((book.category || 'others').toUpperCase());
+                    // Escape quotes for onclick attribute
+                    const escapedTitle = safeTitle.replace(/'/g, "\\'").replace(/"/g, '&quot;');
                     return `
-                        <div class="search-suggestion-item" onclick="selectSearchSuggestion('${safeTitle}')" style="
-                            padding: 12px 16px;
-                            cursor: pointer;
-                            border-bottom: 1px solid #f5f5f5;
-                            transition: background 0.2s;
-                        " onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='white'">
+                        <div class="search-suggestion-item" 
+                             role="option"
+                             aria-label="Select ${safeTitle}"
+                             tabindex="0"
+                             onclick="selectSearchSuggestion('${escapedTitle}')"
+                             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectSearchSuggestion('${escapedTitle}');}"
+                             style="
+                                padding: 12px 16px;
+                                cursor: pointer;
+                                border-bottom: 1px solid #f5f5f5;
+                                transition: background 0.2s;
+                            " 
+                             onmouseover="this.style.background='#f5f5f5'" 
+                             onmouseout="this.style.background='white'"
+                             onfocus="this.style.background='#f5f5f5'"
+                             onblur="this.style.background='white'">
                             <div style="font-weight: 600; color: #212121; font-size: 14px; margin-bottom: 4px;">${safeTitle}</div>
                             <div style="font-size: 12px; color: #757575;">
                                 <span style="background: #4CAF50; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">${safeCategory}</span>
@@ -1790,13 +1832,28 @@
         
         // Select search suggestion
         window.selectSearchSuggestion = function(bookTitle) {
+            // Sanitize input to prevent XSS
+            const safeTitle = sanitizeHTML(bookTitle || '');
             const searchInput = document.getElementById('librarySearchInput');
-            if (searchInput) {
-                searchInput.value = bookTitle;
-                handleLibrarySearch(bookTitle);
+            if (searchInput && safeTitle) {
+                searchInput.value = safeTitle;
+                handleLibrarySearch(safeTitle);
                 hideSearchSuggestions();
                 searchInput.blur();
             }
+        };
+        
+        // Debounced search handler (300ms delay)
+        window.handleLibrarySearchDebounced = function(searchTerm) {
+            // Clear previous timer
+            if (searchDebounceTimer) {
+                clearTimeout(searchDebounceTimer);
+            }
+            
+            // Set new timer
+            searchDebounceTimer = setTimeout(() => {
+                handleLibrarySearch(searchTerm);
+            }, 300);
         };
         
         // Handle library search
@@ -1825,7 +1882,9 @@
                 }).length;
                 
                 searchInfo.style.display = 'block';
-                searchInfo.innerHTML = `<i class="fas fa-search"></i> Found ${filteredCount} book${filteredCount !== 1 ? 's' : ''} matching "${searchTerm}"`;
+                // Sanitize searchTerm before using in innerHTML
+                const safeSearchTerm = sanitizeHTML(searchTerm);
+                searchInfo.innerHTML = `<i class="fas fa-search"></i> Found ${filteredCount} book${filteredCount !== 1 ? 's' : ''} matching "${safeSearchTerm}"`;
             } else {
                 searchInfo.style.display = 'none';
             }
@@ -1997,7 +2056,7 @@
                                 <h3 class="document-title">${safeTitle}</h3>
                                 ${safeCategory ? `<span class="document-category-badge">${safeCategory}</span>` : ''}
                             </div>
-                            ${(fileUrl || adminStatus) ? `<button class="document-menu-button" onclick="event.stopPropagation(); toggleBookMenu('${safeId}')" aria-label="Book options" title="Options">
+                            ${(fileUrl || adminStatus) ? `<button class="document-menu-button" onclick="event.stopPropagation(); toggleBookMenu('${safeId}')" aria-label="Book options menu" aria-haspopup="true" aria-expanded="false" title="Options">
                                 <i class="fas fa-ellipsis-v"></i>
                             </button>
                             <div class="document-dropdown" id="book-menu-${safeId}">
@@ -2109,15 +2168,21 @@
             });
         }, true);
         
-        // Handle download book/document - Fast download, no tab opening
+        // Handle download book/document - Fast download with visual feedback
         window.handleDownloadBook = async function(fileUrl, fileName) {
             console.log('[Download] Starting download:', { fileUrl, fileName });
             
             if (!fileUrl) {
                 console.error('[Download] File URL not provided');
-                alert('File URL not available for download.');
+                showMobileAlert('File URL not available for download.');
                 return;
             }
+            
+            // Show download feedback
+            const downloadToast = document.createElement('div');
+            downloadToast.style.cssText = 'position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: white; padding: 12px 24px; border-radius: 8px; z-index: 10000; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 10px;';
+            downloadToast.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Starting download...</span>';
+            document.body.appendChild(downloadToast);
             
             try {
                 // Extract file name from URL if not provided
@@ -2150,6 +2215,7 @@
                 // Method: Use Fetch API with Blob (prevents tab opening) - FAST VERSION
                 try {
                     console.log('[Download] Fetching file as blob...');
+                    downloadToast.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Downloading...</span>';
                     
                     // Fetch the file as blob immediately (no delay)
                     const response = await fetch(fileUrl, {
@@ -2179,17 +2245,28 @@
                     document.body.appendChild(link);
                     link.click();
                     
-                    // Cleanup immediately (no delay)
+                    // Update toast to show success
+                    downloadToast.innerHTML = '<i class="fas fa-check-circle" style="color: #4CAF50;"></i> <span>Download started!</span>';
+                    
+                    // Cleanup after short delay
                     setTimeout(() => {
                         if (link.parentNode) {
                             document.body.removeChild(link);
                         }
                         window.URL.revokeObjectURL(blobUrl);
+                        if (downloadToast.parentNode) {
+                            document.body.removeChild(downloadToast);
+                        }
                         console.log('[Download] Download completed:', downloadFileName);
-                    }, 50);
+                    }, 1500);
                     
                 } catch (fetchError) {
                     console.error('[Download] Fetch method failed:', fetchError);
+                    
+                    // Remove toast
+                    if (downloadToast.parentNode) {
+                        document.body.removeChild(downloadToast);
+                    }
                     
                     // Fallback: Try direct download without opening tab (fast)
                     const link = document.createElement('a');
@@ -2201,20 +2278,53 @@
                     document.body.appendChild(link);
                     link.click();
                     
+                    // Show success toast
+                    const fallbackToast = document.createElement('div');
+                    fallbackToast.style.cssText = 'position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: white; padding: 12px 24px; border-radius: 8px; z-index: 10000; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);';
+                    fallbackToast.innerHTML = '<i class="fas fa-check-circle" style="color: #4CAF50;"></i> <span>Download started!</span>';
+                    document.body.appendChild(fallbackToast);
+                    
                     setTimeout(() => {
                         if (link.parentNode) {
                             document.body.removeChild(link);
                         }
-                    }, 50);
+                        if (fallbackToast.parentNode) {
+                            document.body.removeChild(fallbackToast);
+                        }
+                    }, 1500);
                     
                     console.log('[Download] Fallback download method used');
                 }
                 
             } catch (error) {
                 console.error('[Download] Error initiating download:', error);
-                alert('Download failed. Please try again.');
+                
+                // Remove toast if still present
+                if (downloadToast.parentNode) {
+                    document.body.removeChild(downloadToast);
+                }
+                
+                showMobileAlert('Download failed. Please check your connection and try again.');
             }
         };
+        
+        // Mobile-friendly alert function
+        function showMobileAlert(message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10001; max-width: 80%; text-align: center;';
+            alertDiv.innerHTML = `
+                <p style="margin: 0 0 16px 0; font-size: 16px; color: #212121;">${sanitizeHTML(message)}</p>
+                <button onclick="this.parentElement.remove()" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; font-weight: 600;">OK</button>
+            `;
+            document.body.appendChild(alertDiv);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
     </script>
 
     <!-- Admin Login Modal -->
