@@ -89,8 +89,13 @@ function resetSupabaseClient() {
     console.log('[Supabase Client] Client instance reset');
 }
 
-// ES6 export
-export { getSupabaseClient, resetSupabaseClient };
+// ES6 export (only if module environment)
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        getSupabaseClient,
+        resetSupabaseClient
+    };
+}
 
 // Also export for window/CommonJS compatibility
 // BarakahPush Notification System – Active

@@ -6,7 +6,11 @@
  */
 
 // BarakahPush Notification System – Active
-let cachedNotifications = [];
+// Use global cache if exists, otherwise create
+if (typeof window.cachedNotifications === 'undefined') {
+    window.cachedNotifications = [];
+}
+let cachedNotifications = window.cachedNotifications; // Reference to global cache
 let unreadCount = 0;
 
 /**
@@ -69,6 +73,8 @@ async function fetchBarakahPushNotifications() {
         }
 
         cachedNotifications = notifications || [];
+        // Update global cache reference
+        window.cachedNotifications = cachedNotifications;
         // Update cache
         try {
             localStorage.setItem('barakahpush_notifications', JSON.stringify(cachedNotifications));
@@ -124,6 +130,9 @@ async function markNotificationAsRead(notificationId) {
         if (notification) {
             notification.is_read = true;
         }
+        
+        // Update global cache reference
+        window.cachedNotifications = cachedNotifications;
 
         updateUnreadCount();
         return true;

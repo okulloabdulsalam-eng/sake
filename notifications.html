@@ -532,7 +532,11 @@
         // Notifications Admin Password
         const NOTIFICATIONS_ADMIN_PASSWORD = 'kiuma2025';
         let currentFilter = 'all';
-        let cachedNotifications = []; // Cache notifications for instant filtering
+        // Use cachedNotifications from barakahpush.js if available, otherwise create local
+        if (typeof window.cachedNotifications === 'undefined') {
+            window.cachedNotifications = []; // Cache notifications for instant filtering
+        }
+        let cachedNotifications = window.cachedNotifications; // Reference to global cache
         let isLoadingNotifications = false;
         
         // Update admin button visibility
