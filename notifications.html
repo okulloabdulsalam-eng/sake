@@ -12,6 +12,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Firebase SDK -->
+    <!-- Firebase SDK - Authentication Only -->
+    <!-- OLD NOTIFICATION SYSTEM REMOVED: Firebase Cloud Messaging (FCM) scripts removed -->
+    <!-- All FCM logic, service workers, push handlers, and related code have been deleted -->
+    <!-- Notification system now uses BarakahPush instead -->
     <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-auth-compat.js"></script>
     <script src="fcm-config.js"></script>
@@ -408,9 +412,10 @@
 
             <section class="page-content">
                 <div class="mobile-actions" style="margin-bottom: 16px;">
-                    <button class="btn btn-primary mobile-btn" onclick="if(typeof requestNotificationPermission === 'function') { requestNotificationPermission(); } else { alert('Push notifications not available. Please check your browser settings.'); }">
-                        <i class="fas fa-bell"></i> Enable Push
-                    </button>
+                    <!-- OLD NOTIFICATION SYSTEM REMOVED: Firebase Cloud Messaging (FCM) push notification button removed -->
+                    <!-- This button previously called requestNotificationPermission() for FCM push notifications -->
+                    <!-- All FCM logic, service workers, and push handlers have been removed -->
+                    <!-- Notification system now uses BarakahPush instead -->
                     <button class="btn btn-secondary mobile-btn" id="adminLoginBtn" onclick="showAdminLogin()">
                         <i class="fas fa-lock"></i> Admin
                     </button>

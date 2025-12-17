@@ -6,7 +6,11 @@
  * 
  * @fileoverview
  * This file contains Firebase configuration values for Authentication ONLY.
- * FCM/Messaging has been removed. This file is now Auth-only.
+ * 
+ * OLD NOTIFICATION SYSTEM REMOVED: Firebase Cloud Messaging (FCM) has been completely removed.
+ * All FCM logic, service workers, push notification handlers, and related code have been deleted.
+ * This file now only contains Firebase Auth configuration.
+ * 
  * Keep this file secure and never commit it to public repositories.
  * Use environment variables in production.
  */

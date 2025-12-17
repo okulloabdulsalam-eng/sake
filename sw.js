@@ -3,6 +3,12 @@
  * Production-safe service worker with cache-first for static assets
  * and network-first for API/data requests
  * 
+ * NOTE: This is a PWA caching service worker, NOT for push notifications.
+ * OLD NOTIFICATION SYSTEM REMOVED: Firebase Cloud Messaging (FCM) service worker
+ * (firebase-messaging-sw.js) has been completely removed. All FCM push notification
+ * logic, handlers, and related code have been deleted. Notification system now uses
+ * BarakahPush instead.
+ * 
  * Version: 1.0.0
  * Last Updated: 2024
  */
