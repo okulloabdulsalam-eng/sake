@@ -1,15 +1,16 @@
 /**
- * Firebase Authentication Configuration
+ * Firebase Configuration - Authentication & BarakahPush Notifications
  * 
  * IMPORTANT: Replace these values with your Firebase project credentials
  * Get these from: Firebase Console > Project Settings > General > Your apps > Web app
  * 
  * @fileoverview
- * This file contains Firebase configuration values for Authentication ONLY.
+ * This file contains Firebase configuration for:
+ * - Authentication (Firebase Auth)
+ * - BarakahPush Notification System (FCM with DATA messages only)
  * 
- * OLD NOTIFICATION SYSTEM REMOVED: Firebase Cloud Messaging (FCM) has been completely removed.
- * All FCM logic, service workers, push notification handlers, and related code have been deleted.
- * This file now only contains Firebase Auth configuration.
+ * BarakahPush Notification System – Active
+ * Uses FCM DATA messages only (WebView-safe, handled at app level)
  * 
  * Keep this file secure and never commit it to public repositories.
  * Use environment variables in production.
@@ -32,9 +33,15 @@ const firebaseConfig = {
     storageBucket: "kiuma-mob-app.firebasestorage.app",
     
     // Your Firebase App ID
-    appId: "1:69327390212:web:10a7f8b52d5ea93d549751"
+    appId: "1:69327390212:web:10a7f8b52d5ea93d549751",
     
-    // NOTE: messagingSenderId, vapidKey, and measurementId removed - FCM no longer used
+    // BarakahPush Notification System – FCM Configuration
+    // Get messagingSenderId from: Firebase Console > Project Settings > Cloud Messaging
+    messagingSenderId: "69327390212",
+    
+    // Get VAPID key from: Firebase Console > Project Settings > Cloud Messaging > Web Push certificates
+    // Generate key pair if not exists, then copy the key
+    vapidKey: "YOUR_VAPID_KEY_HERE" // TODO: Replace with your actual VAPID key
 };
 
 /**

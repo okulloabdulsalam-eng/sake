@@ -12,14 +12,18 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Firebase SDK -->
-    <!-- Firebase SDK - Authentication Only -->
-    <!-- OLD NOTIFICATION SYSTEM REMOVED: Firebase Cloud Messaging (FCM) scripts removed -->
-    <!-- All FCM logic, service workers, push handlers, and related code have been deleted -->
-    <!-- Notification system now uses BarakahPush instead -->
+    <!-- Firebase SDK - Authentication & BarakahPush -->
+    <!-- BarakahPush Notification System – Active -->
     <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-messaging-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="services/supabaseClient.js"></script>
     <script src="fcm-config.js"></script>
     <script src="firebase-auth.js"></script>
+    <script src="js/barakahpush-init.js"></script>
+    <script src="js/barakahpush.js"></script>
     
     <style>
         /* Mobile-First Styles */
@@ -412,15 +416,15 @@
 
             <section class="page-content">
                 <div class="mobile-actions" style="margin-bottom: 16px;">
-                    <!-- OLD NOTIFICATION SYSTEM REMOVED: Firebase Cloud Messaging (FCM) push notification button removed -->
-                    <!-- This button previously called requestNotificationPermission() for FCM push notifications -->
-                    <!-- All FCM logic, service workers, and push handlers have been removed -->
-                    <!-- Notification system now uses BarakahPush instead -->
+                    <!-- BarakahPush Notification System – Active -->
+                    <button class="btn btn-primary mobile-btn" onclick="initializeBarakahPush()">
+                        <i class="fas fa-bell"></i> Enable Push
+                    </button>
                     <button class="btn btn-secondary mobile-btn" id="adminLoginBtn" onclick="showAdminLogin()">
                         <i class="fas fa-lock"></i> Admin
                     </button>
                     <button class="btn btn-primary mobile-btn admin-only" onclick="showAddNotificationModal()" style="display: none;">
-                        <i class="fas fa-plus"></i> Add
+                        <i class="fas fa-plus"></i> Send Notification
                     </button>
                     <button class="btn btn-secondary mobile-btn admin-logout" onclick="logoutAdmin()" style="display: none;">
                         <i class="fas fa-sign-out-alt"></i> Logout
@@ -491,20 +495,19 @@
                     <textarea class="mobile-form-textarea" id="notifMessage" placeholder="Notification message" maxlength="2000" required></textarea>
                 </div>
                 <div class="mobile-form-group">
-                    <label class="mobile-form-label">Icon</label>
-                    <select class="mobile-form-select" id="notifIcon">
-                        <option value="fa-bell">Bell</option>
-                        <option value="fa-calendar-check">Calendar</option>
-                        <option value="fa-book">Book</option>
-                        <option value="fa-hand-holding-heart">Donation</option>
-                        <option value="fa-clock">Time</option>
-                        <option value="fa-users">Users</option>
-                        <option value="fa-graduation-cap">Education</option>
-                        <option value="fa-star-and-crescent">Star</option>
-                    </select>
+                    <label class="mobile-form-label">
+                        <input type="checkbox" id="sendEmail" style="margin-right: 8px;">
+                        Send Email
+                    </label>
+                </div>
+                <div class="mobile-form-group">
+                    <label class="mobile-form-label">
+                        <input type="checkbox" id="sendPush" checked style="margin-right: 8px;">
+                        Send Push Notification (default ON)
+                    </label>
                 </div>
                 <button type="submit" class="mobile-submit-btn">
-                    <i class="fas fa-plus"></i> Add Notification
+                    <i class="fas fa-paper-plane"></i> Send Notification
                 </button>
             </form>
         </div>
@@ -720,16 +723,29 @@
                     ${isAuth ? `<button class="mobile-notification-delete" onclick="deleteNotification('${safeNotifId}', '${safeDatabaseId}', event)" aria-label="Delete"><i class="fas fa-trash"></i></button>` : ''}
                 `;
                 
-                // Mark as read on click
-                item.addEventListener('click', function(e) {
+                // Mark as read on click - BarakahPush Notification System – Active
+                item.addEventListener('click', async function(e) {
                     if (e.target.closest('.mobile-notification-delete')) return;
                     
                     if (this.dataset.status === 'unread') {
                         this.dataset.status = 'read';
                         this.classList.remove('unread');
                         this.classList.add('read');
-                        markNotificationAsRead(notifId);
-                        updateUnreadBadge();
+                        
+                        // Use BarakahPush mark as read
+                        if (typeof markNotificationAsRead === 'function') {
+                            await markNotificationAsRead(notifId);
+                        } else {
+                            // Fallback to local storage
+                            markNotificationAsRead(notifId);
+                        }
+                        
+                        if (typeof updateBarakahPushBadge === 'function') {
+                            updateBarakahPushBadge();
+                        } else {
+                            updateUnreadBadge();
+                        }
+                        
                         // Update filter if on unread view
                         if (currentFilter === 'unread') {
                             displayNotifications(cachedNotifications, 'unread');
@@ -976,7 +992,7 @@
             displayNotifications(cachedNotifications, currentFilter);
         }
         
-        // Add notification
+        // Add notification - BarakahPush Notification System – Active
         window.addNotification = async function(e) {
             e.preventDefault();
             
@@ -984,14 +1000,15 @@
                           localStorage.getItem('adminPassword') === NOTIFICATIONS_ADMIN_PASSWORD;
             
             if (!isAuth) {
-                alert('You must be authenticated as admin to add notifications.');
+                alert('You must be authenticated as admin to send notifications.');
                 showAdminLogin();
                 return;
             }
             
             const title = document.getElementById('notifTitle').value.trim();
             const message = document.getElementById('notifMessage').value.trim();
-            const icon = document.getElementById('notifIcon').value || 'fa-bell';
+            const sendEmail = document.getElementById('sendEmail').checked;
+            const sendPush = document.getElementById('sendPush').checked;
             
             // Input validation
             if (!title || !message) {
@@ -1010,10 +1027,6 @@
                 return;
             }
             
-            // Icon validation (basic check)
-            const validIcons = ['fa-bell', 'fa-calendar-check', 'fa-book', 'fa-hand-holding-heart', 'fa-clock', 'fa-users', 'fa-graduation-cap', 'fa-star-and-crescent'];
-            const safeIcon = validIcons.includes(icon) ? icon : 'fa-bell';
-            
             const submitBtn = document.querySelector('#addNotificationForm button[type="submit"]');
             if (!submitBtn) {
                 alert('Error: Submit button not found');
@@ -1022,71 +1035,70 @@
             
             const originalBtnText = submitBtn.innerHTML;
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-            
-            let saved = false;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
             
             try {
-                // Try to save to database first (more reliable)
-                const isStaticHosting = window.location.hostname.includes('github.io');
-                if (!isStaticHosting) {
-                    try {
-                        const API_BASE_URL = window.API_BASE_URL || '/api';
-                        const formData = new FormData();
-                        formData.append('title', title);
-                        formData.append('message', message);
-                        formData.append('type', 'announcement');
-                        formData.append('icon', icon);
-                        formData.append('admin_password', NOTIFICATIONS_ADMIN_PASSWORD);
-                        
-                        const response = await fetch(API_BASE_URL + '/save_notification.php', {
-                            method: 'POST',
-                            body: formData
-                        });
-                        
-                        if (response.ok) {
-                            const data = await response.json();
-                            if (data.success) {
-                                saved = true;
-                                console.log('Notification saved to database');
-                            }
-                        }
-                    } catch (error) {
-                        console.warn('Database save failed:', error);
+                // BarakahPush Notification System – Active
+                // Send via Firebase Cloud Function
+                let result = null;
+                
+                if (typeof firebase !== 'undefined' && firebase.functions) {
+                    // Use Firebase Cloud Function
+                    const sendNotification = firebase.functions().httpsCallable('adminSendNotification');
+                    result = await sendNotification({
+                        password: NOTIFICATIONS_ADMIN_PASSWORD,
+                        title: title,
+                        body: message,
+                        send_email: sendEmail,
+                        send_push: sendPush
+                    });
+                } else {
+                    // Fallback to API endpoint
+                    const API_BASE_URL = window.API_BASE_URL || '/api';
+                    const response = await fetch(API_BASE_URL + '/send-barakahpush-notification.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            password: NOTIFICATIONS_ADMIN_PASSWORD,
+                            title: title,
+                            body: message,
+                            send_email: sendEmail,
+                            send_push: sendPush
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        result = await response.json();
+                    } else {
+                        throw new Error('Failed to send notification');
                     }
                 }
                 
-                // If neither saved, at least show success (for GitHub Pages)
-                if (!saved && isStaticHosting) {
-                    saved = true; // Allow it on static hosting
-                }
-                
-                if (saved) {
-                    // Add to cache immediately (optimistic update)
-                    const newNotif = {
-                        id: Date.now().toString(), // Temporary ID
-                        title: title,
-                        message: message,
-                        icon: safeIcon,
-                        createdAt: new Date(),
-                    };
-                    cachedNotifications.unshift(newNotif); // Add to beginning
-                    displayNotifications(cachedNotifications, currentFilter);
-                    
+                if (result && result.success) {
                     closeAddNotificationModal();
-                    alert('Notification added successfully!');
+                    alert(`Notification sent successfully! Sent to ${result.sent || result.total || 0} users.`);
                     
-                    // Refresh in background to get real ID
+                    // Refresh notifications
                     setTimeout(() => {
-                        loadNotificationsFromStorage(false);
-                    }, 500);
+                        if (typeof fetchBarakahPushNotifications === 'function') {
+                            fetchBarakahPushNotifications().then(() => {
+                                if (typeof displayNotifications === 'function') {
+                                    displayNotifications(cachedNotifications, currentFilter);
+                                }
+                            });
+                        } else {
+                            loadNotificationsFromStorage(true);
+                        }
+                    }, 1000);
                 } else {
-                    throw new Error('Failed to save notification. Please try again.');
+                    throw new Error(result?.error || 'Failed to send notification');
                 }
                 
             } catch (error) {
-                console.error('Error saving notification:', error);
-                alert('Error saving notification: ' + (error.message || 'Unknown error'));
+                console.error('[BarakahPush] Error sending notification:', error);
+                alert('Error sending notification: ' + (error.message || 'Unknown error'));
             } finally {
                 // Always reset button state
                 if (submitBtn) {
@@ -1152,22 +1164,38 @@
             }
         }
         
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
+        // Initialize - BarakahPush Notification System – Active
+        document.addEventListener('DOMContentLoaded', async function() {
             updateAdminButtonVisibility();
             
-            // Load notifications immediately (non-blocking)
-            loadNotificationsFromStorage(true);
+            // Initialize BarakahPush
+            if (typeof initializeBarakahPush === 'function') {
+                await initializeBarakahPush();
+            }
+            
+            // Load notifications using BarakahPush
+            if (typeof fetchBarakahPushNotifications === 'function') {
+                cachedNotifications = await fetchBarakahPushNotifications();
+                displayNotifications(cachedNotifications, currentFilter);
+            } else {
+                // Fallback to old method
+                loadNotificationsFromStorage(true);
+            }
             
             
-            // Refresh notifications in background every 30 seconds (only when page is visible)
+                    // Refresh notifications in background every 30 seconds (only when page is visible)
             let refreshInterval = null;
             const startBackgroundRefresh = () => {
                 if (refreshInterval) clearInterval(refreshInterval);
-                refreshInterval = setInterval(() => {
+                refreshInterval = setInterval(async () => {
                     // Only refresh if page is visible (saves battery/data)
                     if (!document.hidden && !isLoadingNotifications) {
-                        loadNotificationsFromStorage(false); // Silent refresh
+                        if (typeof fetchBarakahPushNotifications === 'function') {
+                            cachedNotifications = await fetchBarakahPushNotifications();
+                            displayNotifications(cachedNotifications, currentFilter);
+                        } else {
+                            loadNotificationsFromStorage(false); // Silent refresh
+                        }
                     }
                 }, 30000);
             };

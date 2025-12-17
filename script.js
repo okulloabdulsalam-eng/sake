@@ -2177,8 +2177,16 @@ function initializePrayerTimesEditing() {
 }
 
 // Global function to update notification badge on all pages
+// BarakahPush Notification System – Active
 window.updateNotificationBadge = async function() {
     try {
+        // Use BarakahPush if available
+        if (typeof updateBarakahPushBadge === 'function') {
+            await updateBarakahPushBadge();
+            return;
+        }
+        
+        // Fallback to old method
         let unreadCount = 0;
         
         // Get from localStorage (Firestore removed)
@@ -2208,12 +2216,33 @@ window.updateNotificationBadge = async function() {
     }
 };
 
-// Update badge on page load
+// Update badge on page load - BarakahPush Notification System – Active
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Initialize BarakahPush if available
+        if (typeof initializeBarakahPush === 'function') {
+            await initializeBarakahPush();
+        }
         setTimeout(() => window.updateNotificationBadge(), 500);
+        
+        // Set up periodic badge updates
+        setInterval(() => {
+            window.updateNotificationBadge();
+        }, 30000); // Update every 30 seconds
     });
 } else {
-    setTimeout(() => window.updateNotificationBadge(), 500);
+    // Initialize BarakahPush if available
+    if (typeof initializeBarakahPush === 'function') {
+        initializeBarakahPush().then(() => {
+            setTimeout(() => window.updateNotificationBadge(), 500);
+        });
+    } else {
+        setTimeout(() => window.updateNotificationBadge(), 500);
+    }
+    
+    // Set up periodic badge updates
+    setInterval(() => {
+        window.updateNotificationBadge();
+    }, 30000); // Update every 30 seconds
 }
 
