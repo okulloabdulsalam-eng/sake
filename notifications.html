@@ -17,9 +17,21 @@
     <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-messaging-compat.js"></script>
+    <!-- BarakahPush Notification System – Active -->
+    <!-- Load order is critical: Supabase must load BEFORE barakahpush-init.js -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
     <script src="services/supabaseClient.js"></script>
+    <!-- Ensure Supabase is ready before BarakahPush -->
+    <script>
+        // Verify Supabase client is available before BarakahPush loads
+        if (typeof window.getSupabaseClient !== 'function') {
+            console.warn('[BarakahPush] Supabase client not available, creating fallback');
+            window.getSupabaseClient = function() {
+                return null; // Safe fallback
+            };
+        }
+    </script>
     <script src="fcm-config.js"></script>
     <script src="firebase-auth.js"></script>
     <script src="js/barakahpush-init.js"></script>

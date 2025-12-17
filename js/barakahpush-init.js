@@ -14,6 +14,7 @@
 // BarakahPush Notification System – Active
 let messaging = null;
 let currentFCMToken = null;
+let isInitialized = false; // Guard flag to prevent duplicate initialization
 
 /**
  * Initialize BarakahPush FCM
@@ -21,6 +22,12 @@ let currentFCMToken = null;
  * BarakahPush Notification System – Active
  */
 async function initializeBarakahPush() {
+    // Prevent duplicate initialization
+    if (isInitialized) {
+        console.warn('[BarakahPush] Already initialized, skipping');
+        return true;
+    }
+    
     try {
         // Check if Firebase is initialized
         if (typeof firebase === 'undefined') {
@@ -90,13 +97,15 @@ async function initializeBarakahPush() {
         }
 
         // Get FCM token (wrapped in try/catch) - only after SW is ready
+        let tokenObtained = false;
         try {
             if (swRegistration || 'serviceWorker' in navigator) {
                 // Wait for service worker to be ready
                 if (swRegistration) {
                     await swRegistration.update(); // Ensure SW is up to date
                 }
-                await getFCMToken(swRegistration);
+                const token = await getFCMToken(swRegistration);
+                tokenObtained = !!token;
             } else {
                 console.warn('[BarakahPush] Service worker not available, skipping token');
             }
@@ -115,7 +124,14 @@ async function initializeBarakahPush() {
             console.warn('[BarakahPush] Message handler setup failed (non-fatal):', msgError);
         }
 
-        console.log('[BarakahPush] ✅ Initialized successfully');
+        // Only log success after SW registered and token obtained
+        if (swRegistration && tokenObtained) {
+            isInitialized = true;
+            console.log('[BarakahPush] ✅ Initialized successfully');
+        } else {
+            console.warn('[BarakahPush] ⚠️ Initialized with warnings (SW or token may be missing)');
+            isInitialized = true; // Still mark as initialized to prevent retries
+        }
         return true;
     } catch (error) {
         console.warn('[BarakahPush] ❌ Initialization error (non-fatal):', error);
@@ -176,29 +192,13 @@ async function getFCMToken(swRegistration = null) {
         console.log('[BarakahPush] FCM Token obtained');
 
         // Store token in Supabase (non-blocking)
+        // Firebase v9 handles token refresh automatically, no need for onTokenRefresh
         storeFCMToken(token).catch(err => {
             console.warn('[BarakahPush] Token storage failed (non-fatal):', err);
         });
 
-        // Set up token refresh handler
-        try {
-            messaging.onTokenRefresh(async () => {
-                console.log('[BarakahPush] Token refreshed');
-                try {
-                    const newToken = await messaging.getToken({
-                        vapidKey: window.firebaseConfig?.vapidKey
-                    });
-                    if (newToken) {
-                        currentFCMToken = newToken;
-                        await storeFCMToken(newToken);
-                    }
-                } catch (refreshError) {
-                    console.warn('[BarakahPush] Token refresh failed:', refreshError);
-                }
-            });
-        } catch (refreshHandlerError) {
-            console.warn('[BarakahPush] Token refresh handler setup failed:', refreshHandlerError);
-        }
+        // Note: Firebase v9 compat automatically handles token refresh
+        // No need for messaging.onTokenRefresh (Firebase v8 syntax removed)
 
         return token;
     } catch (error) {
@@ -208,23 +208,53 @@ async function getFCMToken(swRegistration = null) {
 }
 
 /**
- * Store FCM token in Supabase
+ * Store FCM token in Supabase - BarakahPush Notification System – Active
  */
 async function storeFCMToken(token) {
     try {
-        const supabase = window.getSupabaseClient();
+        // Safely get Supabase client - never throw, return null if unavailable
+        let supabase = null;
+        try {
+            if (typeof window.getSupabaseClient === 'function') {
+                supabase = window.getSupabaseClient();
+            }
+        } catch (err) {
+            // Silently handle - Supabase may not be available
+        }
+        
         if (!supabase) {
-            console.error('[BarakahPush] Supabase client not available');
+            console.warn('[BarakahPush] Supabase client not available, token stored locally only');
+            // Store in localStorage for later
+            try {
+                localStorage.setItem('barakahpush_token', token);
+                localStorage.setItem('barakahpush_token_platform', navigator.userAgent);
+            } catch (storageError) {
+                console.warn('[BarakahPush] LocalStorage storage failed:', storageError);
+            }
             return false;
         }
 
-        // Get current user
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
+        // Get current user (fails silently if not logged in)
+        let user = null;
+        try {
+            const { data: { user: authUser }, error: getUserError } = await supabase.auth.getUser();
+            if (getUserError) {
+                throw getUserError;
+            }
+            user = authUser;
+        } catch (authError) {
             console.warn('[BarakahPush] No user logged in, token stored locally only');
             // Store in localStorage for later
-            localStorage.setItem('barakahpush_token', token);
-            localStorage.setItem('barakahpush_token_platform', navigator.userAgent);
+            try {
+                localStorage.setItem('barakahpush_token', token);
+                localStorage.setItem('barakahpush_token_platform', navigator.userAgent);
+            } catch (storageError) {
+                // Ignore storage errors
+            }
+            return false;
+        }
+
+        if (!user) {
             return false;
         }
 
@@ -245,14 +275,29 @@ async function storeFCMToken(token) {
             });
 
         if (error) {
-            console.error('[BarakahPush] Error storing token:', error);
+            console.warn('[BarakahPush] Error storing token (non-fatal):', error);
+            // Store locally as fallback
+            try {
+                localStorage.setItem('barakahpush_token', token);
+                localStorage.setItem('barakahpush_token_platform', navigator.userAgent);
+            } catch (storageError) {
+                // Ignore storage errors
+            }
             return false;
         }
 
         console.log('[BarakahPush] ✅ Token stored successfully');
         return true;
     } catch (error) {
-        console.error('[BarakahPush] Error in storeFCMToken:', error);
+        // Never throw - always return false
+        console.warn('[BarakahPush] Error in storeFCMToken (non-fatal):', error);
+        // Store locally as fallback
+        try {
+            localStorage.setItem('barakahpush_token', token);
+            localStorage.setItem('barakahpush_token_platform', navigator.userAgent);
+        } catch (storageError) {
+            // Ignore storage errors
+        }
         return false;
     }
 }

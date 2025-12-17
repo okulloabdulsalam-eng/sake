@@ -93,9 +93,28 @@ function resetSupabaseClient() {
 export { getSupabaseClient, resetSupabaseClient };
 
 // Also export for window/CommonJS compatibility
+// BarakahPush Notification System – Active
+// Ensure Supabase client is globally available BEFORE barakahpush-init.js loads
 if (typeof window !== 'undefined') {
-    window.getSupabaseClient = getSupabaseClient;
+    // Create wrapper that never throws
+    window.getSupabaseClient = function() {
+        try {
+            return getSupabaseClient();
+        } catch (error) {
+            console.warn('[Supabase Client] Error getting client (returning null):', error);
+            return null;
+        }
+    };
     window.resetSupabaseClient = resetSupabaseClient;
+    
+    // Try to initialize immediately if config is available
+    if (window.supabaseConfig && typeof supabase !== 'undefined') {
+        try {
+            getSupabaseClient(); // Pre-initialize
+        } catch (err) {
+            // Silently fail - will be initialized when needed
+        }
+    }
 }
 
 if (typeof module !== 'undefined' && module.exports) {
