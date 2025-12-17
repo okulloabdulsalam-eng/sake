@@ -101,10 +101,13 @@ if (typeof module !== 'undefined' && module.exports) {
 // BarakahPush Notification System – Active
 // Ensure Supabase client is globally available BEFORE barakahpush-init.js loads
 if (typeof window !== 'undefined') {
+    // Store original function before creating wrapper (prevent infinite recursion)
+    const originalGetSupabaseClient = getSupabaseClient;
+    
     // Create wrapper that never throws
     window.getSupabaseClient = function() {
         try {
-            return getSupabaseClient();
+            return originalGetSupabaseClient();
         } catch (error) {
             console.warn('[Supabase Client] Error getting client (returning null):', error);
             return null;
@@ -115,7 +118,7 @@ if (typeof window !== 'undefined') {
     // Try to initialize immediately if config is available
     if (window.supabaseConfig && typeof supabase !== 'undefined') {
         try {
-            getSupabaseClient(); // Pre-initialize
+            originalGetSupabaseClient(); // Pre-initialize using original function
         } catch (err) {
             // Silently fail - will be initialized when needed
         }

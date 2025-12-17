@@ -4,9 +4,34 @@
  * Handles file uploads to Supabase Storage
  */
 
-import { getSupabaseClient } from './supabaseClient.js';
-import { handleError } from '../utils/errorHandler.js';
-import { log } from '../utils/logger.js';
+// BarakahPush Notification System – Active
+// Use window.getSupabaseClient instead of ES6 import (supabaseClient.js is loaded as regular script)
+// import { getSupabaseClient } from './supabaseClient.js';
+// import { handleError } from '../utils/errorHandler.js';
+// import { log } from '../utils/logger.js';
+
+// Get Supabase client from window (works with regular script loading)
+function getSupabaseClient() {
+    if (typeof window !== 'undefined' && typeof window.getSupabaseClient === 'function') {
+        return window.getSupabaseClient();
+    }
+    throw new Error('Supabase client not available');
+}
+
+// Fallback error handler
+function handleError(error, context = '') {
+    console.error(`[Upload Service] Error ${context}:`, error);
+    return { success: false, error: error.message || 'Unknown error' };
+}
+
+// Fallback logger
+function log(message, level = 'info') {
+    if (level === 'error') {
+        console.error(`[Upload Service] ${message}`);
+    } else {
+        console.log(`[Upload Service] ${message}`);
+    }
+}
 
 /**
  * Upload file to Supabase Storage
