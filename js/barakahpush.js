@@ -10,19 +10,44 @@ let cachedNotifications = [];
 let unreadCount = 0;
 
 /**
- * Fetch notifications from Supabase
+ * Fetch notifications from Supabase - BarakahPush Notification System – Active
  */
 async function fetchBarakahPushNotifications() {
     try {
-        const supabase = window.getSupabaseClient();
-        if (!supabase) {
-            console.error('[BarakahPush] Supabase client not available');
-            return [];
+        // Safely get Supabase client
+        let supabase = null;
+        try {
+            supabase = window.getSupabaseClient && window.getSupabaseClient();
+        } catch (err) {
+            console.warn('[BarakahPush] Supabase unavailable, using cache');
         }
 
-        const { data: { user } } = await supabase.auth.getUser();
+        if (!supabase) {
+            // Fallback to localStorage cache
+            try {
+                const cached = JSON.parse(localStorage.getItem('barakahpush_notifications') || '[]');
+                cachedNotifications = cached;
+                updateUnreadCount();
+                return cachedNotifications;
+            } catch (cacheError) {
+                return [];
+            }
+        }
+
+        // Get user (fails silently if not logged in)
+        let user = null;
+        try {
+            const { data: { user: authUser } } = await supabase.auth.getUser();
+            user = authUser;
+        } catch (authError) {
+            // Not logged in - use cache
+            const cached = JSON.parse(localStorage.getItem('barakahpush_notifications') || '[]');
+            cachedNotifications = cached;
+            updateUnreadCount();
+            return cachedNotifications;
+        }
+
         if (!user) {
-            console.warn('[BarakahPush] No user logged in');
             return [];
         }
 
@@ -35,16 +60,32 @@ async function fetchBarakahPushNotifications() {
             .limit(100);
 
         if (error) {
-            console.error('[BarakahPush] Error fetching notifications:', error);
-            return [];
+            console.warn('[BarakahPush] Error fetching notifications (using cache):', error);
+            // Use cache as fallback
+            const cached = JSON.parse(localStorage.getItem('barakahpush_notifications') || '[]');
+            cachedNotifications = cached;
+            updateUnreadCount();
+            return cachedNotifications;
         }
 
         cachedNotifications = notifications || [];
+        // Update cache
+        try {
+            localStorage.setItem('barakahpush_notifications', JSON.stringify(cachedNotifications));
+        } catch (cacheError) {
+            // Ignore cache errors
+        }
         updateUnreadCount();
         return cachedNotifications;
     } catch (error) {
-        console.error('[BarakahPush] Error in fetchBarakahPushNotifications:', error);
-        return [];
+        console.warn('[BarakahPush] Error in fetchBarakahPushNotifications (non-fatal):', error);
+        // Return cache if available
+        try {
+            const cached = JSON.parse(localStorage.getItem('barakahpush_notifications') || '[]');
+            return cached;
+        } catch (cacheError) {
+            return [];
+        }
     }
 }
 

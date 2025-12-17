@@ -18,50 +18,107 @@ let currentFCMToken = null;
 /**
  * Initialize BarakahPush FCM
  * Must be called after Firebase app initialization
+ * BarakahPush Notification System – Active
  */
 async function initializeBarakahPush() {
     try {
         // Check if Firebase is initialized
         if (typeof firebase === 'undefined') {
-            console.error('[BarakahPush] Firebase SDK not loaded');
+            console.warn('[BarakahPush] Firebase SDK not loaded');
             return false;
         }
 
         // Check if Firebase app is initialized
         if (!firebase.apps || firebase.apps.length === 0) {
-            console.error('[BarakahPush] Firebase app not initialized. Call initializeFirebaseApp() first');
-            return false;
+            console.warn('[BarakahPush] Firebase app not initialized. Attempting to initialize...');
+            // Try to initialize if function exists
+            if (typeof initializeFirebaseApp === 'function') {
+                initializeFirebaseApp();
+            } else {
+                return false;
+            }
         }
 
         // Check if messaging is available
         if (typeof firebase.messaging === 'undefined') {
-            console.error('[BarakahPush] Firebase Messaging SDK not loaded. Include firebase-messaging-compat.js');
+            console.warn('[BarakahPush] Firebase Messaging SDK not loaded. Include firebase-messaging-compat.js');
             return false;
+        }
+
+        // Register service worker first (required for FCM)
+        let swRegistration = null;
+        try {
+            if ('serviceWorker' in navigator) {
+                // Try root path first
+                try {
+                    swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+                        scope: '/'
+                    });
+                    console.log('[BarakahPush] Service worker registered:', swRegistration.scope);
+                } catch (rootError) {
+                    // Try current directory
+                    try {
+                        swRegistration = await navigator.serviceWorker.register('./firebase-messaging-sw.js', {
+                            scope: './'
+                        });
+                        console.log('[BarakahPush] Service worker registered (relative path):', swRegistration.scope);
+                    } catch (relError) {
+                        console.warn('[BarakahPush] Service worker registration failed (non-fatal):', relError);
+                    }
+                }
+            } else {
+                console.warn('[BarakahPush] Service workers not supported');
+            }
+        } catch (swError) {
+            console.warn('[BarakahPush] Service worker registration failed (non-fatal):', swError);
+            // Continue anyway - some browsers may work without SW
         }
 
         // Get messaging instance
         messaging = firebase.messaging();
 
-        // Request notification permission
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') {
-            console.warn('[BarakahPush] Notification permission not granted:', permission);
-            return false;
+        // Request notification permission (WebView-safe)
+        try {
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') {
+                console.warn('[BarakahPush] Notification permission not granted:', permission);
+                // Don't return false - token might still work
+            }
+        } catch (permError) {
+            console.warn('[BarakahPush] Permission request failed (non-fatal):', permError);
+            // Continue - some WebViews handle this differently
         }
 
-        // Get FCM token
-        await getFCMToken();
+        // Get FCM token (wrapped in try/catch) - only after SW is ready
+        try {
+            if (swRegistration || 'serviceWorker' in navigator) {
+                // Wait for service worker to be ready
+                if (swRegistration) {
+                    await swRegistration.update(); // Ensure SW is up to date
+                }
+                await getFCMToken(swRegistration);
+            } else {
+                console.warn('[BarakahPush] Service worker not available, skipping token');
+            }
+        } catch (tokenError) {
+            console.warn('[BarakahPush] Token retrieval failed (non-fatal):', tokenError);
+            // Continue - app can still function
+        }
 
         // Set up message handler for DATA messages (app-level)
-        messaging.onMessage((payload) => {
-            console.log('[BarakahPush] Message received:', payload);
-            handleBarakahPushMessage(payload);
-        });
+        try {
+            messaging.onMessage((payload) => {
+                console.log('[BarakahPush] Message received:', payload);
+                handleBarakahPushMessage(payload);
+            });
+        } catch (msgError) {
+            console.warn('[BarakahPush] Message handler setup failed (non-fatal):', msgError);
+        }
 
         console.log('[BarakahPush] ✅ Initialized successfully');
         return true;
     } catch (error) {
-        console.error('[BarakahPush] ❌ Initialization error:', error);
+        console.warn('[BarakahPush] ❌ Initialization error (non-fatal):', error);
         return false;
     }
 }
@@ -69,17 +126,46 @@ async function initializeBarakahPush() {
 /**
  * Get FCM token and store it
  */
-async function getFCMToken() {
+async function getFCMToken(swRegistration = null) {
     try {
         if (!messaging) {
-            console.error('[BarakahPush] Messaging not initialized');
+            console.warn('[BarakahPush] Messaging not initialized');
             return null;
         }
 
-        // Get current token
-        const token = await messaging.getToken({
-            vapidKey: window.firebaseConfig?.vapidKey
-        });
+        // Get current token with error handling
+        let token = null;
+        try {
+            // Try with service worker registration if available
+            if (swRegistration) {
+                token = await messaging.getToken({
+                    vapidKey: window.firebaseConfig?.vapidKey,
+                    serviceWorkerRegistration: swRegistration
+                });
+            } else if ('serviceWorker' in navigator) {
+                // Try with ready service worker
+                const registration = await navigator.serviceWorker.ready;
+                token = await messaging.getToken({
+                    vapidKey: window.firebaseConfig?.vapidKey,
+                    serviceWorkerRegistration: registration
+                });
+            } else {
+                // Fallback without service worker (for WebView compatibility)
+                token = await messaging.getToken({
+                    vapidKey: window.firebaseConfig?.vapidKey
+                });
+            }
+        } catch (tokenError) {
+            // Try without service worker registration (for WebView compatibility)
+            try {
+                token = await messaging.getToken({
+                    vapidKey: window.firebaseConfig?.vapidKey
+                });
+            } catch (fallbackError) {
+                console.warn('[BarakahPush] Token retrieval failed:', fallbackError);
+                return null;
+            }
+        }
 
         if (!token) {
             console.warn('[BarakahPush] No FCM token available');
@@ -87,26 +173,36 @@ async function getFCMToken() {
         }
 
         currentFCMToken = token;
-        console.log('[BarakahPush] FCM Token:', token);
+        console.log('[BarakahPush] FCM Token obtained');
 
-        // Store token in Supabase
-        await storeFCMToken(token);
+        // Store token in Supabase (non-blocking)
+        storeFCMToken(token).catch(err => {
+            console.warn('[BarakahPush] Token storage failed (non-fatal):', err);
+        });
 
         // Set up token refresh handler
-        messaging.onTokenRefresh(async () => {
-            console.log('[BarakahPush] Token refreshed');
-            const newToken = await messaging.getToken({
-                vapidKey: window.firebaseConfig?.vapidKey
+        try {
+            messaging.onTokenRefresh(async () => {
+                console.log('[BarakahPush] Token refreshed');
+                try {
+                    const newToken = await messaging.getToken({
+                        vapidKey: window.firebaseConfig?.vapidKey
+                    });
+                    if (newToken) {
+                        currentFCMToken = newToken;
+                        await storeFCMToken(newToken);
+                    }
+                } catch (refreshError) {
+                    console.warn('[BarakahPush] Token refresh failed:', refreshError);
+                }
             });
-            if (newToken) {
-                currentFCMToken = newToken;
-                await storeFCMToken(newToken);
-            }
-        });
+        } catch (refreshHandlerError) {
+            console.warn('[BarakahPush] Token refresh handler setup failed:', refreshHandlerError);
+        }
 
         return token;
     } catch (error) {
-        console.error('[BarakahPush] Error getting FCM token:', error);
+        console.warn('[BarakahPush] Error getting FCM token (non-fatal):', error);
         return null;
     }
 }
@@ -239,24 +335,69 @@ function showBarakahPushNotification(title, body, type = 'general') {
 }
 
 /**
- * Update badge count
+ * Update badge count - BarakahPush Notification System – Active
  */
 async function updateBarakahPushBadge() {
     try {
-        const supabase = window.getSupabaseClient();
-        if (!supabase) return;
+        // Safely get Supabase client (fails silently)
+        let supabase = null;
+        try {
+            supabase = window.getSupabaseClient && window.getSupabaseClient();
+        } catch (err) {
+            console.warn('[BarakahPush] Supabase client unavailable, using fallback');
+        }
 
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!supabase) {
+            // Fallback: Use localStorage cache
+            try {
+                const cached = JSON.parse(localStorage.getItem('barakahpush_notifications') || '[]');
+                const unreadCount = cached.filter(n => !n.is_read).length;
+                document.querySelectorAll('.notifications-btn .badge').forEach(badge => {
+                    badge.textContent = unreadCount;
+                    badge.style.display = unreadCount > 0 ? 'inline' : 'none';
+                });
+            } catch (cacheError) {
+                // Silently fail
+            }
+            return;
+        }
+
+        // Get current user (fails silently if not logged in)
+        let user = null;
+        try {
+            const { data: { user: authUser } } = await supabase.auth.getUser();
+            user = authUser;
+        } catch (authError) {
+            // Not logged in - use fallback
+            const cached = JSON.parse(localStorage.getItem('barakahpush_notifications') || '[]');
+            const unreadCount = cached.filter(n => !n.is_read).length;
+            document.querySelectorAll('.notifications-btn .badge').forEach(badge => {
+                badge.textContent = unreadCount;
+                badge.style.display = unreadCount > 0 ? 'inline' : 'none';
+            });
+            return;
+        }
+
+        if (!user) {
+            return;
+        }
 
         // Get unread count from Supabase
         const { data: notifications, error } = await supabase
             .from('notifications')
             .select('id')
+            .eq('user_id', user.id)
             .eq('is_read', false);
 
         if (error) {
-            console.error('[BarakahPush] Error fetching unread count:', error);
+            console.warn('[BarakahPush] Error fetching unread count (using fallback):', error);
+            // Use fallback
+            const cached = JSON.parse(localStorage.getItem('barakahpush_notifications') || '[]');
+            const unreadCount = cached.filter(n => !n.is_read).length;
+            document.querySelectorAll('.notifications-btn .badge').forEach(badge => {
+                badge.textContent = unreadCount;
+                badge.style.display = unreadCount > 0 ? 'inline' : 'none';
+            });
             return;
         }
 
@@ -268,7 +409,8 @@ async function updateBarakahPushBadge() {
             badge.style.display = unreadCount > 0 ? 'inline' : 'none';
         });
     } catch (error) {
-        console.error('[BarakahPush] Error updating badge:', error);
+        console.warn('[BarakahPush] Error updating badge (non-fatal):', error);
+        // Silently fail - don't break the app
     }
 }
 

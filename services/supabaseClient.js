@@ -22,24 +22,28 @@ function getSupabaseClient() {
         return supabaseClientInstance;
     }
 
-    // Check if Supabase SDK is loaded
+    // Check if Supabase SDK is loaded - fail silently for BarakahPush
     if (typeof supabase === 'undefined') {
-        throw new Error('Supabase JS library not loaded. Include: <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>');
+        console.warn('[Supabase Client] Supabase JS library not loaded');
+        return null;
     }
 
-    // Check if config is available
+    // Check if config is available - fail silently
     if (!window.supabaseConfig) {
-        throw new Error('Supabase configuration not found. Make sure supabase-config.js is loaded.');
+        console.warn('[Supabase Client] Supabase configuration not found');
+        return null;
     }
 
     const config = window.supabaseConfig;
 
     if (!config.supabaseUrl || config.supabaseUrl === 'YOUR_SUPABASE_URL') {
-        throw new Error('Supabase URL not configured. Update supabase-config.js');
+        console.warn('[Supabase Client] Supabase URL not configured');
+        return null;
     }
 
     if (!config.supabaseAnonKey || config.supabaseAnonKey === 'YOUR_SUPABASE_ANON_KEY') {
-        throw new Error('Supabase Anon Key not configured. Update supabase-config.js');
+        console.warn('[Supabase Client] Supabase Anon Key not configured');
+        return null;
     }
 
     // Create client instance - THIS IS THE ONLY createClient() CALL IN THE ENTIRE CODEBASE
@@ -72,8 +76,8 @@ function getSupabaseClient() {
         console.log('[Supabase Client] ✅ Singleton client initialized - THIS IS THE ONLY createClient() CALL');
         return supabaseClientInstance;
     } catch (error) {
-        console.error('[Supabase Client] ❌ Error creating client:', error);
-        throw new Error('Failed to initialize Supabase client: ' + error.message);
+        console.warn('[Supabase Client] ❌ Error creating client (failing silently):', error);
+        return null; // Fail silently instead of throwing
     }
 }
 

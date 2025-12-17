@@ -41,7 +41,7 @@ const firebaseConfig = {
     
     // Get VAPID key from: Firebase Console > Project Settings > Cloud Messaging > Web Push certificates
     // Generate key pair if not exists, then copy the key
-    vapidKey: "YOUR_VAPID_KEY_HERE" // TODO: Replace with your actual VAPID key
+    vapidKey: "BHMDvl2IeqHupDGCross8v0eqlwcTDHDeOGXYbWmUiHqFysd1h_zual-w7_RJGw3qTd1BuDr3zI4Dx2Fo5fnDq0" // TODO: Replace with your actual VAPID key
 };
 
 /**

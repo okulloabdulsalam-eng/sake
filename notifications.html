@@ -638,24 +638,66 @@
             }
         };
         
-        // Filter notifications (instant client-side filtering)
-        window.filterNotifications = function(status) {
-            currentFilter = status;
-            
-            // Update button states
-            document.querySelectorAll('.mobile-filter-btn').forEach(btn => {
-                const filter = btn.dataset.filter;
-                if (filter === status) {
-                    btn.classList.remove('btn-outline');
-                    btn.classList.add('btn-primary');
+        // Filter notifications (instant client-side filtering) - BarakahPush Notification System – Active
+        window.filterNotifications = function(type) {
+            try {
+                // Handle both 'all'/'unread' status and type/category filtering
+                if (type === 'all' || type === 'unread') {
+                    currentFilter = type;
                 } else {
-                    btn.classList.remove('btn-primary');
-                    btn.classList.add('btn-outline');
+                    // Filter by notification type/category
+                    currentFilter = type;
                 }
-            });
-            
-            // Instant client-side filtering (no reload)
-            displayNotifications(cachedNotifications, status);
+                
+                // Update button states safely
+                try {
+                    document.querySelectorAll('.mobile-filter-btn').forEach(btn => {
+                        const filter = btn.dataset.filter;
+                        if (filter === type || filter === currentFilter) {
+                            btn.classList.remove('btn-outline');
+                            btn.classList.add('btn-primary');
+                        } else {
+                            btn.classList.remove('btn-primary');
+                            btn.classList.add('btn-outline');
+                        }
+                    });
+                } catch (btnError) {
+                    console.warn('[BarakahPush] Error updating button states:', btnError);
+                }
+                
+                // Filter notifications
+                let filtered = cachedNotifications || [];
+                
+                if (type === 'all') {
+                    // Show all
+                    filtered = cachedNotifications;
+                } else if (type === 'unread') {
+                    // Show only unread
+                    filtered = cachedNotifications.filter(n => !n.is_read);
+                } else {
+                    // Filter by type/category
+                    filtered = cachedNotifications.filter(n => {
+                        const notifType = (n.type || 'general').toLowerCase();
+                        return notifType === type.toLowerCase();
+                    });
+                }
+                
+                // Display filtered notifications
+                if (typeof displayNotifications === 'function') {
+                    displayNotifications(filtered, type);
+                } else {
+                    // Fallback display
+                    const notificationsList = document.getElementById('notificationsList');
+                    if (notificationsList) {
+                        notificationsList.innerHTML = filtered.length > 0 
+                            ? '<div class="mobile-empty-state"><i class="fas fa-bell"></i><p>No notifications found</p></div>'
+                            : '<div class="mobile-empty-state"><i class="fas fa-bell"></i><p>No notifications found</p></div>';
+                    }
+                }
+            } catch (error) {
+                console.warn('[BarakahPush] Error in filterNotifications (non-fatal):', error);
+                // Silently fail - don't break the UI
+            }
         };
         
         // Display notifications (instant, no loading)
