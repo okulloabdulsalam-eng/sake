@@ -574,12 +574,24 @@
             }
         }
         
-        // Verify admin password
+        // Verify admin password - BarakahPush Notification System – Active
+        // Password-only login (no email required)
         function verifyAdminPassword() {
             const passwordInput = document.getElementById('adminPassword');
-            const password = passwordInput ? passwordInput.value : '';
+            const password = passwordInput ? passwordInput.value.trim() : '';
+            const errorMsg = document.getElementById('passwordError');
+            
+            // Clear any previous errors
+            if (errorMsg) {
+                errorMsg.style.display = 'none';
+                errorMsg.textContent = '';
+            }
             
             if (!password) {
+                if (errorMsg) {
+                    errorMsg.style.display = 'block';
+                    errorMsg.textContent = 'Please enter password.';
+                }
                 return false;
             }
             
@@ -591,7 +603,6 @@
                 alert('Admin access granted!');
                 return true;
             } else {
-                const errorMsg = document.getElementById('passwordError');
                 if (errorMsg) {
                     errorMsg.style.display = 'block';
                     errorMsg.textContent = 'Incorrect password. Please try again.';
@@ -599,6 +610,9 @@
                 return false;
             }
         }
+        
+        // Override global verifyAdminPassword if it exists (from script.js)
+        window.verifyAdminPassword = verifyAdminPassword;
         
         // Logout admin
         function logoutAdmin() {

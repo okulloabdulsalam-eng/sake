@@ -1555,6 +1555,7 @@ window.closeAdminLogin = function() {
     }
     if (passwordError) {
         passwordError.style.display = 'none';
+        passwordError.textContent = ''; // Clear error message
     }
 }
 
@@ -1572,6 +1573,40 @@ window.verifyAdminPassword = async function() {
     const email = emailInput ? emailInput.value.trim() : '';
     const password = passwordInput.value.trim();
     
+    // Check if this is the notifications admin login (password only)
+    // If no email input exists, it's password-only login
+    if (!emailInput) {
+        // Password-only login (for notifications page)
+        if (!password) {
+            if (passwordError) {
+                passwordError.style.display = 'block';
+                passwordError.textContent = 'Please enter password.';
+            }
+            return;
+        }
+        
+        // Verify password only
+        if (password === ADMIN_PASSWORD) {
+            sessionStorage.setItem('isAdminAuthenticated', 'true');
+            localStorage.setItem('adminPassword', ADMIN_PASSWORD);
+            if (typeof closeAdminLogin === 'function') {
+                closeAdminLogin();
+            }
+            if (typeof updateAdminButtonVisibility === 'function') {
+                updateAdminButtonVisibility();
+            }
+            alert('Admin access granted!');
+            return;
+        } else {
+            if (passwordError) {
+                passwordError.style.display = 'block';
+                passwordError.textContent = 'Incorrect password. Please try again.';
+            }
+            return;
+        }
+    }
+    
+    // Email + password login (for other pages)
     if (!email || !password) {
         if (passwordError) {
             passwordError.style.display = 'block';
