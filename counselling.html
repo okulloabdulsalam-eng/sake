@@ -315,6 +315,14 @@
                         </div>
                         <div class="counselling-type-description">
                             Get support for personal challenges you're facing at campus, religious struggles, family issues, and more.
+                            <br><br>
+                            <strong style="color: var(--primary-green);">
+                                <i class="fas fa-user"></i> Contact Amir (Male) / Amirat (Female) directly:
+                            </strong>
+                            <br>
+                            <a href="https://wa.me/256703268522" target="_blank" style="color: #25D366; text-decoration: none; font-weight: 600;">
+                                <i class="fab fa-whatsapp"></i> WhatsApp: 0703268522
+                            </a>
                         </div>
                     </div>
 
@@ -327,6 +335,14 @@
                         </div>
                         <div class="counselling-type-description">
                             Report concerns about a brother or sister who may need counselling or support.
+                            <br><br>
+                            <strong style="color: var(--primary-green);">
+                                <i class="fas fa-user"></i> Contact Amir (Male) / Amirat (Female) directly:
+                            </strong>
+                            <br>
+                            <a href="https://wa.me/256703268522" target="_blank" style="color: #25D366; text-decoration: none; font-weight: 600;">
+                                <i class="fab fa-whatsapp"></i> WhatsApp: 0703268522
+                            </a>
                         </div>
                     </div>
 
@@ -339,6 +355,14 @@
                         </div>
                         <div class="counselling-type-description">
                             Get guidance on marriage, family approval, seeking suitable partners, and more.
+                            <br><br>
+                            <strong style="color: var(--primary-green);">
+                                <i class="fas fa-user"></i> Contact Amir (Male) / Amirat (Female) directly:
+                            </strong>
+                            <br>
+                            <a href="https://wa.me/256703268522" target="_blank" style="color: #25D366; text-decoration: none; font-weight: 600;">
+                                <i class="fab fa-whatsapp"></i> WhatsApp: 0703268522
+                            </a>
                         </div>
                     </div>
 
@@ -351,6 +375,14 @@
                         </div>
                         <div class="counselling-type-description">
                             Get guidance from seniors who have completed your course to help you succeed.
+                            <br><br>
+                            <strong style="color: var(--primary-green);">
+                                <i class="fas fa-user"></i> Contact Amir (Male) / Amirat (Female) directly:
+                            </strong>
+                            <br>
+                            <a href="https://wa.me/256703268522" target="_blank" style="color: #25D366; text-decoration: none; font-weight: 600;">
+                                <i class="fab fa-whatsapp"></i> WhatsApp: 0703268522
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -440,17 +472,17 @@
                         </div>
 
                         <button type="submit" class="submit-btn">
-                            <i class="fas fa-paper-plane"></i> Submit Request
+                            <i class="fab fa-whatsapp"></i> Submit via WhatsApp
                         </button>
 
                         <div class="success-message" id="personalSuccess">
-                            <i class="fas fa-check-circle"></i> Thank you! Your counselling request has been submitted. We will contact you soon.
+                            <i class="fas fa-check-circle"></i> WhatsApp will open with your request. Thank you!
                         </div>
                     </form>
                 </div>
 
                 <!-- Brother/Sister Needs Help Form -->
-                <div class="form-section" id="brotherSisterForm">
+                <div class="form-section" id="brotherSisterFormSection">
                     <h2 class="form-section-title">
                         <i class="fas fa-hands-helping"></i>
                         Report Brother/Sister Needing Help
@@ -536,11 +568,11 @@
                         </div>
 
                         <button type="submit" class="submit-btn">
-                            <i class="fas fa-paper-plane"></i> Submit Report
+                            <i class="fab fa-whatsapp"></i> Submit via WhatsApp
                         </button>
 
                         <div class="success-message" id="brotherSisterSuccess">
-                            <i class="fas fa-check-circle"></i> Thank you for your concern. We will reach out to help the brother/sister in need.
+                            <i class="fas fa-check-circle"></i> WhatsApp will open with your report. Thank you for your concern!
                         </div>
                     </form>
                 </div>
@@ -639,11 +671,11 @@
                         </div>
 
                         <button type="submit" class="submit-btn">
-                            <i class="fas fa-paper-plane"></i> Submit Request
+                            <i class="fab fa-whatsapp"></i> Submit via WhatsApp
                         </button>
 
                         <div class="success-message" id="marriageSuccess">
-                            <i class="fas fa-check-circle"></i> Thank you! Your marriage counselling request has been submitted. We will contact you soon.
+                            <i class="fas fa-check-circle"></i> WhatsApp will open with your request. Thank you!
                         </div>
                     </form>
                 </div>
@@ -769,11 +801,11 @@
                         </div>
 
                         <button type="submit" class="submit-btn">
-                            <i class="fas fa-paper-plane"></i> Submit Request
+                            <i class="fab fa-whatsapp"></i> Submit via WhatsApp
                         </button>
 
                         <div class="success-message" id="academicSuccess">
-                            <i class="fas fa-check-circle"></i> Thank you! Your academic counselling request has been submitted. We will connect you with seniors who can help.
+                            <i class="fas fa-check-circle"></i> WhatsApp will open with your request. Thank you!
                         </div>
                     </form>
                 </div>
@@ -811,12 +843,15 @@
             document.querySelectorAll('.form-section').forEach(section => {
                 section.classList.remove('active');
             });
-            document.getElementById(formType + 'Form').classList.add('active');
+            
+            // Handle special case for brother-sister form
+            const formId = formType === 'brother-sister' ? 'brotherSisterFormSection' : formType + 'Form';
+            document.getElementById(formId).classList.add('active');
             document.getElementById('backBtn').classList.add('show');
             
             // Scroll to form
             setTimeout(() => {
-                document.getElementById(formType + 'Form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                document.getElementById(formId).scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 100);
         }
 
@@ -841,14 +876,53 @@
             }
         });
 
+        // WhatsApp number
+        const whatsappNumber = '256703268522';
+
+        // Format WhatsApp message for Personal Counselling
+        function formatPersonalCounsellingMessage(formData) {
+            const name = formData.get('name');
+            const contact = formData.get('contact');
+            const email = formData.get('email') || 'Not provided';
+            const issues = Array.from(formData.getAll('issues')).join(', ') || 'Not specified';
+            const description = formData.get('description');
+            const contactMethod = formData.get('contactMethod');
+            
+            let message = `*Personal Counselling Request*\n\n`;
+            message += `*Name:* ${name}\n`;
+            message += `*Contact:* ${contact}\n`;
+            message += `*Email:* ${email}\n`;
+            message += `*Issues:* ${issues}\n`;
+            message += `*Preferred Contact Method:* ${contactMethod}\n\n`;
+            message += `*Description:*\n${description}\n\n`;
+            message += `_I need personal counselling support._`;
+            
+            return message;
+        }
+
         // Handle form submissions
         document.getElementById('personalCounsellingForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
-            const data = Object.fromEntries(formData);
-            console.log('Personal Counselling Data:', data);
             
-            // TODO: Send to backend API
+            // Validate required fields
+            if (!formData.get('name') || !formData.get('contact') || !formData.get('description')) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            
+            // Check if at least one issue is selected
+            const issues = formData.getAll('issues');
+            if (issues.length === 0) {
+                alert('Please select at least one issue you are facing.');
+                return;
+            }
+            
+            const message = formatPersonalCounsellingMessage(formData);
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+            
+            window.open(whatsappUrl, '_blank');
+            
             document.getElementById('personalSuccess').classList.add('show');
             this.reset();
             setTimeout(() => {
@@ -856,13 +930,49 @@
             }, 100);
         });
 
+        // Format WhatsApp message for Brother/Sister Report
+        function formatBrotherSisterMessage(formData) {
+            const reporterName = formData.get('reporterName');
+            const reporterContact = formData.get('reporterContact');
+            const personName = formData.get('personName') || 'Not provided';
+            const concerns = Array.from(formData.getAll('concerns')).join(', ') || 'Not specified';
+            const situation = formData.get('situation');
+            const personContact = formData.get('personContact') || 'Not provided';
+            
+            let message = `*Brother/Sister Needs Help - Report*\n\n`;
+            message += `*Reporter Name:* ${reporterName}\n`;
+            message += `*Reporter Contact:* ${reporterContact}\n`;
+            message += `*Name of Brother/Sister:* ${personName}\n`;
+            message += `*Their Contact (if known):* ${personContact}\n`;
+            message += `*Concerns:* ${concerns}\n\n`;
+            message += `*Situation Description:*\n${situation}\n\n`;
+            message += `_A brother/sister needs counselling support._`;
+            
+            return message;
+        }
+
         document.getElementById('brotherSisterForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
-            const data = Object.fromEntries(formData);
-            console.log('Brother/Sister Report Data:', data);
             
-            // TODO: Send to backend API
+            // Validate required fields
+            if (!formData.get('reporterName') || !formData.get('reporterContact') || !formData.get('situation')) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            
+            // Check if at least one concern is selected
+            const concerns = formData.getAll('concerns');
+            if (concerns.length === 0) {
+                alert('Please select at least one concern.');
+                return;
+            }
+            
+            const message = formatBrotherSisterMessage(formData);
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+            
+            window.open(whatsappUrl, '_blank');
+            
             document.getElementById('brotherSisterSuccess').classList.add('show');
             this.reset();
             setTimeout(() => {
@@ -870,13 +980,53 @@
             }, 100);
         });
 
+        // Format WhatsApp message for Marriage Counselling
+        function formatMarriageCounsellingMessage(formData) {
+            const name = formData.get('name');
+            const gender = formData.get('gender');
+            const contact = formData.get('contact');
+            const email = formData.get('email') || 'Not provided';
+            const marriageNeeds = Array.from(formData.getAll('marriageNeeds')).join(', ') || 'Not specified';
+            const personOfInterest = formData.get('personOfInterest') || '';
+            const details = formData.get('details');
+            
+            let message = `*Marriage Counselling Request*\n\n`;
+            message += `*Name:* ${name}\n`;
+            message += `*Gender:* ${gender}\n`;
+            message += `*Contact:* ${contact}\n`;
+            message += `*Email:* ${email}\n`;
+            message += `*What I Need Help With:* ${marriageNeeds}\n`;
+            if (personOfInterest) {
+                message += `*Person of Interest:* ${personOfInterest}\n`;
+            }
+            message += `\n*Details:*\n${details}\n\n`;
+            message += `_I need marriage counselling support._`;
+            
+            return message;
+        }
+
         document.getElementById('marriageCounsellingForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
-            const data = Object.fromEntries(formData);
-            console.log('Marriage Counselling Data:', data);
             
-            // TODO: Send to backend API
+            // Validate required fields
+            if (!formData.get('name') || !formData.get('gender') || !formData.get('contact') || !formData.get('details')) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            
+            // Check if at least one need is selected
+            const needs = formData.getAll('marriageNeeds');
+            if (needs.length === 0) {
+                alert('Please select at least one area where you need help.');
+                return;
+            }
+            
+            const message = formatMarriageCounsellingMessage(formData);
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+            
+            window.open(whatsappUrl, '_blank');
+            
             document.getElementById('marriageSuccess').classList.add('show');
             this.reset();
             document.getElementById('suggestPersonGroup').style.display = 'none';
@@ -885,13 +1035,56 @@
             }, 100);
         });
 
+        // Format WhatsApp message for Academic Counselling
+        function formatAcademicCounsellingMessage(formData) {
+            const name = formData.get('name');
+            const regNumber = formData.get('regNumber');
+            const course = formData.get('course');
+            const year = formData.get('year');
+            const contact = formData.get('contact');
+            const email = formData.get('email') || 'Not provided';
+            const academicNeeds = Array.from(formData.getAll('academicNeeds')).join(', ') || 'Not specified';
+            const description = formData.get('description');
+            const contactMethod = formData.get('contactMethod');
+            
+            let message = `*Academic Counselling Request*\n\n`;
+            message += `*Name:* ${name}\n`;
+            message += `*Registration Number:* ${regNumber}\n`;
+            message += `*Course/Program:* ${course}\n`;
+            message += `*Current Year/Semester:* ${year}\n`;
+            message += `*Contact:* ${contact}\n`;
+            message += `*Email:* ${email}\n`;
+            message += `*What I Need Help With:* ${academicNeeds}\n`;
+            message += `*Preferred Contact Method:* ${contactMethod}\n\n`;
+            message += `*Description:*\n${description}\n\n`;
+            message += `_I need academic counselling support._`;
+            
+            return message;
+        }
+
         document.getElementById('academicCounsellingForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
-            const data = Object.fromEntries(formData);
-            console.log('Academic Counselling Data:', data);
             
-            // TODO: Send to backend API
+            // Validate required fields
+            if (!formData.get('name') || !formData.get('regNumber') || !formData.get('course') || 
+                !formData.get('year') || !formData.get('contact') || !formData.get('description')) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            
+            // Check if at least one need is selected
+            const needs = formData.getAll('academicNeeds');
+            if (needs.length === 0) {
+                alert('Please select at least one area where you need help.');
+                return;
+            }
+            
+            const message = formatAcademicCounsellingMessage(formData);
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+            
+            window.open(whatsappUrl, '_blank');
+            
             document.getElementById('academicSuccess').classList.add('show');
             this.reset();
             setTimeout(() => {

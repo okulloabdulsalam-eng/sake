@@ -301,29 +301,40 @@
                             <tr>
                                 <th>Day</th>
                                 <th>Time</th>
-                                <th>Activity</th>
+                                <th>Teacher</th>
+                                <th>Program</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>Monday</td>
-                                <td>5:00 PM - 6:30 PM</td>
-                                <td>Quran Recitation & Tajweed</td>
+                                <td>7:15 PM - 8:15 PM</td>
+                                <td>Ustadh Ahmed Ali</td>
+                                <td>Memorization, Tajweed, Tafsir</td>
+                            </tr>
+                            <tr>
+                                <td>Tuesday</td>
+                                <td>7:15 PM - 8:15 PM</td>
+                                <td>Ustadha Fatima Hassan</td>
+                                <td>Memorization, Tajweed, Tafsir</td>
                             </tr>
                             <tr>
                                 <td>Wednesday</td>
-                                <td>5:00 PM - 6:30 PM</td>
-                                <td>Quran Memorization (Hifz)</td>
+                                <td>7:15 PM - 8:15 PM</td>
+                                <td>Ustadh Ibrahim Musa</td>
+                                <td>Memorization, Tajweed, Tafsir</td>
+                            </tr>
+                            <tr>
+                                <td>Thursday</td>
+                                <td>7:15 PM - 8:15 PM</td>
+                                <td>Ustadha Aisha Omar</td>
+                                <td>Memorization, Tajweed, Tafsir</td>
                             </tr>
                             <tr>
                                 <td>Friday</td>
-                                <td>7:15 PM - 8:45 PM</td>
-                                <td>Weekly Quran Study Session</td>
-                            </tr>
-                            <tr>
-                                <td>Sunday</td>
-                                <td>5:00 PM - 6:30 PM</td>
-                                <td>Quran Recitation & Tajweed</td>
+                                <td>7:15 PM - 8:15 PM</td>
+                                <td>Ustadh Ahmed Ali</td>
+                                <td>Memorization, Tajweed, Tafsir</td>
                             </tr>
                         </tbody>
                     </table>
@@ -391,8 +402,24 @@
                             <input type="number" class="form-input" name="juzNumber" id="juzNumber" min="1" max="30" placeholder="Enter juz number (1-30)" disabled>
                         </div>
 
+                        <div class="form-group">
+                            <label class="form-label">
+                                Select Teacher <span style="color: #999; font-size: 12px;">(Optional)</span>
+                            </label>
+                            <select class="form-select" name="teacher" id="teacherSelect">
+                                <option value="">No preference</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                Language Best Spoken <span class="required">*</span>
+                            </label>
+                            <input type="text" class="form-input" name="language" id="language" required placeholder="e.g., English, Arabic, Luganda, Swahili">
+                        </div>
+
                         <button type="submit" class="submit-btn">
-                            <i class="fas fa-paper-plane"></i> Submit Enrollment
+                            <i class="fab fa-whatsapp"></i> Submit via WhatsApp
                         </button>
 
                         <div class="success-message" id="successMessage">
@@ -458,7 +485,17 @@
         // Load Teachers
         function loadTeachers() {
             const teachersGrid = document.getElementById('teachersGrid');
+            const teacherSelect = document.getElementById('teacherSelect');
+            
             teachersGrid.innerHTML = '';
+            
+            // Populate teacher dropdown
+            teachers.forEach(teacher => {
+                const option = document.createElement('option');
+                option.value = teacher.name;
+                option.textContent = teacher.name;
+                teacherSelect.appendChild(option);
+            });
 
             teachers.forEach(teacher => {
                 const teacherCard = document.createElement('div');
@@ -513,24 +550,65 @@
             }
         });
 
-        // Handle Form Submission
+        // Handle Form Submission - Open WhatsApp
         document.getElementById('enrollmentForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const formData = new FormData(this);
-            const data = {
-                name: formData.get('name'),
-                course: formData.get('course'),
-                regNumber: formData.get('regNumber'),
-                memorizationLevel: formData.get('memorizationLevel'),
-                juzNumber: formData.get('juzNumber') || null
-            };
-
-            // Here you can send data to your backend
-            console.log('Enrollment Data:', data);
+            const name = formData.get('name');
+            const course = formData.get('course');
+            const regNumber = formData.get('regNumber');
+            const memorizationLevel = formData.get('memorizationLevel');
+            const juzNumber = formData.get('juzNumber') || '';
+            const teacher = formData.get('teacher') || '';
+            const language = formData.get('language');
             
-            // For now, just show success message
-            // TODO: Send to backend API
+            // Format memorization level display
+            let memorizationDisplay = memorizationLevel;
+            if (memorizationLevel === 'inputjuz' && juzNumber) {
+                memorizationDisplay = `${juzNumber} Juz`;
+            } else if (memorizationLevel === 'yasaruna') {
+                memorizationDisplay = 'Yasaruna (Beginner)';
+            } else if (memorizationLevel === '1juz') {
+                memorizationDisplay = '1 Juz';
+            } else if (memorizationLevel === '2juz') {
+                memorizationDisplay = '2 Juz';
+            } else if (memorizationLevel === '3juz') {
+                memorizationDisplay = '3 Juz';
+            } else if (memorizationLevel === '4juz') {
+                memorizationDisplay = '4 Juz';
+            } else if (memorizationLevel === '5juz') {
+                memorizationDisplay = '5 Juz';
+            }
+            
+            // Get teacher name if selected
+            let teacherName = '';
+            if (teacher) {
+                const selectedTeacher = teachers.find(t => t.name === teacher);
+                teacherName = selectedTeacher ? selectedTeacher.name : teacher;
+            }
+            
+            // Format WhatsApp message
+            let message = `*Quran Study Enrollment*\n\n`;
+            message += `*Full Name:* ${name}\n`;
+            message += `*Course at University:* ${course}\n`;
+            message += `*Registration Number:* ${regNumber}\n`;
+            message += `*Level of Memorization:* ${memorizationDisplay}\n`;
+            message += `*Language Best Spoken:* ${language}\n`;
+            if (teacherName) {
+                message += `*Preferred Teacher:* ${teacherName}\n`;
+            }
+            message += `\n_I would like to enroll in the Quran Study Program._`;
+            
+            // WhatsApp number: 0703268522
+            // Format: 256703268522 (Uganda country code)
+            const whatsappNumber = '256703268522';
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+            
+            // Open WhatsApp
+            window.open(whatsappUrl, '_blank');
+            
+            // Show success message
             document.getElementById('successMessage').classList.add('show');
             this.reset();
             document.getElementById('juzInputGroup').classList.remove('show');
