@@ -68,6 +68,13 @@
             </div>
         </header>
 
+        <!-- Back Button -->
+        <div style="padding: 10px 20px; background: #f5f5f5; border-bottom: 1px solid #e0e0e0;">
+            <button onclick="goBack()" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: white; border: 2px solid var(--primary-green); border-radius: 8px; color: var(--primary-green); font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+        </div>
+
         <main class="main-content">
             <!-- Welcome Section -->
             <section class="welcome-section">
@@ -303,6 +310,16 @@
 
     <script src="script.js"></script>
     <script src="update-navigation.js"></script>
+    <script>
+        // Back function
+        function goBack() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
     <script>
         function toggleCharityDetails() {
             const details = document.getElementById('charityDetails');

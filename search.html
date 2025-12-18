@@ -52,6 +52,13 @@
             </div>
         </header>
 
+        <!-- Back Button -->
+        <div style="padding: 10px 20px; background: #f5f5f5; border-bottom: 1px solid #e0e0e0;">
+            <button onclick="goBack()" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: white; border: 2px solid var(--primary-green); border-radius: 8px; color: var(--primary-green); font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+        </div>
+
         <!-- Search Section -->
         <main class="main-content">
             <section class="search-section-full">
@@ -114,6 +121,16 @@
     <script type="module" src="services/supabaseClient.js"></script>
     <script type="module" src="js/search.js"></script>
     <script src="update-navigation.js"></script>
+    <script>
+        // Back function
+        function goBack() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
     <script>
         // Navigation toggle
         document.getElementById('menuToggle')?.addEventListener('click', () => {
