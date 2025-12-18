@@ -240,9 +240,6 @@
                     <label for="sortByCategory" style="display: block; margin-bottom: 12px; font-size: 18px; font-weight: 600; color: var(--dark-gray);">
                         <i class="fas fa-filter" style="color: var(--primary-green); margin-right: 8px;"></i>
                         Sort By Category
-                        <span style="display: block; font-size: 14px; font-weight: normal; color: #666; margin-top: 4px;">
-                            👆 Click here to choose a category
-                        </span>
                     </label>
                     <select id="sortByCategory" style="
                         width: 100%;
@@ -273,7 +270,7 @@
                     </select>
                     <div style="margin-top: 8px; font-size: 14px; color: #666; text-align: center;">
                         <i class="fas fa-hand-pointer" style="margin-right: 5px;"></i>
-                        Click the box above to see all categories
+                        👆 Click here to choose a category
                     </div>
                 </div>
                 
@@ -665,59 +662,73 @@
                     }
                 </style>
 
-                <!-- How to Download Box - Before Books -->
-                <div style="
-                    background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
-                    border: 3px solid #2196F3;
-                    border-radius: 15px;
-                    padding: 20px;
-                    margin-bottom: 25px;
-                    box-shadow: 0 4px 15px rgba(33, 150, 243, 0.2);
-                ">
-                    <h3 style="
+                <!-- How to Download Box - Collapsible Dropdown -->
+                <div style="margin-bottom: 25px;">
+                    <button id="downloadInstructionsToggle" onclick="toggleDownloadInstructions()" style="
+                        width: 100%;
+                        padding: 18px 20px;
+                        background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
+                        border: 3px solid #2196F3;
+                        border-radius: 15px;
                         color: #1976D2;
                         font-size: 20px;
                         font-weight: 700;
-                        margin: 0 0 15px 0;
+                        cursor: pointer;
                         display: flex;
                         align-items: center;
-                        gap: 10px;
+                        justify-content: space-between;
+                        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.2);
+                        transition: all 0.3s;
                     ">
-                        <i class="fas fa-download" style="font-size: 24px;"></i>
-                        How to Download Books
-                    </h3>
+                        <span style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-download" style="font-size: 24px;"></i>
+                            How to Download Books
+                        </span>
+                        <i class="fas fa-chevron-down" id="downloadChevron" style="transition: transform 0.3s;"></i>
+                    </button>
                     
-                    <div style="background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px;">
-                        <h4 style="color: #1976D2; font-size: 16px; font-weight: 600; margin: 0 0 10px 0;">
-                            <i class="fas fa-check-circle" style="color: #4CAF50; margin-right: 8px;"></i>
-                            Option 1: Direct Download
-                        </h4>
-                        <ol style="margin: 0; padding-left: 25px; color: #333; line-height: 1.8; font-size: 15px;">
-                            <li>Click the <strong>3 dots (⋯)</strong> on the book</li>
-                            <li>Click <strong>"Download"</strong></li>
-                            <li>Wait for a few seconds - the download will start automatically</li>
-                        </ol>
-                    </div>
-                    
-                    <div style="background: white; border-radius: 10px; padding: 15px;">
-                        <h4 style="color: #1976D2; font-size: 16px; font-weight: 600; margin: 0 0 10px 0;">
-                            <i class="fas fa-check-circle" style="color: #4CAF50; margin-right: 8px;"></i>
-                            Option 2: Open Then Download
-                        </h4>
-                        <ol style="margin: 0; padding-left: 25px; color: #333; line-height: 1.8; font-size: 15px;">
-                            <li>Click the <strong>3 dots (⋯)</strong> on the book</li>
-                            <li>Click <strong>"Open Document"</strong></li>
-                            <li>When it opens in Chrome, click the <strong>3 dots (⋯)</strong> in the <strong>right corner</strong> of Chrome</li>
-                            <li>Click <strong>"Download"</strong></li>
-                            <li>Click <strong>"Accept"</strong> if asked</li>
-                        </ol>
-                    </div>
-                    
-                    <div style="margin-top: 15px; padding: 12px; background: #FFF3CD; border-left: 4px solid #FFC107; border-radius: 8px;">
-                        <p style="margin: 0; color: #856404; font-size: 14px; line-height: 1.6;">
-                            <i class="fas fa-lightbulb" style="margin-right: 8px;"></i>
-                            <strong>Tip:</strong> If download doesn't start, try Option 2. Make sure you have enough storage space on your device.
-                        </p>
+                    <div id="downloadInstructionsContent" style="
+                        display: none;
+                        background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
+                        border: 3px solid #2196F3;
+                        border-top: none;
+                        border-radius: 0 0 15px 15px;
+                        padding: 20px;
+                        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.2);
+                        margin-top: -5px;
+                    ">
+                        <div style="background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px;">
+                            <h4 style="color: #1976D2; font-size: 16px; font-weight: 600; margin: 0 0 10px 0;">
+                                <i class="fas fa-check-circle" style="color: #4CAF50; margin-right: 8px;"></i>
+                                Option 1: Direct Download
+                            </h4>
+                            <ol style="margin: 0; padding-left: 25px; color: #333; line-height: 1.8; font-size: 15px;">
+                                <li>Click the <strong>3 dots (⋯)</strong> on the book</li>
+                                <li>Click <strong>"Download"</strong></li>
+                                <li>Wait for a few seconds - the download will start automatically</li>
+                            </ol>
+                        </div>
+                        
+                        <div style="background: white; border-radius: 10px; padding: 15px;">
+                            <h4 style="color: #1976D2; font-size: 16px; font-weight: 600; margin: 0 0 10px 0;">
+                                <i class="fas fa-check-circle" style="color: #4CAF50; margin-right: 8px;"></i>
+                                Option 2: Open Then Download
+                            </h4>
+                            <ol style="margin: 0; padding-left: 25px; color: #333; line-height: 1.8; font-size: 15px;">
+                                <li>Click the <strong>3 dots (⋯)</strong> on the book</li>
+                                <li>Click <strong>"Open Document"</strong></li>
+                                <li>When it opens in Chrome, click the <strong>3 dots (⋯)</strong> in the <strong>right corner</strong> of Chrome</li>
+                                <li>Click <strong>"Download"</strong></li>
+                                <li>Click <strong>"Accept"</strong> if asked</li>
+                            </ol>
+                        </div>
+                        
+                        <div style="margin-top: 15px; padding: 12px; background: #FFF3CD; border-left: 4px solid #FFC107; border-radius: 8px;">
+                            <p style="margin: 0; color: #856404; font-size: 14px; line-height: 1.6;">
+                                <i class="fas fa-lightbulb" style="margin-right: 8px;"></i>
+                                <strong>Tip:</strong> If download doesn't start, try Option 2. Make sure you have enough storage space on your device.
+                            </p>
+                        </div>
                     </div>
                 </div>
 
