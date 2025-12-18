@@ -192,7 +192,7 @@
                 
                 <!-- Continue to Books Link -->
                 <div style="margin-bottom: 25px;">
-                    <a href="library-books.html" style="display: block; padding: 20px; background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); color: white; text-decoration: none; border-radius: 15px; text-align: center; font-size: 18px; font-weight: 600; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3); transition: transform 0.2s;">
+                    <a href="#sortByCategorySection" onclick="event.preventDefault(); document.getElementById('sortByCategorySection').scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => document.getElementById('sortByCategory').focus(), 500);" style="display: block; padding: 20px; background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); color: white; text-decoration: none; border-radius: 15px; text-align: center; font-size: 18px; font-weight: 600; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3); transition: transform 0.2s;">
                         <i class="fas fa-arrow-right" style="margin-right: 10px;"></i>
                         Continue to Books
                     </a>
@@ -244,7 +244,7 @@
                 </div>
                 
                 <!-- Sort By Dropdown - Very Visible and Clear -->
-                <div style="margin-bottom: 24px;">
+                <div id="sortByCategorySection" style="margin-bottom: 24px; scroll-margin-top: 20px;">
                     <label for="sortByCategory" style="display: block; margin-bottom: 12px; font-size: 18px; font-weight: 600; color: var(--dark-gray);">
                         <i class="fas fa-filter" style="color: var(--primary-green); margin-right: 8px;"></i>
                         Sort By Category
