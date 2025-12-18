@@ -104,7 +104,8 @@ self.addEventListener('install', (event) => {
         });
       })
       .then(() => {
-        // Force activation of new service worker
+        // Force immediate activation (automatic download/installation)
+        console.log('[SW] All assets cached - forcing immediate activation');
         return self.skipWaiting();
       })
   );

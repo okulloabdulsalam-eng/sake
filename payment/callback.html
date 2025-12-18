@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Successful - KIUMA</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .payment-status-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .payment-status-card {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+        .success-icon {
+            font-size: 80px;
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+        .loading-icon {
+            font-size: 80px;
+            color: #667eea;
+            margin-bottom: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .payment-details {
+            background: #f5f5f5;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .payment-detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .payment-detail-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .payment-detail-label {
+            font-weight: 600;
+            color: #666;
+        }
+        .payment-detail-value {
+            color: #333;
+            font-weight: 500;
+        }
+        .btn {
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px 5px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+        .error-message {
+            background: #FFEBEE;
+            color: #C62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="payment-status-container">
+        <div class="payment-status-card">
+            <!-- Loading State -->
+            <div id="loadingState">
+                <div class="loading-icon">
+                    <i class="fas fa-spinner"></i>
+                </div>
+                <h2>Verifying Payment...</h2>
+                <p>Please wait while we verify your payment with Pesapal.</p>
+            </div>
+
+            <!-- Success State -->
+            <div id="successState" style="display: none;">
+                <div class="success-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h2 style="color: #4CAF50; margin-bottom: 10px;">Payment Successful!</h2>
+                <p style="color: #666; margin-bottom: 20px;">Your payment has been verified and processed successfully.</p>
+                
+                <div class="payment-details" id="paymentDetails">
+                    <!-- Payment details will be populated here -->
+                </div>
+
+                <div style="margin-top: 30px;">
+                    <a href="../pay.html" class="btn btn-primary">
+                        <i class="fas fa-arrow-left"></i> Back to Payments
+                    </a>
+                    <a href="../index.html" class="btn btn-secondary">
+                        <i class="fas fa-home"></i> Go Home
+                    </a>
+                </div>
+            </div>
+
+            <!-- Error State -->
+            <div id="errorState" style="display: none;">
+                <div style="font-size: 80px; color: #F44336; margin-bottom: 20px;">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <h2 style="color: #F44336; margin-bottom: 10px;">Payment Verification Failed</h2>
+                <div class="error-message" id="errorMessage">
+                    <!-- Error message will be populated here -->
+                </div>
+                <p style="color: #666; margin-top: 20px;">
+                    If payment was deducted from your account, please contact support with your payment reference.
+                </p>
+                <div style="margin-top: 30px;">
+                    <a href="../pay.html" class="btn btn-primary">
+                        <i class="fas fa-arrow-left"></i> Try Again
+                    </a>
+                    <a href="../contact.html" class="btn btn-secondary">
+                        <i class="fas fa-envelope"></i> Contact Support
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Integration - Railway or Firebase Functions -->
+    <!-- Option 1: Railway (Recommended - No Blaze plan needed) -->
+    <script>
+        // Set your Railway API URL here
+        window.RAILWAY_API_URL = 'https://your-app.railway.app'; // UPDATE THIS with your Railway URL
+    </script>
+    <script src="../public/payment-railway.js"></script>
+    
+    <!-- Option 2: Firebase Functions (Requires Blaze plan) -->
+    <!-- Uncomment below if using Firebase Functions instead -->
+    <!--
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
+    <script src="../fcm-config.js"></script>
+    <script src="../public/payment.js"></script>
+    -->
+
+    <script>
+        // Handle payment verification on page load
+        window.addEventListener('DOMContentLoaded', async function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const orderTrackingId = urlParams.get('OrderTrackingId');
+            const orderMerchantReference = urlParams.get('OrderMerchantReference');
+
+            if (!orderTrackingId) {
+                showError('Missing payment information. Please contact support.');
+                return;
+            }
+
+            try {
+                // Verify payment (works with both Railway and Firebase)
+                if (typeof window.handlePesapalCallback === 'function') {
+                    const result = await window.handlePesapalCallback({
+                        OrderTrackingId: orderTrackingId,
+                        OrderMerchantReference: orderMerchantReference
+                    });
+
+                    if (result.success) {
+                        showSuccess(result);
+                    } else {
+                        showError('Payment verification failed. Please contact support.');
+                    }
+                } else {
+                    throw new Error('Payment verification system not loaded');
+                }
+            } catch (error) {
+                console.error('Payment verification error:', error);
+                let errorMessage = 'Failed to verify payment. Please contact support.';
+                
+                if (error.message) {
+                    errorMessage = error.message;
+                }
+                
+                showError(errorMessage);
+            }
+        });
+
+        function showSuccess(paymentData) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'none';
+            document.getElementById('successState').style.display = 'block';
+
+            // Populate payment details
+            const detailsHtml = `
+                <div class="payment-detail-row">
+                    <span class="payment-detail-label">Amount:</span>
+                    <span class="payment-detail-value">${paymentData.amount.toLocaleString()} ${paymentData.currency}</span>
+                </div>
+                <div class="payment-detail-row">
+                    <span class="payment-detail-label">Reference:</span>
+                    <span class="payment-detail-value">${paymentData.reference}</span>
+                </div>
+                <div class="payment-detail-row">
+                    <span class="payment-detail-label">Status:</span>
+                    <span class="payment-detail-value" style="color: #4CAF50; font-weight: 600;">${paymentData.status.toUpperCase()}</span>
+                </div>
+            `;
+            document.getElementById('paymentDetails').innerHTML = detailsHtml;
+        }
+
+        function showError(message) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('successState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'block';
+            document.getElementById('errorMessage').textContent = message;
+        }
+    </script>
+</body>
+</html>
+

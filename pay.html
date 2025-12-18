@@ -2,8 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="theme-color" content="#757575">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Payment - KIUMA</title>
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -192,13 +197,22 @@
                         <!-- Payment Method Selection (Required) -->
                         <div class="form-group">
                             <label class="form-label">Payment Method <span style="color: #F44336;">*</span></label>
-                            <select class="form-input" id="paymentMethod" required>
+                            <select class="form-input" id="paymentMethod" required onchange="handlePaymentMethodChange()">
                                 <option value="">Select payment method</option>
+                                <option value="pesapal">Pesapal (Online Payment)</option>
                                 <option value="mtn">MTN Mobile Money</option>
                                 <option value="airtel">Airtel Money</option>
                                 <option value="bank">Bank Transfer</option>
                             </select>
                             <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">Select the method you will use to make payment</small>
+                        </div>
+
+                        <!-- Pesapal Payment Button (shown when Pesapal is selected) -->
+                        <div class="form-group" id="pesapalPaymentButton" style="display: none; margin-top: 20px;">
+                            <button type="button" class="btn btn-primary" id="payWithPesapalBtn" onclick="processPesapalPayment()" style="width: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 15px; font-size: 16px; font-weight: 600;">
+                                <i class="fas fa-credit-card"></i> Pay with Pesapal
+                            </button>
+                            <small style="color: #666; font-size: 12px; margin-top: 5px; display: block; text-align: center;">Secure online payment via Pesapal</small>
                         </div>
 
                         <!-- Payment Reason (Required for non-subscriptions, hidden for subscriptions) -->
@@ -427,6 +441,42 @@
         </nav>
     </div>
 
+    <!-- Service Worker Registration (for offline functionality) -->
+    <script src="js/register-service-worker.js"></script>
+    
+    <!-- Payment Integration - Choose ONE: Vercel, Railway, or Firebase Functions -->
+    
+    <!-- Option 1: Vercel Serverless Function (EASIEST - Free, No backend needed) -->
+    <script>
+        // Set your Vercel API URL here (get from Vercel dashboard after deployment)
+        window.VERCEL_API_URL = 'https://your-app.vercel.app'; // UPDATE THIS with your Vercel URL
+    </script>
+    <script src="public/payment-vercel.js"></script>
+    
+    <!-- Option 2: Railway Backend (Free tier available) -->
+    <!-- Uncomment below and comment out Vercel option above if using Railway -->
+    <!--
+    <script>
+        window.RAILWAY_API_URL = 'https://your-app.railway.app';
+    </script>
+    <script src="public/payment-railway.js"></script>
+    -->
+    
+    <!-- Option 3: Firebase Functions (Requires Blaze plan) -->
+    <!-- Uncomment below if using Firebase Functions -->
+    <!--
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
+    <script src="fcm-config.js"></script>
+    <script src="public/payment.js"></script>
+    <script>
+        if (typeof firebase !== 'undefined' && typeof initializeFirebaseApp === 'function') {
+            initializeFirebaseApp();
+        }
+    </script>
+    -->
+    
     <script src="script.js"></script>
     <script src="update-navigation.js"></script>
     <script>
@@ -1190,6 +1240,196 @@ Jazakallahu Khairan.`;
                 }, 500);
             }
         };
+
+        // Handle payment method change
+        function handlePaymentMethodChange() {
+            const paymentMethod = document.getElementById('paymentMethod')?.value;
+            const pesapalButton = document.getElementById('pesapalPaymentButton');
+            const contactAmirBtn = document.getElementById('contactAmirBtn');
+            
+            if (paymentMethod === 'pesapal') {
+                // Show Pesapal button, hide WhatsApp button
+                if (pesapalButton) pesapalButton.style.display = 'block';
+                if (contactAmirBtn) contactAmirBtn.style.display = 'none';
+            } else {
+                // Hide Pesapal button, show WhatsApp button
+                if (pesapalButton) pesapalButton.style.display = 'none';
+                if (contactAmirBtn) contactAmirBtn.style.display = 'block';
+            }
+        }
+
+        // Process Pesapal Payment
+        async function processPesapalPayment() {
+            try {
+                // Validate form
+                const paymentMethod = document.getElementById('paymentMethod')?.value;
+                if (paymentMethod !== 'pesapal') {
+                    showMobileAlert('Please select Pesapal as payment method', 'Payment Method Required');
+                    return;
+                }
+
+                // Get payment details
+                const amount = isSubscription ? selectedAmount : (document.getElementById('paymentAmount')?.value || '');
+                if (!amount || amount <= 0) {
+                    showMobileAlert('Please enter a valid amount', 'Invalid Amount');
+                    document.getElementById('paymentAmount')?.focus();
+                    return;
+                }
+
+                // Get payment description
+                let description = '';
+                if (selectedPaymentType === 'semester' || selectedPaymentType === 'monthly') {
+                    const planNames = {
+                        'undergraduate': 'Undergraduate Plan',
+                        'postgraduate': 'Postgraduate Plan',
+                        'university-staff': 'University Staff Plan',
+                        'elders': 'Elders Plan'
+                    };
+                    description = `${planNames[selectedPlan] || selectedPlan} - ${selectedPaymentType === 'semester' ? 'Semester' : 'Monthly'} Subscription`;
+                } else {
+                    const typeNames = {
+                        'zakat': 'Zakat Payment',
+                        'charity': 'Charity Donation',
+                        'donate': 'General Donation',
+                        'kisilaahe': 'Kisilaahe Subscription'
+                    };
+                    description = typeNames[selectedPaymentType] || 'Payment';
+                    
+                    const reason = document.getElementById('paymentReason')?.value;
+                    if (reason) {
+                        const reasonNames = {
+                            'general-donation': 'General Donation',
+                            'iftar': 'Iftar',
+                            'bananas': 'Bananas',
+                            'mosque-building-fund': 'Mosque Building Fund',
+                            'kizumu-tahfiz-charity-visit': 'Kizumu Tahfiz Charity Visit',
+                            'tuition-for-brothers': 'Tuition for Brothers',
+                            'other': 'Other'
+                        };
+                        description += ` - ${reasonNames[reason] || reason}`;
+                    }
+                }
+
+                // Get user info (works with both Railway and Firebase)
+                let userEmail = '';
+                let firstName = '';
+                let lastName = '';
+                
+                // Try to get from Firebase Auth if available
+                if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+                    const user = firebase.auth().currentUser;
+                    userEmail = user.email || '';
+                    const userName = document.getElementById('paymentName')?.value || user.displayName || '';
+                    const nameParts = userName.split(' ');
+                    firstName = nameParts[0] || '';
+                    lastName = nameParts.slice(1).join(' ') || '';
+                } else {
+                    // Fallback: get from form or prompt
+                    userEmail = document.getElementById('paymentName')?.value || '';
+                    if (!userEmail || !userEmail.includes('@')) {
+                        // Prompt for email if not available
+                        const emailInput = prompt('Please enter your email address for payment:');
+                        if (!emailInput || !emailInput.includes('@')) {
+                            showMobileAlert('A valid email address is required for Pesapal payments', 'Email Required');
+                            return;
+                        }
+                        userEmail = emailInput;
+                    }
+                    const userName = document.getElementById('paymentName')?.value || '';
+                    const nameParts = userName.split(' ');
+                    firstName = nameParts[0] || '';
+                    lastName = nameParts.slice(1).join(' ') || '';
+                }
+
+                // Show loading
+                const payBtn = document.getElementById('payWithPesapalBtn');
+                const originalText = payBtn.innerHTML;
+                payBtn.disabled = true;
+                payBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+                // Prepare payment data
+                const paymentData = {
+                    amount: parseFloat(amount),
+                    currency: 'UGX',
+                    description: description,
+                    email: userEmail,
+                    phone: '', // Can be added if you have phone field
+                    first_name: firstName,
+                    last_name: lastName,
+                    callback_url: window.location.origin + '/payment/callback.html',
+                    cancel_url: window.location.origin + '/payment/cancel.html'
+                };
+
+                // Initialize payment (this will redirect to Pesapal)
+                // Works with both Railway and Firebase Functions
+                if (typeof window.processPayment === 'function') {
+                    await window.processPayment(paymentData);
+                } else {
+                    throw new Error('Pesapal payment system not loaded. Please refresh the page.');
+                }
+
+            } catch (error) {
+                console.error('Pesapal payment error:', error);
+                
+                // Reset button
+                const payBtn = document.getElementById('payWithPesapalBtn');
+                if (payBtn) {
+                    payBtn.disabled = false;
+                    payBtn.innerHTML = '<i class="fas fa-credit-card"></i> Pay with Pesapal';
+                }
+
+                // Show error
+                let errorMessage = 'Failed to process payment. Please try again.';
+                if (error.message) {
+                    errorMessage = error.message;
+                }
+                showMobileAlert(errorMessage, 'Payment Error');
+            }
+        }
+
+        // Check for Pesapal callback on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const orderTrackingId = urlParams.get('OrderTrackingId');
+            const orderMerchantReference = urlParams.get('OrderMerchantReference');
+            
+            // If we're on the callback page, handle it
+            if (window.location.pathname.includes('callback') && orderTrackingId) {
+                handlePesapalCallback({ OrderTrackingId: orderTrackingId, OrderMerchantReference: orderMerchantReference });
+            }
+        });
+
+        // Handle Pesapal callback
+        async function handlePesapalCallback(urlParams) {
+            try {
+                if (typeof window.handlePesapalCallback === 'function') {
+                    const result = await window.handlePesapalCallback(urlParams);
+                    
+                    if (result.success) {
+                        // Show success message
+                        showMobileAlert(
+                            `Payment successful!\n\nAmount: ${result.amount.toLocaleString()} ${result.currency}\nReference: ${result.reference}\n\nThank you for your payment!`,
+                            'Payment Successful'
+                        );
+                        
+                        // Redirect to payment page after 3 seconds
+                        setTimeout(() => {
+                            window.location.href = 'pay.html';
+                        }, 3000);
+                    } else {
+                        throw new Error('Payment verification failed');
+                    }
+                } else {
+                    console.warn('Pesapal callback handler not available');
+                }
+            } catch (error) {
+                console.error('Callback handling error:', error);
+                showMobileAlert(
+                    'Payment verification failed. Please contact support if payment was deducted.',
+                    'Verification Error'
+                );
+            }
+        }
     </script>
 
     <!-- Floating Kizumu Visit Button -->

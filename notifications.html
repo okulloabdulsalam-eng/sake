@@ -8,8 +8,12 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#4CAF50">
     <title>Notifications - KIUMA</title>
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Service Worker Registration (for offline functionality) -->
+    <script src="js/register-service-worker.js"></script>
     
     <!-- Firebase SDK -->
     <!-- Firebase SDK - Authentication & BarakahPush -->
@@ -536,7 +540,8 @@
         if (typeof window.cachedNotifications === 'undefined') {
             window.cachedNotifications = []; // Cache notifications for instant filtering
         }
-        let cachedNotifications = window.cachedNotifications; // Reference to global cache
+        // Create local alias to avoid redeclaration issues (use var for function scope)
+        var cachedNotifications = window.cachedNotifications;
         let isLoadingNotifications = false;
         
         // Define filterNotifications IMMEDIATELY (before onclick handlers execute)

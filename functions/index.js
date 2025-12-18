@@ -18,8 +18,19 @@
  * - Prevents replay attacks and fraud
  */
 
+// Load environment variables from .env file (if available)
+// This allows using .env file for local development
+// For production, set environment variables in Firebase Console
+try {
+  if (process.env.NODE_ENV !== 'production') {
+    require('dotenv').config();
+  }
+} catch (error) {
+  // dotenv not installed or .env file not found - that's okay
+  // Will fall back to functions.config() or environment variables
+}
+
 const functions = require('firebase-functions');
-const { defineString } = require('firebase-functions/params');
 const admin = require('firebase-admin');
 const axios = require('axios');
 const crypto = require('crypto');
@@ -36,45 +47,75 @@ const db = admin.firestore();
 const PESAPAL_BASE_URL = 'https://pay.pesapal.com/v3'; // Production URL
 const PESAPAL_SANDBOX_URL = 'https://cybqa.pesapal.com/pesapalv3'; // Sandbox for testing
 
-// Secure Parameters - Defined using Firebase Functions v2 parameter system
-// SECURITY: These are stored securely in Firebase, never in code
-// Set using: firebase functions:secrets:set PESAPAL_CONSUMER_KEY
-const PESAPAL_CONSUMER_KEY = defineString('PESAPAL_CONSUMER_KEY');
-const PESAPAL_CONSUMER_SECRET = defineString('PESAPAL_CONSUMER_SECRET');
-const PESAPAL_TEST_MODE = defineString('PESAPAL_TEST_MODE', { default: 'true' });
-const PESAPAL_WEBHOOK_SECRET = defineString('PESAPAL_WEBHOOK_SECRET', { default: '' });
-const PESAPAL_NOTIFICATION_ID = defineString('PESAPAL_NOTIFICATION_ID', { default: '' });
-const APP_BASE_URL = defineString('APP_BASE_URL', { default: '' });
+// Configuration - Using functions.config() for Spark plan compatibility
+// SECURITY: These are stored in Firebase config, never in code
+// Set using: firebase functions:config:set pesapal.consumer_key="your_key"
+// 
+// DEPRECATION WARNING: functions.config() is deprecated and will stop working in March 2026
+// This code works until then. For long-term solution, upgrade to Blaze plan and use secrets.
+//
+// Alternative: Use environment variables (see .env.example file)
 
-// Feature Flag: Lock Pesapal Payment System
-// Set to 'false' to disable Pesapal payments (system remains in code but locked)
-// Set to 'true' to enable Pesapal payments
-const PESAPAL_ENABLED = defineString('PESAPAL_ENABLED', { default: 'false' });
+// Helper function to get config value with fallback to environment variable
+function getConfig(key, defaultValue = '') {
+  // Priority 1: Try environment variable first (more secure, works on all plans)
+  const envKey = key.toUpperCase().replace(/\./g, '_');
+  if (process.env[envKey]) {
+    return process.env[envKey];
+  }
+  
+  // Priority 2: Try functions.config() (works on Spark plan, deprecated)
+  try {
+    const config = functions.config();
+    const keys = key.split('.');
+    let value = config;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    if (value) {
+      return value;
+    }
+  } catch (error) {
+    // Config not available, continue to default
+  }
+  
+  // Priority 3: Use default value
+  return defaultValue;
+}
+
+// Get Pesapal configuration values
+function getPesapalConfig() {
+  return {
+    consumerKey: getConfig('pesapal.consumer_key'),
+    consumerSecret: getConfig('pesapal.consumer_secret'),
+    testMode: getConfig('pesapal.test_mode', 'true'),
+    webhookSecret: getConfig('pesapal.webhook_secret', ''),
+    notificationId: getConfig('pesapal.notification_id', ''),
+    baseUrl: getConfig('app.base_url', ''),
+    enabled: getConfig('pesapal.enabled', 'false')
+  };
+}
 
 /**
- * Get Pesapal credentials from Firebase Functions secure parameters
- * SECURITY: Secret keys stored ONLY in Firebase secure parameters, never in code
+ * Get Pesapal credentials from Firebase Functions config
+ * SECURITY: Secret keys stored in Firebase config, never in code
  * 
- * WHY SECURE PARAMETERS:
- * - Encrypted at rest and in transit
- * - Never exposed in logs or error messages
- * - Managed through Firebase Console or CLI
- * - Automatically rotated when needed
+ * Works on Spark plan (no Blaze upgrade required)
  * 
  * @returns {Object} Consumer key and secret
  */
 function getPesapalCredentials() {
-  // SECURITY: Access secure parameters (never hardcoded)
-  const consumerKey = PESAPAL_CONSUMER_KEY.value();
-  const consumerSecret = PESAPAL_CONSUMER_SECRET.value();
-  const testModeValue = PESAPAL_TEST_MODE.value();
+  const config = getPesapalConfig();
+  const consumerKey = config.consumerKey;
+  const consumerSecret = config.consumerSecret;
+  const testModeValue = config.testMode;
   const isTestMode = testModeValue === 'true';
   
   if (!consumerKey || !consumerSecret) {
     throw new Error(
       'Pesapal credentials not configured. ' +
-      'Run: firebase functions:secrets:set PESAPAL_CONSUMER_KEY ' +
-      'and: firebase functions:secrets:set PESAPAL_CONSUMER_SECRET'
+      'Run: firebase functions:config:set pesapal.consumer_key="your_key" ' +
+      'and: firebase functions:config:set pesapal.consumer_secret="your_secret"'
     );
   }
   
@@ -219,7 +260,8 @@ function validatePaymentAmount(amount, currency = 'UGX') {
  */
 exports.initializePayment = functions.https.onCall(async (data, context) => {
   // FEATURE FLAG: Check if Pesapal is enabled
-  const isEnabled = PESAPAL_ENABLED.value() === 'true';
+  const config = getPesapalConfig();
+  const isEnabled = config.enabled === 'true';
   if (!isEnabled) {
     throw new functions.https.HttpsError(
       'failed-precondition',
@@ -298,9 +340,9 @@ exports.initializePayment = functions.https.onCall(async (data, context) => {
       currency: currency,
       amount: parseFloat(amount),
       description: description,
-      callback_url: callback_url || `${APP_BASE_URL.value() || ''}/payment/callback`,
-      cancellation_url: cancel_url || `${APP_BASE_URL.value() || ''}/payment/cancel`,
-      notification_id: PESAPAL_NOTIFICATION_ID.value() || '', // Webhook notification ID
+      callback_url: callback_url || `${getPesapalConfig().baseUrl || ''}/payment/callback`,
+      cancellation_url: cancel_url || `${getPesapalConfig().baseUrl || ''}/payment/cancel`,
+      notification_id: getPesapalConfig().notificationId || '', // Webhook notification ID
       billing_address: {
         email_address: userEmail,
         phone_number: data.phone || '',
@@ -492,7 +534,8 @@ function validateVerifiedPayment(paymentData, pesapalData) {
  */
 exports.verifyPayment = functions.https.onCall(async (data, context) => {
   // FEATURE FLAG: Check if Pesapal is enabled
-  const isEnabled = PESAPAL_ENABLED.value() === 'true';
+  const config = getPesapalConfig();
+  const isEnabled = config.enabled === 'true';
   if (!isEnabled) {
     throw new functions.https.HttpsError(
       'failed-precondition',
@@ -670,7 +713,8 @@ function verifyWebhookSignature(signature, payload, secret) {
  */
 exports.pesapalWebhook = functions.https.onRequest(async (req, res) => {
   // FEATURE FLAG: Check if Pesapal is enabled
-  const isEnabled = PESAPAL_ENABLED.value() === 'true';
+  const config = getPesapalConfig();
+  const isEnabled = config.enabled === 'true';
   if (!isEnabled) {
     return res.status(503).json({ 
       error: 'Service unavailable',
@@ -688,7 +732,7 @@ exports.pesapalWebhook = functions.https.onRequest(async (req, res) => {
     const payload = req.body;
     
     // SECURITY: Verify webhook signature
-    const webhookSecret = PESAPAL_WEBHOOK_SECRET.value();
+    const webhookSecret = getPesapalConfig().webhookSecret;
     if (webhookSecret && signature) {
       const isValid = verifyWebhookSignature(signature, payload, webhookSecret);
       if (!isValid) {
