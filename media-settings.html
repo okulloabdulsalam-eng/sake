@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="theme-color" content="#757575">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Media Settings - KIUMA</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="js/register-service-worker.js"></script>
+    <style>
+        .media-settings-container {
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+        
+        .category-section {
+            margin-bottom: 30px;
+        }
+        
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
+            color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+        }
+        
+        .category-header i {
+            font-size: 28px;
+        }
+        
+        .category-header h2 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 600;
+        }
+        
+        .media-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        
+        .media-item-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid var(--primary-green);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .media-item-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .media-item-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        
+        .media-item-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+        
+        .media-item-title {
+            flex: 1;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--dark-gray);
+        }
+        
+        .media-item-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        
+        .media-action-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .play-btn {
+            background: var(--primary-green);
+            color: white;
+        }
+        
+        .download-btn {
+            background: #2196F3;
+            color: white;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-gray);
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Menu -->
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="library.html" class="nav-link"><i class="fas fa-book-open"></i> Library</a></li>
+            <li><a href="media.html" class="nav-link active"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <div class="logo-container">
+                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none';">
+                    <span class="header-text">KIUMA</span>
+                </div>
+                <button class="notifications-btn" id="notificationsBtn">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge" style="display: none;">0</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="media-settings-container">
+                <div style="margin-bottom: 30px; text-align: center;">
+                    <h1 style="color: var(--primary-green); font-size: 28px; margin-bottom: 10px;">
+                        <i class="fas fa-photo-video"></i> Media Library
+                    </h1>
+                    <p style="color: var(--text-gray); font-size: 16px;">
+                        Browse and access all media content
+                    </p>
+                </div>
+
+                <!-- Audio Category -->
+                <div class="category-section">
+                    <div class="category-header">
+                        <i class="fas fa-headphones"></i>
+                        <h2>Audio</h2>
+                    </div>
+                    <div class="media-list" id="audioList">
+                        <div class="empty-state">
+                            <i class="fas fa-headphones"></i>
+                            <p>No audio files available yet</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Videos Category -->
+                <div class="category-section">
+                    <div class="category-header">
+                        <i class="fas fa-video"></i>
+                        <h2>Videos</h2>
+                    </div>
+                    <div class="media-list" id="videosList">
+                        <div class="empty-state">
+                            <i class="fas fa-video"></i>
+                            <p>No videos available yet</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
+            <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
+            <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
+            <a href="media.html" class="nav-item active"><i class="fas fa-photo-video"></i><span>Media</span></a>
+        </nav>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="update-navigation.js"></script>
+    <script>
+        // Sample media data - Replace with your actual media data source
+        const mediaData = {
+            audio: [
+                // Add your audio files here
+                // Example: { title: "Audio Lecture 1", url: "path/to/audio.mp3" }
+            ],
+            videos: [
+                // Add your video files here
+                // Example: { title: "Video 1", url: "path/to/video.mp4" }
+            ]
+        };
+
+        function createMediaItem(item, type) {
+            const card = document.createElement('div');
+            card.className = 'media-item-card';
+            
+            const icon = type === 'audio' ? 'fa-headphones' : 'fa-video';
+            
+            card.innerHTML = `
+                <div class="media-item-header">
+                    <div class="media-item-icon">
+                        <i class="fas ${icon}"></i>
+                    </div>
+                    <div class="media-item-title">${item.title || 'Untitled'}</div>
+                </div>
+                <div class="media-item-actions">
+                    <button class="media-action-btn play-btn" onclick="playMedia('${item.url}', '${type}')">
+                        <i class="fas fa-play"></i> Play
+                    </button>
+                    <button class="media-action-btn download-btn" onclick="downloadMedia('${item.url}', '${item.title || 'media'}')">
+                        <i class="fas fa-download"></i> Download
+                    </button>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        function displayMedia() {
+            const audioList = document.getElementById('audioList');
+            const videosList = document.getElementById('videosList');
+            
+            // Display audio
+            if (mediaData.audio.length === 0) {
+                audioList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-headphones"></i>
+                        <p>No audio files available yet</p>
+                    </div>
+                `;
+            } else {
+                audioList.innerHTML = '';
+                mediaData.audio.forEach(item => {
+                    audioList.appendChild(createMediaItem(item, 'audio'));
+                });
+            }
+            
+            // Display videos
+            if (mediaData.videos.length === 0) {
+                videosList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-video"></i>
+                        <p>No videos available yet</p>
+                    </div>
+                `;
+            } else {
+                videosList.innerHTML = '';
+                mediaData.videos.forEach(item => {
+                    videosList.appendChild(createMediaItem(item, 'video'));
+                });
+            }
+        }
+
+        function playMedia(url, type) {
+            if (type === 'audio') {
+                const audio = new Audio(url);
+                audio.play().catch(err => {
+                    console.error('Error playing audio:', err);
+                    alert('Unable to play audio. Please try downloading instead.');
+                });
+            } else {
+                window.open(url, '_blank');
+            }
+        }
+
+        function downloadMedia(url, filename) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            displayMedia();
+        });
+    </script>
+</body>
+</html>
+

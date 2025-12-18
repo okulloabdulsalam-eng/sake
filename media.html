@@ -411,6 +411,14 @@
             </section>
 
             <section class="page-content">
+                <!-- Continue to Media Link -->
+                <div style="margin-bottom: 25px;">
+                    <a href="media-settings.html" style="display: block; padding: 20px; background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); color: white; text-decoration: none; border-radius: 15px; text-align: center; font-size: 18px; font-weight: 600; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3); transition: transform 0.2s;">
+                        <i class="fas fa-arrow-right" style="margin-right: 10px;"></i>
+                        Continue to Media
+                    </a>
+                </div>
+                
                 <!-- Data Saving Options -->
                 <div style="margin-bottom: 30px;">
                     <!-- Option 1: Want to Save Data -->
@@ -453,32 +461,6 @@
                         <p style="color: #333; margin: 0; line-height: 1.6; font-size: 15px;">
                             Click the link below to access all media content directly online.
                         </p>
-                    </div>
-                </div>
-                
-                <div class="mobile-actions" style="margin-bottom: 16px;">
-                    <button class="btn btn-secondary mobile-btn" id="adminLoginBtn" onclick="showMediaPasswordPrompt()">
-                        <i class="fas fa-lock"></i> Admin
-                    </button>
-                    <button class="btn btn-primary mobile-btn admin-only" id="addMediaBtn" onclick="showAddMediaModal()" style="display: none;">
-                        <i class="fas fa-plus"></i> Add Media
-                    </button>
-                    <button class="btn btn-secondary mobile-btn admin-logout" onclick="logoutMediaAdmin()" style="display: none;">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </button>
-                </div>
-                
-                <div class="mobile-filter-buttons">
-                    <button class="btn btn-primary mobile-filter-btn" onclick="filterMedia('all')" data-filter="all">All</button>
-                    <button class="btn btn-outline mobile-filter-btn" onclick="filterMedia('video')" data-filter="video">Videos</button>
-                    <button class="btn btn-outline mobile-filter-btn" onclick="filterMedia('audio')" data-filter="audio">Audio</button>
-                    <button class="btn btn-outline mobile-filter-btn" onclick="filterMedia('image')" data-filter="image">Images</button>
-                </div>
-
-                <div class="mobile-media-grid" id="mediaGrid">
-                    <div class="mobile-loading">
-                        <i class="fas fa-spinner fa-spin"></i>
-                        <p>Loading media...</p>
                     </div>
                 </div>
             </section>
