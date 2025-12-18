@@ -171,7 +171,72 @@
                         <p><strong>Type:</strong> <span id="selectedType"></span></p>
                     </div>
 
-                    <!-- Unified Payment Form (for ALL payment types) -->
+                    <!-- Zakat Calculation Form -->
+                    <div id="zakatForm" style="display: none;">
+                        <h3 class="section-title" style="margin-bottom: 20px;">
+                            <i class="fas fa-calculator"></i> Zakat Calculation Request
+                        </h3>
+                        <p style="color: var(--text-gray); margin-bottom: 20px; line-height: 1.6;">
+                            Please provide your information for Zakat calculation. Our team will calculate your Zakat obligation and contact you.
+                        </p>
+                        
+                        <form id="zakatCalculationForm">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Full Name <span style="color: #F44336;">*</span>
+                                </label>
+                                <input type="text" class="form-input" id="zakatName" required placeholder="Enter your full name">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Contact Number <span style="color: #F44336;">*</span>
+                                </label>
+                                <input type="tel" class="form-input" id="zakatContact" required placeholder="Enter your phone number">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Location <span style="color: #F44336;">*</span>
+                                </label>
+                                <input type="text" class="form-input" id="zakatLocation" required placeholder="Enter your location (city, district, etc.)">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Business Name <span style="color: #666; font-size: 12px;">(Optional)</span>
+                                </label>
+                                <input type="text" class="form-input" id="zakatBusiness" placeholder="Enter your business name (if applicable)">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Date for Calculation <span style="color: #F44336;">*</span>
+                                </label>
+                                <input type="date" class="form-input" id="zakatDate" required>
+                                <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">
+                                    Select the date for which you want Zakat calculated (usually end of lunar year)
+                                </small>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Additional Information <span style="color: #666; font-size: 12px;">(Optional)</span>
+                                </label>
+                                <textarea class="form-input" id="zakatAdditionalInfo" rows="4" placeholder="Any additional information about your assets, income, or specific questions about Zakat calculation"></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary" style="width: 100%; background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); padding: 15px; font-size: 18px; font-weight: 600;">
+                                <i class="fab fa-whatsapp"></i> Submit Zakat Calculation Request
+                            </button>
+
+                            <div class="success-message" id="zakatSuccess" style="display: none; margin-top: 20px;">
+                                <i class="fas fa-check-circle"></i> WhatsApp will open with your Zakat calculation request. Our team will calculate your Zakat and contact you soon.
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Unified Payment Form (for ALL payment types except Zakat) -->
                     <div id="unifiedPaymentForm" style="display: none;">
                         <h3 class="section-title" style="margin-bottom: 20px;">Payment Details</h3>
 
@@ -525,12 +590,29 @@
                 setTimeout(() => {
                     membershipPlans.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }, 100);
-            } else {
-                // For all other payment types (zakat, charity, donate, kisilaahe)
+            } else if (type === 'zakat') {
+                // Special Zakat form
                 membershipPlans.style.display = 'none';
                 paymentForm.style.display = 'block';
                 const unifiedForm = document.getElementById('unifiedPaymentForm');
+                const zakatForm = document.getElementById('zakatForm');
+                if (unifiedForm) unifiedForm.style.display = 'none';
+                if (zakatForm) zakatForm.style.display = 'block';
+                selectedPlanInfo.style.display = 'none';
+                document.getElementById('amirDaawaNotice').style.display = 'none';
+                
+                // Scroll to zakat form
+                setTimeout(() => {
+                    paymentForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            } else {
+                // For all other payment types (charity, donate, kisilaahe)
+                membershipPlans.style.display = 'none';
+                paymentForm.style.display = 'block';
+                const unifiedForm = document.getElementById('unifiedPaymentForm');
+                const zakatForm = document.getElementById('zakatForm');
                 if (unifiedForm) unifiedForm.style.display = 'block';
+                if (zakatForm) zakatForm.style.display = 'none';
                 selectedPlanInfo.style.display = 'none';
                 document.getElementById('amirDaawaNotice').style.display = 'none';
                 
@@ -1387,8 +1469,65 @@ Jazakallahu Khairan.`;
             }
         }
 
-        // Check for Pesapal callback on page load
-        window.addEventListener('DOMContentLoaded', function() {
+        // Handle Zakat Form Submission
+        document.addEventListener('DOMContentLoaded', function() {
+            const zakatForm = document.getElementById('zakatCalculationForm');
+            if (zakatForm) {
+                zakatForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const name = document.getElementById('zakatName').value.trim();
+                    const contact = document.getElementById('zakatContact').value.trim();
+                    const location = document.getElementById('zakatLocation').value.trim();
+                    const business = document.getElementById('zakatBusiness').value.trim();
+                    const date = document.getElementById('zakatDate').value;
+                    const additionalInfo = document.getElementById('zakatAdditionalInfo').value.trim();
+                    
+                    // Validate required fields
+                    if (!name || !contact || !location || !date) {
+                        showMobileAlert('Please fill in all required fields', 'Required Fields Missing');
+                        return;
+                    }
+                    
+                    // Format WhatsApp message
+                    let message = `*Zakat Calculation Request*\n\n`;
+                    message += `*Name:* ${name}\n`;
+                    message += `*Contact Number:* ${contact}\n`;
+                    message += `*Location:* ${location}\n`;
+                    if (business) {
+                        message += `*Business:* ${business}\n`;
+                    }
+                    message += `*Date for Calculation:* ${date}\n`;
+                    if (additionalInfo) {
+                        message += `\n*Additional Information:*\n${additionalInfo}\n`;
+                    }
+                    message += `\n_Please calculate my Zakat obligation and contact me._`;
+                    
+                    // WhatsApp number: 0703268522 (256703268522)
+                    const whatsappNumber = '256703268522';
+                    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+                    
+                    // Open WhatsApp
+                    window.open(whatsappUrl, '_blank');
+                    
+                    // Show success message
+                    document.getElementById('zakatSuccess').style.display = 'block';
+                    zakatForm.reset();
+                    
+                    // Scroll to success message
+                    setTimeout(() => {
+                        document.getElementById('zakatSuccess').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }, 100);
+                });
+            }
+            
+            // Set default date to today
+            const zakatDateInput = document.getElementById('zakatDate');
+            if (zakatDateInput) {
+                const today = new Date().toISOString().split('T')[0];
+                zakatDateInput.value = today;
+            }
+            
             const urlParams = new URLSearchParams(window.location.search);
             const orderTrackingId = urlParams.get('OrderTrackingId');
             const orderMerchantReference = urlParams.get('OrderMerchantReference');
