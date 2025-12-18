@@ -1154,6 +1154,22 @@
             displayBooks(cachedBooks, category, adminStatus, ''); // Empty search term
         };
         
+        // Toggle Download Instructions
+        function toggleDownloadInstructions() {
+            const content = document.getElementById('downloadInstructionsContent');
+            const chevron = document.getElementById('downloadChevron');
+            
+            if (content && chevron) {
+                if (content.style.display === 'none' || !content.style.display) {
+                    content.style.display = 'block';
+                    chevron.style.transform = 'rotate(180deg)';
+                } else {
+                    content.style.display = 'none';
+                    chevron.style.transform = 'rotate(0deg)';
+                }
+            }
+        }
+
         // Update category counts
         function updateCategoryCounts(books) {
             const categories = ['all', 'quran', 'yasaruna', 'hadith', 'tauheed', 'swalah', 'others'];
