@@ -293,8 +293,8 @@
                     /* Mobile-First Document Card Styles */
                     .media-grid {
                         display: grid;
-                        grid-template-columns: 1fr;
-                        gap: 12px;
+                        grid-template-columns: repeat(2, 1fr);
+                        gap: 8px;
                         padding: 0;
                     }
                     
@@ -329,8 +329,15 @@
                     
                     @media (min-width: 768px) {
                         .media-grid {
-                            grid-template-columns: repeat(2, 1fr);
-                            gap: 16px;
+                            grid-template-columns: repeat(3, 1fr);
+                            gap: 10px;
+                        }
+                    }
+                    
+                    @media (min-width: 1024px) {
+                        .media-grid {
+                            grid-template-columns: repeat(4, 1fr);
+                            gap: 12px;
                         }
                     }
                     
@@ -344,7 +351,7 @@
                     .document-card {
                         width: 100%;
                         background: transparent;
-                        border-radius: 8px;
+                        border-radius: 10px;
                         box-shadow: none;
                         overflow: visible;
                         transition: all 0.2s ease;
@@ -354,7 +361,7 @@
                         display: flex;
                         flex-direction: column;
                         position: relative;
-                        margin-bottom: 6px;
+                        margin-bottom: 4px;
                     }
                     
                     .document-card:active {
@@ -365,7 +372,7 @@
                         display: flex;
                         align-items: center;
                         justify-content: space-between;
-                        padding: 8px 10px;
+                        padding: 10px 12px;
                         position: relative;
                     }
                     
@@ -377,10 +384,10 @@
                     
                     .document-title {
                         font-size: 14px;
-                        font-weight: 600;
+                        font-weight: 500;
                         color: #212121;
-                        line-height: 1.2;
-                        margin: 0 0 3px 0;
+                        line-height: 1.3;
+                        margin: 0 0 4px 0;
                         display: -webkit-box;
                         -webkit-line-clamp: 2;
                         line-clamp: 2;
@@ -392,8 +399,8 @@
                     .document-category-badge {
                         display: inline-block;
                         padding: 2px 6px;
-                        border-radius: 3px;
-                        font-size: 9px;
+                        border-radius: 12px;
+                        font-size: 10px;
                         font-weight: 600;
                         text-transform: uppercase;
                         letter-spacing: 0.2px;
@@ -402,13 +409,13 @@
                     }
                     
                     .document-body {
-                        padding: 0 10px 8px 10px;
+                        padding: 0 12px 10px 12px;
                     }
                     
                     .document-description {
                         font-size: 12px;
                         color: #616161;
-                        line-height: 1.3;
+                        line-height: 1.4;
                         margin: 0;
                         display: -webkit-box;
                         -webkit-line-clamp: 2;
@@ -420,12 +427,12 @@
                     
                     .document-menu-button {
                         position: absolute;
-                        top: 8px;
-                        right: 10px;
-                        width: 32px;
-                        height: 32px;
-                        min-width: 32px;
-                        min-height: 32px;
+                        top: 10px;
+                        right: 12px;
+                        width: 28px;
+                        height: 28px;
+                        min-width: 28px;
+                        min-height: 28px;
                         border-radius: 50%;
                         border: none;
                         background: #f5f5f5;
@@ -446,7 +453,7 @@
                     }
                     
                     .document-menu-button i {
-                        font-size: 12px;
+                        font-size: 11px;
                     }
                     
                     .document-menu-button.active {
@@ -456,8 +463,8 @@
                     
                     .document-dropdown {
                         position: absolute;
-                        top: 36px;
-                        right: 10px;
+                        top: 34px;
+                        right: 12px;
                         background: white;
                         border-radius: 8px;
                         box-shadow: 0 4px 16px rgba(0,0,0,0.15);
@@ -501,7 +508,7 @@
                     }
                     
                     .document-dropdown-item i {
-                        font-size: 13px;
+                        font-size: 12px;
                         width: 16px;
                         text-align: center;
                     }
@@ -520,54 +527,120 @@
                     
                     @media (max-width: 767px) {
                         .document-card {
-                            border-radius: 6px;
-                            margin-bottom: 6px;
+                            border-radius: 10px;
+                            margin-bottom: 4px;
                         }
                         
                         .document-header {
-                            padding: 8px 10px;
+                            padding: 10px 12px;
                         }
                         
                         .document-title {
-                            font-size: 13px;
-                            padding-right: 40px;
+                            font-size: 14px;
+                            padding-right: 36px;
                         }
                         
                         .document-body {
-                            padding: 0 10px 8px 10px;
+                            padding: 0 12px 10px 12px;
                         }
                         
                         .document-description {
-                            font-size: 11px;
+                            font-size: 12px;
                         }
                         
                         .document-menu-button {
-                            width: 32px;
-                            height: 32px;
-                            top: 8px;
-                            right: 10px;
+                            width: 28px;
+                            height: 28px;
+                            top: 10px;
+                            right: 12px;
                         }
                         
                         .document-menu-button i {
-                            font-size: 14px;
+                            font-size: 11px;
                         }
                         
                         .document-dropdown {
-                            top: 40px;
-                            right: 10px;
-                            left: 10px;
-                            min-width: auto;
+                            top: 34px;
+                            right: 12px;
+                            left: auto;
+                            min-width: 140px;
                         }
                         
                         .document-dropdown-item {
-                            padding: 12px;
-                            font-size: 13px;
+                            padding: 10px 12px;
+                            font-size: 12px;
                         }
                         
                         .document-dropdown-item i {
-                            font-size: 14px;
-                            width: 18px;
+                            font-size: 12px;
+                            width: 16px;
                         }
+                    }
+                    
+                    /* Compact Card Layout - Force compact styling */
+                    .compact-card {
+                        padding: 10px !important;
+                        min-height: auto !important;
+                    }
+                    
+                    .compact-card * {
+                        margin-bottom: 4px !important;
+                    }
+                    
+                    .compact-card .document-card {
+                        padding: 0 !important;
+                    }
+                    
+                    .compact-card .document-header {
+                        padding: 8px 10px !important;
+                    }
+                    
+                    .compact-card .document-body {
+                        padding: 0 10px 8px 10px !important;
+                    }
+                    
+                    .compact-card .icon,
+                    .compact-card img,
+                    .compact-card svg {
+                        width: 32px !important;
+                        height: 32px !important;
+                        max-height: 32px !important;
+                    }
+                    
+                    .compact-card h3,
+                    .compact-card .document-title,
+                    .compact-card .title {
+                        font-size: 14px !important;
+                        margin: 4px 0 !important;
+                        line-height: 1.3 !important;
+                    }
+                    
+                    .compact-card p,
+                    .compact-card .document-description,
+                    .compact-card .description {
+                        font-size: 12px !important;
+                        line-height: 1.3 !important;
+                        margin: 0 !important;
+                    }
+                    
+                    .compact-card .document-category-badge,
+                    .compact-card .badge {
+                        font-size: 10px !important;
+                        padding: 2px 6px !important;
+                        margin: 0 !important;
+                    }
+                    
+                    .compact-card .document-menu-button {
+                        width: 26px !important;
+                        height: 26px !important;
+                        padding: 4px !important;
+                    }
+                    
+                    .compact-card .document-dropdown,
+                    .compact-card .menu,
+                    .compact-card .dropdown,
+                    .compact-card .actions {
+                        padding: 4px !important;
                     }
                 </style>
 
@@ -1967,7 +2040,7 @@
             // Render books as mobile-first document cards
             filtered.forEach(book => {
                 const newBookItem = document.createElement('div');
-                newBookItem.className = 'media-item';
+                newBookItem.className = 'media-item compact-card';
                 newBookItem.dataset.category = (book.category || 'others').toLowerCase();
                 newBookItem.dataset.id = book.id;
                 
