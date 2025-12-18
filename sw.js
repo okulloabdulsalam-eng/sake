@@ -41,6 +41,8 @@ const STATIC_ASSETS = [
   '/pay.html',
   '/join-us.html',
   '/whatsapp-join-modal.html',
+  '/quran.html',
+  '/counselling.html',
   
   // Core assets
   '/styles.css',

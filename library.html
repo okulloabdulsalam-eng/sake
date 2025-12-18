@@ -190,83 +190,59 @@
                     "></div>
                 </div>
                 
-                <!-- Category Cards Grid -->
-                <div class="category-cards-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px;">
-                    <!-- All Category Card -->
-                    <div class="category-card active" data-category="all" onclick="if(typeof window.filterBooks==='function')window.filterBooks('all')" style="background: linear-gradient(135deg, #4CAF50, #388E3C); border-radius: 12px; padding: 16px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; touch-action: manipulation;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                            <i class="fas fa-th" style="font-size: 24px; color: white;"></i>
-                            <span class="category-badge" style="background: rgba(255,255,255,0.3); color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;" id="count-all">0</span>
-                        </div>
-                        <div style="color: white; font-size: 16px; font-weight: 600;">All</div>
-                    </div>
-                    
-                    <!-- Quran Category Card -->
-                    <div class="category-card" data-category="quran" onclick="if(typeof window.filterBooks==='function')window.filterBooks('quran')" style="background: linear-gradient(135deg, #4CAF50, #388E3C); border-radius: 12px; padding: 16px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; touch-action: manipulation;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                            <i class="fas fa-quran" style="font-size: 24px; color: white;"></i>
-                            <span class="category-badge" style="background: rgba(255,255,255,0.3); color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;" id="count-quran">0</span>
-                        </div>
-                        <div style="color: white; font-size: 16px; font-weight: 600;">Quran</div>
-                    </div>
-                    
-                    <!-- Yasaruna Category Card -->
-                    <div class="category-card" data-category="yasaruna" onclick="if(typeof window.filterBooks==='function')window.filterBooks('yasaruna')" style="background: linear-gradient(135deg, #2196F3, #1976D2); border-radius: 12px; padding: 16px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; touch-action: manipulation;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                            <i class="fas fa-book-open" style="font-size: 24px; color: white;"></i>
-                            <span class="category-badge" style="background: rgba(255,255,255,0.3); color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;" id="count-yasaruna">0</span>
-                        </div>
-                        <div style="color: white; font-size: 16px; font-weight: 600;">Yasaruna</div>
-                    </div>
-                    
-                    <!-- Hadith Category Card -->
-                    <div class="category-card" data-category="hadith" onclick="if(typeof window.filterBooks==='function')window.filterBooks('hadith')" style="background: linear-gradient(135deg, #4CAF50, #388E3C); border-radius: 12px; padding: 16px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; touch-action: manipulation;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                            <i class="fas fa-book-reader" style="font-size: 24px; color: white;"></i>
-                            <span class="category-badge" style="background: rgba(255,255,255,0.3); color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;" id="count-hadith">0</span>
-                        </div>
-                        <div style="color: white; font-size: 16px; font-weight: 600;">Hadith</div>
-                    </div>
-                    
-                    <!-- Tauheed Category Card -->
-                    <div class="category-card" data-category="tauheed" onclick="if(typeof window.filterBooks==='function')window.filterBooks('tauheed')" style="background: linear-gradient(135deg, #9C27B0, #7B1FA2); border-radius: 12px; padding: 16px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; touch-action: manipulation;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                            <i class="fas fa-star-and-crescent" style="font-size: 24px; color: white;"></i>
-                            <span class="category-badge" style="background: rgba(255,255,255,0.3); color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;" id="count-tauheed">0</span>
-                        </div>
-                        <div style="color: white; font-size: 16px; font-weight: 600;">Tauheed</div>
-                    </div>
-                    
-                    <!-- Swalah Category Card -->
-                    <div class="category-card" data-category="swalah" onclick="if(typeof window.filterBooks==='function')window.filterBooks('swalah')" style="background: linear-gradient(135deg, #009688, #00796B); border-radius: 12px; padding: 16px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; touch-action: manipulation;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                            <i class="fas fa-mosque" style="font-size: 24px; color: white;"></i>
-                            <span class="category-badge" style="background: rgba(255,255,255,0.3); color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;" id="count-swalah">0</span>
-                        </div>
-                        <div style="color: white; font-size: 16px; font-weight: 600;">Swalah</div>
-                    </div>
-                    
-                    <!-- Others Category Card -->
-                    <div class="category-card" data-category="others" onclick="if(typeof window.filterBooks==='function')window.filterBooks('others')" style="background: linear-gradient(135deg, #757575, #616161); border-radius: 12px; padding: 16px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; touch-action: manipulation;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                            <i class="fas fa-folder" style="font-size: 24px; color: white;"></i>
-                            <span class="category-badge" style="background: rgba(255,255,255,0.3); color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;" id="count-others">0</span>
-                        </div>
-                        <div style="color: white; font-size: 16px; font-weight: 600;">Others</div>
+                <!-- Sort By Dropdown - Very Visible and Clear -->
+                <div style="margin-bottom: 24px;">
+                    <label for="sortByCategory" style="display: block; margin-bottom: 12px; font-size: 18px; font-weight: 600; color: var(--dark-gray);">
+                        <i class="fas fa-filter" style="color: var(--primary-green); margin-right: 8px;"></i>
+                        Sort By Category
+                        <span style="display: block; font-size: 14px; font-weight: normal; color: #666; margin-top: 4px;">
+                            👆 Click here to choose a category
+                        </span>
+                    </label>
+                    <select id="sortByCategory" style="
+                        width: 100%;
+                        padding: 18px 20px;
+                        font-size: 18px;
+                        font-weight: 600;
+                        border: 3px solid var(--primary-green);
+                        border-radius: 12px;
+                        background: linear-gradient(135deg, #ffffff, #f5f5f5);
+                        color: var(--dark-gray);
+                        cursor: pointer;
+                        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+                        transition: all 0.3s;
+                        appearance: none;
+                        background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'20\' height=\'20\' viewBox=\'0 0 20 20\'><path fill=\'%234CAF50\' d=\'M5 7l5 5 5-5z\'/></svg>');
+                        background-repeat: no-repeat;
+                        background-position: right 15px center;
+                        background-size: 20px;
+                        padding-right: 50px;
+                    " onchange="if(typeof window.filterBooks==='function')window.filterBooks(this.value)">
+                        <option value="all">📚 All Books (<span id="count-all-display">0</span>)</option>
+                        <option value="quran">📖 Quran (<span id="count-quran-display">0</span>)</option>
+                        <option value="yasaruna">📘 Yasaruna (<span id="count-yasaruna-display">0</span>)</option>
+                        <option value="hadith">📗 Hadith (<span id="count-hadith-display">0</span>)</option>
+                        <option value="tauheed">⭐ Tauheed (<span id="count-tauheed-display">0</span>)</option>
+                        <option value="swalah">🕌 Swalah (<span id="count-swalah-display">0</span>)</option>
+                        <option value="others">📁 Others (<span id="count-others-display">0</span>)</option>
+                    </select>
+                    <div style="margin-top: 8px; font-size: 14px; color: #666; text-align: center;">
+                        <i class="fas fa-hand-pointer" style="margin-right: 5px;"></i>
+                        Click the box above to see all categories
                     </div>
                 </div>
                 
                 <style>
-                    .category-card:hover {
+                    /* Sort By Dropdown Styles */
+                    #sortByCategory:hover {
+                        border-color: #388E3C !important;
+                        box-shadow: 0 6px 16px rgba(76, 175, 80, 0.3) !important;
                         transform: translateY(-2px);
-                        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
                     }
-                    .category-card:active {
-                        transform: translateY(0);
-                    }
-                    .category-card.active {
-                        box-shadow: 0 4px 16px rgba(0,0,0,0.2) !important;
-                        transform: scale(1.02);
+                    #sortByCategory:focus {
+                        outline: none;
+                        border-color: #388E3C !important;
+                        box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4) !important;
                     }
                     
                     /* Book Card Mobile Styles */
@@ -644,6 +620,62 @@
                     }
                 </style>
 
+                <!-- How to Download Box - Before Books -->
+                <div style="
+                    background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
+                    border: 3px solid #2196F3;
+                    border-radius: 15px;
+                    padding: 20px;
+                    margin-bottom: 25px;
+                    box-shadow: 0 4px 15px rgba(33, 150, 243, 0.2);
+                ">
+                    <h3 style="
+                        color: #1976D2;
+                        font-size: 20px;
+                        font-weight: 700;
+                        margin: 0 0 15px 0;
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                    ">
+                        <i class="fas fa-download" style="font-size: 24px;"></i>
+                        How to Download Books
+                    </h3>
+                    
+                    <div style="background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px;">
+                        <h4 style="color: #1976D2; font-size: 16px; font-weight: 600; margin: 0 0 10px 0;">
+                            <i class="fas fa-check-circle" style="color: #4CAF50; margin-right: 8px;"></i>
+                            Option 1: Direct Download
+                        </h4>
+                        <ol style="margin: 0; padding-left: 25px; color: #333; line-height: 1.8; font-size: 15px;">
+                            <li>Click the <strong>3 dots (⋯)</strong> on the book</li>
+                            <li>Click <strong>"Download"</strong></li>
+                            <li>Wait for a few seconds - the download will start automatically</li>
+                        </ol>
+                    </div>
+                    
+                    <div style="background: white; border-radius: 10px; padding: 15px;">
+                        <h4 style="color: #1976D2; font-size: 16px; font-weight: 600; margin: 0 0 10px 0;">
+                            <i class="fas fa-check-circle" style="color: #4CAF50; margin-right: 8px;"></i>
+                            Option 2: Open Then Download
+                        </h4>
+                        <ol style="margin: 0; padding-left: 25px; color: #333; line-height: 1.8; font-size: 15px;">
+                            <li>Click the <strong>3 dots (⋯)</strong> on the book</li>
+                            <li>Click <strong>"Open Document"</strong></li>
+                            <li>When it opens in Chrome, click the <strong>3 dots (⋯)</strong> in the <strong>right corner</strong> of Chrome</li>
+                            <li>Click <strong>"Download"</strong></li>
+                            <li>Click <strong>"Accept"</strong> if asked</li>
+                        </ol>
+                    </div>
+                    
+                    <div style="margin-top: 15px; padding: 12px; background: #FFF3CD; border-left: 4px solid #FFC107; border-radius: 8px;">
+                        <p style="margin: 0; color: #856404; font-size: 14px; line-height: 1.6;">
+                            <i class="fas fa-lightbulb" style="margin-right: 8px;"></i>
+                            <strong>Tip:</strong> If download doesn't start, try Option 2. Make sure you have enough storage space on your device.
+                        </p>
+                    </div>
+                </div>
+
                 <div class="media-grid" id="libraryGrid">
                     <!-- Books will be loaded here dynamically -->
                 </div>
@@ -798,6 +830,11 @@
 
         // Check admin status on page load
         window.addEventListener('DOMContentLoaded', function() {
+            // Initialize dropdown to "all" by default
+            const sortDropdown = document.getElementById('sortByCategory');
+            if (sortDropdown && !sortDropdown.value) {
+                sortDropdown.value = 'all';
+            }
             // Check admin status in background (non-blocking)
             if (typeof window.checkAdminStatus === 'function') {
                 setTimeout(() => {
@@ -1050,16 +1087,11 @@
                 searchInfo.style.display = 'none';
             }
             
-            // Update category card active states
-            const categoryCards = document.querySelectorAll('.category-card');
-            categoryCards.forEach(card => {
-                const cardCategory = card.dataset.category || '';
-                if (cardCategory === category) {
-                    card.classList.add('active');
-                } else {
-                    card.classList.remove('active');
-                }
-            });
+            // Update dropdown selection
+            const sortDropdown = document.getElementById('sortByCategory');
+            if (sortDropdown) {
+                sortDropdown.value = category;
+            }
             
             // Instant client-side filtering (no reload) - without search term
             const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
@@ -1071,6 +1103,7 @@
             const categories = ['all', 'quran', 'yasaruna', 'hadith', 'tauheed', 'swalah', 'others'];
             
             categories.forEach(cat => {
+                // Update old category badges (if they still exist)
                 const badge = document.getElementById(`count-${cat}`);
                 if (badge) {
                     let count = 0;
@@ -1083,6 +1116,21 @@
                         }).length;
                     }
                     badge.textContent = count;
+                }
+                
+                // Update dropdown display counts
+                const displayBadge = document.getElementById(`count-${cat}-display`);
+                if (displayBadge) {
+                    let count = 0;
+                    if (cat === 'all') {
+                        count = books.length;
+                    } else {
+                        count = books.filter(book => {
+                            const bookCategory = (book.category || 'others').toLowerCase();
+                            return bookCategory === cat.toLowerCase();
+                        }).length;
+                    }
+                    displayBadge.textContent = count;
                 }
             });
         }
@@ -1551,7 +1599,8 @@
                 }
                 
                 // Step 6: Update UI immediately with filtered cache (ensures consistency)
-                const currentCategory = document.querySelector('.category-card.active')?.dataset.category || 'all';
+                const sortDropdown = document.getElementById('sortByCategory');
+                const currentCategory = sortDropdown ? sortDropdown.value : 'all';
                 const currentAdminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
                 
                 // Wait for DOM removal animation to complete, then refresh display
@@ -1841,8 +1890,9 @@
             
             if (!suggestionsDiv) return;
             
-            // Get current category
-            const currentCategory = document.querySelector('.category-card.active')?.dataset.category || 'all';
+            // Get current category from dropdown
+            const sortDropdown = document.getElementById('sortByCategory');
+            const currentCategory = sortDropdown ? sortDropdown.value : 'all';
             
             // Filter books for suggestions
             let suggestions = cachedBooks.filter(book => {
@@ -1939,8 +1989,9 @@
             // Update suggestions
             showSearchSuggestions();
             
-            // Get current category
-            const currentCategory = document.querySelector('.category-card.active')?.dataset.category || 'all';
+            // Get current category from dropdown
+            const sortDropdown = document.getElementById('sortByCategory');
+            const currentCategory = sortDropdown ? sortDropdown.value : 'all';
             const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
             
             // Refresh display with search
