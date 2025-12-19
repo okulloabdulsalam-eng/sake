@@ -271,12 +271,23 @@
                             <label class="form-label">Payment Method <span style="color: #F44336;">*</span></label>
                             <select class="form-input" id="paymentMethod" required onchange="handlePaymentMethodChange()">
                                 <option value="">Select payment method</option>
-                                <option value="pesapal">Pesapal (Online Payment)</option>
                                 <option value="mtn">MTN Mobile Money</option>
                                 <option value="airtel">Airtel Money</option>
                                 <option value="bank">Bank Transfer</option>
+                                <option value="pesapal">Pesapal (Online Payment)</option>
+                                <option value="other">Other Payment Methods</option>
                             </select>
                             <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">Select the method you will use to make payment</small>
+                            
+                            <!-- Other Payment Methods Dropdown (shown when "Other Payment Methods" is selected) -->
+                            <div id="otherPaymentMethods" style="display: none; margin-top: 15px; padding: 15px; background: #f5f5f5; border-radius: 8px; border: 1px solid #e0e0e0;">
+                                <label class="form-label" style="margin-bottom: 10px; font-size: 14px; font-weight: 600;">Select Alternative Payment Method:</label>
+                                <select class="form-input" id="otherPaymentMethodSelect" onchange="handleOtherPaymentMethodChange()">
+                                    <option value="">Choose an alternative method</option>
+                                    <option value="pesapal">Pesapal (Online Payment)</option>
+                                </select>
+                                <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">Additional payment options</small>
+                            </div>
                         </div>
 
                         <!-- Pesapal Payment Button (shown when Pesapal is selected) -->
@@ -1335,13 +1346,41 @@ Jazakallahu Khairan.`;
             const paymentMethod = document.getElementById('paymentMethod')?.value;
             const pesapalButton = document.getElementById('pesapalPaymentButton');
             const contactAmirBtn = document.getElementById('contactAmirBtn');
+            const otherPaymentMethods = document.getElementById('otherPaymentMethods');
             
-            if (paymentMethod === 'pesapal') {
-                // Show Pesapal button, hide WhatsApp button
+            // Show/hide other payment methods dropdown
+            if (paymentMethod === 'other') {
+                if (otherPaymentMethods) otherPaymentMethods.style.display = 'block';
+                if (pesapalButton) pesapalButton.style.display = 'none';
+                if (contactAmirBtn) contactAmirBtn.style.display = 'block';
+            } else {
+                if (otherPaymentMethods) otherPaymentMethods.style.display = 'none';
+                
+                if (paymentMethod === 'pesapal') {
+                    // Show Pesapal button, hide WhatsApp button
+                    if (pesapalButton) pesapalButton.style.display = 'block';
+                    if (contactAmirBtn) contactAmirBtn.style.display = 'none';
+                } else {
+                    // Hide Pesapal button, show WhatsApp button
+                    if (pesapalButton) pesapalButton.style.display = 'none';
+                    if (contactAmirBtn) contactAmirBtn.style.display = 'block';
+                }
+            }
+        }
+        
+        // Handle other payment method change
+        function handleOtherPaymentMethodChange() {
+            const otherMethod = document.getElementById('otherPaymentMethodSelect')?.value;
+            const pesapalButton = document.getElementById('pesapalPaymentButton');
+            const contactAmirBtn = document.getElementById('contactAmirBtn');
+            
+            // Update main payment method dropdown to reflect selection
+            if (otherMethod === 'pesapal') {
+                document.getElementById('paymentMethod').value = 'pesapal';
                 if (pesapalButton) pesapalButton.style.display = 'block';
                 if (contactAmirBtn) contactAmirBtn.style.display = 'none';
             } else {
-                // Hide Pesapal button, show WhatsApp button
+                document.getElementById('paymentMethod').value = 'other';
                 if (pesapalButton) pesapalButton.style.display = 'none';
                 if (contactAmirBtn) contactAmirBtn.style.display = 'block';
             }
