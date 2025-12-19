@@ -638,6 +638,10 @@
                 selectedPlanInfo.style.display = 'none';
                 document.getElementById('amirDaawaNotice').style.display = 'none';
                 
+                // Show payment methods section for non-Zakat payments
+                const recommendedMethods = document.getElementById('recommendedPaymentMethods');
+                if (recommendedMethods) recommendedMethods.style.display = 'block';
+                
                 // Show payment reason (required for non-subscriptions)
                 const paymentReasonGroup = document.getElementById('paymentReasonGroup');
                 const paymentReason = document.getElementById('paymentReason');
