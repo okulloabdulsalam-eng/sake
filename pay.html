@@ -1705,6 +1705,22 @@ Jazakallahu Khairan.`;
                 window.location.href = 'index.html';
             }
         }
+        
+        // Toggle payment dropdown
+        function togglePaymentDropdown(method) {
+            const details = document.getElementById(method + 'Details');
+            const chevron = document.getElementById(method + 'Chevron');
+            
+            if (details && chevron) {
+                if (details.style.display === 'none' || details.style.display === '') {
+                    details.style.display = 'block';
+                    chevron.style.transform = 'rotate(180deg)';
+                } else {
+                    details.style.display = 'none';
+                    chevron.style.transform = 'rotate(0deg)';
+                }
+            }
+        }
     </script>
 </body>
 </html>
