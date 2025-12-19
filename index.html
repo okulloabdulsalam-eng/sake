@@ -2,590 +2,774 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
-    <meta name="description" content="KIUMA - Kampala International University Muslim Students Association - Your guide to Islamic values, programs, and activities">
-    <meta name="theme-color" content="#757575">
-    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>KIUMA - Kampala International University Muslim Students Association</title>
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0a0e27">
+    <meta name="description" content="Solo Leveling System - Level up your real life">
+    <title>Solo Leveling System</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="offline-db.js"></script>
-    <script src="network-sync.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="home-page">
-    <!-- Navigation Menu -->
-    <nav class="nav-menu" id="navMenu">
-        <div class="nav-header">
-            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+<body>
+    <!-- Overlay Notification Container -->
+    <div id="notification-overlay"></div>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h2 class="neon-text">Initializing System...</h2>
         </div>
-        <ul class="nav-list">
-            <li><a href="index.html" class="nav-link active"><i class="fas fa-home"></i> Home</a></li>
-            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
-            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
-            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
-            <li><a href="quran.html" class="nav-link"><i class="fas fa-quran"></i> Quran</a></li>
-            <li><a href="counselling.html" class="nav-link"><i class="fas fa-comments"></i> Counselling</a></li>
-            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
-            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
-            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
-            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
-            <li><a href="library.html" class="nav-link"><i class="fas fa-book-open"></i> Library</a></li>
-            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
-            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
-            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
-            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
-            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
-            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
-        </ul>
-    </nav>
+    </div>
 
     <!-- Main Container -->
-    <div class="container">
+    <div id="app" class="app-container">
         <!-- Header -->
         <header class="header">
             <div class="header-content">
-                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
-                <div class="logo-container">
-                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='block';" onload="this.style.display='block'; if(this.nextElementSibling) this.nextElementSibling.style.display='none';">
-                    <span class="header-text">KIUMA</span>
-                    <svg class="header-logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="display: none;">
-                        <!-- Outer Circle -->
-                        <circle cx="100" cy="100" r="95" fill="none" stroke="#4CAF50" stroke-width="4"/>
-                        <!-- Top Text Arc -->
-                        <path id="topArc" d="M 20,100 A 80,80 0 0,1 180,100" fill="none"/>
-                        <text fill="#4CAF50" font-size="9" font-weight="bold" font-family="Arial, sans-serif" letter-spacing="0.5">
-                            <textPath href="#topArc" startOffset="50%" text-anchor="middle">
-                                KAMPALA INTERNATIONAL UNIVERSITY
-                            </textPath>
-                        </text>
-                        <!-- Bottom Text Arc -->
-                        <path id="bottomArc" d="M 180,100 A 80,80 0 0,1 20,100" fill="none"/>
-                        <text fill="#4CAF50" font-size="9" font-weight="bold" font-family="Arial, sans-serif" letter-spacing="0.5">
-                            <textPath href="#bottomArc" startOffset="50%" text-anchor="middle">
-                                MUSLIM ASSOCIATION
-                            </textPath>
-                        </text>
-                        <!-- Mosque/Mihrab (Left) -->
-                        <path d="M 50,75 L 50,115 L 58,115 L 58,105 L 63,100 L 58,95 L 58,85 Z" fill="none" stroke="#4CAF50" stroke-width="2"/>
-                        <circle cx="56.5" cy="100" r="2" fill="#4CAF50"/>
-                        <!-- Minaret (Center) -->
-                        <rect x="88" y="65" width="10" height="45" fill="none" stroke="#4CAF50" stroke-width="2"/>
-                        <rect x="90" y="75" width="6" height="2" fill="#4CAF50"/>
-                        <rect x="90" y="85" width="6" height="2" fill="#4CAF50"/>
-                        <rect x="90" y="95" width="6" height="2" fill="#4CAF50"/>
-                        <polygon points="93,60 90,65 96,65" fill="#4CAF50"/>
-                        <!-- Crescent and Star (Right) -->
-                        <path d="M 140,92 A 12,12 0 0,1 128,92 A 10,10 0 0,0 140,92 Z" fill="#4CAF50"/>
-                        <path d="M 130,88 L 131.5,92 L 136,92 L 132.5,94.5 L 134,99 L 130,96.5 L 126,99 L 127.5,94.5 L 124,92 L 128.5,92 Z" fill="#4CAF50"/>
-                        <!-- KIUMA Text -->
-                        <text x="100" y="145" font-size="22" font-weight="bold" fill="#4CAF50" text-anchor="middle" font-family="Arial, sans-serif" letter-spacing="2">KIUMA</text>
-                    </svg>
+                <h1 class="logo neon-text">SOLO LEVELING</h1>
+                <div class="header-stats">
+                    <div class="stat-mini">
+                        <span class="stat-label">Level</span>
+                        <span id="header-level" class="stat-value">1</span>
+                    </div>
+                    <div class="stat-mini">
+                        <span class="stat-label">Rank</span>
+                        <span id="header-rank" class="stat-value rank-E">E</span>
+                    </div>
                 </div>
-                <button class="notifications-btn" id="notificationsBtn">
-                    <i class="fas fa-bell"></i>
-                    <span class="badge" style="display: none;">0</span>
-                </button>
             </div>
         </header>
 
-        <!-- Home Page Content -->
-        <main class="main-content">
-            <!-- Welcome Section -->
-            <section class="welcome-section">
-                <div>
-                    <h2 class="greeting">
-                        <a href="about.html">KIUMA</a>
-                        <span>Assalam Alaikum, <span id="userName">Brother/Sister</span></span>
-                    </h2>
-                </div>
-                <a href="join-us.html" class="account-icon-btn" id="accountIconBtn">
-                    <i class="fas fa-user-circle" id="accountIcon"></i>
-                </a>
-            </section>
-
-            <!-- Prayer Times Card -->
-            <section class="promo-card prayer-times-card">
-                <div class="card-badge">Prayer Times</div>
-                <div class="card-content">
-                    <div class="card-text">
-                        <div class="hijri-date" id="hijriDate"></div>
-                        <div class="date-display" id="dateDisplay"></div>
-                        <div class="next-prayer" id="nextPrayer">
-                            <i class="fas fa-clock"></i> Next: <span id="nextPrayerTime">Asr</span>
-                        </div>
-                    </div>
-                    <div class="card-illustration">
-                        <i class="fas fa-mosque" style="font-size: 60px; color: #4CAF50;"></i>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Prayer Times List -->
-            <section class="prayer-times-list" id="prayerTimesList">
-                <div class="prayer-times-header">
-                    <h3 style="margin: 0 0 15px 0; color: var(--dark-gray); font-size: 18px;">Prayer Times</h3>
-                    <button class="admin-edit-btn" onclick="showAdminLogin()" id="adminEditBtn" style="display: none;">
-                        <i class="fas fa-edit"></i> Edit Times
-                    </button>
-                </div>
-                
-                <div class="prayer-table-header">
-                    <div class="header-cell">Prayer</div>
-                    <div class="header-cell">Adhan</div>
-                    <div class="header-cell">Iqaama</div>
-                </div>
-                
-                <div class="prayer-item">
-                    <span class="prayer-name">Fajr</span>
-                    <span class="prayer-time adhan-time editable" data-prayer="fajr" data-type="adhan" id="fajrAdhan" contenteditable="false">05:35</span>
-                    <span class="prayer-time iqaama-time editable" data-prayer="fajr" data-type="iqaama" id="fajrIqaama" contenteditable="false">06:00</span>
-                </div>
-                <div class="prayer-item">
-                    <span class="prayer-name">Dhuhr</span>
-                    <span class="prayer-time adhan-time editable" data-prayer="dhuhr" data-type="adhan" id="dhuhrAdhan" contenteditable="false">13:00</span>
-                    <span class="prayer-time iqaama-time editable" data-prayer="dhuhr" data-type="iqaama" id="dhuhrIqaama" contenteditable="false">13:15</span>
-                </div>
-                <div class="prayer-item">
-                    <span class="prayer-name">Asr</span>
-                    <span class="prayer-time adhan-time editable" data-prayer="asr" data-type="adhan" id="asrAdhan" contenteditable="false">16:00</span>
-                    <span class="prayer-time iqaama-time editable" data-prayer="asr" data-type="iqaama" id="asrIqaama" contenteditable="false">16:15</span>
-                </div>
-                <div class="prayer-item">
-                    <span class="prayer-name">Maghrib</span>
-                    <span class="prayer-time adhan-time editable" data-prayer="maghrib" data-type="adhan" id="maghribAdhan" contenteditable="false">18:55</span>
-                    <span class="prayer-time iqaama-time editable" data-prayer="maghrib" data-type="iqaama" id="maghribIqaama" contenteditable="false">19:00</span>
-                </div>
-                <div class="prayer-item">
-                    <span class="prayer-name">Isha</span>
-                    <span class="prayer-time adhan-time editable" data-prayer="isha" data-type="adhan" id="ishaAdhan" contenteditable="false">20:00</span>
-                    <span class="prayer-time iqaama-time editable" data-prayer="isha" data-type="iqaama" id="ishaIqaama" contenteditable="false">20:15</span>
-                </div>
-            </section>
-
-            <!-- Admin Login Modal -->
-            <div class="modal-overlay" id="adminLoginModal" style="display: none;">
-                <div class="modal-content">
-                    <h3><i class="fas fa-lock"></i> Admin Login</h3>
-                    <p>Sign in with your account to edit content</p>
-                    <div class="form-group">
-                        <input type="email" class="form-input" id="adminEmail" placeholder="Enter your email">
-                    </div>
-                    <div class="form-group">
-                        <input type="password" class="form-input" id="adminPassword" placeholder="Enter your password">
-                    </div>
-                    <div style="display: flex; gap: 10px;">
-                        <button class="btn btn-primary" onclick="verifyAdminPassword()" style="flex: 1;">Login</button>
-                        <button class="btn btn-secondary" onclick="closeAdminLogin()" style="flex: 1;">Cancel</button>
-                    </div>
-                    <p id="passwordError" style="color: #F44336; font-size: 12px; margin: 10px 0 0 0; display: none;">Incorrect email or password.</p>
-                </div>
-            </div>
-
-            <!-- Search Bar -->
-            <section class="search-section">
-                <div class="search-bar" onclick="window.location.href='search.html'">
-                    <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Search here..." id="searchInput" readonly>
-                </div>
-            </section>
-
-            <!-- Quick Access Grid -->
-            <section class="quick-access">
-                <h3 class="section-title">What do you need?</h3>
-                <div class="grid-container">
-                    <div class="grid-item" onclick="navigateTo('programs.html')">
-                        <div class="grid-icon">
-                            <i class="fas fa-book"></i>
-                        </div>
-                        <span class="grid-label">Programs</span>
-                    </div>
-                    <div class="grid-item" onclick="navigateTo('quran.html')">
-                        <div class="grid-icon">
-                            <i class="fas fa-quran"></i>
-                        </div>
-                        <span class="grid-label">Quran</span>
-                    </div>
-                    <div class="grid-item" onclick="navigateTo('activities.html')">
-                        <div class="grid-icon">
-                            <i class="fas fa-running"></i>
-                        </div>
-                        <span class="grid-label">Activities</span>
-                    </div>
-                    <div class="grid-item" onclick="navigateTo('events.html')">
-                        <div class="grid-icon">
-                            <i class="fas fa-calendar-alt"></i>
-                        </div>
-                        <span class="grid-label">Events</span>
-                    </div>
-                    <div class="grid-item" onclick="navigateTo('leadership.html')">
-                        <div class="grid-icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <span class="grid-label">Leadership</span>
-                    </div>
-                    <div class="grid-item" onclick="navigateTo('pay.html')">
-                        <div class="grid-icon">
-                            <i class="fas fa-hand-holding-heart"></i>
-                        </div>
-                        <span class="grid-label">Donations</span>
-                    </div>
-                    <div class="grid-item" onclick="navigateTo('ask-question.html')">
-                        <div class="grid-icon">
-                            <i class="fas fa-question-circle"></i>
-                        </div>
-                        <span class="grid-label">Ask Question</span>
-                    </div>
-                    <div class="grid-item" onclick="navigateTo('join-us.html')">
-                        <div class="grid-icon">
-                            <i class="fas fa-cog"></i>
-                        </div>
-                        <span class="grid-label">Settings</span>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Recent Activities -->
-            <section class="recent-section">
-                <h3 class="section-title">Recent Activities</h3>
-                <a href="quran.html" style="text-decoration: none; color: inherit; display: block;">
-                    <div class="activity-card" style="cursor: pointer; transition: transform 0.2s;">
-                        <div class="activity-icon"><i class="fas fa-book-open"></i></div>
-                        <div class="activity-content">
-                            <h4>Weekly Quran Study</h4>
-                            <p>Monday - Friday 7:15 PM - 8:15 PM</p>
-                            <span class="activity-badge">You come get a personal teacher</span>
-                        </div>
-                    </div>
-                </a>
-                <div class="activity-card">
-                    <div class="activity-icon"><i class="fas fa-handshake"></i></div>
-                    <div class="activity-content">
-                        <h4>Mosque Iftar</h4>
-                        <p>Ramadhan 7:10 PM</p>
-                        <span class="activity-badge success">Confirmed</span>
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        <!-- Bottom Navigation -->
+        <!-- Navigation -->
         <nav class="bottom-nav">
-            <a href="index.html" class="nav-item active">
-                <i class="fas fa-home"></i>
-                <span>Home</span>
-            </a>
-            <a href="programs.html" class="nav-item">
-                <i class="fas fa-book"></i>
-                <span>Programs</span>
-            </a>
-            <a href="events.html" class="nav-item">
-                <i class="fas fa-calendar"></i>
-                <span>Events</span>
-            </a>
-            <a href="pay.html" class="nav-item">
-                <i class="fas fa-credit-card"></i>
-                <span>Pay</span>
-            </a>
-            <a href="join-us.html" class="nav-item">
-                <i class="fas fa-user-plus"></i>
-                <span>Join</span>
-            </a>
+            <button class="nav-btn active" data-page="dashboard">
+                <span class="nav-icon">⚡</span>
+                <span class="nav-label">Dashboard</span>
+            </button>
+            <button class="nav-btn" data-page="quests">
+                <span class="nav-icon">📋</span>
+                <span class="nav-label">Quests</span>
+            </button>
+            <button class="nav-btn" data-page="skills">
+                <span class="nav-icon">🌟</span>
+                <span class="nav-label">Skills</span>
+            </button>
+            <button class="nav-btn" data-page="stats">
+                <span class="nav-icon">📊</span>
+                <span class="nav-label">Stats</span>
+            </button>
+            <button class="nav-btn" data-page="achievements">
+                <span class="nav-icon">🏆</span>
+                <span class="nav-label">Achievements</span>
+            </button>
+            <button class="nav-btn" data-page="assistant">
+                <span class="nav-icon">🤖</span>
+                <span class="nav-label">AI</span>
+            </button>
+            <button class="nav-btn" id="more-menu-btn">
+                <span class="nav-icon">⋯</span>
+                <span class="nav-label">More</span>
+            </button>
         </nav>
-    </div>
 
-    <!-- Floating Important Lessons Button -->
-    <div class="floating-lessons-btn" onclick="showLessonsModal()">
-        <i class="fas fa-fire"></i>
-        <span>Important Lessons</span>
-    </div>
-
-    <!-- Floating Kizumu Visit Button -->
-    <div class="floating-kizumu-btn" onclick="showActivitiesModal()">
-        <i class="fas fa-heart"></i>
-        <span>Kizumu Visit</span>
-    </div>
-
-    <!-- Important Lessons Modal -->
-    <div class="modal-overlay" id="lessonsModal" style="display: none;">
-        <div class="modal-content activities-modal">
-            <div class="modal-header" style="background: linear-gradient(135deg, #F44336, #C62828);">
-                <h3><i class="fas fa-fire"></i> Important Lessons</h3>
-                <button class="modal-close" onclick="closeLessonsModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="activities-modal-list">
-                <div class="activity-modal-item" onclick="navigateToLesson('learn-prayer')">
-                    <div class="activity-modal-icon" style="background: var(--primary-green);">
-                        <i class="fas fa-pray"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Learn the Prayer</h4>
-                        <p>How to perform Salah correctly</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
+        <!-- More Menu (Hidden by default) -->
+        <div id="more-menu" class="more-menu" style="display: none;">
+            <div class="more-menu-overlay" id="more-menu-overlay"></div>
+            <div class="more-menu-content">
+                <div class="more-menu-header">
+                    <h3>More Options</h3>
+                    <button class="more-menu-close" id="more-menu-close">&times;</button>
                 </div>
-                
-                <div class="activity-modal-item" onclick="navigateToLesson('misunderstood-concepts')">
-                    <div class="activity-modal-icon" style="background: #FF9800;">
-                        <i class="fas fa-lightbulb"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Misunderstood Concepts</h4>
-                        <p>Clarifying common misconceptions</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-                
-                <div class="activity-modal-item" onclick="navigateToLesson('important-hadiths')">
-                    <div class="activity-modal-icon" style="background: #9C27B0;">
-                        <i class="fas fa-book-quran"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Important Hadiths</h4>
-                        <p>Essential sayings of the Prophet (PBUH)</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-                
-                <div class="activity-modal-item" onclick="navigateToLesson('did-you-know')">
-                    <div class="activity-modal-icon" style="background: #2196F3;">
-                        <i class="fas fa-info-circle"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Did You Know</h4>
-                        <p>Interesting Islamic facts</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-                
-                <div class="activity-modal-item" onclick="navigateToLesson('akhlaq-series')">
-                    <div class="activity-modal-icon" style="background: #E91E63;">
-                        <i class="fas fa-heart"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Islamic Character (Akhlaq)</h4>
-                        <p>Essential character traits and virtues</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
+                <div class="more-menu-items">
+                    <button class="more-menu-item" data-page="shop">
+                        <span class="more-menu-icon">🛒</span>
+                        <span class="more-menu-label">Shop</span>
+                    </button>
+                    <button class="more-menu-item" data-page="inventory">
+                        <span class="more-menu-icon">🎒</span>
+                        <span class="more-menu-label">Inventory</span>
+                    </button>
+                    <button class="more-menu-item" data-page="history">
+                        <span class="more-menu-icon">📜</span>
+                        <span class="more-menu-label">History</span>
+                    </button>
+                    <button class="more-menu-item" data-page="settings">
+                        <span class="more-menu-icon">⚙️</span>
+                        <span class="more-menu-label">Settings</span>
+                    </button>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Activities Modal -->
-    <div class="modal-overlay" id="activitiesModal" style="display: none;">
-        <div class="modal-content activities-modal">
-            <div class="modal-header">
-                <h3><i class="fas fa-heart"></i> Important Activities</h3>
-                <button class="modal-close" onclick="closeActivitiesModal()">
-                    <i class="fas fa-times"></i>
-                </button>
+        <!-- Dashboard Page -->
+        <section id="page-dashboard" class="page active">
+            <div class="page-content">
+                <!-- Avatar Section -->
+                <div class="glass-panel avatar-section">
+                    <div class="avatar-container">
+                        <div id="avatar-display" class="avatar-display">
+                            <div class="avatar-glow"></div>
+                            <div class="avatar-level-badge" id="avatar-level-badge">1</div>
+                        </div>
+                        <h2 id="player-name" class="player-name">Hunter</h2>
+                        <p id="player-rank" class="player-rank rank-E">Rank: E</p>
+                    </div>
+                </div>
+
+                <!-- Energy/Focus Bars -->
+                <div id="energy-bars-container"></div>
+
+                <!-- XP Progress Bar -->
+                <div class="glass-panel xp-panel">
+                    <div class="xp-header">
+                        <span class="xp-label">Experience Points</span>
+                        <span id="xp-display" class="xp-amount">0 / 100</span>
+                    </div>
+                    <div class="xp-bar-container">
+                        <div id="xp-bar" class="xp-bar"></div>
+                    </div>
+                    <div class="xp-info">
+                        <span>Next Level: <span id="xp-next-level">100</span> XP</span>
+                    </div>
+                </div>
+
+                <!-- Active Quests Preview -->
+                <div class="glass-panel">
+                    <h3 class="panel-title">Active Quests</h3>
+                    <div id="active-quests-list" class="quests-preview">
+                        <p class="empty-state">No active quests</p>
+                    </div>
+                    <button class="btn-primary" onclick="navigateTo('quests')">View All Quests</button>
+                </div>
+
+                <!-- Skill Points Summary -->
+                <div class="glass-panel">
+                    <h3 class="panel-title">Available Skill Points</h3>
+                    <div class="skill-points-display">
+                        <span id="skill-points-count" class="skill-points-value">0</span>
+                        <button id="btn-use-skill-points" class="btn-secondary">Allocate</button>
+                    </div>
+                </div>
+
+                <!-- Material Rewards Summary -->
+                <div class="glass-panel">
+                    <h3 class="panel-title">Material Assets</h3>
+                    <div id="material-rewards-display" class="material-rewards-display">
+                        <div class="material-item">
+                            <span class="material-icon">💰</span>
+                            <span class="material-label">Money:</span>
+                            <span id="material-money" class="material-value">$0</span>
+                        </div>
+                        <div class="material-item">
+                            <span class="material-icon">⭐</span>
+                            <span class="material-label">Influence:</span>
+                            <span id="material-influence" class="material-value">0</span>
+                        </div>
+                        <div class="material-item">
+                            <span class="material-icon">👥</span>
+                            <span class="material-label">Allies:</span>
+                            <span id="material-allies" class="material-value">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI System Messages -->
+                <div class="glass-panel ai-message-panel">
+                    <h3 class="panel-title">System Message</h3>
+                    <div id="ai-message-content" class="ai-message-content">
+                        Welcome, Hunter. Begin your journey to become stronger.
+                    </div>
+                </div>
+
+                <!-- Prayer Times -->
+                <div class="glass-panel prayer-times-panel" id="prayer-times-panel">
+                    <h3 class="panel-title">Prayer Times</h3>
+                    <div id="prayer-times-list" class="prayer-times-list"></div>
+                </div>
             </div>
-            <div class="activities-modal-list">
-                <div class="activity-modal-item" onclick="navigateToActivity('kizumu-visit')">
-                    <div class="activity-modal-icon" style="background: #E91E63;">
-                        <i class="fas fa-heart"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Kizumu Tahfiz Charity Visit</h4>
-                        <p>Support Islamic education through charity visit</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
+        </section>
+
+        <!-- Quests Page -->
+        <section id="page-quests" class="page">
+            <div class="page-content">
+                <div class="page-header">
+                    <h2 class="page-title">Quests</h2>
                 </div>
-                
-                <div class="activity-modal-item" onclick="navigateToActivity('tuition-brothers')">
-                    <div class="activity-modal-icon" style="background: var(--primary-green);">
-                        <i class="fas fa-graduation-cap"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Tuition for Brothers</h4>
-                        <p>Support brothers' education and learning</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-                
-                <div class="activity-modal-item" onclick="navigateToActivity('kisilaahe')">
-                    <div class="activity-modal-icon" style="background: #9C27B0;">
-                        <i class="fas fa-donate"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Donate to Kisilaahe</h4>
-                        <p>Support Kisilaahe with essential items</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-                
-                <div class="activity-modal-item" onclick="navigateToActivity('activities')">
-                    <div class="activity-modal-icon" style="background: #FF9800;">
-                        <i class="fas fa-running"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>View All Activities</h4>
-                        <p>See all community activities and events</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
+
+                <div id="quests-container" class="quests-container">
+                    <!-- Quests will be dynamically loaded here -->
                 </div>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <!-- Account Modal (Login/Create Account/Account Info) -->
-    <div class="modal-overlay" id="accountModal" style="display: none;">
-        <div class="modal-content account-modal">
-            <!-- Login/Signup Tabs -->
-            <div id="accountTabs" style="display: none;">
-                <div class="account-tabs">
-                    <button class="account-tab active" id="loginTab" onclick="showLoginTab()">
-                        <i class="fas fa-sign-in-alt"></i> Login
-                    </button>
-                    <button class="account-tab" id="signupTab" onclick="showSignupTab()">
-                        <i class="fas fa-user-plus"></i> Create Account
-                    </button>
+        <!-- Skills Page -->
+        <section id="page-skills" class="page">
+            <div class="page-content">
+                <div class="page-header">
+                    <h2 class="page-title">Skill Tree</h2>
+                    <div class="skill-points-header">
+                        <span>Available Points: <strong id="skill-points-header">0</strong></span>
+                    </div>
                 </div>
+
+                <!-- Stat Allocation UI -->
+                <div id="stat-allocation-container"></div>
+
+                <!-- Active Skills Section -->
+                <div id="active-skills-container"></div>
+
+                <!-- Passive Skills Section -->
+                <div id="passive-skills-container"></div>
+
+                <!-- Skill Tree -->
+                <div id="skill-tree-container" class="skill-tree-container">
+                    <!-- Skill tree will be dynamically loaded here -->
+                </div>
+
+                <!-- Crafting Section -->
+                <div id="crafting-container" style="margin-top: 2rem;"></div>
+
+                <!-- Instant Dungeons Section -->
+                <div id="instant-dungeons-container" style="margin-top: 2rem;"></div>
             </div>
+        </section>
 
-            <div class="modal-header">
-                <h3 id="accountModalTitle"><i class="fas fa-user-circle"></i> Account</h3>
-                <button class="modal-close" onclick="closeAccountModal()">
-                    <i class="fas fa-times"></i>
-                </button>
+        <!-- Stats Page -->
+        <section id="page-stats" class="page">
+            <div class="page-content">
+                <div class="page-header">
+                    <h2 class="page-title">Statistics</h2>
+                </div>
+
+                <!-- Stat Allocation UI -->
+                <div id="stat-allocation-container"></div>
+
+                <div class="stats-grid">
+                    <div class="stat-card glass-panel">
+                        <div class="stat-icon">💪</div>
+                        <div class="stat-info">
+                            <span class="stat-name">Strength</span>
+                            <span id="stat-strength" class="stat-number">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-panel">
+                        <div class="stat-icon">🧠</div>
+                        <div class="stat-info">
+                            <span class="stat-name">Intelligence</span>
+                            <span id="stat-intelligence" class="stat-number">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-panel">
+                        <div class="stat-icon">🎯</div>
+                        <div class="stat-info">
+                            <span class="stat-name">Strategy</span>
+                            <span id="stat-strategy" class="stat-number">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-panel">
+                        <div class="stat-icon">🛡️</div>
+                        <div class="stat-info">
+                            <span class="stat-name">Endurance</span>
+                            <span id="stat-endurance" class="stat-number">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-panel">
+                        <div class="stat-icon">✨</div>
+                        <div class="stat-info">
+                            <span class="stat-name">Wisdom</span>
+                            <span id="stat-wisdom" class="stat-number">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-panel">
+                        <div class="stat-icon">🤝</div>
+                        <div class="stat-info">
+                            <span class="stat-name">Social</span>
+                            <span id="stat-social" class="stat-number">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-panel">
+                        <div class="stat-icon">⚕️</div>
+                        <div class="stat-info">
+                            <span class="stat-name">Medical</span>
+                            <span id="stat-medical" class="stat-number">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-panel">
+                        <div class="stat-icon">💰</div>
+                        <div class="stat-info">
+                            <span class="stat-name">Financial</span>
+                            <span id="stat-financial" class="stat-number">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rank Progression -->
+                <div class="glass-panel rank-progression">
+                    <h3 class="panel-title">Rank Progression</h3>
+                    <div class="rank-bar">
+                        <div id="rank-progress" class="rank-progress"></div>
+                    </div>
+                    <div class="rank-info">
+                        <span>Current: <span id="current-rank-display" class="rank-E">E</span></span>
+                        <span>Next: <span id="next-rank-display" class="rank-D">D</span></span>
+                    </div>
+                </div>
+
+                <!-- Quest Analytics Dashboard -->
+                <div id="quest-analytics-dashboard"></div>
+
+                <!-- Progress Charts -->
+                <div id="xp-chart-container" style="margin-top: 1rem;"></div>
+                <div id="quest-chart-container" style="margin-top: 1rem;"></div>
             </div>
+        </section>
 
-            <div class="modal-body">
-                <!-- Login Form -->
-                <form id="loginFormElement" onsubmit="handleLogin(event)" style="display: none;">
-                    <div class="form-group">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-input" id="loginEmail" placeholder="your.email@example.com" required>
+        <!-- AI Assistant Page -->
+        <section id="page-assistant" class="page">
+            <div class="page-content">
+                <div class="page-header">
+                    <h2 class="page-title">AI Memory & Journal</h2>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <span id="ai-online-status" class="status-badge" style="padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.85rem; background: var(--bg-secondary);">
+                            <span id="ai-status-indicator" style="color: #ef4444;">●</span> 
+                            <span id="ai-status-text">Offline</span>
+                        </span>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Password</label>
-                        <input type="password" class="form-input" id="loginPassword" placeholder="Enter your password" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 15px;">
-                        <i class="fas fa-sign-in-alt"></i> Login
-                    </button>
-                    <p style="text-align: center; margin-top: 15px; font-size: 14px; color: var(--text-gray);">
-                        Don't have an account? <a href="#" onclick="showSignupTab(); return false;" style="color: var(--primary-green); font-weight: 600;">Create one</a>
-                    </p>
-                </form>
+                </div>
 
-                <!-- Signup Form -->
-                <form id="signupFormElement" onsubmit="handleSignup(event)" style="display: none;">
-                    <div class="form-group">
-                        <label class="form-label">First Name</label>
-                        <input type="text" class="form-input" id="signupFirstName" placeholder="Enter your first name" required>
+                <!-- Tab Selector for Journal/Reports -->
+                <div class="glass-panel" style="margin-bottom: 1rem; padding: 0.5rem;">
+                    <div style="display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border-color);">
+                        <button class="journal-tab-btn active" data-tab="journal" style="flex: 1; padding: 0.75rem; background: transparent; border: none; color: var(--text-primary); border-bottom: 2px solid var(--neon-blue); cursor: pointer;">
+                            📝 Journal
+                        </button>
+                        <button class="journal-tab-btn" data-tab="quest-reports" style="flex: 1; padding: 0.75rem; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
+                            ⚔️ Quest Reports
+                        </button>
+                        <button class="journal-tab-btn" data-tab="purchases" style="flex: 1; padding: 0.75rem; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
+                            🛒 Purchases
+                        </button>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Last Name</label>
-                        <input type="text" class="form-input" id="signupLastName" placeholder="Enter your last name" required>
+                </div>
+
+                <!-- Journal Tab Content -->
+                <div id="journal-tab-content" class="journal-tab-content active">
+                    <div class="glass-panel" style="margin-bottom: 1.5rem; padding: 1.5rem;">
+                        <h3 style="margin: 0 0 0.5rem 0; color: var(--text-primary);">Share Your Life</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">
+                            Tell me about your day, life experiences, goals, challenges, or anything you want me to remember. 
+                            I'll analyze this information to help you level up through personalized quests.
+                        </p>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-input" id="signupEmail" placeholder="your.email@example.com" required>
+                </div>
+
+                <!-- Quest Reports Tab Content -->
+                <div id="quest-reports-tab-content" class="journal-tab-content" style="display: none;">
+                    <div class="glass-panel" style="margin-bottom: 1.5rem; padding: 1.5rem;">
+                        <h3 style="margin: 0 0 0.5rem 0; color: var(--text-primary);">Quest Completion Reports</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">
+                            Report how you completed your quests in real life. Describe what you did, what happened, what you learned, and the results. 
+                            The system will analyze your report and generate rewards based on your real-world achievements.
+                        </p>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">WhatsApp Number</label>
-                        <input type="tel" class="form-input" id="signupWhatsApp" placeholder="+256 703 268 522" required>
-                        <p style="font-size: 12px; color: var(--text-gray); margin-top: 5px;">Include country code (e.g., +256)</p>
+                    <div id="active-quests-for-report" class="glass-panel" style="margin-bottom: 1rem; padding: 1rem;">
+                        <h4 style="margin: 0 0 0.75rem 0; color: var(--text-primary);">Active Quests</h4>
+                        <div id="active-quests-list-reports"></div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Gender</label>
-                        <select class="form-input" id="signupGender" required>
-                            <option value="">Select gender</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
+                </div>
+
+                <!-- Purchases Tab Content -->
+                <div id="purchases-tab-content" class="journal-tab-content" style="display: none;">
+                    <div class="glass-panel" style="margin-bottom: 1.5rem; padding: 1.5rem;">
+                        <h3 style="margin: 0 0 0.5rem 0; color: var(--text-primary);">Report Real-World Purchases</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">
+                            Did you buy a book, course, tool, or service that helps you level up? Report it here! 
+                            The system will add it to your inventory and track how it helps your growth.
+                        </p>
+                    </div>
+                    <div id="purchase-history-container"></div>
+                </div>
+
+                <!-- Journal Search & Filters -->
+                <div class="glass-panel" style="margin-bottom: 1rem; padding: 1rem;">
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap;">
+                        <input 
+                            type="text" 
+                            id="journal-search-input" 
+                            placeholder="Search entries..." 
+                            style="flex: 1; min-width: 200px; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);"
+                        >
+                        <select id="journal-filter-category" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);">
+                            <option value="">All Categories</option>
+                            <option value="career">Career</option>
+                            <option value="learning">Learning</option>
+                            <option value="health">Health</option>
+                            <option value="finance">Finance</option>
+                            <option value="social">Social</option>
+                            <option value="personal_growth">Personal Growth</option>
+                            <option value="challenges">Challenges</option>
+                        </select>
+                        <select id="journal-filter-sentiment" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);">
+                            <option value="">All Sentiments</option>
+                            <option value="positive">Positive</option>
+                            <option value="negative">Negative</option>
+                            <option value="neutral">Neutral</option>
+                        </select>
+                        <select id="journal-filter-analyzed" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);">
+                            <option value="">All Entries</option>
+                            <option value="true">Analyzed</option>
+                            <option value="false">Pending</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Password</label>
-                        <input type="password" class="form-input" id="signupPassword" placeholder="At least 6 characters" required minlength="6">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Confirm Password</label>
-                        <input type="password" class="form-input" id="signupConfirmPassword" placeholder="Confirm your password" required minlength="6">
-                    </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 15px;">
-                        <i class="fas fa-user-plus"></i> Create Account
-                    </button>
-                    <p style="text-align: center; margin-top: 15px; font-size: 14px; color: var(--text-gray);">
-                        Already have an account? <a href="#" onclick="showLoginTab(); return false;" style="color: var(--primary-green); font-weight: 600;">Login</a>
-                    </p>
-                </form>
-
-                <!-- Account Info -->
-                <div id="accountInfo" style="display: none;">
-                    <div class="account-info-card">
-                        <div class="account-avatar">
-                            <i class="fas fa-user-circle"></i>
-                        </div>
-                        <h3 id="accountName" style="text-align: center; margin: 15px 0 5px 0; color: var(--dark-gray);"></h3>
-                        <p style="text-align: center; color: var(--text-gray); margin-bottom: 20px;">
-                            <i class="fas fa-envelope"></i> <span id="accountEmail"></span>
-                        </p>
-                        <p style="text-align: center; color: var(--text-gray); margin-bottom: 20px;">
-                            <i class="fas fa-venus-mars"></i> <span id="accountGender"></span>
-                        </p>
-                        <button class="btn btn-primary" onclick="showWhatsAppJoinFromAccount()" style="width: 100%; margin-bottom: 10px; background: #25D366; border-color: #25D366;">
-                            <i class="fab fa-whatsapp"></i> Join WhatsApp Notifications
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button id="btn-journal-clear-filters" class="btn-secondary" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
+                            Clear Filters
                         </button>
-                        <button class="btn btn-secondary" onclick="handleLogout()" style="width: 100%;">
-                            <i class="fas fa-sign-out-alt"></i> Logout
+                        <span id="journal-search-results-count" style="color: var(--text-secondary); font-size: 0.85rem; align-self: center; margin-left: auto;">
+                            Showing all entries
+                        </span>
+                    </div>
+                </div>
+
+                <div class="assistant-container">
+                    <div id="ai-journal-entries" class="journal-entries-container" style="max-height: calc(100vh - 500px); overflow-y: auto; margin-bottom: 1rem;">
+                        <!-- Journal entries will be displayed here -->
+                    </div>
+
+                    <!-- Dynamic Input Container (changes based on active tab) -->
+                    <div class="assistant-input-container" style="position: sticky; bottom: 0; background: var(--bg-primary); padding: 1rem; border-top: 1px solid var(--border-color);">
+                        <!-- Journal Input -->
+                        <div id="journal-input-section">
+                            <textarea 
+                                id="ai-journal-input" 
+                                class="assistant-input" 
+                                placeholder="Share your thoughts, experiences, goals, challenges... (Works offline)"
+                                rows="3"
+                                style="resize: vertical; min-height: 80px; font-family: inherit; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);"
+                            ></textarea>
+                            <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                                <button id="btn-ai-voice-record" class="btn-secondary" style="flex: 0 0 auto; display: none;">
+                                    <span style="margin-right: 0.5rem;">🎤</span> Voice
+                                </button>
+                                <button id="btn-save-journal-entry" class="btn-primary" style="flex: 1;">
+                                    Save Entry
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Quest Report Input -->
+                        <div id="quest-report-input-section" style="display: none;">
+                            <select id="quest-select-for-report" style="width: 100%; padding: 0.75rem; margin-bottom: 0.5rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);">
+                                <option value="">Select a quest to report...</option>
+                            </select>
+                            <textarea 
+                                id="quest-report-input" 
+                                class="assistant-input" 
+                                placeholder="Describe how you completed this quest in real life. What did you do? What happened? What did you learn? What were the results? Include details about money earned, items acquired, people you met, etc."
+                                rows="4"
+                                style="resize: vertical; min-height: 100px; font-family: inherit; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);"
+                            ></textarea>
+                            <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                                <button id="btn-quest-report-voice" class="btn-secondary" style="flex: 0 0 auto; display: none;">
+                                    <span style="margin-right: 0.5rem;">🎤</span> Voice
+                                </button>
+                                <button id="btn-submit-quest-report" class="btn-primary" style="flex: 1;">
+                                    Submit Report
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Purchase Report Input -->
+                        <div id="purchase-report-input-section" style="display: none;">
+                            <select id="purchase-type-select" style="width: 100%; padding: 0.75rem; margin-bottom: 0.5rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);">
+                                <option value="">Select purchase type...</option>
+                                <option value="book">📚 Book</option>
+                                <option value="course">🎓 Course/Training</option>
+                                <option value="tool">🛠️ Tool/Equipment</option>
+                                <option value="service">💼 Service</option>
+                                <option value="software">💻 Software/App</option>
+                                <option value="other">📦 Other</option>
+                            </select>
+                            <input 
+                                type="text" 
+                                id="purchase-name-input" 
+                                placeholder="Item name (e.g., 'The Art of War by Sun Tzu')"
+                                style="width: 100%; padding: 0.75rem; margin-bottom: 0.5rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);"
+                            >
+                            <input 
+                                type="number" 
+                                id="purchase-cost-input" 
+                                placeholder="Cost (optional)"
+                                style="width: 100%; padding: 0.75rem; margin-bottom: 0.5rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);"
+                            >
+                            <textarea 
+                                id="purchase-description-input" 
+                                placeholder="How will this help you level up? What skills/stats will it improve?"
+                                rows="3"
+                                style="resize: vertical; min-height: 80px; font-family: inherit; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);"
+                            ></textarea>
+                            <button id="btn-submit-purchase" class="btn-primary" style="width: 100%; margin-top: 0.5rem;">
+                                Report Purchase
+                            </button>
+                        </div>
+
+                        <div id="ai-analysis-status" style="display: none; margin-top: 0.5rem; padding: 0.75rem; background: var(--bg-secondary); border-radius: 8px; color: var(--text-secondary); font-size: 0.9rem;">
+                            <div class="loading-spinner" style="width: 16px; height: 16px; margin-right: 0.5rem; display: inline-block;"></div>
+                            <span>Analyzing your entry and generating insights...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Achievements Page -->
+        <section id="page-achievements" class="page">
+            <div class="page-content">
+                <div class="page-header">
+                    <h2 class="page-title">Achievements</h2>
+                </div>
+
+                <!-- Streak Display -->
+                <div class="glass-panel" style="margin-bottom: 1.5rem; padding: 1.5rem;">
+                    <h3 style="margin: 0 0 1rem 0; color: var(--text-primary);">Daily Streak</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                        <div style="text-align: center; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
+                            <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Current Streak</div>
+                            <div id="current-streak" style="font-size: 2rem; font-weight: bold; color: var(--neon-blue);">0 days 🔥</div>
+                        </div>
+                        <div style="text-align: center; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
+                            <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Longest Streak</div>
+                            <div id="longest-streak" style="font-size: 2rem; font-weight: bold; color: var(--text-primary);">0 days</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Daily Challenges -->
+                <div class="glass-panel" style="margin-bottom: 1.5rem; padding: 1.5rem;">
+                    <h3 style="margin: 0 0 1rem 0; color: var(--text-primary);">Daily Challenges</h3>
+                    <div id="daily-challenges-list" class="challenges-list">
+                        <!-- Daily challenges will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Weekly Challenges -->
+                <div class="glass-panel" style="margin-bottom: 1.5rem; padding: 1.5rem;">
+                    <h3 style="margin: 0 0 1rem 0; color: var(--text-primary);">Weekly Challenges</h3>
+                    <div id="weekly-challenges-list" class="challenges-list">
+                        <!-- Weekly challenges will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Unlocked Achievements -->
+                <div class="glass-panel" style="margin-bottom: 1.5rem; padding: 1.5rem;">
+                    <h3 style="margin: 0 0 1rem 0; color: var(--text-primary);">Unlocked Achievements</h3>
+                    <div id="achievements-unlocked" class="achievements-grid">
+                        <!-- Unlocked achievements will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Locked Achievements -->
+                <div class="glass-panel" style="padding: 1.5rem;">
+                    <h3 style="margin: 0 0 1rem 0; color: var(--text-primary);">Locked Achievements</h3>
+                    <div id="achievements-locked" class="achievements-grid">
+                        <!-- Locked achievements will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Shop Page -->
+        <section id="page-shop" class="page">
+            <div class="page-content">
+                <div class="page-header">
+                    <h2 class="page-title">Real-World Shop</h2>
+                </div>
+                <div id="shop-container"></div>
+            </div>
+        </section>
+
+        <!-- Inventory Page -->
+        <section id="page-inventory" class="page">
+            <div class="page-content">
+                <div class="page-header">
+                    <h2 class="page-title">Inventory</h2>
+                </div>
+                <div id="inventory-container"></div>
+            </div>
+        </section>
+
+        <!-- History Page -->
+        <section id="page-history" class="page">
+            <div class="page-content">
+                <div class="page-header">
+                    <h2 class="page-title">Activity History</h2>
+                </div>
+
+                <!-- History Filters -->
+                <div class="glass-panel" style="margin-bottom: 1.5rem; padding: 1rem;">
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap;">
+                        <input 
+                            type="text" 
+                            id="history-search-input" 
+                            placeholder="Search history..." 
+                            style="flex: 1; min-width: 200px; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);"
+                        >
+                        <select id="history-filter-type" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);">
+                            <option value="">All Types</option>
+                            <option value="quest_completed">Quest Completed</option>
+                            <option value="quest_accepted">Quest Accepted</option>
+                            <option value="xp_gain">XP Gained</option>
+                            <option value="level_up">Level Up</option>
+                            <option value="achievement_unlocked">Achievement</option>
+                            <option value="skill_upgrade">Skill Upgrade</option>
+                        </select>
+                        <button id="btn-history-clear-filters" class="btn-secondary" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
+                            Clear Filters
                         </button>
                     </div>
                 </div>
+
+                <div id="history-container"></div>
+            </div>
+        </section>
+
+        <!-- Settings Page -->
+        <section id="page-settings" class="page">
+            <div class="page-content">
+                <div class="page-header">
+                    <h2 class="page-title">Settings</h2>
+                </div>
+
+                <!-- Data Management -->
+                <div class="glass-panel" style="margin-bottom: 1.5rem; padding: 1.5rem;">
+                    <h3 style="margin: 0 0 1rem 0; color: var(--text-primary);">Data Management</h3>
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <button id="btn-export-data" class="btn-primary" style="width: 100%;">
+                            📥 Export Data (Backup)
+                        </button>
+                        <label class="btn-secondary" style="width: 100%; text-align: center; cursor: pointer; padding: 0.75rem;">
+                            📤 Import Data (Restore)
+                            <input type="file" id="import-file-input" accept=".json" style="display: none;" />
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Knowledge Library -->
+                <div class="glass-panel" style="margin-bottom: 1.5rem; padding: 1.5rem;">
+                    <h3 style="margin: 0 0 1rem 0; color: var(--text-primary);">Knowledge Library</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
+                        Browse and read knowledge sources that power the quest system.
+                    </p>
+                    <div id="knowledge-library"></div>
+                </div>
+
+                <!-- Shadow Monarch Status -->
+                <div class="glass-panel" style="margin-bottom: 1.5rem; padding: 1.5rem;">
+                    <h3 style="margin: 0 0 1rem 0; color: var(--text-primary);">Class Evolution</h3>
+                    <div id="shadow-monarch-status"></div>
+                </div>
+
+                <!-- Loot Boxes -->
+                <div class="glass-panel" style="padding: 1.5rem;">
+                    <h3 style="margin: 0 0 1rem 0; color: var(--text-primary);">Loot Boxes</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
+                        Open loot boxes to receive random rewards.
+                    </p>
+                    <div id="loot-boxes-container"></div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Quest Modal -->
+    <div id="quest-modal" class="modal">
+        <div class="modal-content glass-panel">
+            <span class="modal-close">&times;</span>
+            <h2 id="quest-modal-title" class="modal-title"></h2>
+            <div id="quest-modal-body" class="modal-body"></div>
+            <div class="modal-actions">
+                <button id="quest-accept-btn" class="btn-primary">Accept Quest</button>
+                <button id="quest-complete-btn" class="btn-success" style="display: none;">Submit Report</button>
+                <button id="quest-cancel-btn" class="btn-secondary">Cancel</button>
             </div>
         </div>
     </div>
 
-    <!-- Service Worker Registration (for offline functionality) -->
-    <script src="js/register-service-worker.js"></script>
-    
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase-config.js"></script>
-    <!-- Load singleton Supabase client first (as module) -->
-    <script type="module" src="services/supabaseClient.js"></script>
-    <script type="module" src="js/prayer-times.js"></script>
-    <script src="js/index-search.js"></script>
-    <script src="script.js"></script>
-    <script src="update-navigation.js"></script>
-    <script>
-        // Initialize user display and modals
-        window.addEventListener('DOMContentLoaded', function() {
-            loadUserData();
-            
-            // Close modals on overlay click
-            document.getElementById('activitiesModal')?.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    closeActivitiesModal();
-                }
-            });
-            
-            document.getElementById('accountModal')?.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    closeAccountModal();
-                }
-            });
-
-            // Scroll to charity visit if URL has hash
-            if (window.location.hash === '#charity-visit') {
-                setTimeout(() => {
-                    document.querySelector('.charity-visit-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    if (document.getElementById('charityDetails')) {
-                        document.getElementById('charityDetails').style.display = 'block';
-                        const icon = document.getElementById('charityToggleIcon');
-                        if (icon) {
-                            icon.classList.remove('fa-chevron-down');
-                            icon.classList.add('fa-chevron-up');
-                        }
-                    }
-                }, 300);
-            }
-        });
-    </script>
+    <script src="js/database.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/gameEngine.js"></script>
+    <script src="js/dataCollection.js"></script>
+    <!-- Knowledge Engine System -->
+    <script src="js/knowledgeSources.js"></script>
+    <script src="js/knowledgeSourcesExtended.js"></script>
+    <script src="js/knowledgeIndex.js"></script>
+    <script src="js/knowledgeQuestTranslator.js"></script>
+    <script src="js/knowledgeEngine.js"></script>
+    <script src="js/knowledgeSync.js"></script>
+    <script src="js/knowledgeVerification.js"></script>
+    <script src="js/knowledgeReader.js"></script>
+    <!-- Quest Generation -->
+    <script src="js/aiQuestGenerator.js"></script>
+    <script src="js/materialRewards.js"></script>
+    <script src="js/reportSystem.js"></script>
+    <script src="js/backgroundQuestGenerator.js"></script>
+    <script src="js/questSystem.js"></script>
+    <script src="js/questChains.js"></script>
+    <script src="js/dailyChallenges.js"></script>
+    <!-- AI Journal & Memory System -->
+    <script src="js/aiJournalSystem.js"></script>
+    <script src="js/pendingQuestDelivery.js"></script>
+    <script src="js/journalSearch.js"></script>
+    <!-- New Features -->
+    <script src="js/questAnalytics.js"></script>
+    <script src="js/dailyReflectionPrompts.js"></script>
+    <script src="js/progressCharts.js"></script>
+    <script src="js/smartReminders.js"></script>
+    <script src="js/questDifficultyAdjustment.js"></script>
+    <script src="js/journalAchievements.js"></script>
+    <!-- Solo Leveling UI Enhancements -->
+    <script src="js/soloLevelingUI.js"></script>
+    <!-- Real-World Features -->
+    <script src="js/realWorldShop.js"></script>
+    <script src="js/energySystem.js"></script>
+    <script src="js/activeSkills.js"></script>
+    <script src="js/questRewardsScreen.js"></script>
+    <script src="js/realWorldCrafting.js"></script>
+    <script src="js/lootBoxSystem.js"></script>
+    <script src="js/purchaseReporting.js"></script>
+    <!-- Solo Leveling Missing Features -->
+    <script src="js/statAllocation.js"></script>
+    <script src="js/penaltyQuestSystem.js"></script>
+    <script src="js/threatDetection.js"></script>
+    <script src="js/skillBooks.js"></script>
+    <script src="js/passiveSkills.js"></script>
+    <script src="js/instantDungeons.js"></script>
+    <script src="js/emergencyQuests.js"></script>
+    <script src="js/itemRaritySystem.js"></script>
+    <!-- Skills & Stats -->
+    <script src="js/skillSystem.js"></script>
+    <script src="js/skillSynergies.js"></script>
+    <!-- New Features -->
+    <script src="js/achievementSystem.js"></script>
+    <script src="js/streakSystem.js"></script>
+    <script src="js/statisticsDashboard.js"></script>
+    <script src="js/avatarEvolution.js"></script>
+    <script src="js/enhancedHistory.js"></script>
+    <script src="js/dataExport.js"></script>
+    <script src="js/audioSystem.js"></script>
+    <script src="js/shadowMonarch.js"></script>
+    <script src="js/detailedInventory.js"></script>
+    <!-- UI & Assistant -->
+    <script src="js/aiAssistant.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/prayerTimes.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html>
+
