@@ -1240,6 +1240,40 @@ function closeActivitiesModal() {
     }
 }
 
+function showLessonsModal() {
+    const modal = document.getElementById('lessonsModal');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+function closeLessonsModal() {
+    const modal = document.getElementById('lessonsModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function navigateToLesson(sectionId) {
+    closeLessonsModal();
+    // If we're on the important-lessons page, scroll to section
+    if (window.location.pathname.includes('important-lessons.html') || window.location.pathname.endsWith('important-lessons.html')) {
+        const element = document.getElementById(sectionId);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Add a highlight effect
+            element.style.transition = 'background-color 0.3s';
+            element.style.backgroundColor = '#fff3e0';
+            setTimeout(() => {
+                element.style.backgroundColor = '';
+            }, 2000);
+        }
+    } else {
+        // Navigate to the page with the section
+        window.location.href = `important-lessons.html#${sectionId}`;
+    }
+}
+
 function navigateToActivity(type) {
     closeActivitiesModal();
     

@@ -180,7 +180,7 @@
     </div>
 
     <!-- Floating Important Lessons Button -->
-    <div class="floating-lessons-btn" onclick="window.location.href='important-lessons.html'">
+    <div class="floating-lessons-btn" onclick="showLessonsModal()">
         <i class="fas fa-fire"></i>
         <span>Important Lessons</span>
     </div>
@@ -189,6 +189,63 @@
     <div class="floating-kizumu-btn" onclick="showActivitiesModal()">
         <i class="fas fa-heart"></i>
         <span>Kizumu Visit</span>
+    </div>
+
+    <!-- Important Lessons Modal -->
+    <div class="modal-overlay" id="lessonsModal" style="display: none;">
+        <div class="modal-content activities-modal">
+            <div class="modal-header" style="background: linear-gradient(135deg, #F44336, #C62828);">
+                <h3><i class="fas fa-fire"></i> Important Lessons</h3>
+                <button class="modal-close" onclick="closeLessonsModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="activities-modal-list">
+                <div class="activity-modal-item" onclick="navigateToLesson('learn-prayer')">
+                    <div class="activity-modal-icon" style="background: var(--primary-green);">
+                        <i class="fas fa-pray"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Learn the Prayer</h4>
+                        <p>How to perform Salah correctly</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="navigateToLesson('misunderstood-concepts')">
+                    <div class="activity-modal-icon" style="background: #FF9800;">
+                        <i class="fas fa-lightbulb"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Misunderstood Concepts</h4>
+                        <p>Clarifying common misconceptions</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="navigateToLesson('important-hadiths')">
+                    <div class="activity-modal-icon" style="background: #9C27B0;">
+                        <i class="fas fa-book-quran"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Important Hadiths</h4>
+                        <p>Essential sayings of the Prophet (PBUH)</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="navigateToLesson('did-you-know')">
+                    <div class="activity-modal-icon" style="background: #2196F3;">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Did You Know</h4>
+                        <p>Interesting Islamic facts</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Activities Modal -->
