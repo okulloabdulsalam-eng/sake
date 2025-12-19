@@ -2,337 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#4CAF50">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Media - KIUMA</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        /* Mobile-First Styles */
-        * {
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
-        }
-        
-        body {
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            overscroll-behavior: none;
-        }
-        
-        .mobile-actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        
-        .mobile-btn {
-            min-height: 44px; /* iOS touch target */
-            padding: 12px 16px;
-            font-size: 14px;
-            border-radius: 8px;
-            touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
-            flex: 1;
-            min-width: 100px;
-            max-width: 150px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-        }
-        
-        .mobile-btn:active {
-            transform: scale(0.95);
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        }
-        
-        .mobile-file-input-wrapper {
-            position: relative;
-            width: 100%;
-            min-height: 120px;
-            border: 2px dashed #4CAF50;
-            border-radius: 12px;
-            background: #f5f5f5;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            margin: 16px 0;
-            touch-action: manipulation;
-        }
-        
-        .mobile-file-input {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            z-index: 10;
-            font-size: 16px; /* Prevents zoom on iOS */
-            cursor: pointer;
-        }
-        
-        .mobile-file-input-label {
-            pointer-events: none;
-            text-align: center;
-            color: #4CAF50;
-            z-index: 1;
-        }
-        
-        .mobile-file-input-label i {
-            font-size: 48px;
-            margin-bottom: 12px;
-            display: block;
-        }
-        
-        .mobile-file-selected {
-            background: #E8F5E9;
-            border-color: #4CAF50;
-        }
-        
-        .mobile-media-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            padding: 12px 0;
-        }
-        
-        @media (min-width: 480px) {
-            .mobile-media-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-        
-        .mobile-media-item {
-            position: relative;
-            aspect-ratio: 1;
-            border-radius: 12px;
-            overflow: hidden;
-            background: #f5f5f5;
-            touch-action: manipulation;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        
-        .mobile-media-item:active {
-            transform: scale(0.98);
-            box-shadow: 0 1px 4px rgba(0,0,0,0.15);
-        }
-        
-        .mobile-media-item img,
-        .mobile-media-item video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .mobile-media-item .play-icon {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.6);
-            color: white;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-        }
-        
-        .mobile-media-item .delete-btn {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            background: #f44336;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            touch-action: manipulation;
-            z-index: 5;
-        }
-        
-        .mobile-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 10000;
-            display: none;
-            align-items: flex-end;
-            justify-content: center;
-            padding: 0;
-            animation: fadeIn 0.2s ease;
-        }
-        
-        .mobile-modal.active {
-            display: flex;
-        }
-        
-        .mobile-modal-content {
-            background: white;
-            width: 100%;
-            max-width: 500px;
-            max-height: 90vh;
-            border-radius: 20px 20px 0 0;
-            padding: 24px;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            animation: slideUp 0.3s ease;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        
-        @keyframes slideUp {
-            from { transform: translateY(100%); }
-            to { transform: translateY(0); }
-        }
-        
-        .mobile-modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        
-        .mobile-modal-header h3 {
-            margin: 0;
-            font-size: 20px;
-            color: #333;
-        }
-        
-        .mobile-close-btn {
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: #666;
-            padding: 0;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            touch-action: manipulation;
-        }
-        
-        .mobile-form-group {
-            margin-bottom: 20px;
-        }
-        
-        .mobile-form-label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
-            font-size: 14px;
-        }
-        
-        .mobile-form-input,
-        .mobile-form-textarea {
-            width: 100%;
-            padding: 14px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px; /* Prevents zoom on iOS */
-            font-family: inherit;
-            -webkit-appearance: none;
-            appearance: none;
-        }
-        
-        .mobile-form-textarea {
-            min-height: 100px;
-            resize: vertical;
-        }
-        
-        .mobile-submit-btn {
-            width: 100%;
-            padding: 16px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            margin-top: 20px;
-            touch-action: manipulation;
-            min-height: 48px;
-        }
-        
-        .mobile-submit-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        
-        .mobile-filter-buttons {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            padding-bottom: 8px;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-        }
-        
-        .mobile-filter-buttons::-webkit-scrollbar {
-            display: none;
-        }
-        
-        .mobile-filter-btn {
-            flex-shrink: 0;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            touch-action: manipulation;
-            min-height: 40px;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .mobile-filter-btn:active {
-            transform: scale(0.95);
-        }
-        
-        .mobile-loading {
-            text-align: center;
-            padding: 40px 20px;
-            color: #666;
-        }
-        
-        .mobile-empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #999;
-        }
-        
-        .mobile-empty-state i {
-            font-size: 64px;
-            margin-bottom: 16px;
-            opacity: 0.5;
-        }
-    </style>
 </head>
 <body>
     <nav class="nav-menu" id="navMenu">
@@ -354,7 +27,7 @@
             <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
             <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
             <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
-            <li><a href="join-us.html" class="nav-link"><i class="fas fa-user-circle"></i> My Account</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
         </ul>
     </nav>
 
@@ -363,8 +36,7 @@
             <div class="header-content">
                 <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
                 <div class="logo-container">
-                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; if(this.nextElementSibling && this.nextElementSibling.nextElementSibling) this.nextElementSibling.nextElementSibling.style.display='block';" onload="this.style.display='block'; if(this.nextElementSibling && this.nextElementSibling.nextElementSibling) this.nextElementSibling.nextElementSibling.style.display='none';">
-                    <span class="header-text">KIUMA</span>
+                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
                     <svg class="header-logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="display: none;">
                         <circle cx="100" cy="100" r="95" fill="none" stroke="#4CAF50" stroke-width="4"/>
                         <path id="topArc" d="M 20,100 A 80,80 0 0,1 180,100" fill="none"/>
@@ -375,21 +47,12 @@
                         <text fill="#4CAF50" font-size="9" font-weight="bold" font-family="Arial, sans-serif" letter-spacing="0.5">
                             <textPath href="#bottomArc" startOffset="50%" text-anchor="middle">MUSLIM ASSOCIATION</textPath>
                         </text>
-                        <path d="M 50,75 L 50,115 L 58,115 L 58,105 L 63,100 L 58,95 L 58,85 Z" fill="none" stroke="#4CAF50" stroke-width="2"/>
-                        <circle cx="56.5" cy="100" r="2" fill="#4CAF50"/>
-                        <rect x="88" y="65" width="10" height="45" fill="none" stroke="#4CAF50" stroke-width="2"/>
-                        <rect x="90" y="75" width="6" height="2" fill="#4CAF50"/>
-                        <rect x="90" y="85" width="6" height="2" fill="#4CAF50"/>
-                        <rect x="90" y="95" width="6" height="2" fill="#4CAF50"/>
-                        <polygon points="93,60 90,65 96,65" fill="#4CAF50"/>
-                        <path d="M 140,92 A 12,12 0 0,1 128,92 A 10,10 0 0,0 140,92 Z" fill="#4CAF50"/>
-                        <path d="M 130,88 L 131.5,92 L 136,92 L 132.5,94.5 L 134,99 L 130,96.5 L 126,99 L 127.5,94.5 L 124,92 L 128.5,92 Z" fill="#4CAF50"/>
                         <text x="100" y="145" font-size="22" font-weight="bold" fill="#4CAF50" text-anchor="middle" font-family="Arial, sans-serif" letter-spacing="2">KIUMA</text>
                     </svg>
                 </div>
                 <button class="notifications-btn" id="notificationsBtn">
                     <i class="fas fa-bell"></i>
-                    <span class="badge" style="display: none;">0</span>
+                    <span class="badge">3</span>
                 </button>
             </div>
         </header>
@@ -401,67 +64,41 @@
                         <a href="about.html">KIUMA</a>
                     </h2>
                 </div>
-                <a href="join-us.html" class="account-icon-btn" id="accountIconBtn" aria-label="Account">
+                <button class="account-icon-btn" id="accountIconBtn" onclick="toggleAccountModal()">
                     <i class="fas fa-user-circle" id="accountIcon"></i>
-                </a>
+                </button>
             </section>
 
-            <section class="page-header">
+            <section class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <h2 class="page-title">Media Gallery</h2>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-secondary" id="adminLoginBtn" onclick="showAdminLogin()" style="padding: 10px 15px;">
+                        <i class="fas fa-lock"></i> Admin Login
+                    </button>
+                    <button class="btn btn-primary admin-only" onclick="showAddMediaModal()" style="display: none; padding: 10px 15px;">
+                        <i class="fas fa-plus"></i> Add Media
+                    </button>
+                    <button class="btn btn-secondary admin-logout" onclick="if(typeof window.logoutAdmin==='function')window.logoutAdmin()" style="display: none; padding: 10px 15px;">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
             </section>
 
             <section class="page-content">
-                <!-- Continue to Media Link -->
-                <div style="margin-bottom: 25px;">
-                    <a href="media-settings.html" style="display: block; padding: 20px; background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); color: white; text-decoration: none; border-radius: 15px; text-align: center; font-size: 18px; font-weight: 600; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3); transition: transform 0.2s;">
-                        <i class="fas fa-arrow-right" style="margin-right: 10px;"></i>
-                        Continue to Media
-                    </a>
+                <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <button class="btn btn-primary" style="flex: 1; min-width: calc(33.33% - 7px); padding: 12px;" onclick="filterMedia('all')">All</button>
+                    <button class="btn btn-outline" style="flex: 1; min-width: calc(33.33% - 7px); padding: 12px;" onclick="filterMedia('video')">Videos</button>
+                    <button class="btn btn-outline" style="flex: 1; min-width: calc(33.33% - 7px); padding: 12px;" onclick="filterMedia('audio')">Audio</button>
+                    <button class="btn btn-outline" style="flex: 1; min-width: calc(33.33% - 7px); padding: 12px;" onclick="filterMedia('image')">Images</button>
                 </div>
-                
-                <!-- Data Saving Options -->
-                <div style="margin-bottom: 30px;">
-                    <!-- Option 1: Want to Save Data -->
-                    <div style="background: linear-gradient(135deg, #E3F2FD, #BBDEFB); border: 3px solid #2196F3; border-radius: 15px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(33, 150, 243, 0.2);">
-                        <h3 style="color: #1976D2; font-size: 20px; font-weight: 700; margin: 0 0 15px 0; display: flex; align-items: center; gap: 10px;">
-                            <i class="fas fa-save" style="font-size: 24px;"></i>
-                            Option 1: Want to Save Data?
-                        </h3>
-                        <p style="color: #333; margin: 0 0 15px 0; line-height: 1.6; font-size: 15px;">
-                            Contact <strong>0703268522 (Males)</strong> for:
-                        </p>
-                        <ul style="color: #333; margin: 0 0 20px 0; padding-left: 25px; line-height: 1.8; font-size: 15px;">
-                            <li>Books</li>
-                            <li>Tafsir Luganda (Sheikh Nkata)</li>
-                            <li>Somali</li>
-                            <li>All audio lectures (KIUMA mosque)</li>
-                            <li>Video on funeral rights</li>
-                            <li>Quran apps and settings</li>
-                        </ul>
-                        <p style="color: #1976D2; font-weight: 600; margin: 0 0 15px 0; font-size: 15px;">
-                            <i class="fas fa-truck" style="margin-right: 8px;"></i>
-                            Delivery free around Ishaka
-                        </p>
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                            <a href="tel:0703268522" style="flex: 1; min-width: 140px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; background: #4CAF50; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; transition: background 0.3s;">
-                                <i class="fas fa-phone"></i> Call: 0703268522
-                            </a>
-                            <a href="https://wa.me/256703268522" target="_blank" style="flex: 1; min-width: 140px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; background: #25D366; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; transition: background 0.3s;">
-                                <i class="fab fa-whatsapp"></i> WhatsApp: 0703268522
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <!-- Option 2: Use Link Below -->
-                    <div style="background: linear-gradient(135deg, #FFF3E0, #FFE0B2); border: 3px solid #FF9800; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(255, 152, 0, 0.2);">
-                        <h3 style="color: #F57C00; font-size: 20px; font-weight: 700; margin: 0 0 15px 0; display: flex; align-items: center; gap: 10px;">
-                            <i class="fas fa-link" style="font-size: 24px;"></i>
-                            Option 2: Use Link Below to Access All Media
-                        </h3>
-                        <p style="color: #333; margin: 0; line-height: 1.6; font-size: 15px;">
-                            Click the link below to access all media content directly online.
-                        </p>
-                    </div>
+
+                <div class="media-grid" id="mediaGrid">
+                    <!-- Media items will be loaded here -->
+                </div>
+
+                <div class="info-card" style="margin-top: 20px;">
+                    <h3><i class="fas fa-info-circle"></i> About Media Gallery</h3>
+                    <p>Browse through our collection of videos, audio files, and images. All media files are stored securely on Google Drive and available for download.</p>
                 </div>
             </section>
         </main>
@@ -471,508 +108,66 @@
             <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
             <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
             <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
-            <a href="join-us.html" class="nav-item" id="accountNavItem"><i class="fas fa-user-circle"></i><span id="accountNavText">Account</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
         </nav>
     </div>
 
-    <!-- Add Media Modal (Mobile-Optimized) -->
-    <div class="mobile-modal" id="addMediaModal">
-        <div class="mobile-modal-content">
-            <div class="mobile-modal-header">
-                <h3><i class="fas fa-upload"></i> Add Media</h3>
-                <button class="mobile-close-btn" onclick="closeAddMediaModal()" aria-label="Close">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <form id="addMediaForm" onsubmit="addMedia(event)">
-                <div class="mobile-form-group">
-                    <label class="mobile-form-label">Select File *</label>
-                    <div class="mobile-file-input-wrapper" id="fileInputWrapper">
-                        <input type="file" 
-                               id="mediaFile" 
-                               class="mobile-file-input" 
-                               accept="image/*,video/*,audio/*"
-                               capture="environment"
-                               required>
-                        <div class="mobile-file-input-label" id="fileInputLabel">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <div style="font-weight: 600; margin-bottom: 4px;">Tap to Choose File</div>
-                            <div style="font-size: 12px; color: #999;">Video, audio, or image (Max 500MB)</div>
-                        </div>
-                        <div id="fileSelectedInfo" style="display: none; text-align: center; z-index: 2;">
-                            <i class="fas fa-check-circle" style="color: #4CAF50; font-size: 32px; margin-bottom: 8px;"></i>
-                            <div id="fileName" style="font-weight: 600; color: #333; margin-bottom: 4px;"></div>
-                            <div id="fileSize" style="font-size: 12px; color: #666;"></div>
-                            <div style="font-size: 12px; color: #4CAF50; margin-top: 8px;">Tap to change</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="mobile-form-group">
-                    <label class="mobile-form-label">Description (Optional) <span id="descCharCount" style="font-size: 12px; color: #999; font-weight: normal;">(0/500)</span></label>
-                    <textarea class="mobile-form-textarea" id="mediaDescription" placeholder="Add a description..." maxlength="500"></textarea>
-                </div>
-                <button type="submit" class="mobile-submit-btn">
-                    <i class="fas fa-upload"></i> Upload Media
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="api-config.js"></script>
-    <script src="supabase-config.js"></script>
-    <script src="supabase-storage.js"></script>
     <script src="script.js"></script>
-    <script src="update-navigation.js"></script>
     <script>
-        // Media Admin Password
-        const MEDIA_ADMIN_PASSWORD = 'kiuma2025';
-        
-        // Define functions immediately so they're available for onclick handlers
-        window.showMediaPasswordPrompt = function() {
-            const password = prompt('Enter admin password to access media management:');
-            if (password === null) {
-                return; // User cancelled
-            }
-            
-            if (password === MEDIA_ADMIN_PASSWORD) {
-                sessionStorage.setItem('isMediaAdminAuthenticated', 'true');
-                localStorage.setItem('adminPassword', MEDIA_ADMIN_PASSWORD);
-                updateUploadButtonVisibility();
-                alert('Admin access granted!');
-            } else {
-                alert('Incorrect password. Please try again.');
-            }
-        };
-        
-        window.filterMedia = function(type) {
-            if (typeof currentFilter !== 'undefined') {
-                currentFilter = type;
-                
-                // Update button states
-                document.querySelectorAll('.mobile-filter-btn').forEach(btn => {
-                    const filter = btn.dataset.filter;
-                    if (filter === type) {
-                        btn.classList.remove('btn-outline');
-                        btn.classList.add('btn-primary');
-                    } else {
-                        btn.classList.remove('btn-primary');
-                        btn.classList.add('btn-outline');
-                    }
-                });
-                
-                // Instant client-side filtering (no reload)
-                if (typeof cachedMedia !== 'undefined' && typeof displayMedia === 'function') {
-                    displayMedia(cachedMedia, type);
-                }
-            }
-        };
-        let currentFilter = 'all';
-        let cachedMedia = []; // Cache media for instant filtering
-        let isLoadingMedia = false;
-        
-        // Check if media admin is authenticated
-        function isMediaAdminAuthenticated() {
-            return sessionStorage.getItem('isMediaAdminAuthenticated') === 'true';
-        }
-        
-        // Authenticate media admin with password
-        function authenticateMediaAdmin(password) {
-            if (password === MEDIA_ADMIN_PASSWORD) {
-                sessionStorage.setItem('isMediaAdminAuthenticated', 'true');
-                return true;
-            }
-            return false;
-        }
-        
-        // Logout media admin
-        function logoutMediaAdmin() {
-            sessionStorage.removeItem('isMediaAdminAuthenticated');
-            updateUploadButtonVisibility();
-            alert('Logged out successfully.');
-        }
-        
-        // showMediaPasswordPrompt is already defined above as window.showMediaPasswordPrompt
-        
-        // Update admin button visibility
-        function updateUploadButtonVisibility() {
-            const isAuth = isMediaAdminAuthenticated();
-            const adminLoginBtn = document.getElementById('adminLoginBtn');
-            const addMediaBtn = document.getElementById('addMediaBtn');
-            const adminLogoutBtn = document.querySelector('.admin-logout');
-            
-            if (isAuth) {
-                if (adminLoginBtn) adminLoginBtn.style.display = 'none';
-                if (addMediaBtn) addMediaBtn.style.display = 'block';
-                if (adminLogoutBtn) adminLogoutBtn.style.display = 'block';
-            } else {
-                if (adminLoginBtn) adminLoginBtn.style.display = 'block';
-                if (addMediaBtn) addMediaBtn.style.display = 'none';
-                if (adminLogoutBtn) adminLogoutBtn.style.display = 'none';
-            }
-        }
-        
-        // Show add media modal
         window.showAddMediaModal = function() {
-            if (!isMediaAdminAuthenticated()) {
-                showMediaPasswordPrompt();
-                if (!isMediaAdminAuthenticated()) {
-                    return;
+            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+            if (!adminStatus) {
+                if (typeof window.showAdminLogin === 'function') {
+                    window.showAdminLogin();
+                } else {
+                    alert('Please login as admin first.');
                 }
+                return;
             }
-            
             const modal = document.getElementById('addMediaModal');
             if (modal) {
-                modal.classList.add('active');
-                document.body.style.overflow = 'hidden';
+                modal.style.display = 'flex';
             }
         };
-        
-        // Close add media modal
+
         window.closeAddMediaModal = function() {
             const modal = document.getElementById('addMediaModal');
             if (modal) {
-                modal.classList.remove('active');
-                document.body.style.overflow = '';
+                modal.style.display = 'none';
             }
             const form = document.getElementById('addMediaForm');
             if (form) {
                 form.reset();
-                updateFileInputDisplay();
             }
         };
-        
-        // Update file input display
-        function updateFileInputDisplay() {
-            const fileInput = document.getElementById('mediaFile');
-            const fileInputWrapper = document.getElementById('fileInputWrapper');
-            const fileInputLabel = document.getElementById('fileInputLabel');
-            const fileSelectedInfo = document.getElementById('fileSelectedInfo');
-            const fileName = document.getElementById('fileName');
-            const fileSize = document.getElementById('fileSize');
-            
-            if (fileInput && fileInput.files && fileInput.files[0]) {
-                const file = fileInput.files[0];
-                const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
-                
-                fileName.textContent = file.name;
-                fileSize.textContent = fileSizeMB + ' MB';
-                
-                fileInputLabel.style.display = 'none';
-                fileSelectedInfo.style.display = 'block';
-                fileInputWrapper.classList.add('mobile-file-selected');
-            } else {
-                fileInputLabel.style.display = 'block';
-                fileSelectedInfo.style.display = 'none';
-                fileInputWrapper.classList.remove('mobile-file-selected');
-            }
-        }
-        
-        // filterMedia is already defined above as window.filterMedia
-        
-        // Cleanup on page unload
-        window.addEventListener('beforeunload', () => {
-            if (mediaListener) {
-                mediaListener();
-                mediaListener = null;
-            }
-        });
-        
-        // Display media (instant, no loading)
-        function displayMedia(mediaItems, filter = 'all') {
-            const mediaGrid = document.getElementById('mediaGrid');
-            if (!mediaGrid) return;
-            
-            // Filter media (client-side, instant)
-            let filtered = mediaItems;
-            if (filter !== 'all') {
-                filtered = mediaItems.filter(item => {
-                    const type = item.type || item.file_type || '';
-                    return type.toLowerCase().includes(filter);
-                });
-            }
-            
-            // Display media
-            if (filtered.length === 0) {
-                // Check if we have media but they're all filtered out
-                const hasMedia = mediaItems.length > 0;
-                const message = hasMedia && filter !== 'all' 
-                    ? `No ${filter} media found` 
-                    : 'No media found';
-                
-                mediaGrid.innerHTML = `
-                    <div class="mobile-empty-state">
-                        <i class="fas fa-photo-video"></i>
-                        <p>${message}</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            mediaGrid.innerHTML = '';
-            filtered.forEach(item => {
-                const mediaItem = createMediaItem(item);
-                mediaGrid.appendChild(mediaItem);
+
+        window.filterMedia = function(type) {
+            const buttons = document.querySelectorAll('.page-content > div:first-child button');
+            buttons.forEach(btn => {
+                const btnText = btn.textContent.trim().toLowerCase();
+                const isActive = (type === 'all' && btnText === 'all') ||
+                                (type === 'video' && btnText === 'videos') ||
+                                (type === 'audio' && btnText === 'audio') ||
+                                (type === 'image' && btnText === 'images');
+                if (isActive) {
+                    btn.className = 'btn btn-primary';
+                } else {
+                    btn.className = 'btn btn-outline';
+                }
             });
-        }
-        
-        // Load media from storage (with caching and timeout)
-        async function loadMediaFromStorage(filter = 'all', showLoading = true) {
-            if (isLoadingMedia) {
-                return; // Already loading, don't duplicate
-            }
-            
-            const mediaGrid = document.getElementById('mediaGrid');
-            if (!mediaGrid) return;
-            
-            // Try to load from localStorage cache first (instant)
-            if (cachedMedia.length === 0) {
-                try {
-                    const cached = localStorage.getItem('cachedMedia');
-                    if (cached) {
-                        cachedMedia = JSON.parse(cached);
-                        if (cachedMedia.length > 0) {
-                            displayMedia(cachedMedia, filter);
-                            showLoading = false; // Already showing data
-                        }
-                    }
-                } catch (e) {
-                    console.log('Cache load failed:', e);
-                }
-            } else if (showLoading) {
-                // Show cached data immediately if available
-                displayMedia(cachedMedia, filter);
-                showLoading = false;
-            }
-            
-            if (showLoading) {
-                mediaGrid.innerHTML = '<div class="mobile-loading"><i class="fas fa-spinner fa-spin"></i><p>Loading media...</p></div>';
-            }
-            
-            isLoadingMedia = true;
-            
-            // Add timeout to prevent infinite loading
-            let loadingTimeoutId = setTimeout(() => {
-                if (isLoadingMedia && cachedMedia.length === 0) {
-                    isLoadingMedia = false;
-                    mediaGrid.innerHTML = `
-                        <div class="mobile-empty-state">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <p>Loading timeout. Please check your connection and refresh.</p>
-                            <button class="btn btn-primary mobile-btn" onclick="loadMediaFromStorage('${filter}', true)" style="margin-top: 16px;">
-                                <i class="fas fa-redo"></i> Retry
-                            </button>
-                        </div>
-                    `;
-                }
-            }, 10000); // 10 second timeout
-            
-            try {
-                const API_BASE_URL = window.API_BASE_URL || '/api';
-                const isStaticHosting = window.location.hostname.includes('github.io') || 
-                                       window.location.hostname.includes('netlify.app') ||
-                                       window.location.hostname.includes('vercel.app');
-                
-                let mediaItems = [];
-                
-                // Try to load from API if not static hosting (with timeout)
-                if (!isStaticHosting) {
-                    try {
-                        const fetchPromise = fetch(API_BASE_URL + '/get_media.php');
-                        const timeoutPromise = new Promise((_, reject) => 
-                            setTimeout(() => reject(new Error('Request timeout')), 3000)
-                        );
-                        
-                        const response = await Promise.race([fetchPromise, timeoutPromise]);
-                        if (response.ok) {
-                            const data = await response.json();
-                            if (data.success && data.media) {
-                                mediaItems = data.media;
-                            }
-                        }
-                    } catch (error) {
-                        console.log('API not available:', error.message);
-                    }
-                }
-                
-                // Cache media
-                cachedMedia = mediaItems;
-                isLoadingMedia = false;
-                
-                // Clear loading timeout
-                if (loadingTimeoutId) {
-                    clearTimeout(loadingTimeoutId);
-                    loadingTimeoutId = null;
-                }
-                
-                // Save to localStorage for instant load next time (with quota handling)
-                try {
-                    localStorage.setItem('cachedMedia', JSON.stringify(cachedMedia));
-                } catch (e) {
-                    console.log('Cache save failed:', e);
-                    // If quota exceeded, try to clear old cache
-                    if (e.name === 'QuotaExceededError') {
-                        try {
-                            // Keep only last 50 media items in cache
-                            const limitedCache = cachedMedia.slice(0, 50);
-                            localStorage.setItem('cachedMedia', JSON.stringify(limitedCache));
-                        } catch (e2) {
-                            console.error('Error clearing cache:', e2);
-                        }
-                    }
-                }
-                
-                // Display with current filter (instant)
-                displayMedia(cachedMedia, filter);
-                
-            } catch (error) {
-                console.error('Error loading media:', error);
-                isLoadingMedia = false;
-                
-                // Clear loading timeout
-                if (loadingTimeoutId) {
-                    clearTimeout(loadingTimeoutId);
-                    loadingTimeoutId = null;
-                }
-                
-                if (cachedMedia.length === 0) {
-                    mediaGrid.innerHTML = `
-                        <div class="mobile-empty-state">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <p>Error loading media: ${error.message || 'Unknown error'}</p>
-                            <button class="btn btn-primary mobile-btn" onclick="loadMediaFromStorage('${filter}', true)" style="margin-top: 16px;">
-                                <i class="fas fa-redo"></i> Retry
-                            </button>
-                        </div>
-                    `;
-                }
-            }
-        }
-        
-        // Create media item element (with XSS protection)
-        function createMediaItem(item) {
-            const div = document.createElement('div');
-            div.className = 'mobile-media-item';
-            div.dataset.id = item.id;
-            div.dataset.type = item.type || item.file_type || 'unknown';
-            
-            // Sanitize URL
-            const rawUrl = item.url || item.drive_file_id || item.storage_url || '';
-            const url = sanitizeURL(rawUrl);
-            const safeDescription = sanitizeHTML(item.description || 'Media');
-            const safeId = sanitizeHTML(item.id.toString());
-            const isAuth = isMediaAdminAuthenticated();
-            
-            if (item.type === 'video' || (item.file_type && item.file_type.includes('video'))) {
-                const video = document.createElement('video');
-                video.src = url;
-                video.preload = 'metadata';
-                video.addEventListener('error', () => {
-                    div.innerHTML = '<div style="width: 100%; height: 100%; background: linear-gradient(135deg, #f44336, #d32f2f); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-exclamation-triangle"></i></div>';
-                });
-                div.appendChild(video);
-                
-                const playIcon = document.createElement('div');
-                playIcon.className = 'play-icon';
-                playIcon.innerHTML = '<i class="fas fa-play"></i>';
-                div.appendChild(playIcon);
-                
-                if (isAuth) {
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.className = 'delete-btn';
-                    deleteBtn.setAttribute('aria-label', 'Delete');
-                    deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
-                    deleteBtn.onclick = (e) => deleteMedia(safeId, e);
-                    div.appendChild(deleteBtn);
-                }
-                
-                div.addEventListener('click', () => {
-                    if (url) window.open(url, '_blank');
-                });
-            } else if (item.type === 'audio' || (item.file_type && item.file_type.includes('audio'))) {
-                const audioDiv = document.createElement('div');
-                audioDiv.style.cssText = 'width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;';
-                audioDiv.innerHTML = '<i class="fas fa-music"></i>';
-                div.appendChild(audioDiv);
-                
-                if (isAuth) {
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.className = 'delete-btn';
-                    deleteBtn.setAttribute('aria-label', 'Delete');
-                    deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
-                    deleteBtn.onclick = (e) => deleteMedia(safeId, e);
-                    div.appendChild(deleteBtn);
-                }
-                
-                div.addEventListener('click', () => {
-                    if (url) window.open(url, '_blank');
-                });
-            } else {
-                const img = document.createElement('img');
-                img.src = url;
-                img.alt = safeDescription;
-                img.loading = 'lazy';
-                img.addEventListener('error', () => {
-                    div.innerHTML = '<div style="width: 100%; height: 100%; background: linear-gradient(135deg, #2196F3, #1976D2); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-image"></i></div>';
-                });
-                div.appendChild(img);
-                
-                if (isAuth) {
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.className = 'delete-btn';
-                    deleteBtn.setAttribute('aria-label', 'Delete');
-                    deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
-                    deleteBtn.onclick = (e) => deleteMedia(safeId, e);
-                    div.appendChild(deleteBtn);
-                }
-                
-                div.addEventListener('click', () => {
-                    if (url) {
-                        // Open in fullscreen view (with sanitized URL)
-                        const modal = document.createElement('div');
-                        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 10000; display: flex; align-items: center; justify-content: center;';
-                        
-                        const modalImg = document.createElement('img');
-                        modalImg.src = url;
-                        modalImg.style.cssText = 'max-width: 100%; max-height: 100%; object-fit: contain;';
-                        modal.appendChild(modalImg);
-                        
-                        const closeBtn = document.createElement('button');
-                        closeBtn.style.cssText = 'position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 20px;';
-                        closeBtn.innerHTML = '<i class="fas fa-times"></i>';
-                        closeBtn.onclick = () => {
-                            modal.remove();
-                            document.body.style.overflow = '';
-                        };
-                        modal.appendChild(closeBtn);
-                        
-                        document.body.style.overflow = 'hidden';
-                        document.body.appendChild(modal);
-                        modal.addEventListener('click', (e) => {
-                            if (e.target === modal) {
-                                modal.remove();
-                                document.body.style.overflow = '';
-                            }
-                        });
-                    }
-                });
-            }
-            
-            return div;
-        }
-        
-        // Add media
-        window.addMedia = async function(e) {
+            loadMediaFromStorage(type);
+        };
+
+        window.addMedia = function(e) {
             if (e) e.preventDefault();
             
-            if (!isMediaAdminAuthenticated()) {
-                showMediaPasswordPrompt();
-                if (!isMediaAdminAuthenticated()) {
-                    alert('You must enter the correct password to add media.');
-                    return false;
-                }
+            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+            if (!adminStatus) {
+                alert('You must be logged in as admin to add media.');
+                return false;
             }
-            
+
             const fileInput = document.getElementById('mediaFile');
             const descriptionInput = document.getElementById('mediaDescription');
             
@@ -980,489 +175,204 @@
                 alert('Please select a file to upload.');
                 return false;
             }
-            
-            const file = fileInput.files[0];
-            
-            // Validate file before upload
-            const validation = validateFile(file);
-            if (!validation.valid) {
-                alert(validation.error);
-                return false;
-            }
-            
-            const description = descriptionInput ? descriptionInput.value.trim() : '';
-            const fileType = getFileTypeCategory(file.type);
-            const folder = `media/${fileType}s`;
-            
+
+            const formData = new FormData();
+            formData.append('mediaFile', fileInput.files[0]);
+            formData.append('description', descriptionInput ? descriptionInput.value.trim() : '');
+
             const submitBtn = document.querySelector('#addMediaForm button[type="submit"]');
             const originalBtnText = submitBtn.innerHTML;
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
-            
-            try {
-                // Check if upload function exists
-                if (typeof uploadToSupabaseStorage !== 'function') {
-                    throw new Error('Upload service not available. Please refresh the page.');
-                }
-                
-                // Upload to Supabase Storage
-                const uploadResult = await uploadToSupabaseStorage(file, folder, (progress) => {
-                    submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Uploading... ${Math.round(progress)}%`;
-                });
-                
-                if (!uploadResult.success) {
-                    throw new Error(uploadResult.error || 'Upload failed');
-                }
-                
-                // Save metadata to database
-                const API_BASE_URL = window.API_BASE_URL || '/api';
-                const isStaticHosting = window.location.hostname.includes('github.io') || 
-                                       window.location.hostname.includes('netlify.app') ||
-                                       window.location.hostname.includes('vercel.app');
-                
-                let saved = false;
-                
-                if (!isStaticHosting) {
-                    try {
-                        const formData = new FormData();
-                        formData.append('url', uploadResult.url);
-                        formData.append('description', description);
-                        formData.append('type', fileType);
-                        formData.append('file_name', file.name);
-                        formData.append('file_size', file.size);
-                        formData.append('admin_password', MEDIA_ADMIN_PASSWORD);
-                        
-                        const response = await fetch(API_BASE_URL + '/upload_media.php', {
-                            method: 'POST',
-                            body: formData
-                        });
-                        
-                        if (response.ok) {
-                            const data = await response.json();
-                            if (data.success) {
-                                saved = true;
-                                console.log('Media saved to database');
-                            }
-                        }
-                    } catch (error) {
-                        console.warn('Database save failed:', error);
-                    }
-                }
-                
-                // If neither saved, at least show success (for GitHub Pages)
-                if (!saved && isStaticHosting) {
-                    saved = true; // Allow it on static hosting
-                }
-                
-                if (saved) {
-                    // Add to cache immediately (optimistic update)
-                    const newMedia = {
-                        id: Date.now().toString(), // Temporary ID
-                        url: uploadResult.url,
-                        description: description,
-                        type: fileType,
-                        file_type: fileType,
-                        file_name: file.name,
-                        file_size: file.size,
-                        uploaded_date: new Date()
-                    };
-                    cachedMedia.unshift(newMedia); // Add to beginning
-                    displayMedia(cachedMedia, currentFilter);
-                    
-                    // Save to localStorage (with quota handling)
-                    try {
-                        localStorage.setItem('cachedMedia', JSON.stringify(cachedMedia));
-                    } catch (e) {
-                        console.log('Cache save failed:', e);
-                        // If quota exceeded, try to clear old cache
-                        if (e.name === 'QuotaExceededError') {
-                            try {
-                                const limitedCache = cachedMedia.slice(0, 50);
-                                localStorage.setItem('cachedMedia', JSON.stringify(limitedCache));
-                            } catch (e2) {
-                                console.error('Error clearing cache:', e2);
-                            }
-                        }
-                    }
-                    
-                    closeAddMediaModal();
-                    alert('Media uploaded successfully!');
-                    
-            // Real-time listener will automatically update the UI
-            // No need to manually refresh
-                } else {
-                    throw new Error('Failed to save media metadata. Please try again.');
-                }
-                
-            } catch (error) {
-                console.error('Upload error:', error);
-                alert('Error uploading media: ' + error.message);
-            } finally {
+
+            fetch(API_BASE_URL + '/upload_media.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnText;
-            }
-        };
-        
-        // Delete media
-        window.deleteMedia = async function(mediaId, event) {
-            if (event) {
-                event.stopPropagation();
-                event.preventDefault();
-            }
-            
-            if (!isMediaAdminAuthenticated()) {
-                showMediaPasswordPrompt();
-                if (!isMediaAdminAuthenticated()) {
-                    alert('You must enter the correct password to delete media.');
-                    return;
+                
+                if (data.success) {
+                    alert('Media uploaded successfully!');
+                    window.closeAddMediaModal();
+                    loadMediaFromStorage();
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to upload media'));
                 }
-            }
-            
-            // Mobile-friendly confirmation
-            const confirmed = confirm('Are you sure you want to delete this media file?');
-            if (!confirmed) {
+            })
+            .catch(error => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+                console.error('Error:', error);
+                alert('Error uploading media. Please try again.');
+            });
+        };
+
+        window.deleteMedia = function(mediaId) {
+            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+            if (!adminStatus) {
+                alert('You must be logged in as admin to delete media.');
                 return;
             }
             
-            try {
-                const API_BASE_URL = window.API_BASE_URL || '/api';
-                const formData = new FormData();
-                formData.append('id', mediaId);
-                formData.append('admin_password', MEDIA_ADMIN_PASSWORD);
-                
-                const isStaticHosting = window.location.hostname.includes('github.io') || 
-                                       window.location.hostname.includes('netlify.app') ||
-                                       window.location.hostname.includes('vercel.app');
-                
-                let deleted = false;
-                
-                // Try to delete from database if not static hosting
-                if (!isStaticHosting) {
-                    try {
-                        const response = await fetch(API_BASE_URL + '/delete_media.php', {
-                            method: 'POST',
-                            body: formData
-                        });
-                        
-                        if (response.ok) {
-                            const data = await response.json();
-                            if (data.success) {
-                                deleted = true;
-                                console.log('Media deleted from database');
-                            }
-                        }
-                    } catch (error) {
-                        console.warn('Database delete failed:', error);
-                    }
-                }
-                
-                // Remove from cache immediately (optimistic update)
-                cachedMedia = cachedMedia.filter(m => {
-                    const mId = m.id.toString();
-                    return mId !== mediaId.toString();
-                });
-                displayMedia(cachedMedia, currentFilter);
-                
-                // Save to localStorage
-                try {
-                    localStorage.setItem('cachedMedia', JSON.stringify(cachedMedia));
-                } catch (e) {
-                    console.log('Cache save failed:', e);
-                }
-                
-                alert('Media deleted successfully!');
-                
-                // Refresh in background
-                setTimeout(() => {
-                    loadMediaFromStorage(currentFilter, false);
-                }, 500);
-            } catch (error) {
-                console.error('Delete error:', error);
-                alert('Error deleting media: ' + error.message);
-            }
-        };
-        
-        // Sanitize HTML to prevent XSS
-        function sanitizeHTML(str) {
-            if (!str) return '';
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
-        }
-        
-        // Sanitize URL to prevent XSS
-        function sanitizeURL(url) {
-            if (!url) return '';
-            // Basic URL validation - only allow http/https/data URLs
-            try {
-                const urlObj = new URL(url);
-                if (!['http:', 'https:', 'data:'].includes(urlObj.protocol)) {
-                    return '';
-                }
-                return url;
-            } catch (e) {
-                // If URL parsing fails, return empty
-                return '';
-            }
-        }
-        
-        // Get file type category
-        function getFileTypeCategory(mimeType) {
-            if (mimeType.startsWith('video/')) return 'video';
-            if (mimeType.startsWith('audio/')) return 'audio';
-            if (mimeType.startsWith('image/')) return 'image';
-            return 'other';
-        }
-        
-        // Validate file before upload
-        function validateFile(file) {
-            const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
-            const allowedTypes = ['image/', 'video/', 'audio/'];
-            
-            // Check file size
-            if (file.size > MAX_FILE_SIZE) {
-                return { valid: false, error: `File size (${(file.size / (1024 * 1024)).toFixed(2)}MB) exceeds maximum allowed size of 500MB.` };
+            if (!confirm('Are you sure you want to delete this media file?')) {
+                return;
             }
             
-            // Check file type
-            const isValidType = allowedTypes.some(type => file.type.startsWith(type));
-            if (!isValidType) {
-                return { valid: false, error: `File type "${file.type}" is not supported. Please upload an image, video, or audio file.` };
+            const adminPassword = prompt('Enter admin password to confirm deletion:');
+            if (!adminPassword) {
+                return;
             }
             
-            return { valid: true };
-        }
-        
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            updateUploadButtonVisibility();
-            loadMediaFromStorage('all', true);
+            const formData = new FormData();
+            formData.append('id', mediaId);
+            formData.append('password', adminPassword);
             
-            
-            // Refresh media in background every 30 seconds (only when page is visible)
-            let refreshInterval = null;
-            const startBackgroundRefresh = () => {
-                if (refreshInterval) clearInterval(refreshInterval);
-                refreshInterval = setInterval(() => {
-                    // Only refresh if page is visible (saves battery/data)
-                    if (!document.hidden && !isLoadingMedia) {
-                        loadMediaFromStorage(currentFilter, false); // Silent refresh
-                    }
-                }, 30000);
-            };
-            
-            // Start refresh when page is visible
-            startBackgroundRefresh();
-            
-            // Pause refresh when page is hidden, resume when visible
-            document.addEventListener('visibilitychange', () => {
-                if (document.hidden) {
-                    if (refreshInterval) clearInterval(refreshInterval);
+            fetch(API_BASE_URL + '/delete_media.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Media deleted successfully!');
+                    loadMediaFromStorage();
                 } else {
-                    startBackgroundRefresh();
+                    alert('Error: ' + (data.message || 'Failed to delete media'));
                 }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error deleting media. Please try again.');
             });
+        };
+
+        function loadMediaFromStorage(type = 'all') {
+            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+            const mediaGrid = document.getElementById('mediaGrid');
             
-            // File input change handler (consolidated to avoid duplicate declarations)
-            const fileInput = document.getElementById('mediaFile');
-            if (fileInput) {
-                // Combined change handler for display update and file size warning
-                fileInput.addEventListener('change', () => {
-                    // Update display
-                    updateFileInputDisplay();
-                    
-                    // File size warning
-                    if (fileInput.files && fileInput.files[0]) {
-                        const file = fileInput.files[0];
-                        const fileSizeMB = file.size / (1024 * 1024);
-                        const MAX_SIZE_MB = 500;
-                        
-                        if (fileSizeMB > MAX_SIZE_MB) {
-                            alert(`Warning: File size (${fileSizeMB.toFixed(2)}MB) exceeds the maximum allowed size of ${MAX_SIZE_MB}MB. Upload may fail.`);
-                        } else if (fileSizeMB > MAX_SIZE_MB * 0.9) {
-                            // Warn if close to limit
-                            const wrapper = document.getElementById('fileInputWrapper');
-                            if (wrapper) {
-                                wrapper.style.borderColor = '#ff9800';
-                                setTimeout(() => {
-                                    wrapper.style.borderColor = '';
-                                }, 3000);
-                            }
+            if (!mediaGrid) return;
+            
+            mediaGrid.innerHTML = '';
+            
+            const url = type === 'all' ? (API_BASE_URL + '/get_media.php') : (API_BASE_URL + `/get_media.php?type=${type}`);
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.media) {
+                        if (data.media.length === 0) {
+                            mediaGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;"><i class="fas fa-folder-open" style="font-size: 48px; margin-bottom: 10px; opacity: 0.5;"></i><p>No media files found</p></div>';
+                            return;
                         }
+                        
+                        data.media.forEach(media => {
+                            const mediaItem = document.createElement('div');
+                            mediaItem.className = 'media-item';
+                            mediaItem.dataset.type = media.file_type;
+                            
+                            const safeName = (media.file_name || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+                            const safeDesc = (media.description || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+                            // Use proxy download endpoint for direct download
+                            const downloadLink = media.id ? (API_BASE_URL + '/download_media.php?id=' + media.id) : '';
+                            const thumbnail = media.thumbnail_url || '';
+                            
+                            let preview = '';
+                            if (media.file_type === 'video') {
+                                preview = `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, #f44336, #d32f2f); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-video"></i></div>`;
+                            } else if (media.file_type === 'audio') {
+                                preview = `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, #9C27B0, #7B1FA2); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-music"></i></div>`;
+                            } else if (media.file_type === 'image' && thumbnail) {
+                                preview = `<img src="${thumbnail}" alt="${safeName}" style="width: 100%; height: 200px; object-fit: cover;">`;
+                            } else {
+                                preview = `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, #2196F3, #1976D2); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-image"></i></div>`;
+                            }
+                            
+                            mediaItem.innerHTML = `
+                                <div style="width: 100%; height: 100%; position: relative; border-radius: 8px; overflow: hidden; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column;">
+                                    ${preview}
+                                    <div style="padding: 12px; flex: 1; display: flex; flex-direction: column;">
+                                        <h4 style="margin: 0 0 5px 0; font-size: 14px; font-weight: 600; color: var(--dark-gray); line-height: 1.3;">${safeName}</h4>
+                                        ${safeDesc ? `<p style="margin: 5px 0 0 0; font-size: 11px; color: var(--text-gray); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${safeDesc}</p>` : ''}
+                                        ${downloadLink ? `<a href="${downloadLink}" download="${safeName}" style="margin-top: 10px; padding: 8px 12px; background: var(--primary-green); color: white; text-decoration: none; border-radius: 5px; text-align: center; font-size: 12px; display: inline-block;"><i class="fas fa-download"></i> Download</a>` : ''}
+                                    </div>
+                                    ${adminStatus ? `<button onclick="deleteMedia('${media.id}')" style="position: absolute; top: 8px; right: 8px; background: #f44336; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); font-size: 14px; z-index: 10;"><i class="fas fa-trash"></i></button>` : ''}
+                                </div>
+                            `;
+                            
+                            mediaGrid.appendChild(mediaItem);
+                        });
+                    } else {
+                        mediaGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;"><i class="fas fa-folder-open" style="font-size: 48px; margin-bottom: 10px; opacity: 0.5;"></i><p>No media files found</p></div>';
                     }
+                })
+                .catch(error => {
+                    console.error('Error loading media:', error);
+                    mediaGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #f44336;"><i class="fas fa-exclamation-triangle"></i><p>Error loading media files</p></div>';
                 });
-                
-                // Mobile touch handlers
-                const fileInputWrapper = document.getElementById('fileInputWrapper');
-                if (fileInputWrapper) {
-                    fileInputWrapper.addEventListener('touchstart', (e) => {
-                        e.preventDefault();
-                        fileInput.click();
-                    });
-                }
+        }
+
+        window.addEventListener('DOMContentLoaded', function() {
+            if (typeof window.checkAdminStatus === 'function') {
+                window.checkAdminStatus();
             }
-            
-            // Close modal on overlay click
-            const modal = document.getElementById('addMediaModal');
-            if (modal) {
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        closeAddMediaModal();
-                    }
-                });
-            }
-            
-            // Character counter for description
-            const descInput = document.getElementById('mediaDescription');
-            const descCounter = document.getElementById('descCharCount');
-            if (descInput && descCounter) {
-                descInput.addEventListener('input', () => {
-                    const length = descInput.value.length;
-                    descCounter.textContent = `(${length}/500)`;
-                    descCounter.style.color = length > 450 ? '#f44336' : '#999';
-                });
-            }
-            
-            // File size warning is already handled in the fileInput handler above
+            loadMediaFromStorage();
         });
     </script>
 
-    <!-- Floating Important Lessons Button -->
-    <div class="floating-lessons-btn" onclick="showLessonsModal()">
-        <i class="fas fa-fire"></i>
-        <span>Important Lessons</span>
-    </div>
-
-    <!-- Floating Kizumu Visit Button -->
-    <div class="floating-kizumu-btn" onclick="showActivitiesModal()">
-        <i class="fas fa-heart"></i>
-        <span>Kizumu Visit</span>
-    </div>
-
-    <!-- Important Lessons Modal -->
-    <div class="modal-overlay" id="lessonsModal" style="display: none;">
-        <div class="modal-content activities-modal">
-            <div class="modal-header" style="background: linear-gradient(135deg, #F44336, #C62828);">
-                <h3><i class="fas fa-fire"></i> Important Lessons</h3>
-                <button class="modal-close" onclick="closeLessonsModal()">
+    <!-- Admin Login Modal -->
+    <div class="modal-overlay" id="adminLoginModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-shield-alt"></i> Admin Login</h3>
+                <button class="modal-close" onclick="closeAdminLogin()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div class="activities-modal-list">
-                <div class="activity-modal-item" onclick="navigateToLesson('learn-prayer')">
-                    <div class="activity-modal-icon" style="background: var(--primary-green);">
-                        <i class="fas fa-pray"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Learn the Prayer</h4>
-                        <p>How to perform Salah correctly</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
+            <div class="modal-body">
+                <p style="margin-bottom: 15px;">Enter admin password to access admin features.</p>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="adminPassword" placeholder="Enter admin password">
                 </div>
-                
-                <div class="activity-modal-item" onclick="navigateToLesson('misunderstood-concepts')">
-                    <div class="activity-modal-icon" style="background: #FF9800;">
-                        <i class="fas fa-lightbulb"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Misunderstood Concepts</h4>
-                        <p>Clarifying common misconceptions</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-                
-                <div class="activity-modal-item" onclick="navigateToLesson('important-hadiths')">
-                    <div class="activity-modal-icon" style="background: #9C27B0;">
-                        <i class="fas fa-book-quran"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Important Hadiths</h4>
-                        <p>Essential sayings of the Prophet (PBUH)</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-                
-                <div class="activity-modal-item" onclick="navigateToLesson('did-you-know')">
-                    <div class="activity-modal-icon" style="background: #2196F3;">
-                        <i class="fas fa-info-circle"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Did You Know</h4>
-                        <p>Interesting Islamic facts</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-                
-                <div class="activity-modal-item" onclick="navigateToLesson('akhlaq-series')">
-                    <div class="activity-modal-icon" style="background: #E91E63;">
-                        <i class="fas fa-heart"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Islamic Character (Akhlaq)</h4>
-                        <p>Essential character traits and virtues</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="if(typeof window.verifyAdminPassword==='function')window.verifyAdminPassword()" style="flex: 1;">Login</button>
+                    <button class="btn btn-secondary" onclick="if(typeof window.closeAdminLogin==='function')window.closeAdminLogin()" style="flex: 1;">Cancel</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Activities Modal -->
-    <div class="modal-overlay" id="activitiesModal" style="display: none;">
-        <div class="modal-content activities-modal">
+    <!-- Add Media Modal -->
+    <div class="modal-overlay" id="addMediaModal" style="display: none;">
+        <div class="modal-content">
             <div class="modal-header">
-                <h3><i class="fas fa-heart"></i> Important Activities</h3>
-                <button class="modal-close" onclick="closeActivitiesModal()">
+                <h3><i class="fas fa-upload"></i> Add Media File</h3>
+                <button class="modal-close" onclick="closeAddMediaModal()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div class="activities-modal-list">
-                <div class="activity-modal-item" onclick="navigateToActivity('kizumu-visit')">
-                    <div class="activity-modal-icon" style="background: #E91E63;">
-                        <i class="fas fa-heart"></i>
+            <div class="modal-body">
+                <form id="addMediaForm" onsubmit="event.preventDefault(); addMedia(event); return false;" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label class="form-label">Select File *</label>
+                        <input type="file" class="form-input" id="mediaFile" required accept="video/*,audio/*,image/*">
+                        <p style="font-size: 12px; color: var(--text-gray); margin-top: 5px;">Upload video, audio, or image file (Max 500MB)</p>
                     </div>
-                    <div class="activity-modal-text">
-                        <h4>Kizumu Tahfiz Charity Visit</h4>
-                        <p>Support Islamic education through charity visit</p>
+                    <div class="form-group">
+                        <label class="form-label">Description (Optional)</label>
+                        <textarea class="form-input" id="mediaDescription" rows="3" placeholder="Enter description"></textarea>
                     </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-                
-                <div class="activity-modal-item" onclick="navigateToActivity('tuition-brothers')">
-                    <div class="activity-modal-icon" style="background: var(--primary-green);">
-                        <i class="fas fa-graduation-cap"></i>
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button type="submit" class="btn btn-primary" style="flex: 1;">
+                            <i class="fas fa-upload"></i> Upload to Google Drive
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="closeAddMediaModal()" style="flex: 1;">Cancel</button>
                     </div>
-                    <div class="activity-modal-text">
-                        <h4>Tuition for Brothers</h4>
-                        <p>Support brothers' education and learning</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-                
-                <div class="activity-modal-item" onclick="navigateToActivity('kisilaahe')">
-                    <div class="activity-modal-icon" style="background: #9C27B0;">
-                        <i class="fas fa-donate"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Donate to Kisilaahe</h4>
-                        <p>Support Kisilaahe with essential items</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-                
-                <div class="activity-modal-item" onclick="navigateToActivity('activities')">
-                    <div class="activity-modal-icon" style="background: #FF9800;">
-                        <i class="fas fa-running"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>View All Activities</h4>
-                        <p>See all community activities and events</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
+                </form>
             </div>
         </div>
     </div>
 </body>
 </html>
-

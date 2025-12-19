@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="KIUMA - Kampala International University Muslim Students Association - Your guide to Islamic values, programs, and activities">
+    <title>KIUMA - Kampala International University Muslim Students Association</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="home-page">
+    <!-- Navigation Menu -->
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link active"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="library.html" class="nav-link"><i class="fas fa-book-open"></i> Library</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <div class="logo-container">
+                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
+                    <svg class="header-logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+                        <!-- Outer Circle -->
+                        <circle cx="100" cy="100" r="95" fill="none" stroke="#4CAF50" stroke-width="4"/>
+                        <!-- Top Text Arc -->
+                        <path id="topArc" d="M 20,100 A 80,80 0 0,1 180,100" fill="none"/>
+                        <text fill="#4CAF50" font-size="9" font-weight="bold" font-family="Arial, sans-serif" letter-spacing="0.5">
+                            <textPath href="#topArc" startOffset="50%" text-anchor="middle">
+                                KAMPALA INTERNATIONAL UNIVERSITY
+                            </textPath>
+                        </text>
+                        <!-- Bottom Text Arc -->
+                        <path id="bottomArc" d="M 180,100 A 80,80 0 0,1 20,100" fill="none"/>
+                        <text fill="#4CAF50" font-size="9" font-weight="bold" font-family="Arial, sans-serif" letter-spacing="0.5">
+                            <textPath href="#bottomArc" startOffset="50%" text-anchor="middle">
+                                MUSLIM ASSOCIATION
+                            </textPath>
+                        </text>
+                        <!-- Mosque/Mihrab (Left) -->
+                        <path d="M 50,75 L 50,115 L 58,115 L 58,105 L 63,100 L 58,95 L 58,85 Z" fill="none" stroke="#4CAF50" stroke-width="2"/>
+                        <circle cx="56.5" cy="100" r="2" fill="#4CAF50"/>
+                        <!-- Minaret (Center) -->
+                        <rect x="88" y="65" width="10" height="45" fill="none" stroke="#4CAF50" stroke-width="2"/>
+                        <rect x="90" y="75" width="6" height="2" fill="#4CAF50"/>
+                        <rect x="90" y="85" width="6" height="2" fill="#4CAF50"/>
+                        <rect x="90" y="95" width="6" height="2" fill="#4CAF50"/>
+                        <polygon points="93,60 90,65 96,65" fill="#4CAF50"/>
+                        <!-- Crescent and Star (Right) -->
+                        <path d="M 140,92 A 12,12 0 0,1 128,92 A 10,10 0 0,0 140,92 Z" fill="#4CAF50"/>
+                        <path d="M 130,88 L 131.5,92 L 136,92 L 132.5,94.5 L 134,99 L 130,96.5 L 126,99 L 127.5,94.5 L 124,92 L 128.5,92 Z" fill="#4CAF50"/>
+                        <!-- KIUMA Text -->
+                        <text x="100" y="145" font-size="22" font-weight="bold" fill="#4CAF50" text-anchor="middle" font-family="Arial, sans-serif" letter-spacing="2">KIUMA</text>
+                    </svg>
+                </div>
+                <button class="notifications-btn" id="notificationsBtn">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">3</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Home Page Content -->
+        <main class="main-content">
+            <!-- Welcome Section -->
+            <section class="welcome-section">
+                <div>
+                    <h2 class="greeting">
+                        <a href="about.html">KIUMA</a>
+                        <span>Assalam Alaikum, <span id="userName">Brother/Sister</span></span>
+                    </h2>
+                </div>
+                <button class="account-icon-btn" id="accountIconBtn" onclick="toggleAccountModal()">
+                    <i class="fas fa-user-circle" id="accountIcon"></i>
+                </button>
+            </section>
+
+            <!-- Prayer Times Card -->
+            <section class="promo-card prayer-times-card">
+                <div class="card-badge">Prayer Times</div>
+                <div class="card-content">
+                    <div class="card-text">
+                        <div class="hijri-date" id="hijriDate"></div>
+                        <div class="date-display" id="dateDisplay"></div>
+                        <div class="next-prayer" id="nextPrayer">
+                            <i class="fas fa-clock"></i> Next: <span id="nextPrayerTime">Asr</span>
+                        </div>
+                    </div>
+                    <div class="card-illustration">
+                        <i class="fas fa-mosque" style="font-size: 60px; color: #4CAF50;"></i>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Prayer Times List -->
+            <section class="prayer-times-list" id="prayerTimesList">
+                <div class="prayer-times-header">
+                    <h3 style="margin: 0 0 15px 0; color: var(--dark-gray); font-size: 18px;">Prayer Times</h3>
+                    <button class="admin-edit-btn" onclick="showAdminLogin()" id="adminEditBtn">
+                        <i class="fas fa-edit"></i> Edit Times
+                    </button>
+                </div>
+                
+                <div class="prayer-table-header">
+                    <div class="header-cell">Prayer</div>
+                    <div class="header-cell">Adhan</div>
+                    <div class="header-cell">Iqaama</div>
+                </div>
+                
+                <div class="prayer-item">
+                    <span class="prayer-name">Fajr</span>
+                    <span class="prayer-time adhan-time editable" data-prayer="fajr" data-type="adhan" id="fajrAdhan" contenteditable="false">05:35</span>
+                    <span class="prayer-time iqaama-time editable" data-prayer="fajr" data-type="iqaama" id="fajrIqaama" contenteditable="false">06:00</span>
+                </div>
+                <div class="prayer-item">
+                    <span class="prayer-name">Dhuhr</span>
+                    <span class="prayer-time adhan-time editable" data-prayer="dhuhr" data-type="adhan" id="dhuhrAdhan" contenteditable="false">13:00</span>
+                    <span class="prayer-time iqaama-time editable" data-prayer="dhuhr" data-type="iqaama" id="dhuhrIqaama" contenteditable="false">13:15</span>
+                </div>
+                <div class="prayer-item active">
+                    <span class="prayer-name">Asr</span>
+                    <span class="prayer-time adhan-time editable" data-prayer="asr" data-type="adhan" id="asrAdhan" contenteditable="false">16:00</span>
+                    <span class="prayer-time iqaama-time editable" data-prayer="asr" data-type="iqaama" id="asrIqaama" contenteditable="false">16:15</span>
+                </div>
+                <div class="prayer-item">
+                    <span class="prayer-name">Maghrib</span>
+                    <span class="prayer-time adhan-time editable" data-prayer="maghrib" data-type="adhan" id="maghribAdhan" contenteditable="false">18:55</span>
+                    <span class="prayer-time iqaama-time editable" data-prayer="maghrib" data-type="iqaama" id="maghribIqaama" contenteditable="false">19:00</span>
+                </div>
+                <div class="prayer-item">
+                    <span class="prayer-name">Isha</span>
+                    <span class="prayer-time adhan-time editable" data-prayer="isha" data-type="adhan" id="ishaAdhan" contenteditable="false">20:00</span>
+                    <span class="prayer-time iqaama-time editable" data-prayer="isha" data-type="iqaama" id="ishaIqaama" contenteditable="false">20:15</span>
+                </div>
+            </section>
+
+            <!-- Admin Login Modal -->
+            <div class="modal-overlay" id="adminLoginModal" style="display: none;">
+                <div class="modal-content">
+                    <h3><i class="fas fa-lock"></i> Admin Login</h3>
+                    <p>Enter password to edit prayer times</p>
+                    <div class="form-group">
+                        <input type="password" class="form-input" id="adminPassword" placeholder="Enter admin password">
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-primary" onclick="verifyAdminPassword()" style="flex: 1;">Login</button>
+                        <button class="btn btn-secondary" onclick="closeAdminLogin()" style="flex: 1;">Cancel</button>
+                    </div>
+                    <p id="passwordError" style="color: #F44336; font-size: 12px; margin: 10px 0 0 0; display: none;">Incorrect password. Please try again.</p>
+                </div>
+            </div>
+
+            <!-- Search Bar -->
+            <section class="search-section">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search here..." id="searchInput">
+                </div>
+            </section>
+
+            <!-- Quick Access Grid -->
+            <section class="quick-access">
+                <h3 class="section-title">What do you need?</h3>
+                <div class="grid-container">
+                    <div class="grid-item" onclick="navigateTo('programs.html')">
+                        <div class="grid-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <span class="grid-label">Programs</span>
+                    </div>
+                    <div class="grid-item" onclick="navigateTo('programs.html')">
+                        <div class="grid-icon">
+                            <i class="fas fa-quran"></i>
+                        </div>
+                        <span class="grid-label">Quran</span>
+                    </div>
+                    <div class="grid-item" onclick="navigateTo('activities.html')">
+                        <div class="grid-icon">
+                            <i class="fas fa-running"></i>
+                        </div>
+                        <span class="grid-label">Activities</span>
+                    </div>
+                    <div class="grid-item" onclick="navigateTo('events.html')">
+                        <div class="grid-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <span class="grid-label">Events</span>
+                    </div>
+                    <div class="grid-item" onclick="navigateTo('leadership.html')">
+                        <div class="grid-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <span class="grid-label">Leadership</span>
+                    </div>
+                    <div class="grid-item" onclick="navigateTo('pay.html')">
+                        <div class="grid-icon">
+                            <i class="fas fa-hand-holding-heart"></i>
+                        </div>
+                        <span class="grid-label">Donations</span>
+                    </div>
+                    <div class="grid-item" onclick="navigateTo('ask-question.html')">
+                        <div class="grid-icon">
+                            <i class="fas fa-question-circle"></i>
+                        </div>
+                        <span class="grid-label">Ask Question</span>
+                    </div>
+                    <div class="grid-item" onclick="navigateTo('contact.html')">
+                        <div class="grid-icon">
+                            <i class="fas fa-cog"></i>
+                        </div>
+                        <span class="grid-label">Settings</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recent Activities -->
+            <section class="recent-section">
+                <h3 class="section-title">Recent Activities</h3>
+                <div class="activity-card">
+                    <div class="activity-icon"><i class="fas fa-book-open"></i></div>
+                    <div class="activity-content">
+                        <h4>Weekly Quran Study</h4>
+                        <p>Every Friday 7:15 PM</p>
+                        <span class="activity-badge">You come get a personal teacher</span>
+                    </div>
+                </div>
+                <div class="activity-card">
+                    <div class="activity-icon"><i class="fas fa-handshake"></i></div>
+                    <div class="activity-content">
+                        <h4>Mosque Iftar</h4>
+                        <p>Ramadhan 7:10 PM</p>
+                        <span class="activity-badge success">Confirmed</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item active">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a>
+            <a href="programs.html" class="nav-item">
+                <i class="fas fa-book"></i>
+                <span>Programs</span>
+            </a>
+            <a href="events.html" class="nav-item">
+                <i class="fas fa-calendar"></i>
+                <span>Events</span>
+            </a>
+            <a href="pay.html" class="nav-item">
+                <i class="fas fa-credit-card"></i>
+                <span>Pay</span>
+            </a>
+            <a href="join-us.html" class="nav-item">
+                <i class="fas fa-user-plus"></i>
+                <span>Join</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Floating Kizumu Visit Button -->
+    <div class="floating-kizumu-btn" onclick="showActivitiesModal()">
+        <i class="fas fa-heart"></i>
+        <span>Kizumu Visit</span>
+    </div>
+
+    <!-- Activities Modal -->
+    <div class="modal-overlay" id="activitiesModal" style="display: none;">
+        <div class="modal-content activities-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-heart"></i> Important Activities</h3>
+                <button class="modal-close" onclick="closeActivitiesModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="activities-modal-list">
+                <div class="activity-modal-item" onclick="navigateToActivity('kizumu-visit')">
+                    <div class="activity-modal-icon" style="background: #E91E63;">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Kizumu Tahfiz Charity Visit</h4>
+                        <p>Support Islamic education through charity visit</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="navigateToActivity('tuition-brothers')">
+                    <div class="activity-modal-icon" style="background: var(--primary-green);">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Tuition for Brothers</h4>
+                        <p>Support brothers' education and learning</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="navigateToActivity('kisilaahe')">
+                    <div class="activity-modal-icon" style="background: #9C27B0;">
+                        <i class="fas fa-donate"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Donate to Kisilaahe</h4>
+                        <p>Support Kisilaahe with essential items</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="navigateToActivity('activities')">
+                    <div class="activity-modal-icon" style="background: #FF9800;">
+                        <i class="fas fa-running"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>View All Activities</h4>
+                        <p>See all community activities and events</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Modal (Login/Create Account/Account Info) -->
+    <div class="modal-overlay" id="accountModal" style="display: none;">
+        <div class="modal-content account-modal">
+            <!-- Login/Signup Tabs -->
+            <div id="accountTabs" style="display: none;">
+                <div class="account-tabs">
+                    <button class="account-tab active" id="loginTab" onclick="showLoginTab()">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                    <button class="account-tab" id="signupTab" onclick="showSignupTab()">
+                        <i class="fas fa-user-plus"></i> Create Account
+                    </button>
+                </div>
+            </div>
+
+            <div class="modal-header">
+                <h3 id="accountModalTitle"><i class="fas fa-user-circle"></i> Account</h3>
+                <button class="modal-close" onclick="closeAccountModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Login Form -->
+                <form id="loginFormElement" onsubmit="handleLogin(event)" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="loginEmail" placeholder="your.email@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="loginPassword" placeholder="Enter your password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 15px;">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                    <p style="text-align: center; margin-top: 15px; font-size: 14px; color: var(--text-gray);">
+                        Don't have an account? <a href="#" onclick="showSignupTab(); return false;" style="color: var(--primary-green); font-weight: 600;">Create one</a>
+                    </p>
+                </form>
+
+                <!-- Signup Form -->
+                <form id="signupFormElement" onsubmit="handleSignup(event)" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">First Name</label>
+                        <input type="text" class="form-input" id="signupFirstName" placeholder="Enter your first name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" class="form-input" id="signupLastName" placeholder="Enter your last name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="signupEmail" placeholder="your.email@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">WhatsApp Number</label>
+                        <input type="tel" class="form-input" id="signupWhatsApp" placeholder="+256 703 268 522" required>
+                        <p style="font-size: 12px; color: var(--text-gray); margin-top: 5px;">Include country code (e.g., +256)</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Gender</label>
+                        <select class="form-input" id="signupGender" required>
+                            <option value="">Select gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="signupPassword" placeholder="At least 6 characters" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Confirm Password</label>
+                        <input type="password" class="form-input" id="signupConfirmPassword" placeholder="Confirm your password" required minlength="6">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 15px;">
+                        <i class="fas fa-user-plus"></i> Create Account
+                    </button>
+                    <p style="text-align: center; margin-top: 15px; font-size: 14px; color: var(--text-gray);">
+                        Already have an account? <a href="#" onclick="showLoginTab(); return false;" style="color: var(--primary-green); font-weight: 600;">Login</a>
+                    </p>
+                </form>
+
+                <!-- Account Info -->
+                <div id="accountInfo" style="display: none;">
+                    <div class="account-info-card">
+                        <div class="account-avatar">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <h3 id="accountName" style="text-align: center; margin: 15px 0 5px 0; color: var(--dark-gray);"></h3>
+                        <p style="text-align: center; color: var(--text-gray); margin-bottom: 20px;">
+                            <i class="fas fa-envelope"></i> <span id="accountEmail"></span>
+                        </p>
+                        <p style="text-align: center; color: var(--text-gray); margin-bottom: 20px;">
+                            <i class="fas fa-venus-mars"></i> <span id="accountGender"></span>
+                        </p>
+                        <button class="btn btn-secondary" onclick="handleLogout()" style="width: 100%;">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Initialize user display and modals
+        window.addEventListener('DOMContentLoaded', function() {
+            loadUserData();
+            
+            // Close modals on overlay click
+            document.getElementById('activitiesModal')?.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeActivitiesModal();
+                }
+            });
+            
+            document.getElementById('accountModal')?.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeAccountModal();
+                }
+            });
+
+            // Scroll to charity visit if URL has hash
+            if (window.location.hash === '#charity-visit') {
+                setTimeout(() => {
+                    document.querySelector('.charity-visit-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    if (document.getElementById('charityDetails')) {
+                        document.getElementById('charityDetails').style.display = 'block';
+                        const icon = document.getElementById('charityToggleIcon');
+                        if (icon) {
+                            icon.classList.remove('fa-chevron-down');
+                            icon.classList.add('fa-chevron-up');
+                        }
+                    }
+                }, 300);
+            }
+        });
+    </script>
+</body>
+</html>

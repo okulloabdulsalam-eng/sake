@@ -3,15 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Account - KIUMA</title>
+    <title>Join Us - KIUMA</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-auth-compat.js"></script>
-    <script src="fcm-config.js"></script>
-    <script src="firebase-auth.js"></script>
 </head>
 <body>
     <nav class="nav-menu" id="navMenu">
@@ -33,7 +27,7 @@
             <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
             <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
             <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
-            <li><a href="join-us.html" class="nav-link active"><i class="fas fa-user-circle"></i> My Account</a></li>
+            <li><a href="join-us.html" class="nav-link active"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
         </ul>
     </nav>
 
@@ -42,7 +36,7 @@
             <div class="header-content">
                 <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
                 <div class="logo-container">
-                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='block';" onload="this.style.display='block'; if(this.nextElementSibling) this.nextElementSibling.style.display='none';">
+                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
                     <svg class="header-logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="display: none;">
                         <circle cx="100" cy="100" r="95" fill="none" stroke="#4CAF50" stroke-width="4"/>
                         <path id="topArc" d="M 20,100 A 80,80 0 0,1 180,100" fill="none"/>
@@ -53,240 +47,86 @@
                         <text fill="#4CAF50" font-size="9" font-weight="bold" font-family="Arial, sans-serif" letter-spacing="0.5">
                             <textPath href="#bottomArc" startOffset="50%" text-anchor="middle">MUSLIM ASSOCIATION</textPath>
                         </text>
+                        <path d="M 50,75 L 50,115 L 58,115 L 58,105 L 63,100 L 58,95 L 58,85 Z" fill="none" stroke="#4CAF50" stroke-width="2"/>
+                        <circle cx="56.5" cy="100" r="2" fill="#4CAF50"/>
+                        <rect x="88" y="65" width="10" height="45" fill="none" stroke="#4CAF50" stroke-width="2"/>
+                        <rect x="90" y="75" width="6" height="2" fill="#4CAF50"/>
+                        <rect x="90" y="85" width="6" height="2" fill="#4CAF50"/>
+                        <rect x="90" y="95" width="6" height="2" fill="#4CAF50"/>
+                        <polygon points="93,60 90,65 96,65" fill="#4CAF50"/>
+                        <path d="M 140,92 A 12,12 0 0,1 128,92 A 10,10 0 0,0 140,92 Z" fill="#4CAF50"/>
+                        <path d="M 130,88 L 131.5,92 L 136,92 L 132.5,94.5 L 134,99 L 130,96.5 L 126,99 L 127.5,94.5 L 124,92 L 128.5,92 Z" fill="#4CAF50"/>
                         <text x="100" y="145" font-size="22" font-weight="bold" fill="#4CAF50" text-anchor="middle" font-family="Arial, sans-serif" letter-spacing="2">KIUMA</text>
                     </svg>
                 </div>
                 <button class="notifications-btn" id="notificationsBtn">
                     <i class="fas fa-bell"></i>
-                    <span class="badge" style="display: none;">0</span>
+                    <span class="badge">3</span>
                 </button>
             </div>
         </header>
 
         <main class="main-content">
+            <!-- Welcome Section -->
             <section class="welcome-section">
                 <div>
                     <h2 class="greeting">
                         <a href="about.html">KIUMA</a>
                     </h2>
                 </div>
-                <a href="join-us.html" class="account-icon-btn" id="accountIconBtn">
+                <button class="account-icon-btn" id="accountIconBtn" onclick="toggleAccountModal()">
                     <i class="fas fa-user-circle" id="accountIcon"></i>
-                </a>
+                </button>
             </section>
 
-            <!-- Login Section (shown when not logged in) -->
-            <section id="loginSection" class="page-content">
-                <div class="page-header">
-                    <h2 class="page-title">Join KIUMA</h2>
+            <section class="page-header">
+                <h2 class="page-title">Join Our Community</h2>
+            </section>
+
+            <section class="page-content">
+                <div class="info-card">
+                    <h3><i class="fas fa-users"></i> Welcome to KIUMA</h3>
+                    <p>Become part of a vibrant Islamic community dedicated to faith, knowledge, and service. Join Muslim students at Kampala International University who are making a difference.</p>
                 </div>
 
-                <!-- Welcome Banner -->
-                <div class="info-card" style="background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); color: white; text-align: center; margin-bottom: 25px;">
-                    <div style="font-size: 50px; margin-bottom: 15px;"><i class="fas fa-mosque"></i></div>
-                    <h2 style="margin: 0 0 10px 0; font-size: 22px;">Welcome to KIUMA</h2>
-                    <p style="margin: 0; opacity: 0.9; font-size: 14px;">Sign in to access your account and settings</p>
-                </div>
-
-                <!-- Login Form -->
-                <form id="loginForm" onsubmit="handleLogin(event)">
-                    <div id="loginMessage" style="display: none; padding: 15px; margin-bottom: 20px; border-radius: 8px; font-size: 14px;"></div>
+                <form id="joinForm" onsubmit="handleJoinSubmit(event)">
+                    <div id="formMessage" style="display: none; padding: 15px; margin-bottom: 20px; border-radius: 8px; font-size: 14px;"></div>
                     
                     <div class="form-group">
-                        <label class="form-label">Email Address *</label>
-                        <input type="email" class="form-input" id="loginEmail" name="email" placeholder="Enter your email" required>
+                        <label class="form-label">Full Name *</label>
+                        <input type="text" class="form-input" id="fullname" name="fullname" placeholder="Enter your full name" required>
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Password *</label>
-                        <input type="password" class="form-input" id="loginPassword" name="password" placeholder="Enter your password" required>
+                        <label class="form-label">Email Address *</label>
+                        <input type="email" class="form-input" id="email" name="email" placeholder="Enter your email" required>
                     </div>
 
-                    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 16px; margin-bottom: 15px;">
-                        <i class="fas fa-sign-in-alt"></i> Sign In
+                    <div class="form-group">
+                        <label class="form-label">Phone Number *</label>
+                        <input type="tel" class="form-input" id="phone" name="phone" placeholder="Enter your phone number" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Role/Position (Optional)</label>
+                        <input type="text" class="form-input" id="role" name="role" placeholder="e.g., Student, Member, Volunteer">
+                    </div>
+
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-user-plus"></i> Join Now
                     </button>
                 </form>
 
-                <div style="text-align: center; margin-top: 20px; color: #666; font-size: 14px;">
-                    Don't have an account? <a href="#" onclick="showSignupForm(); return false;" style="color: var(--primary-green); font-weight: 600;">Create Account</a>
-                </div>
-
-                <!-- Signup Form (hidden by default) -->
-                <div id="signupSection" style="display: none; margin-top: 30px;">
-                    <h3 style="margin-bottom: 20px; color: var(--dark-green);">Create New Account</h3>
-                    <form id="signupForm" onsubmit="handleSignup(event)">
-                        <div id="signupMessage" style="display: none; padding: 15px; margin-bottom: 20px; border-radius: 8px; font-size: 14px;"></div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">Full Name *</label>
-                            <input type="text" class="form-input" id="signupName" name="name" placeholder="Enter your full name" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Email Address *</label>
-                            <input type="email" class="form-input" id="signupEmail" name="email" placeholder="Enter your email" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Password *</label>
-                            <input type="password" class="form-input" id="signupPassword" name="password" placeholder="Create a password (min. 6 characters)" required minlength="6">
-                        </div>
-
-                        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 16px; margin-bottom: 15px;">
-                            <i class="fas fa-user-plus"></i> Create Account
-                        </button>
-                    </form>
-
-                    <div style="text-align: center; margin-top: 20px; color: #666; font-size: 14px;">
-                        Already have an account? <a href="#" onclick="showLoginForm(); return false;" style="color: var(--primary-green); font-weight: 600;">Sign In</a>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Account Section (shown when logged in) -->
-            <section id="accountSection" class="page-content" style="display: none;">
-                <div class="page-header">
-                    <h2 class="page-title">My Account</h2>
-                </div>
-
-                <!-- User Info Card -->
-                <div class="info-card" style="background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); color: white; margin-bottom: 20px;">
-                    <div style="display: flex; align-items: center; gap: 15px;">
-                        <div style="width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 35px;">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div style="flex: 1;">
-                            <h3 style="margin: 0 0 8px 0; font-size: 20px; color: #ffffff; font-weight: 600;" id="userDisplayName">User Name</h3>
-                            <p style="margin: 0 0 5px 0; color: #ffffff; font-size: 15px; font-weight: 500;" id="userEmail">user@example.com</p>
-                            <p style="margin: 0; color: #ffffff; font-size: 13px; opacity: 0.95;" id="userMemberSince">Member since: --</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Account Details -->
-                <div class="info-card" style="margin-bottom: 20px;">
-                    <h3 style="margin: 0 0 15px 0; font-size: 16px; color: var(--dark-green);"><i class="fas fa-id-card"></i> Account Details</h3>
-                    <div style="display: flex; flex-direction: column; gap: 12px;">
-                        <div style="display: flex; justify-content: space-between; padding: 10px; background: #f5f5f5; border-radius: 8px;">
-                            <span style="color: #666;">Full Name</span>
-                            <span style="font-weight: 600;" id="detailName">--</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; padding: 12px; background: #f5f5f5; border-radius: 8px;">
-                            <span style="color: #666; font-size: 14px;">Email</span>
-                            <span style="font-weight: 600; color: var(--dark-gray); font-size: 14px; word-break: break-all; text-align: right; max-width: 60%;" id="detailEmail">--</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; padding: 10px; background: #f5f5f5; border-radius: 8px;">
-                            <span style="color: #666;">Account Status</span>
-                            <span style="font-weight: 600; color: var(--primary-green);"><i class="fas fa-check-circle"></i> Active</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Settings Section -->
-                <h4 style="margin: 20px 0 15px 0; color: var(--dark-gray);"><i class="fas fa-cog"></i> Settings</h4>
-                <div class="settings-list">
-                    <!-- Edit Profile -->
-                    <div class="settings-item" onclick="showEditNameModal()">
-                        <div class="settings-icon" style="background: #4CAF50;">
-                            <i class="fas fa-user-edit"></i>
-                        </div>
-                        <div class="settings-content">
-                            <h4>Edit Profile</h4>
-                            <p>Update your display name</p>
-                        </div>
-                        <i class="fas fa-chevron-right"></i>
-                    </div>
-
-                    <!-- Notification Settings -->
-                    <div class="settings-item" onclick="showSettingsModal()">
-                        <div class="settings-icon" style="background: #2196F3;">
-                            <i class="fas fa-bell"></i>
-                        </div>
-                        <div class="settings-content">
-                            <h4>Notifications</h4>
-                            <p>Manage notification preferences</p>
-                        </div>
-                        <i class="fas fa-chevron-right"></i>
-                    </div>
-
-                    <!-- Privacy Settings -->
-                    <div class="settings-item" onclick="showPrivacyModal()">
-                        <div class="settings-icon" style="background: #9C27B0;">
-                            <i class="fas fa-shield-alt"></i>
-                        </div>
-                        <div class="settings-content">
-                            <h4>Privacy</h4>
-                            <p>Manage your privacy settings</p>
-                        </div>
-                        <i class="fas fa-chevron-right"></i>
-                    </div>
-
-                    <!-- My Programs -->
-                    <div class="settings-item" onclick="window.location.href='join-programs.html'">
-                        <div class="settings-icon" style="background: #FF9800;">
-                            <i class="fas fa-graduation-cap"></i>
-                        </div>
-                        <div class="settings-content">
-                            <h4>My Programs</h4>
-                            <p>View enrolled courses</p>
-                        </div>
-                        <i class="fas fa-chevron-right"></i>
-                    </div>
-
-                    <!-- Contact Us -->
-                    <div class="settings-item" onclick="window.location.href='contact.html'">
-                        <div class="settings-icon" style="background: #00BCD4;">
-                            <i class="fas fa-envelope"></i>
-                        </div>
-                        <div class="settings-content">
-                            <h4>Contact Us</h4>
-                            <p>Get in touch with KIUMA</p>
-                        </div>
-                        <i class="fas fa-chevron-right"></i>
-                    </div>
-
-                    <!-- Contact Developers -->
-                    <div class="settings-item" style="border-bottom: none;">
-                        <div class="settings-icon" style="background: #4CAF50;">
-                            <i class="fas fa-code"></i>
-                        </div>
-                        <div class="settings-content" style="flex: 1;">
-                            <h4>Contact Developers</h4>
-                            <p>For app support, feature requests, bug reports, and technical assistance</p>
-                            <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
-                                <a href="javascript:void(0)" onclick="if(typeof window.openWhatsApp==='function'){window.openWhatsApp('256703268522','Hello Abdulsalam, I need help with the KIUMA app');}else{window.location.href='https://wa.me/256703268522?text='+encodeURIComponent('Hello Abdulsalam, I need help with the KIUMA app');}" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #25D366; color: white; border-radius: 8px; text-decoration: none; transition: background 0.3s; cursor: pointer;" onmouseover="this.style.background='#128C7E'" onmouseout="this.style.background='#25D366'">
-                                    <i class="fab fa-whatsapp" style="font-size: 20px;"></i>
-                                    <div style="flex: 1;">
-                                        <div style="font-weight: 600;">Abdulsalam</div>
-                                        <div style="font-size: 12px; opacity: 0.9;">0703268522</div>
-                                    </div>
-                                    <i class="fas fa-external-link-alt" style="font-size: 12px;"></i>
-                                </a>
-                                <a href="javascript:void(0)" onclick="if(typeof window.openWhatsApp==='function'){window.openWhatsApp('256744950690','Hello Sulaiman, I need help with the KIUMA app');}else{window.location.href='https://wa.me/256744950690?text='+encodeURIComponent('Hello Sulaiman, I need help with the KIUMA app');}" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #25D366; color: white; border-radius: 8px; text-decoration: none; transition: background 0.3s; cursor: pointer;" onmouseover="this.style.background='#128C7E'" onmouseout="this.style.background='#25D366'">
-                                    <i class="fab fa-whatsapp" style="font-size: 20px;"></i>
-                                    <div style="flex: 1;">
-                                        <div style="font-weight: 600;">Sulaiman</div>
-                                        <div style="font-size: 12px; opacity: 0.9;">0744950690</div>
-                                    </div>
-                                    <i class="fas fa-external-link-alt" style="font-size: 12px;"></i>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sign Out -->
-                <div class="settings-list" style="margin-top: 20px;">
-                    <div class="settings-item" onclick="handleLogout()" style="border: 2px solid #FFCDD2;">
-                        <div class="settings-icon" style="background: #757575;">
-                            <i class="fas fa-sign-out-alt"></i>
-                        </div>
-                        <div class="settings-content">
-                            <h4 style="color: #F44336;">Sign Out</h4>
-                            <p>Sign out of your account</p>
-                        </div>
-                        <i class="fas fa-chevron-right"></i>
-                    </div>
+                <div class="info-card" style="margin-top: 20px; background: #E8F5E9;">
+                    <h3 style="color: var(--dark-green); margin-bottom: 10px;"><i class="fas fa-heart"></i> Why Join?</h3>
+                    <ul class="info-list" style="margin: 0;">
+                        <li><i class="fas fa-check-circle" style="color: var(--primary-green);"></i> Access to educational programs and resources</li>
+                        <li><i class="fas fa-check-circle" style="color: var(--primary-green);"></i> Connect with a supportive community</li>
+                        <li><i class="fas fa-check-circle" style="color: var(--primary-green);"></i> Participate in events and activities</li>
+                        <li><i class="fas fa-check-circle" style="color: var(--primary-green);"></i> Get Islamic guidance and support</li>
+                        <li><i class="fas fa-check-circle" style="color: var(--primary-green);"></i> Make a positive impact in society</li>
+                    </ul>
                 </div>
             </section>
         </main>
@@ -296,719 +136,113 @@
             <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
             <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
             <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
-            <a href="join-us.html" class="nav-item active" id="accountNavItem"><i class="fas fa-user-circle"></i><span id="accountNavText">Join</span></a>
+            <a href="join-us.html" class="nav-item active"><i class="fas fa-user-plus"></i><span>Join</span></a>
         </nav>
     </div>
 
-    <!-- Edit Name Modal -->
-    <div class="modal-overlay" id="editNameModal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-edit"></i> Edit Name</h3>
-                <button class="modal-close" onclick="closeEditNameModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="editNameForm" onsubmit="handleEditName(event)">
-                    <div class="form-group">
-                        <label class="form-label">Display Name</label>
-                        <input type="text" class="form-input" id="editNameInput" placeholder="Enter your name" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">
-                        <i class="fas fa-save"></i> Save Changes
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Settings Modal -->
-    <div class="modal-overlay" id="settingsModal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-bell"></i> Notification Settings</h3>
-                <button class="modal-close" onclick="closeSettingsModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="settings-option">
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                        <input type="checkbox" id="notificationsEnabled" checked>
-                        <span>Enable Push Notifications</span>
-                    </label>
-                </div>
-                <div class="settings-option" style="margin-top: 15px;">
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                        <input type="checkbox" id="emailUpdates" checked>
-                        <span>Receive Email Updates</span>
-                    </label>
-                </div>
-                <div class="settings-option" style="margin-top: 15px;">
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                        <input type="checkbox" id="eventReminders" checked>
-                        <span>Event Reminders</span>
-                    </label>
-                </div>
-                <button type="button" class="btn btn-primary" onclick="saveSettings()" style="width: 100%; margin-top: 20px;">
-                    <i class="fas fa-save"></i> Save Settings
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Privacy Modal -->
-    <div class="modal-overlay" id="privacyModal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-shield-alt"></i> Privacy Settings</h3>
-                <button class="modal-close" onclick="closePrivacyModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="settings-option">
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                        <input type="checkbox" id="profileVisible" checked>
-                        <span>Make profile visible to other members</span>
-                    </label>
-                </div>
-                <div class="settings-option" style="margin-top: 15px;">
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                        <input type="checkbox" id="showEmail" checked>
-                        <span>Show email in profile</span>
-                    </label>
-                </div>
-                <button type="button" class="btn btn-primary" onclick="savePrivacySettings()" style="width: 100%; margin-top: 20px;">
-                    <i class="fas fa-save"></i> Save Privacy Settings
-                </button>
-            </div>
-        </div>
-    </div>
-
     <script src="script.js"></script>
-    <script src="update-navigation.js"></script>
     <script>
-        // Use pageUser to avoid conflict with firebase-auth.js's currentUser
-        var pageUser = null;
-
-        // Initialize page
-        document.addEventListener('DOMContentLoaded', async () => {
-            // First, check localStorage immediately for instant UI update
-            const userData = localStorage.getItem('userData');
-            if (userData) {
-                try {
-                    const parsedData = JSON.parse(userData);
-                    if (parsedData && (parsedData.email || parsedData.uid)) {
-                        // Show account section immediately with cached data
-                        pageUser = parsedData;
-                        showAccountSection();
-                        updateUserInfo();
-                        updateNavigation();
-                    } else {
-                        showLoginSection();
-                        updateNavigation();
-                    }
-                } catch (e) {
-                    showLoginSection();
-                    updateNavigation();
-                }
-            } else {
-                showLoginSection();
-                updateNavigation();
+        // PHP Backend API URL - Update this to match your server path
+        const API_URL = 'api/submit_recruit.php'; // Relative path to PHP API
+        
+        async function handleJoinSubmit(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.querySelector('#joinForm button[type="submit"]');
+            const messageDiv = document.getElementById('formMessage');
+            const form = e.target;
+            
+            // Get form values
+            const fullname = document.getElementById('fullname').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const role = document.getElementById('role').value.trim();
+            
+            // Validation
+            if (!fullname || !email || !phone) {
+                messageDiv.style.display = 'block';
+                messageDiv.style.backgroundColor = '#FFEBEE';
+                messageDiv.style.color = '#C62828';
+                messageDiv.style.border = '1px solid #F44336';
+                messageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please fill in all required fields.';
+                return;
             }
             
-            // Then verify with Firebase in the background (non-blocking)
-            checkAuthState();
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                messageDiv.style.display = 'block';
+                messageDiv.style.backgroundColor = '#FFEBEE';
+                messageDiv.style.color = '#C62828';
+                messageDiv.style.border = '1px solid #F44336';
+                messageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please enter a valid email address.';
+                return;
+            }
             
-            // Listen to auth state changes (this will update if auth state changes)
-            if (typeof firebase !== 'undefined' && firebase.auth) {
-                firebase.auth().onAuthStateChanged(async (user) => {
-                    if (user) {
-                        pageUser = user;
-                        showAccountSection();
-                        updateUserInfo();
-                        updateNavigation();
-                    } else {
-                        pageUser = null;
-                        showLoginSection();
-                        updateNavigation();
-                    }
+            // Disable submit button
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+            messageDiv.style.display = 'none';
+            
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('fullname', fullname);
+            formData.append('email', email);
+            formData.append('phone', phone);
+            formData.append('role', role);
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: formData
                 });
-            }
-        });
-
-        // Check authentication state (runs in background to verify/update)
-        async function checkAuthState() {
-            // Wait a bit for Firebase to initialize (non-blocking)
-            let retries = 0;
-            while (retries < 10 && (typeof firebase === 'undefined' || !firebase.auth)) {
-                await new Promise(resolve => setTimeout(resolve, 200));
-                retries++;
-            }
-            
-            // Try to check Firebase Auth directly
-            if (typeof firebase !== 'undefined' && firebase.auth) {
-                try {
-                    const auth = firebase.auth();
-                    // Wait for auth to be ready
-                    await new Promise((resolve) => {
-                        const unsubscribe = auth.onAuthStateChanged((user) => {
-                            unsubscribe();
-                            resolve(user);
-                        });
-                    });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    messageDiv.style.display = 'block';
+                    messageDiv.style.backgroundColor = '#E8F5E9';
+                    messageDiv.style.color = '#2E7D32';
+                    messageDiv.style.border = '1px solid #4CAF50';
+                    messageDiv.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message + '<br><small>You will receive a confirmation email and WhatsApp notification has been sent.</small>';
                     
-                    const user = auth.currentUser;
-                    if (user) {
-                        // Firebase user found - sync with localStorage
-                        pageUser = user;
-                        const userData = {
-                            name: user.displayName || user.email?.split('@')[0] || 'User',
-                            firstName: user.displayName?.split(' ')[0] || user.email?.split('@')[0] || 'User',
-                            email: user.email,
-                            uid: user.uid,
-                            createdAt: user.metadata?.creationTime || new Date().toISOString()
-                        };
-                        localStorage.setItem('userData', JSON.stringify(userData));
-                        showAccountSection();
-                        updateUserInfo();
-                        updateNavigation();
-                        return;
-                    }
-                } catch (e) {
-                    console.log('Firebase auth check failed:', e);
-                }
-            }
-            
-            // Try getCurrentUser function
-            if (typeof getCurrentUser === 'function') {
-                try {
-                    const user = getCurrentUser();
-                    if (user) {
-                        pageUser = user;
-                        // Sync with localStorage
-                        const userData = {
-                            name: user.displayName || user.email?.split('@')[0] || 'User',
-                            firstName: user.displayName?.split(' ')[0] || user.email?.split('@')[0] || 'User',
-                            email: user.email,
-                            uid: user.uid,
-                            createdAt: user.metadata?.creationTime || new Date().toISOString()
-                        };
-                        localStorage.setItem('userData', JSON.stringify(userData));
-                        showAccountSection();
-                        updateUserInfo();
-                        updateNavigation();
-                        return;
-                    }
-                } catch (e) {
-                    console.log('getCurrentUser failed:', e);
-                }
-            }
-            
-            // If we have localStorage data but no Firebase user, check if we should keep showing account
-            // This handles the case where localStorage has data but Firebase session expired
-            const userData = localStorage.getItem('userData');
-            if (userData && pageUser) {
-                try {
-                    const parsedData = JSON.parse(userData);
-                    // If localStorage has valid data, keep showing account section
-                    // User might need to re-authenticate but we don't want to lose their data
-                    if (parsedData && (parsedData.email || parsedData.uid)) {
-                        // Keep account section visible but note that Firebase session might be expired
-                        if (!pageUser.uid) {
-                            // Convert localStorage data to user-like object for display
-                            pageUser = {
-                                displayName: parsedData.name || parsedData.firstName,
-                                email: parsedData.email,
-                                uid: parsedData.uid,
-                                metadata: { creationTime: parsedData.createdAt }
-                            };
-                            updateUserInfo();
-                        }
-                        return;
-                    }
-                } catch (e) {
-                    console.log('localStorage parse failed:', e);
-                }
-            }
-            
-            // If no user found anywhere, show login
-            if (!pageUser || (!pageUser.uid && !userData)) {
-                pageUser = null;
-                showLoginSection();
-                updateNavigation();
-            }
-        }
-
-        // Show login section
-        function showLoginSection() {
-            document.getElementById('loginSection').style.display = 'block';
-            document.getElementById('accountSection').style.display = 'none';
-            document.getElementById('signupSection').style.display = 'none';
-        }
-
-        // Show account section
-        function showAccountSection() {
-            document.getElementById('loginSection').style.display = 'none';
-            document.getElementById('accountSection').style.display = 'block';
-        }
-
-        // Show signup form
-        function showSignupForm() {
-            document.getElementById('signupSection').style.display = 'block';
-            document.getElementById('loginForm').style.display = 'none';
-        }
-
-        // Show login form
-        function showLoginForm() {
-            document.getElementById('signupSection').style.display = 'none';
-            document.getElementById('loginForm').style.display = 'block';
-        }
-
-        // Update user info display
-        function updateUserInfo() {
-            if (pageUser) {
-                const displayName = pageUser.displayName || pageUser.email?.split('@')[0] || 'User';
-                const email = pageUser.email || 'No email';
-                
-                // Main user card
-                const userDisplayNameEl = document.getElementById('userDisplayName');
-                const userEmailEl = document.getElementById('userEmail');
-                if (userDisplayNameEl) userDisplayNameEl.textContent = displayName;
-                if (userEmailEl) {
-                    userEmailEl.textContent = email;
-                    userEmailEl.style.display = 'block';
-                    userEmailEl.style.visibility = 'visible';
-                }
-                
-                // Account details section
-                const detailName = document.getElementById('detailName');
-                const detailEmail = document.getElementById('detailEmail');
-                const memberSince = document.getElementById('userMemberSince');
-                
-                if (detailName) detailName.textContent = displayName;
-                if (detailEmail) detailEmail.textContent = email;
-                
-                // Member since date
-                if (memberSince) {
-                    let joinDate = '--';
-                    if (pageUser.metadata?.creationTime) {
-                        const date = new Date(pageUser.metadata.creationTime);
-                        joinDate = date.toLocaleDateString('en-US', {
-                            year: 'numeric', 
-                            month: 'short', 
-                            day: 'numeric'
-                        });
-                    } else if (pageUser.createdAt) {
-                        const date = new Date(pageUser.createdAt);
-                        joinDate = date.toLocaleDateString('en-US', {
-                            year: 'numeric', 
-                            month: 'short', 
-                            day: 'numeric'
-                        });
-                    }
-                    memberSince.textContent = 'Member since: ' + joinDate;
-                    memberSince.style.display = 'block';
-                    memberSince.style.visibility = 'visible';
-                }
-            }
-        }
-
-        // Handle login
-        async function handleLogin(e) {
-            e.preventDefault();
-            const email = document.getElementById('loginEmail').value.trim();
-            const password = document.getElementById('loginPassword').value;
-            const messageDiv = document.getElementById('loginMessage');
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
-            messageDiv.style.display = 'none';
-
-            try {
-                if (typeof signInWithEmail === 'function') {
-                    const result = await signInWithEmail(email, password);
-                    if (result.success) {
-                        pageUser = result.user;
-                        // Save user data to localStorage for homepage greeting
-                        const userData = {
-                            name: pageUser.displayName || pageUser.email?.split('@')[0] || 'User',
-                            firstName: pageUser.displayName?.split(' ')[0] || pageUser.email?.split('@')[0] || 'User',
-                            email: pageUser.email,
-                            uid: pageUser.uid,
-                            createdAt: pageUser.metadata?.creationTime || new Date().toISOString()
-                        };
-                        localStorage.setItem('userData', JSON.stringify(userData));
-                        showAccountSection();
-                        updateUserInfo();
-                        updateNavigation();
-                        messageDiv.style.display = 'block';
-                        messageDiv.style.backgroundColor = '#E8F5E9';
-                        messageDiv.style.color = '#2E7D32';
-                        messageDiv.style.border = '1px solid #4CAF50';
-                        messageDiv.innerHTML = '<i class="fas fa-check-circle"></i> Signed in successfully!';
-                        setTimeout(() => {
-                            messageDiv.style.display = 'none';
-                        }, 2000);
-                    } else {
-                        throw new Error(result.message || 'Login failed');
-                    }
+                    // Reset form
+                    form.reset();
+                    
+                    // Store user name for greeting
+                    const firstName = fullname.split(' ')[0];
+                    localStorage.setItem('userName', firstName);
+                    
+                    // Redirect after 3 seconds
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 3000);
                 } else {
-                    throw new Error('Firebase Auth not available');
+                    messageDiv.style.display = 'block';
+                    messageDiv.style.backgroundColor = '#FFEBEE';
+                    messageDiv.style.color = '#C62828';
+                    messageDiv.style.border = '1px solid #F44336';
+                    messageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.message || 'An error occurred. Please try again.');
                 }
             } catch (error) {
+                console.error('Error:', error);
                 messageDiv.style.display = 'block';
                 messageDiv.style.backgroundColor = '#FFEBEE';
                 messageDiv.style.color = '#C62828';
                 messageDiv.style.border = '1px solid #F44336';
-                messageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + error.message;
+                messageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Network error. Please check your connection and try again. If the problem persists, contact support.';
             } finally {
+                // Re-enable submit button
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+                submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Join Now';
             }
         }
-
-        // Handle signup
-        async function handleSignup(e) {
-            e.preventDefault();
-            const name = document.getElementById('signupName').value.trim();
-            const email = document.getElementById('signupEmail').value.trim();
-            const password = document.getElementById('signupPassword').value;
-            const messageDiv = document.getElementById('signupMessage');
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
-            messageDiv.style.display = 'none';
-
-            try {
-                if (typeof signUpWithEmail === 'function') {
-                    const result = await signUpWithEmail(email, password, name);
-                    if (result.success) {
-                        pageUser = result.user;
-                        // Save user data to localStorage for homepage greeting
-                        const userData = {
-                            name: name || pageUser.displayName || pageUser.email?.split('@')[0] || 'User',
-                            firstName: (name || pageUser.displayName || pageUser.email?.split('@')[0] || 'User').split(' ')[0],
-                            email: pageUser.email,
-                            uid: pageUser.uid,
-                            createdAt: new Date().toISOString()
-                        };
-                        localStorage.setItem('userData', JSON.stringify(userData));
-                        showAccountSection();
-                        updateUserInfo();
-                        updateNavigation();
-                        messageDiv.style.display = 'block';
-                        messageDiv.style.backgroundColor = '#E8F5E9';
-                        messageDiv.style.color = '#2E7D32';
-                        messageDiv.style.border = '1px solid #4CAF50';
-                        messageDiv.innerHTML = '<i class="fas fa-check-circle"></i> Account created successfully!';
-                    } else {
-                        throw new Error(result.message || 'Signup failed');
-                    }
-                } else {
-                    throw new Error('Firebase Auth not available');
-                }
-            } catch (error) {
-                messageDiv.style.display = 'block';
-                messageDiv.style.backgroundColor = '#FFEBEE';
-                messageDiv.style.color = '#C62828';
-                messageDiv.style.border = '1px solid #F44336';
-                messageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + error.message;
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
-            }
-        }
-
-        // Handle logout
-        async function handleLogout() {
-            if (!confirm('Are you sure you want to sign out?')) {
-                return;
-            }
-
-            try {
-                if (typeof signOut === 'function') {
-                    await signOut();
-                } else {
-                    localStorage.removeItem('userData');
-                }
-                pageUser = null;
-                showLoginSection();
-                updateNavigation();
-            } catch (error) {
-                console.error('Logout error:', error);
-                alert('Error signing out. Please try again.');
-            }
-        }
-
-        // Edit name functions
-        function showEditNameModal() {
-            const modal = document.getElementById('editNameModal');
-            const input = document.getElementById('editNameInput');
-            if (pageUser) {
-                input.value = pageUser.displayName || pageUser.email?.split('@')[0] || '';
-            }
-            modal.style.display = 'flex';
-        }
-
-        function closeEditNameModal() {
-            document.getElementById('editNameModal').style.display = 'none';
-        }
-
-        async function handleEditName(e) {
-            e.preventDefault();
-            const newName = document.getElementById('editNameInput').value.trim();
-            
-            if (!newName) {
-                alert('Please enter a name');
-                return;
-            }
-
-            try {
-                if (pageUser && typeof pageUser.updateProfile === 'function') {
-                    await pageUser.updateProfile({ displayName: newName });
-                    pageUser.displayName = newName;
-                }
-                // Always update localStorage for homepage greeting
-                const existingData = JSON.parse(localStorage.getItem('userData') || '{}');
-                existingData.name = newName;
-                existingData.firstName = newName.split(' ')[0];
-                localStorage.setItem('userData', JSON.stringify(existingData));
-                updateUserInfo();
-                closeEditNameModal();
-                alert('Name updated successfully!');
-            } catch (error) {
-                console.error('Error updating name:', error);
-                alert('Error updating name. Please try again.');
-            }
-        }
-
-        // Settings functions
-        function showSettingsModal() {
-            // Load saved settings
-            const notificationsEnabled = localStorage.getItem('notificationsEnabled') !== 'false';
-            const emailUpdates = localStorage.getItem('emailUpdates') !== 'false';
-            const eventReminders = localStorage.getItem('eventReminders') !== 'false';
-            
-            document.getElementById('notificationsEnabled').checked = notificationsEnabled;
-            document.getElementById('emailUpdates').checked = emailUpdates;
-            document.getElementById('eventReminders').checked = eventReminders;
-            
-            document.getElementById('settingsModal').style.display = 'flex';
-        }
-
-        function closeSettingsModal() {
-            document.getElementById('settingsModal').style.display = 'none';
-        }
-
-        function saveSettings() {
-            const notifications = document.getElementById('notificationsEnabled').checked;
-            const emails = document.getElementById('emailUpdates').checked;
-            const reminders = document.getElementById('eventReminders').checked;
-            
-            localStorage.setItem('notificationsEnabled', notifications);
-            localStorage.setItem('emailUpdates', emails);
-            localStorage.setItem('eventReminders', reminders);
-            
-            closeSettingsModal();
-            alert('Settings saved successfully!');
-        }
-
-        // Privacy functions
-        function showPrivacyModal() {
-            // Load saved privacy settings
-            const profileVisible = localStorage.getItem('profileVisible') !== 'false';
-            const showEmail = localStorage.getItem('showEmail') !== 'false';
-            
-            document.getElementById('profileVisible').checked = profileVisible;
-            document.getElementById('showEmail').checked = showEmail;
-            
-            document.getElementById('privacyModal').style.display = 'flex';
-        }
-
-        function closePrivacyModal() {
-            document.getElementById('privacyModal').style.display = 'none';
-        }
-
-        function savePrivacySettings() {
-            const profileVisible = document.getElementById('profileVisible').checked;
-            const showEmail = document.getElementById('showEmail').checked;
-            
-            localStorage.setItem('profileVisible', profileVisible);
-            localStorage.setItem('showEmail', showEmail);
-            
-            closePrivacyModal();
-            alert('Privacy settings saved successfully!');
-        }
-
-        // Update navigation text - uses unified navigation system
-        function updateNavigation() {
-            // Use the unified navigation update system
-            if (typeof window.forceUpdateNavigation === 'function') {
-                window.forceUpdateNavigation();
-            } else if (typeof window.updateNavigationLinks === 'function') {
-                window.updateNavigationLinks();
-            }
-        }
-
-        // Close modals when clicking outside
-        document.querySelectorAll('.modal-overlay').forEach(modal => {
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.style.display = 'none';
-                }
-            });
-        });
     </script>
-
-    <style>
-        .settings-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .settings-item {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .settings-item:hover {
-            transform: translateX(5px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-
-        .settings-icon {
-            width: 45px;
-            height: 45px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 20px;
-        }
-
-        .settings-content {
-            flex: 1;
-        }
-
-        .settings-content h4 {
-            margin: 0 0 5px 0;
-            font-size: 16px;
-            color: var(--dark-gray);
-        }
-
-        .settings-content p {
-            margin: 0;
-            font-size: 13px;
-            color: var(--text-gray);
-        }
-
-        .settings-option {
-            padding: 15px;
-            background: #f5f5f5;
-            border-radius: 8px;
-        }
-
-        .settings-option input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
-        }
-    </style>
-    <script>
-    </script>
-
-    <!-- Floating Important Lessons Button -->
-    <div class="floating-lessons-btn" onclick="showLessonsModal()">
-        <i class="fas fa-fire"></i>
-        <span>Important Lessons</span>
-    </div>
 
     <!-- Floating Kizumu Visit Button -->
     <div class="floating-kizumu-btn" onclick="showActivitiesModal()">
         <i class="fas fa-heart"></i>
         <span>Kizumu Visit</span>
-    </div>
-
-    <!-- Important Lessons Modal -->
-    <div class="modal-overlay" id="lessonsModal" style="display: none;">
-        <div class="modal-content activities-modal">
-            <div class="modal-header" style="background: linear-gradient(135deg, #F44336, #C62828);">
-                <h3><i class="fas fa-fire"></i> Important Lessons</h3>
-                <button class="modal-close" onclick="closeLessonsModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="activities-modal-list">
-                <div class="activity-modal-item" onclick="navigateToLesson('learn-prayer')">
-                    <div class="activity-modal-icon" style="background: var(--primary-green);">
-                        <i class="fas fa-pray"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Learn the Prayer</h4>
-                        <p>How to perform Salah correctly</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-                
-                <div class="activity-modal-item" onclick="navigateToLesson('misunderstood-concepts')">
-                    <div class="activity-modal-icon" style="background: #FF9800;">
-                        <i class="fas fa-lightbulb"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Misunderstood Concepts</h4>
-                        <p>Clarifying common misconceptions</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-                
-                <div class="activity-modal-item" onclick="navigateToLesson('important-hadiths')">
-                    <div class="activity-modal-icon" style="background: #9C27B0;">
-                        <i class="fas fa-book-quran"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Important Hadiths</h4>
-                        <p>Essential sayings of the Prophet (PBUH)</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-                
-                <div class="activity-modal-item" onclick="navigateToLesson('did-you-know')">
-                    <div class="activity-modal-icon" style="background: #2196F3;">
-                        <i class="fas fa-info-circle"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Did You Know</h4>
-                        <p>Interesting Islamic facts</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-                
-                <div class="activity-modal-item" onclick="navigateToLesson('akhlaq-series')">
-                    <div class="activity-modal-icon" style="background: #E91E63;">
-                        <i class="fas fa-heart"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Islamic Character (Akhlaq)</h4>
-                        <p>Essential character traits and virtues</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Activities Modal -->
@@ -1069,3 +303,4 @@
     </div>
 </body>
 </html>
+

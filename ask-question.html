@@ -36,7 +36,7 @@
             <div class="header-content">
                 <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
                 <div class="logo-container">
-                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='block';" onload="this.style.display='block'; if(this.nextElementSibling) this.nextElementSibling.style.display='none';">
+                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
                     <svg class="header-logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="display: none;">
                         <circle cx="100" cy="100" r="95" fill="none" stroke="#4CAF50" stroke-width="4"/>
                         <path id="topArc" d="M 20,100 A 80,80 0 0,1 180,100" fill="none"/>
@@ -61,7 +61,7 @@
                 </div>
                 <button class="notifications-btn" id="notificationsBtn">
                     <i class="fas fa-bell"></i>
-                    <span class="badge" style="display: none;">0</span>
+                    <span class="badge">3</span>
                 </button>
             </div>
         </header>
@@ -74,9 +74,9 @@
                         <a href="about.html">KIUMA</a>
                     </h2>
                 </div>
-                <a href="join-us.html" class="account-icon-btn" id="accountIconBtn">
+                <button class="account-icon-btn" id="accountIconBtn" onclick="toggleAccountModal()">
                     <i class="fas fa-user-circle" id="accountIcon"></i>
-                </a>
+                </button>
             </section>
 
             <section class="page-header">
@@ -171,7 +171,6 @@
     </div>
 
     <script src="script.js"></script>
-    <script src="update-navigation.js"></script>
     <script>
         function handleQuestionSubmit(e) {
             e.preventDefault();
@@ -260,26 +259,15 @@ Jazakallahu Khairan`;
             
             // WhatsApp number: 0768829144 (Uganda format, add country code 256)
             const whatsappNumber = '256768829144';
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
             
-            // Open WhatsApp (mobile-friendly)
-            if (typeof window.openWhatsApp === 'function') {
-                window.openWhatsApp(whatsappNumber, message);
-            } else {
-                // Fallback for older browsers
-                const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
-                window.location.href = whatsappUrl;
-            }
+            // Open WhatsApp
+            window.open(whatsappUrl, '_blank');
             
             // Show confirmation
             alert('Opening WhatsApp to send your question. Please click send in WhatsApp to complete the submission.');
         }
     </script>
-
-    <!-- Floating Important Lessons Button -->
-    <div class="floating-lessons-btn" onclick="showLessonsModal()">
-        <i class="fas fa-fire"></i>
-        <span>Important Lessons</span>
-    </div>
 
     <!-- Floating Kizumu Visit Button -->
     <div class="floating-kizumu-btn" onclick="showActivitiesModal()">
@@ -343,7 +331,6 @@ Jazakallahu Khairan`;
             </div>
         </div>
     </div>
-    </script>
 </body>
 </html>
 

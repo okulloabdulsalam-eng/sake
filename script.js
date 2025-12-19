@@ -1,34 +1,3 @@
-// Helper function to open WhatsApp links (mobile-friendly)
-window.openWhatsApp = function(phoneNumber, message = '') {
-    // Clean phone number (remove spaces, dashes, etc.)
-    const cleanNumber = phoneNumber.replace(/[^\d]/g, '');
-    
-    // Build WhatsApp URL
-    let whatsappUrl = `https://wa.me/${cleanNumber}`;
-    if (message) {
-        const encodedMessage = encodeURIComponent(message);
-        whatsappUrl += `?text=${encodedMessage}`;
-    }
-    
-    // Detect mobile device
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-                     (window.innerWidth <= 768);
-    
-    if (isMobile) {
-        // On mobile, use direct navigation (works better)
-        window.location.href = whatsappUrl;
-    } else {
-        // On desktop, try window.open first
-        const newWindow = window.open(whatsappUrl, '_blank');
-        
-        // If blocked, fall back to direct navigation
-        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-            // Popup blocked, use direct navigation
-            window.location.href = whatsappUrl;
-        }
-    }
-};
-
 // Navigation Menu Toggle
 const menuToggle = document.getElementById('menuToggle');
 const navMenu = document.getElementById('navMenu');
@@ -61,7 +30,7 @@ async function updateDates() {
     const now = new Date();
     const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     
-    // Display Gregorian date (below Hijri) - Show immediately
+    // Display Gregorian date (below Hijri)
     const dateDisplay = document.getElementById('dateDisplay');
     if (dateDisplay) {
         dateDisplay.textContent = now.toLocaleDateString('en-US', dateOptions);
@@ -70,34 +39,6 @@ async function updateDates() {
     // Fetch and display Hijri date from Ummah API (main date, shown first)
     const hijriDate = document.getElementById('hijriDate');
     if (hijriDate) {
-        // Show approximate date immediately (fast client-side calculation)
-        const gregorianYear = now.getFullYear();
-        const gregorianMonth = now.getMonth();
-        const gregorianDay = now.getDate();
-        
-        // Quick approximate calculation for immediate display
-        const daysSinceEpoch = Math.floor((now - new Date(622, 6, 16)) / (24 * 60 * 60 * 1000));
-        const hijriYear = Math.floor(daysSinceEpoch / 354.37) + 1;
-        const hijriMonths = ['Muharram', 'Safar', 'Rabi\' al-awwal', 'Rabi\' al-thani', 
-                           'Jumada al-awwal', 'Jumada al-thani', 'Rajab', 'Sha\'ban', 
-                           'Ramadan', 'Shawwal', 'Dhu al-Qi\'dah', 'Dhu al-Hijjah'];
-        const remainingDays = daysSinceEpoch % 354.37;
-        const hijriMonthIndex = Math.min(Math.floor(remainingDays / 29.5), 11);
-        const hijriDay = Math.max(1, Math.floor(remainingDays % 29.5) + 1);
-        
-        // Display approximate date immediately
-        hijriDate.textContent = `${hijriDay} ${hijriMonths[hijriMonthIndex]}, ${hijriYear} AH (approx)`;
-        
-        // Check cache for today's accurate date
-        const todayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
-        const cachedDate = localStorage.getItem(`hijriDate_${todayKey}`);
-        
-        if (cachedDate) {
-            // Use cached accurate date immediately
-            hijriDate.textContent = cachedDate;
-            console.log('[Dates] Using cached Hijri date');
-        }
-        
         try {
             // Get current date in YYYY-MM-DD format
             const yyyy = now.getFullYear();
@@ -179,13 +120,7 @@ async function updateDates() {
                     hijriMonth = parseInt(todayData.hijri.month.number);
                     hijriYear = parseInt(todayData.hijri.year);
                     if (hijriDay && hijriMonth && hijriYear) {
-                        const accurateDate = formatHijriDate(hijriDay, hijriMonth, hijriYear);
-                    hijriDate.textContent = accurateDate;
-                    
-                    // Cache the accurate date for today
-                    const todayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
-                    localStorage.setItem(`hijriDate_${todayKey}`, accurateDate);
-                    console.log('[Dates] ✅ Accurate Hijri date loaded and cached');
+                        hijriDate.textContent = formatHijriDate(hijriDay, hijriMonth, hijriYear);
                     }
                 }
             } else if (data.data && data.data.hijri) {
@@ -223,13 +158,7 @@ async function updateDates() {
                     const monthName = typeof hijriMonth === 'number' 
                         ? hijriMonths[hijriMonth - 1] 
                         : hijriMonth;
-                    const accurateDate = `${hijriDay} ${monthName}, ${hijriYear} AH`;
-                    hijriDate.textContent = accurateDate;
-                    
-                    // Cache the accurate date for today
-                    const todayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
-                    localStorage.setItem(`hijriDate_${todayKey}`, accurateDate);
-                    console.log('[Dates] ✅ Accurate Hijri date loaded and cached');
+                    hijriDate.textContent = `${hijriDay} ${monthName}, ${hijriYear} AH`;
                 } else if (data.hijri.date) {
                     // Try to parse and reformat if needed
                     const dateStr = data.hijri.date;
@@ -268,23 +197,27 @@ async function updateDates() {
                 checkAndCreateWhiteDaysNotification(hijriDay, hijriMonth, hijriYear, hijriMonths);
             }
         } catch (error) {
-            // If API fails, keep the approximate date that was already shown
-            // Don't change it again - it's already displayed at the start of the function
-            console.warn('[Dates] API failed, using approximate date:', error.message);
+            // Silently fallback to approximate calculation if all APIs fail
+            // Don't show error to user, just use calculation
+            const gregorianYear = now.getFullYear();
+            const gregorianMonth = now.getMonth();
+            const gregorianDay = now.getDate();
             
-            // Only check for white days if we have the approximate date values
-            // The approximate date is already displayed, so we just need to check notifications
+            // More accurate Hijri date calculation
             const daysSinceEpoch = Math.floor((now - new Date(622, 6, 16)) / (24 * 60 * 60 * 1000));
+            const hijriYear = Math.floor(daysSinceEpoch / 354.37) + 1;
+            const hijriMonths = ['Muharram', 'Safar', 'Rabi\' al-awwal', 'Rabi\' al-thani', 
+                               'Jumada al-awwal', 'Jumada al-thani', 'Rajab', 'Sha\'ban', 
+                               'Ramadan', 'Shawwal', 'Dhu al-Qi\'dah', 'Dhu al-Hijjah'];
             const remainingDays = daysSinceEpoch % 354.37;
             const hijriMonthIndex = Math.min(Math.floor(remainingDays / 29.5), 11);
             const hijriDay = Math.max(1, Math.floor(remainingDays % 29.5) + 1);
             
+            // Use consistent format: "16 Jumada al-thani, 1447 AH (approx)"
+            hijriDate.textContent = `${hijriDay} ${hijriMonths[hijriMonthIndex]}, ${hijriYear} AH (approx)`;
+            
             // Check for white days with approximate date
             if (hijriDay >= 10 && hijriDay <= 12) {
-                const hijriYear = Math.floor(daysSinceEpoch / 354.37) + 1;
-                const hijriMonths = ['Muharram', 'Safar', 'Rabi\' al-awwal', 'Rabi\' al-thani', 
-                                   'Jumada al-awwal', 'Jumada al-thani', 'Rajab', 'Sha\'ban', 
-                                   'Ramadan', 'Shawwal', 'Dhu al-Qi\'dah', 'Dhu al-Hijjah'];
                 checkAndCreateWhiteDaysNotification(hijriDay, hijriMonthIndex + 1, hijriYear, hijriMonths);
             }
         }
@@ -314,6 +247,56 @@ async function getAllRegisteredUsers() {
         const { password, ...userWithoutPassword } = user;
         return userWithoutPassword;
     });
+}
+
+// Send WhatsApp notification to a user
+async function sendWhatsAppNotification(whatsappNumber, message) {
+    if (!whatsappNumber) return false;
+    
+    try {
+        // Clean the WhatsApp number (remove +, spaces, etc.)
+        const cleanNumber = whatsappNumber.replace(/[^\d]/g, '');
+        
+        // Try to use backend API if available
+        const API_BASE_URL = window.API_BASE_URL || 'http://localhost:3000';
+        
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/send-whatsapp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ number: cleanNumber, message: message })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log('WhatsApp notification sent via API:', data);
+                return true;
+            }
+        } catch (apiError) {
+            // Backend not available, fall back to localStorage method
+            console.log('Backend API not available, using localStorage method');
+        }
+        
+        // Fallback: Store notification for manual sending or use wa.me link
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
+        console.log('WhatsApp notification prepared (fallback):', whatsappUrl);
+        
+        // Store notification in a queue for later processing
+        let notificationQueue = JSON.parse(localStorage.getItem('whatsappNotificationQueue') || '[]');
+        notificationQueue.push({
+            number: cleanNumber,
+            message: message,
+            url: whatsappUrl,
+            timestamp: new Date().toISOString()
+        });
+        localStorage.setItem('whatsappNotificationQueue', JSON.stringify(notificationQueue));
+        
+        return true;
+    } catch (error) {
+        console.error('Error sending WhatsApp notification:', error);
+        return false;
+    }
 }
 
 // Send email notification to a user
@@ -384,10 +367,10 @@ async function sendNotificationsToAllUsers(subject, message, notificationId = nu
         const data = await response.json();
         
         if (data.success) {
-            console.log(`Notifications sent via API: ${data.totalUsers} users, Email: ${data.emailSent}`);
+            console.log(`Notifications sent via API: ${data.totalUsers} users, WhatsApp: ${data.whatsappSent}, Email: ${data.emailSent}`);
             return { 
-                successCount: data.emailSent, 
-                failCount: data.emailFailed, 
+                successCount: data.whatsappSent + data.emailSent, 
+                failCount: data.whatsappFailed + data.emailFailed, 
                 total: data.totalUsers 
             };
         }
@@ -403,6 +386,16 @@ async function sendNotificationsToAllUsers(subject, message, notificationId = nu
     console.log(`Sending notifications to ${users.length} users...`);
     
     for (const user of users) {
+        // Send WhatsApp notification
+        if (user.whatsapp) {
+            const whatsappSuccess = await sendWhatsAppNotification(user.whatsapp, message);
+            if (whatsappSuccess) {
+                successCount++;
+            } else {
+                failCount++;
+            }
+        }
+        
         // Send email notification
         if (user.email) {
             const emailSuccess = await sendEmailNotification(user.email, subject, message);
@@ -607,323 +600,63 @@ function initFastingReminderChecker() {
     setInterval(checkAndCreateFastingReminder, 60000); // 1 minute = 60000ms
 }
 
-// Load prayer times from Supabase database (NO auto-calculation - admin-defined only)
-async function loadPrayerTimes() {
-    let prayers = null;
-    let source = 'none';
+// Load prayer times from localStorage (NO auto-calculation - only manual admin updates)
+function loadPrayerTimes() {
+    const defaultPrayers = {
+        fajr: { adhan: '05:30', iqaama: '05:40' },
+        dhuhr: { adhan: '12:15', iqaama: '12:25' },
+        asr: { adhan: '15:45', iqaama: '15:55' },
+        maghrib: { adhan: '18:20', iqaama: '18:25' },
+        isha: { adhan: '19:45', iqaama: '19:55' }
+    };
     
-    try {
-        // STEP 1: Try to fetch from Supabase first
-        // Check if user is online
-        if (navigator.onLine) {
-            try {
-                if (window.prayerTimesService && window.prayerTimesService.getPrayerTimes) {
-                    prayers = await window.prayerTimesService.getPrayerTimes();
-                    source = 'supabase';
-                } else if (typeof getPrayerTimes === 'function') {
-                    // Fallback if service not loaded yet
-                    const { getPrayerTimes } = await import('./services/prayerTimesService.js');
-                    prayers = await getPrayerTimes();
-                    source = 'supabase';
-                }
-            } catch (supabaseError) {
-                console.warn('[Load Prayer Times] Supabase fetch failed:', supabaseError);
-                console.log('[Load Prayer Times] Falling back to localStorage cache...');
-                // Continue to localStorage fallback
-            }
-        } else {
-            console.log('[Load Prayer Times] User is offline, loading from localStorage cache...');
-        }
-        
-        // STEP 2: If Supabase failed or user is offline, try localStorage cache
-        if (!prayers || Object.keys(prayers).length === 0) {
-            try {
-                const cachedData = localStorage.getItem('cached_prayer_times');
-                if (cachedData) {
-                    prayers = JSON.parse(cachedData);
-                    source = 'cache';
-                    console.log('[Load Prayer Times] Loaded from localStorage cache');
-                } else {
-                    console.log('[Load Prayer Times] No cache found in localStorage');
-                }
-            } catch (cacheError) {
-                console.error('[Load Prayer Times] Error reading from cache:', cacheError);
-                // Continue with empty prayers
-            }
-        }
-        
-        // Log what we received
-        console.log('[Load Prayer Times] Source:', source);
-        console.log('[Load Prayer Times] Received prayers:', prayers);
-        console.log('[Load Prayer Times] Prayers keys:', prayers ? Object.keys(prayers) : 'null');
-        console.log('[Load Prayer Times] Prayers count:', prayers ? Object.keys(prayers).length : 0);
-        
-        // STEP 3: If no prayer times found (neither Supabase nor cache), show fail-safe message
-        if (!prayers || Object.keys(prayers).length === 0) {
-            console.warn('[Load Prayer Times] No prayer times found - showing fail-safe message');
-            const prayerTimesList = document.getElementById('prayerTimesList');
-            if (prayerTimesList) {
-                const failSafeMsg = document.createElement('div');
-                failSafeMsg.style.cssText = 'text-align: center; padding: 40px 20px; color: #999;';
-                failSafeMsg.innerHTML = '<i class="fas fa-info-circle" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i><p style="font-size: 16px; margin: 0;">Prayer times not set by administrator</p>';
-                
-                // Clear existing content and show message
-                const existingItems = prayerTimesList.querySelectorAll('.prayer-item, .prayer-table-header, .prayer-times-header');
-                existingItems.forEach(item => item.style.display = 'none');
-                
-                // Remove existing fail-safe if present
-                const existingFailSafe = prayerTimesList.querySelector('.prayer-times-failsafe');
-                if (existingFailSafe) existingFailSafe.remove();
-                
-                failSafeMsg.className = 'prayer-times-failsafe';
-                prayerTimesList.appendChild(failSafeMsg);
-            }
-            return;
-        }
-        
-        console.log('[Load Prayer Times] Prayer times found, rendering... (source: ' + source + ')');
-        
-        // Remove fail-safe message if prayers exist
-        const failSafeMsg = document.querySelector('.prayer-times-failsafe');
-        if (failSafeMsg) failSafeMsg.remove();
-        
-        // Show prayer items
-        const existingItems = document.querySelectorAll('.prayer-item, .prayer-table-header, .prayer-times-header');
-        existingItems.forEach(item => item.style.display = '');
-        
-        // Update prayer times display (exactly as stored - no modification)
-        Object.keys(prayers).forEach(prayer => {
-            const adhanEl = document.getElementById(prayer + 'Adhan');
-            const iqaamaEl = document.getElementById(prayer + 'Iqaama');
-            if (adhanEl && prayers[prayer].adhan) {
-                adhanEl.textContent = prayers[prayer].adhan;
-            }
-            if (iqaamaEl && prayers[prayer].iqaama) {
-                iqaamaEl.textContent = prayers[prayer].iqaama;
-            }
-        });
-        
-        // Calculate and display the actual next prayer
-        updateNextPrayerSimple(prayers);
-        
-        // Update next prayer every minute to keep it current
-        // Clear any existing interval first
-        if (window.nextPrayerInterval) {
-            clearInterval(window.nextPrayerInterval);
-        }
-        window.nextPrayerInterval = setInterval(() => {
-            updateNextPrayerSimple(prayers);
-        }, 60000); // Update every minute
-        
-        // Check authentication and show/hide edit button
-        updateEditButtonVisibility();
-        
-    } catch (error) {
-        console.error('[Load Prayer Times] Error loading prayer times:', error);
-        
-        // Last resort: Try to load from cache even on error
-        try {
-            const cachedData = localStorage.getItem('cached_prayer_times');
-            if (cachedData) {
-                const cachedPrayers = JSON.parse(cachedData);
-                if (cachedPrayers && Object.keys(cachedPrayers).length > 0) {
-                    console.log('[Load Prayer Times] Using cached data after error');
-                    prayers = cachedPrayers;
-                    source = 'cache';
-                    
-                    // Render cached data
-                    console.log('[Load Prayer Times] Rendering cached prayer times...');
-                    
-                    // Remove fail-safe message if prayers exist
-                    const failSafeMsg = document.querySelector('.prayer-times-failsafe');
-                    if (failSafeMsg) failSafeMsg.remove();
-                    
-                    // Show prayer items
-                    const existingItems = document.querySelectorAll('.prayer-item, .prayer-table-header, .prayer-times-header');
-                    existingItems.forEach(item => item.style.display = '');
-                    
-                    // Update prayer times display
-                    Object.keys(prayers).forEach(prayer => {
-                        const adhanEl = document.getElementById(prayer + 'Adhan');
-                        const iqaamaEl = document.getElementById(prayer + 'Iqaama');
-                        if (adhanEl && prayers[prayer].adhan) {
-                            adhanEl.textContent = prayers[prayer].adhan;
-                        }
-                        if (iqaamaEl && prayers[prayer].iqaama) {
-                            iqaamaEl.textContent = prayers[prayer].iqaama;
-                        }
-                    });
-                    
-                    // Calculate and display the actual next prayer
-                    updateNextPrayerSimple(prayers);
-                    
-                    // Update next prayer every minute
-                    if (window.nextPrayerInterval) {
-                        clearInterval(window.nextPrayerInterval);
-                    }
-                    window.nextPrayerInterval = setInterval(() => {
-                        updateNextPrayerSimple(prayers);
-                    }, 60000);
-                    
-                    // Check authentication and show/hide edit button
-                    updateEditButtonVisibility();
-                    
-                    return; // Successfully loaded from cache
-                }
-            }
-        } catch (cacheError) {
-            console.error('[Load Prayer Times] Cache fallback also failed:', cacheError);
-        }
-        
-        // If we still don't have prayers, show fail-safe message
-        const prayerTimesList = document.getElementById('prayerTimesList');
-        if (prayerTimesList) {
-            const failSafeMsg = document.createElement('div');
-            failSafeMsg.style.cssText = 'text-align: center; padding: 40px 20px; color: #999;';
-            failSafeMsg.innerHTML = '<i class="fas fa-info-circle" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i><p style="font-size: 16px; margin: 0;">Prayer times not set by administrator</p>';
-            
-            const existingItems = prayerTimesList.querySelectorAll('.prayer-item, .prayer-table-header, .prayer-times-header');
-            existingItems.forEach(item => item.style.display = 'none');
-            
-            const existingFailSafe = prayerTimesList.querySelector('.prayer-times-failsafe');
-            if (existingFailSafe) existingFailSafe.remove();
-            
-            failSafeMsg.className = 'prayer-times-failsafe';
-            prayerTimesList.appendChild(failSafeMsg);
-        }
-    }
-}
-
-// Calculate and display the actual next prayer based on current time
-function updateNextPrayerSimple(prayers) {
-    if (!prayers || Object.keys(prayers).length === 0) {
-        return;
+    // Only load from localStorage - no calculation
+    const storedPrayers = JSON.parse(localStorage.getItem('prayerTimes'));
+    const prayers = storedPrayers || defaultPrayers;
+    
+    // If no stored prayers, save defaults once
+    if (!storedPrayers) {
+        localStorage.setItem('prayerTimes', JSON.stringify(defaultPrayers));
     }
     
+    // Update prayer times display (from stored values only)
+    Object.keys(prayers).forEach(prayer => {
+        const adhanEl = document.getElementById(prayer + 'Adhan');
+        const iqaamaEl = document.getElementById(prayer + 'Iqaama');
+        if (adhanEl) adhanEl.textContent = prayers[prayer].adhan;
+        if (iqaamaEl) iqaamaEl.textContent = prayers[prayer].iqaama;
+    });
+    
+    // Find next prayer (using stored adhan times only)
     const now = new Date();
-    const currentTime = now.getHours() * 60 + now.getMinutes(); // Current time in minutes
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+    const prayerTimes = [
+        { name: 'Fajr', time: prayers.fajr.adhan },
+        { name: 'Dhuhr', time: prayers.dhuhr.adhan },
+        { name: 'Asr', time: prayers.asr.adhan },
+        { name: 'Maghrib', time: prayers.maghrib.adhan },
+        { name: 'Isha', time: prayers.isha.adhan }
+    ];
     
-    // Prayer order: Fajr, Dhuhr, Asr, Maghrib, Isha
-    const prayerOrder = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
-    
-    // Convert prayer times to minutes for comparison
-    function timeToMinutes(timeStr) {
-        if (!timeStr) return null;
-        const parts = timeStr.split(':');
-        if (parts.length < 2) return null;
-        const hours = parseInt(parts[0], 10);
-        const minutes = parseInt(parts[1], 10);
-        if (isNaN(hours) || isNaN(minutes)) return null;
-        return hours * 60 + minutes;
-    }
-    
-    // Find the next prayer
-    let nextPrayer = null;
-    let nextPrayerTime = null;
-    let nextPrayerMinutes = null;
-    
-    // Check each prayer in order
-    for (const prayer of prayerOrder) {
-        if (!prayers[prayer] || !prayers[prayer].adhan) continue;
-        
-        const prayerMinutes = timeToMinutes(prayers[prayer].adhan);
-        if (prayerMinutes === null) continue;
-        
-        // If this prayer time hasn't passed today, it's the next one
+    let nextPrayer = prayerTimes[prayerTimes.length - 1];
+    for (let prayer of prayerTimes) {
+        const [hours, minutes] = prayer.time.split(':').map(Number);
+        const prayerMinutes = hours * 60 + minutes;
         if (prayerMinutes > currentTime) {
             nextPrayer = prayer;
-            nextPrayerTime = prayers[prayer].adhan;
-            nextPrayerMinutes = prayerMinutes;
             break;
         }
     }
     
-    // If no prayer found for today, the next prayer is Fajr tomorrow (first prayer)
-    if (!nextPrayer) {
-        nextPrayer = 'fajr';
-        nextPrayerTime = prayers.fajr?.adhan || '';
+    const nextPrayerTime = document.getElementById('nextPrayerTime');
+    if (nextPrayerTime) {
+        nextPrayerTime.textContent = nextPrayer.name + ' (' + nextPrayer.time + ')';
     }
-    
-    // Update the next prayer display
-    const nextPrayerTimeEl = document.getElementById('nextPrayerTime');
-    if (nextPrayerTimeEl) {
-        const prayerNames = {
-            'fajr': 'Fajr',
-            'dhuhr': 'Dhuhr',
-            'asr': 'Asr',
-            'maghrib': 'Maghrib',
-            'isha': 'Isha'
-        };
-        const prayerName = prayerNames[nextPrayer] || nextPrayer;
-        if (nextPrayerTime) {
-            nextPrayerTimeEl.textContent = `${prayerName} (${nextPrayerTime})`;
-        } else {
-            nextPrayerTimeEl.textContent = prayerName;
-        }
-    }
-    
-    // Highlight the next prayer in the list
-    document.querySelectorAll('.prayer-item').forEach(item => {
-        item.classList.remove('active');
-    });
-    
-    // Map prayer keys to display names
-    const prayerNameMap = {
-        'fajr': 'Fajr',
-        'dhuhr': 'Dhuhr',
-        'asr': 'Asr',
-        'maghrib': 'Maghrib',
-        'isha': 'Isha'
-    };
-    
-    // Find and highlight the prayer item by matching the prayer name
-    const prayerItems = document.querySelectorAll('.prayer-item');
-    const nextPrayerDisplayName = prayerNameMap[nextPrayer] || nextPrayer;
-    
-    prayerItems.forEach(item => {
-        const prayerNameEl = item.querySelector('.prayer-name');
-        if (prayerNameEl) {
-            const prayerNameText = prayerNameEl.textContent.trim();
-            
-            // Match by display name (case-insensitive)
-            if (prayerNameText.toLowerCase() === nextPrayerDisplayName.toLowerCase()) {
-                item.classList.add('active');
-            }
-        }
-    });
-    
-    // Fallback: If no item was found by name, find by data attribute or position
-    if (!document.querySelector('.prayer-item.active')) {
-        // Try to find by data-prayer attribute
-        const prayerItemByData = document.querySelector(`.prayer-item [data-prayer="${nextPrayer}"]`);
-        if (prayerItemByData) {
-            prayerItemByData.closest('.prayer-item')?.classList.add('active');
-        } else {
-            // Last resort: find by position in prayer order
-            const prayerIndex = prayerOrder.indexOf(nextPrayer);
-            if (prayerIndex >= 0 && prayerIndex < prayerItems.length) {
-                prayerItems[prayerIndex].classList.add('active');
-            }
-        }
-    }
-}
-
-// DISABLED: No automatic prayer time updates
-// Prayer times are fetched from database on page load only
-// Admin must update times manually in database
-function startPrayerTimesUpdater() {
-    // Function kept for compatibility but does nothing
-    // All automatic time calculations removed
 }
 
 // Update dates on load and continuously (auto-update)
-// Call immediately to show approximate date right away
 updateDates();
-// Load prayer times from database (async)
-loadPrayerTimes().catch(error => {
-    console.error('Failed to load prayer times:', error);
-});
-// Automatic updater disabled - no time calculations
+loadPrayerTimes();
 
 // Initialize fasting reminder checker (checks every minute for Sunday/Wednesday at 2pm, 6pm, 7:40pm)
 initFastingReminderChecker();
@@ -934,13 +667,12 @@ initFastingReminderChecker();
 setInterval(updateDates, 3600000); // 1 hour = 3600000ms
 
 // User Account System
-// Use localUserData to avoid conflict with firebase-auth.js's currentUser
-var localUserData = null;
+let currentUser = null;
 
 function loadUserData() {
     const userData = localStorage.getItem('userData');
     if (userData) {
-        localUserData = JSON.parse(userData);
+        currentUser = JSON.parse(userData);
         updateUserDisplay();
         return true;
     }
@@ -953,14 +685,14 @@ function updateUserDisplay() {
     const accountIcon = document.getElementById('accountIcon');
     const accountIconBtn = document.getElementById('accountIconBtn');
     
-    const userName = localUserData ? (localUserData.firstName || localUserData.name || 'Brother/Sister') : 'Brother/Sister';
+    const userName = currentUser ? (currentUser.firstName || currentUser.name || 'Brother/Sister') : 'Brother/Sister';
     
     // Update all userName spans on the page
     userNameEls.forEach(el => {
         el.textContent = userName;
     });
     
-    if (localUserData) {
+    if (currentUser) {
         // Change icon to show logged in state
         if (accountIcon) {
             accountIcon.className = 'fas fa-user-circle logged-in';
@@ -978,13 +710,6 @@ function updateUserDisplay() {
             accountIconBtn.classList.remove('logged-in');
             accountIconBtn.title = 'Login / Create Account';
         }
-    }
-    
-    // Trigger unified navigation update
-    if (typeof window.forceUpdateNavigation === 'function') {
-        window.forceUpdateNavigation();
-    } else if (typeof window.updateNavigationLinks === 'function') {
-        window.updateNavigationLinks();
     }
 }
 
@@ -1013,7 +738,7 @@ window.showLoginModal = function() {
 window.toggleAccountModal = function() {
     const modal = document.getElementById('accountModal');
     if (modal) {
-        if (localUserData) {
+        if (currentUser) {
             // Show account info/logout
             window.showAccountInfo();
         } else {
@@ -1059,7 +784,7 @@ window.handleLogin = function(e) {
     const user = storedUsers.find(u => u.email === email && u.password === password);
     
     if (user) {
-        localUserData = user;
+        currentUser = user;
         localStorage.setItem('userData', JSON.stringify(user));
         updateUserDisplay();
         window.closeAccountModal();
@@ -1114,78 +839,12 @@ window.handleSignup = function(e) {
     storedUsers.push({...newUser, password: password});
     localStorage.setItem('users', JSON.stringify(storedUsers));
     
-    localUserData = newUser;
+    currentUser = newUser;
     localStorage.setItem('userData', JSON.stringify(newUser));
     updateUserDisplay();
     window.closeAccountModal();
-    
-    // Show success message with WhatsApp join option
-    showRegistrationSuccessModal(firstName, whatsapp);
+    alert('Account created successfully! Welcome, ' + firstName + '!');
 };
-
-// Show registration success modal with WhatsApp join option
-function showRegistrationSuccessModal(firstName, whatsappNumber) {
-    // Get Twilio sandbox join code (UPDATE THIS with your actual code from Twilio Console)
-    // Get it from: https://console.twilio.com/us1/develop/sms/try-it-out/whatsapp-learn
-    const SANDBOX_JOIN_CODE = localStorage.getItem('twilioSandboxCode') || 'planning-job'; // Twilio sandbox join code
-    
-    if (SANDBOX_JOIN_CODE === 'YOUR_CODE_HERE') {
-        // No join code set, just show success
-        alert('Account created successfully! Welcome, ' + firstName + '!\n\nTo receive WhatsApp notifications, you\'ll need to join our WhatsApp sandbox. Instructions will be sent via email.');
-        return;
-    }
-    
-    const joinMessage = `join ${SANDBOX_JOIN_CODE}`;
-    const whatsappUrl = `https://wa.me/14155238886?text=${encodeURIComponent(joinMessage)}`;
-    
-    // Create and show modal
-    const modal = document.createElement('div');
-    modal.id = 'registrationSuccessModal';
-    modal.style.cssText = 'display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; justify-content: center; align-items: center;';
-    
-    modal.innerHTML = `
-        <div style="background: white; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
-            <div style="font-size: 64px; margin-bottom: 20px;">✅</div>
-            <h2 style="color: #2c3e50; margin-bottom: 15px;">Welcome, ${firstName}!</h2>
-            <p style="color: #7f8c8d; margin-bottom: 25px; line-height: 1.6;">
-                Your account has been created successfully!<br><br>
-                <strong>📱 Join WhatsApp Notifications (10 seconds)</strong><br>
-                Click below to receive all KIUMA updates via WhatsApp
-            </p>
-            
-            <div style="background: #E8F5E9; padding: 15px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #4CAF50;">
-                <p style="margin: 0; color: #2E7D32; font-size: 14px;">
-                    <strong>Step 1:</strong> Click "Join WhatsApp" below<br>
-                    <strong>Step 2:</strong> Tap "Send" in WhatsApp<br>
-                    <strong>Done!</strong> ✅ You'll receive all notifications
-                </p>
-            </div>
-            
-            <a href="${whatsappUrl}" target="_blank"
-               style="display: inline-block; background: #25D366; color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-size: 18px; font-weight: bold; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3); margin-right: 10px;">
-                <i class="fab fa-whatsapp"></i> Join WhatsApp
-            </a>
-            
-            <button onclick="this.closest('#registrationSuccessModal').remove()" 
-                    style="padding: 15px 30px; background: #95a5a6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold;">
-                Skip for now
-            </button>
-            
-            <p style="font-size: 12px; color: #95a5a6; margin-top: 20px;">
-                You can join later from your account settings
-            </p>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    // Auto-close after 60 seconds if not interacted
-    setTimeout(function() {
-        if (document.getElementById('registrationSuccessModal')) {
-            modal.remove();
-        }
-    }, 60000);
-}
 
 window.showAccountInfo = function() {
     const modal = document.getElementById('accountModal');
@@ -1196,10 +855,10 @@ window.showAccountInfo = function() {
         document.getElementById('signupFormElement').style.display = 'none';
         document.getElementById('accountInfo').style.display = 'block';
         
-        if (localUserData) {
-            document.getElementById('accountName').textContent = localUserData.name || (localUserData.firstName + ' ' + localUserData.lastName);
-            document.getElementById('accountEmail').textContent = localUserData.email;
-            document.getElementById('accountGender').textContent = localUserData.gender || 'Not specified';
+        if (currentUser) {
+            document.getElementById('accountName').textContent = currentUser.name || (currentUser.firstName + ' ' + currentUser.lastName);
+            document.getElementById('accountEmail').textContent = currentUser.email;
+            document.getElementById('accountGender').textContent = currentUser.gender || 'Not specified';
         }
         
         modal.style.display = 'flex';
@@ -1208,7 +867,7 @@ window.showAccountInfo = function() {
 
 window.handleLogout = function() {
     if (confirm('Are you sure you want to logout?')) {
-        localUserData = null;
+        currentUser = null;
         localStorage.removeItem('userData');
         updateUserDisplay();
         window.closeAccountModal();
@@ -1240,40 +899,6 @@ function closeActivitiesModal() {
     }
 }
 
-function showLessonsModal() {
-    const modal = document.getElementById('lessonsModal');
-    if (modal) {
-        modal.style.display = 'flex';
-    }
-}
-
-function closeLessonsModal() {
-    const modal = document.getElementById('lessonsModal');
-    if (modal) {
-        modal.style.display = 'none';
-    }
-}
-
-function navigateToLesson(sectionId) {
-    closeLessonsModal();
-    // If we're on the important-lessons page, scroll to section
-    if (window.location.pathname.includes('important-lessons.html') || window.location.pathname.endsWith('important-lessons.html')) {
-        const element = document.getElementById(sectionId);
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            // Add a highlight effect
-            element.style.transition = 'background-color 0.3s';
-            element.style.backgroundColor = '#fff3e0';
-            setTimeout(() => {
-                element.style.backgroundColor = '';
-            }, 2000);
-        }
-    } else {
-        // Navigate to the page with the section
-        window.location.href = `important-lessons.html#${sectionId}`;
-    }
-}
-
 function navigateToActivity(type) {
     closeActivitiesModal();
     
@@ -1300,8 +925,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Search functionality is now handled by services/searchService.js and js/search.js
-// Old search implementation removed - see search.html for full search interface
+// Search functionality
+const searchInput = document.getElementById('searchInput');
+if (searchInput) {
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            const query = searchInput.value;
+            if (query.trim()) {
+                // Simple search - can be enhanced
+                alert('Searching for: ' + query);
+            }
+        }
+    });
+}
 
 // Notifications button
 const notificationsBtn = document.getElementById('notificationsBtn');
@@ -1382,155 +1018,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize prayer times editing
     initializePrayerTimesEditing();
-    
-    // Check authentication and update edit button visibility on page load
-    // Also restore Supabase session if user is logged in
-    const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
-    if (adminStatus) {
-        console.log('[Page Load] Admin logged in detected, checking Supabase session...');
-        // Small delay to ensure Supabase client is initialized
-        setTimeout(() => {
-            updateEditButtonVisibility();
-        }, 500);
-    } else {
-        updateEditButtonVisibility();
-    }
-    
-    // Listen for online/offline events to update button states
-    window.addEventListener('online', () => {
-        console.log('[Network] Connection restored');
-        updateEditButtonVisibility();
-        // Re-enable save button if in edit mode
-        const editBtn = document.getElementById('adminEditBtn');
-        if (editBtn && editBtn.innerHTML.includes('Save')) {
-            editBtn.disabled = false;
-            editBtn.style.opacity = '1';
-            editBtn.style.cursor = 'pointer';
-        }
-        // Re-enable save button in save/cancel container
-        const saveBtn = document.querySelector('#saveCancelBtns .btn-primary');
-        if (saveBtn) {
-            saveBtn.disabled = false;
-            saveBtn.style.opacity = '1';
-            saveBtn.style.cursor = 'pointer';
-        }
-    });
-    
-    window.addEventListener('offline', () => {
-        console.log('[Network] Connection lost');
-        console.log('Offline — edit disabled');
-        updateEditButtonVisibility();
-        // Disable save button if in edit mode
-        const editBtn = document.getElementById('adminEditBtn');
-        if (editBtn && editBtn.innerHTML.includes('Save')) {
-            editBtn.disabled = true;
-            editBtn.style.opacity = '0.5';
-            editBtn.style.cursor = 'not-allowed';
-        }
-        // Disable save button in save/cancel container
-        const saveBtn = document.querySelector('#saveCancelBtns .btn-primary');
-        if (saveBtn) {
-            saveBtn.disabled = true;
-            saveBtn.style.opacity = '0.5';
-            saveBtn.style.cursor = 'not-allowed';
-        }
-    });
-    
-    // Set up Supabase auth state listener (plain JavaScript only)
-    // Wait a bit for Supabase client to be initialized
-    setTimeout(function() {
-        try {
-            // Get Supabase client - use window.getSupabaseClient if available
-            var supabase = null;
-            if (typeof window.getSupabaseClient === 'function') {
-                try {
-                    supabase = window.getSupabaseClient();
-                } catch (err) {
-                    console.warn('[Auth Listener] Error getting Supabase client:', err);
-                }
-            }
-            
-            // If client is available, set up listener
-            if (supabase && supabase.auth && typeof supabase.auth.onAuthStateChange === 'function') {
-                console.log('[Auth Listener] Setting up Supabase auth state listener...');
-                
-                // Set up onAuthStateChange listener (plain JavaScript)
-                supabase.auth.onAuthStateChange(function(event, session) {
-                    console.log('[Auth Listener] Auth state changed:', event, session ? 'User: ' + session.user.email : 'No session');
-                    
-                    if (event === 'SIGNED_IN' && session && session.user) {
-                        // User logged in - show Edit button
-                        console.log('[Auth Listener] User signed in - showing Edit button');
-                        updateEditButtonVisibility();
-                    } else if (event === 'SIGNED_OUT' || !session || !session.user) {
-                        // User logged out - hide Edit button
-                        console.log('[Auth Listener] User signed out - hiding Edit button');
-                        updateEditButtonVisibility();
-                        
-                        // Also cancel editing if in progress
-                        var editBtn = document.getElementById('adminEditBtn');
-                        if (editBtn && editBtn.innerHTML.indexOf('Save') !== -1) {
-                            // User was editing, cancel it
-                            if (typeof cancelEditing === 'function') {
-                                cancelEditing();
-                            }
-                        }
-                    } else if (event === 'TOKEN_REFRESHED' && session && session.user) {
-                        // Token refreshed - update button visibility
-                        console.log('[Auth Listener] Token refreshed - updating Edit button');
-                        updateEditButtonVisibility();
-                    }
-                });
-                
-                console.log('[Auth Listener] ✅ Auth state listener set up successfully');
-            } else {
-                console.warn('[Auth Listener] Supabase client not available yet, will retry...');
-                // Retry after a longer delay
-                setTimeout(function() {
-                    if (typeof window.getSupabaseClient === 'function') {
-                        try {
-                            supabase = window.getSupabaseClient();
-                            if (supabase && supabase.auth && typeof supabase.auth.onAuthStateChange === 'function') {
-                                console.log('[Auth Listener] Retrying - setting up Supabase auth state listener...');
-                                
-                                supabase.auth.onAuthStateChange(function(event, session) {
-                                    console.log('[Auth Listener] Auth state changed:', event, session ? 'User: ' + session.user.email : 'No session');
-                                    
-                                    if (event === 'SIGNED_IN' && session && session.user) {
-                                        console.log('[Auth Listener] User signed in - showing Edit button');
-                                        updateEditButtonVisibility();
-                                    } else if (event === 'SIGNED_OUT' || !session || !session.user) {
-                                        console.log('[Auth Listener] User signed out - hiding Edit button');
-                                        updateEditButtonVisibility();
-                                        
-                                        var editBtn = document.getElementById('adminEditBtn');
-                                        if (editBtn && editBtn.innerHTML.indexOf('Save') !== -1) {
-                                            if (typeof cancelEditing === 'function') {
-                                                cancelEditing();
-                                            }
-                                        }
-                                    } else if (event === 'TOKEN_REFRESHED' && session && session.user) {
-                                        console.log('[Auth Listener] Token refreshed - updating Edit button');
-                                        updateEditButtonVisibility();
-                                    }
-                                });
-                                
-                                console.log('[Auth Listener] ✅ Auth state listener set up successfully (retry)');
-                            }
-                        } catch (err) {
-                            console.warn('[Auth Listener] Retry failed:', err);
-                        }
-                    }
-                }, 2000);
-            }
-        } catch (error) {
-            console.error('[Auth Listener] Error setting up auth state listener:', error);
-        }
-    }, 1000);
 });
 
 // Admin Password (in production, this should be stored securely on the backend)
-const ADMIN_PASSWORD = 'kiuma2025'; // Updated to match media and notifications admin password
+const ADMIN_PASSWORD = 'kiuma2024'; // Change this to your desired password
 
 // Check if admin is logged in from localStorage
 let isAdminLoggedIn = localStorage.getItem('isAdminLoggedIn') === 'true' || false;
@@ -1547,24 +1038,13 @@ window.showAdminLogin = function() {
     modal.style.display = 'flex';
     modal.style.visibility = 'visible';
     
-    const emailInput = document.getElementById('adminEmail');
     const passwordInput = document.getElementById('adminPassword');
     const passwordError = document.getElementById('passwordError');
     
-    // Pre-fill email from localStorage if available
-    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-    if (emailInput) {
-        emailInput.value = userData.email || '';
-        if (!userData.email) {
-            emailInput.focus();
-        }
-    }
-    
     if (passwordInput) {
         passwordInput.value = '';
-        if (userData.email) {
-            passwordInput.focus();
-        }
+        // Focus immediately
+        passwordInput.focus();
     }
     
     if (passwordError) {
@@ -1574,197 +1054,74 @@ window.showAdminLogin = function() {
 
 window.closeAdminLogin = function() {
     const modal = document.getElementById('adminLoginModal');
-    const emailInput = document.getElementById('adminEmail');
     const passwordInput = document.getElementById('adminPassword');
     const passwordError = document.getElementById('passwordError');
     
     if (modal) {
         modal.style.display = 'none';
     }
-    if (emailInput) {
-        emailInput.value = '';
-    }
     if (passwordInput) {
         passwordInput.value = '';
     }
     if (passwordError) {
         passwordError.style.display = 'none';
-        passwordError.textContent = ''; // Clear error message
     }
 }
 
-window.verifyAdminPassword = async function() {
-    const emailInput = document.getElementById('adminEmail');
+window.verifyAdminPassword = function() {
     const passwordInput = document.getElementById('adminPassword');
-    const passwordError = document.getElementById('passwordError');
-    
     if (!passwordInput) {
         console.error('Admin password input not found');
         alert('Error: Admin login form not found. Please refresh the page.');
         return;
     }
     
-    const email = emailInput ? emailInput.value.trim() : '';
     const password = passwordInput.value.trim();
-    
-    // Check if this is the notifications admin login (password only)
-    // If no email input exists, it's password-only login
-    if (!emailInput) {
-        // Password-only login (for notifications page)
-        if (!password) {
-            if (passwordError) {
-                passwordError.style.display = 'block';
-                passwordError.textContent = 'Please enter password.';
-            }
-            return;
-        }
-        
-        // Verify password only
-        if (password === ADMIN_PASSWORD) {
-            sessionStorage.setItem('isAdminAuthenticated', 'true');
-            localStorage.setItem('adminPassword', ADMIN_PASSWORD);
-            if (typeof closeAdminLogin === 'function') {
-                closeAdminLogin();
-            }
-            if (typeof updateAdminButtonVisibility === 'function') {
-                updateAdminButtonVisibility();
-            }
-            alert('Admin access granted!');
-            return;
-        } else {
-            if (passwordError) {
-                passwordError.style.display = 'block';
-                passwordError.textContent = 'Incorrect password. Please try again.';
-            }
-            return;
-        }
-    }
-    
-    // Email + password login (for other pages)
-    if (!email || !password) {
-        if (passwordError) {
-            passwordError.style.display = 'block';
-            passwordError.textContent = 'Please enter both email and password.';
-        }
-        return;
-    }
-    
-    // Try Supabase authentication first (required for RLS policies)
-    try {
-        const { adminLoginWithSupabase } = await import('./services/supabaseAuth.js');
-        const supabaseResult = await adminLoginWithSupabase(email, password);
-        
-        if (supabaseResult.success) {
-            // Supabase auth successful
-            isAdminLoggedIn = true;
-            localStorage.setItem('isAdminLoggedIn', 'true');
-            
-            // Also try Firebase Auth for backward compatibility (optional)
-            if (typeof signInWithEmail === 'function') {
-                try {
-                    await signInWithEmail(email, password);
-                } catch (firebaseError) {
-                    console.warn('[Admin Login] Firebase auth optional - continuing with Supabase only:', firebaseError);
-                }
-            }
-            
-            window.closeAdminLogin();
-            
-            // Enable editing if on prayer times page
-            const prayerTimesList = document.getElementById('prayerTimesList');
-            if (prayerTimesList) {
-                try {
-                    enableEditing();
-                } catch (error) {
-                    console.error('Error enabling editing:', error);
-                }
-            }
-            
-            // Update UI
-            if (typeof window.checkAdminStatus === 'function') {
-                window.checkAdminStatus();
-            }
-            
-            // Update edit button visibility after successful login
-            updateEditButtonVisibility();
-            
-            alert('Admin mode enabled. You can now edit content.');
-            return;
-        } else {
-            // Supabase auth failed - show error
-            if (passwordError) {
-                passwordError.style.display = 'block';
-                passwordError.textContent = supabaseResult.message || 'Authentication failed. Please try again.';
-            }
-            passwordInput.value = '';
-            passwordInput.focus();
-            return;
-        }
-    } catch (supabaseAuthError) {
-        console.error('[Admin Login] Supabase auth error:', supabaseAuthError);
-        
-        // Fallback to Firebase Auth if Supabase fails
-        if (typeof signInWithEmail === 'function') {
-            try {
-                const result = await signInWithEmail(email, password);
-                if (result.success) {
-                    isAdminLoggedIn = true;
-                    localStorage.setItem('isAdminLoggedIn', 'true');
-                    
-                    window.closeAdminLogin();
-                    
-                    // Enable editing if on prayer times page
-                    const prayerTimesList = document.getElementById('prayerTimesList');
-                    if (prayerTimesList) {
-                        try {
-                            enableEditing();
-                        } catch (error) {
-                            console.error('Error enabling editing:', error);
-                        }
-                    }
-                    
-                    // Update UI
-                    if (typeof window.checkAdminStatus === 'function') {
-                        window.checkAdminStatus();
-                    }
-                    
-                    alert('Admin mode enabled (Firebase auth). Note: Some features may require Supabase authentication.');
-                    return;
-                } else {
-                    if (passwordError) {
-                        passwordError.style.display = 'block';
-                        passwordError.textContent = result.message || 'Authentication failed. Please try again.';
-                    }
-                    passwordInput.value = '';
-                    passwordInput.focus();
-                    return;
-                }
-            } catch (firebaseError) {
-                console.error('[Admin Login] Firebase auth error:', firebaseError);
-            }
-        }
-        
-        // Both failed - show error
-        if (passwordError) {
-            passwordError.style.display = 'block';
-            passwordError.textContent = 'Authentication failed. Please check your email and password.';
-        }
-        passwordInput.value = '';
+    if (!password) {
+        alert('Please enter a password');
         passwordInput.focus();
         return;
     }
+    
+    // Verify password immediately
+    if (password === ADMIN_PASSWORD) {
+        isAdminLoggedIn = true;
+        localStorage.setItem('isAdminLoggedIn', 'true');
+        
+        // Close login modal immediately
+        window.closeAdminLogin();
+        
+        // Enable editing only if on prayer times page (index.html has prayerTimesList)
+        const prayerTimesList = document.getElementById('prayerTimesList');
+        if (prayerTimesList) {
+            try {
+                enableEditing();
+            } catch (error) {
+                console.error('Error enabling editing:', error);
+                // Continue even if enableEditing fails
+            }
+        }
+        
+        // Update UI for notifications/media pages immediately
+        if (typeof window.checkAdminStatus === 'function') {
+            window.checkAdminStatus();
+        } else if (typeof checkAdminStatus === 'function') {
+            checkAdminStatus();
+        }
+        
+        alert('Admin mode enabled. You can now edit content.');
+    } else {
+        const passwordError = document.getElementById('passwordError');
+        if (passwordError) {
+            passwordError.style.display = 'block';
+            passwordError.textContent = 'Incorrect password. Please try again.';
+        }
+        passwordInput.value = '';
+        passwordInput.focus();
+    }
 }
 
-window.logoutAdmin = async function() {
-    // Sign out from Firebase if available
-    if (typeof signOut === 'function') {
-        try {
-            await signOut();
-        } catch (error) {
-            console.error('Sign out error:', error);
-        }
-    }
-    
+window.logoutAdmin = function() {
     isAdminLoggedIn = false;
     localStorage.removeItem('isAdminLoggedIn');
     checkAdminStatus();
@@ -1800,184 +1157,13 @@ window.checkAdminStatus = function() {
     });
 };
 
-/**
- * Check authentication and update edit button visibility
- */
-async function updateEditButtonVisibility() {
-    const editBtn = document.getElementById('adminEditBtn');
-    if (!editBtn) {
-        return;
-    }
-
-    // Check if offline - hide edit button if offline
-    if (!navigator.onLine) {
-        editBtn.style.display = 'none';
-        console.log('Offline — edit disabled');
-        return;
-    }
-
-    try {
-        // Check Supabase session using getSession() directly
-        let supabase;
-        try {
-            if (window.getSupabaseClient) {
-                supabase = window.getSupabaseClient();
-            } else {
-                const { getSupabaseClient } = await import('./services/supabaseClient.js');
-                supabase = getSupabaseClient();
-            }
-        } catch (clientError) {
-            console.error('[Edit Button] Failed to get Supabase client:', clientError);
-            editBtn.style.display = 'none';
-            return;
-        }
-        
-        if (!supabase) {
-            editBtn.style.display = 'none';
-            return;
-        }
-        
-        // Check session using supabase.auth.getSession()
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        // If no authenticated user, hide Edit button
-        if (sessionError || !session || !session.user) {
-            editBtn.style.display = 'none';
-            console.log('[Edit Button] No authenticated session - hiding edit button');
-            return;
-        }
-        
-        // Also check localStorage admin status
-        const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
-        
-        console.log('[Edit Button] Session check result:', {
-            hasSession: !!session,
-            hasUser: !!session.user,
-            userEmail: session.user?.email,
-            adminStatus: adminStatus
-        });
-        
-        // Show button only if authenticated session exists AND admin status is true
-        if (session && session.user && adminStatus) {
-            editBtn.style.display = '';
-            editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Times';
-            editBtn.onclick = enableEditing;
-            console.log('[Edit Button] ✅ Showing edit button for authenticated user:', session.user.email);
-        } else {
-            editBtn.style.display = 'none';
-            
-            if (!adminStatus) {
-                console.log('[Edit Button] Hiding edit button - user not logged in as admin');
-            } else {
-                console.log('[Edit Button] Hiding edit button - no authenticated session');
-            }
-        }
-    } catch (error) {
-        console.error('[Edit Button] Error checking authentication:', error);
-        // Hide button on error
-        editBtn.style.display = 'none';
-    }
-}
-
 // Also keep the non-window version for backward compatibility
 function checkAdminStatus() {
     window.checkAdminStatus();
-    // Also update edit button visibility
-    updateEditButtonVisibility();
 }
 
-async function enableEditing() {
-    console.log('Enabling prayer times editing...');
-    
-    // Check if offline - prevent editing when offline
-    if (!navigator.onLine) {
-        console.log('Offline — edit disabled');
-        alert('You are offline. Editing is disabled. Please check your internet connection.');
-        return;
-    }
-    
-    // Check Supabase session using getSession() before enabling editing
-    try {
-        let supabase;
-        try {
-            if (window.getSupabaseClient) {
-                supabase = window.getSupabaseClient();
-            } else {
-                const { getSupabaseClient } = await import('./services/supabaseClient.js');
-                supabase = getSupabaseClient();
-            }
-        } catch (clientError) {
-            console.error('[Enable Editing] Failed to get Supabase client:', clientError);
-            alert('Please login to edit prayer times');
-            if (typeof window.showAdminLogin === 'function') {
-                window.showAdminLogin();
-            }
-            return;
-        }
-        
-        if (!supabase) {
-            alert('Please login to edit prayer times');
-            if (typeof window.showAdminLogin === 'function') {
-                window.showAdminLogin();
-            }
-            return;
-        }
-        
-        // Check session using supabase.auth.getSession()
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        // If no authenticated user, prevent editing
-        if (sessionError || !session || !session.user) {
-            console.warn('[Enable Editing] No authenticated session found');
-            alert('Please login to edit prayer times');
-            if (typeof window.showAdminLogin === 'function') {
-                window.showAdminLogin();
-            }
-            // Hide edit button
-            const editBtn = document.getElementById('adminEditBtn');
-            if (editBtn) {
-                editBtn.style.display = 'none';
-            }
-            return;
-        }
-        
-        // Also check localStorage admin status
-        const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
-        if (!adminStatus) {
-            console.warn('[Enable Editing] Admin status not set. Showing login modal.');
-            alert('Please login to edit prayer times');
-            if (typeof window.showAdminLogin === 'function') {
-                window.showAdminLogin();
-            }
-            return;
-        }
-        
-        console.log('[Enable Editing] Session verified:', session.user.email);
-    } catch (error) {
-        console.error('[Enable Editing] Auth check error:', error);
-        alert('Authentication check failed. Please log in again.');
-        if (typeof window.showAdminLogin === 'function') {
-            window.showAdminLogin();
-        }
-        return;
-    }
-    
+function enableEditing() {
     const editableElements = document.querySelectorAll('.editable');
-    console.log('Found editable elements:', editableElements.length);
-    
-    if (editableElements.length === 0) {
-        console.warn('No editable elements found. Prayer times may not be loaded yet.');
-        // Retry after a short delay
-        setTimeout(() => {
-            const retryElements = document.querySelectorAll('.editable');
-            if (retryElements.length > 0) {
-                console.log('Retrying enableEditing after delay...');
-                enableEditing();
-            }
-        }, 500);
-        return;
-    }
-    
     editableElements.forEach(el => {
         el.contentEditable = 'true';
         el.classList.add('editing');
@@ -1985,62 +1171,24 @@ async function enableEditing() {
     
     // Update edit button
     const editBtn = document.getElementById('adminEditBtn');
-    if (editBtn) {
-        editBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
-        editBtn.onclick = savePrayerTimes;
-        editBtn.style.display = ''; // Ensure button is visible
-        
-        // Disable save button if offline
-        if (!navigator.onLine) {
-            editBtn.disabled = true;
-            editBtn.style.opacity = '0.5';
-            editBtn.style.cursor = 'not-allowed';
-            console.log('Offline — edit disabled');
-        } else {
-            editBtn.disabled = false;
-            editBtn.style.opacity = '1';
-            editBtn.style.cursor = 'pointer';
-        }
-        
-        console.log('Edit button updated');
-    } else {
-        console.error('Edit button not found');
-    }
+    editBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+    editBtn.onclick = savePrayerTimes;
     
-    // Add save/cancel buttons (only if authenticated)
-    const prayerTimesList = document.getElementById('prayerTimesList');
-    if (prayerTimesList && !document.getElementById('saveCancelBtns')) {
+    // Add save/cancel buttons
+    if (!document.getElementById('saveCancelBtns')) {
         const btnContainer = document.createElement('div');
         btnContainer.id = 'saveCancelBtns';
         btnContainer.style.cssText = 'display: flex; gap: 10px; margin-top: 15px;';
-        const saveBtn = document.createElement('button');
-        saveBtn.className = 'btn btn-primary';
-        saveBtn.style.cssText = 'flex: 1;';
-        saveBtn.innerHTML = '<i class="fas fa-save"></i> Save';
-        saveBtn.onclick = savePrayerTimes;
-        
-        // Disable save button if offline
-        if (!navigator.onLine) {
-            saveBtn.disabled = true;
-            saveBtn.style.opacity = '0.5';
-            saveBtn.style.cursor = 'not-allowed';
-            console.log('Offline — edit disabled');
-        }
-        
-        btnContainer.appendChild(saveBtn);
-        
-        const cancelBtn = document.createElement('button');
-        cancelBtn.className = 'btn btn-secondary';
-        cancelBtn.style.cssText = 'flex: 1;';
-        cancelBtn.innerHTML = '<i class="fas fa-times"></i> Cancel';
-        cancelBtn.onclick = cancelEditing;
-        btnContainer.appendChild(cancelBtn);
-        
-        prayerTimesList.appendChild(btnContainer);
-        console.log('Save/Cancel buttons added');
+        btnContainer.innerHTML = `
+            <button class="btn btn-primary" onclick="savePrayerTimes()" style="flex: 1;">
+                <i class="fas fa-save"></i> Save
+            </button>
+            <button class="btn btn-secondary" onclick="cancelEditing()" style="flex: 1;">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+        `;
+        document.getElementById('prayerTimesList').appendChild(btnContainer);
     }
-    
-    console.log('Prayer times editing enabled successfully');
 }
 
 function cancelEditing() {
@@ -2051,93 +1199,22 @@ function cancelEditing() {
         el.classList.remove('editing');
     });
     
-    // Reload prayer times from database
-    loadPrayerTimes().catch(error => {
-        console.error('Failed to reload prayer times:', error);
-    });
+    // Reload prayer times (from storage, no calculation)
+    loadPrayerTimes();
     
-    // Update edit button visibility based on authentication
-    updateEditButtonVisibility();
+    // Update edit button
+    const editBtn = document.getElementById('adminEditBtn');
+    editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Times';
+    editBtn.onclick = showAdminLogin;
     
     // Remove save/cancel buttons
     const btnContainer = document.getElementById('saveCancelBtns');
     if (btnContainer) btnContainer.remove();
 }
 
-async function savePrayerTimes() {
-    // Check if offline - prevent saving when offline
-    if (!navigator.onLine) {
-        console.log('Offline — edit disabled');
-        alert('You are offline. Cannot save prayer times. Please check your internet connection and try again.');
-        return;
-    }
-    
-    // Check Supabase session using getSession() before saving
-    try {
-        let supabase;
-        try {
-            if (window.getSupabaseClient) {
-                supabase = window.getSupabaseClient();
-            } else {
-                const { getSupabaseClient } = await import('./services/supabaseClient.js');
-                supabase = getSupabaseClient();
-            }
-        } catch (clientError) {
-            console.error('[Save Prayer Times] Failed to get Supabase client:', clientError);
-            alert('Please login to edit prayer times');
-            if (typeof window.showAdminLogin === 'function') {
-                window.showAdminLogin();
-            }
-            return;
-        }
-        
-        if (!supabase) {
-            alert('Please login to edit prayer times');
-            if (typeof window.showAdminLogin === 'function') {
-                window.showAdminLogin();
-            }
-            return;
-        }
-        
-        // Check session using supabase.auth.getSession()
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        // If no authenticated user, prevent saving
-        if (sessionError || !session || !session.user) {
-            console.error('[Save Prayer Times] No authenticated session found');
-            alert('Please login to edit prayer times');
-            if (typeof window.showAdminLogin === 'function') {
-                window.showAdminLogin();
-            }
-            return;
-        }
-        
-        console.log('[Save Prayer Times] Session verified:', session.user.email);
-        console.log('[Save Prayer Times] ADMIN UID CONFIRMED:', session.user.id, '- Proceeding with save operation');
-    } catch (authCheckError) {
-        console.error('[Save Prayer Times] Auth check error:', authCheckError);
-        alert('Please login to edit prayer times');
-        
-        // Show admin login modal
-        if (typeof window.showAdminLogin === 'function') {
-            window.showAdminLogin();
-        }
-        return;
-    }
-    
-    // Check admin status (additional check)
-    const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
-    if (!adminStatus) {
-        alert('Only administrators can update prayer times. Please log in as admin.');
-        if (typeof window.showAdminLogin === 'function') {
-            window.showAdminLogin();
-        }
-        return;
-    }
-    
+function savePrayerTimes() {
     const prayers = {};
     const prayerNames = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
-    let hasErrors = false;
     
     prayerNames.forEach(prayer => {
         const adhanEl = document.getElementById(prayer + 'Adhan');
@@ -2151,7 +1228,6 @@ async function savePrayerTimes() {
             
             if (!timeRegex.test(adhanTime) || !timeRegex.test(iqaamaTime)) {
                 alert(`Invalid time format for ${prayer}. Please use HH:MM format (e.g., 05:30)`);
-                hasErrors = true;
                 return;
             }
             
@@ -2162,54 +1238,13 @@ async function savePrayerTimes() {
         }
     });
     
-    if (hasErrors) {
-        return;
-    }
+    // Save to localStorage
+    localStorage.setItem('prayerTimes', JSON.stringify(prayers));
     
-    try {
-        // Get admin UID for logging
-        const { checkSupabaseAuth } = await import('./services/supabaseAuth.js');
-        const authStatus = await checkSupabaseAuth();
-        const adminUID = authStatus.authenticated && authStatus.user ? authStatus.user.id : 'UNKNOWN';
-        console.log('[Save Prayer Times] Saving with ADMIN UID:', adminUID);
-        
-        // Save to Supabase database
-        if (window.prayerTimesService && window.prayerTimesService.savePrayerTimes) {
-            await window.prayerTimesService.savePrayerTimes(prayers, 'admin');
-        } else {
-            // Fallback if service not loaded
-            const { savePrayerTimes: saveToDB } = await import('./services/prayerTimesService.js');
-            await saveToDB(prayers, 'admin');
-        }
-        
-        console.log('[Save Prayer Times] Save completed successfully for ADMIN UID:', adminUID);
-        
-        // Disable editing
-        cancelEditing();
-        
-        // Reload prayer times from database
-        await loadPrayerTimes();
-        
-        alert('Prayer times saved successfully!');
-    } catch (error) {
-        console.error('Error saving prayer times:', error);
-        
-        // Check if error is authentication-related
-        if (error.message && (
-            error.message.includes('Authentication') || 
-            error.message.includes('auth') ||
-            error.message.includes('logged in') ||
-            error.message.includes('RLS') ||
-            error.message.includes('row-level security')
-        )) {
-            alert('Authentication error: ' + error.message + '\n\nPlease log in again and try saving.');
-            if (typeof window.showAdminLogin === 'function') {
-                window.showAdminLogin();
-            }
-        } else {
-            alert('Error: Failed to save prayer times. ' + (error.message || 'Please try again.'));
-        }
-    }
+    // Disable editing
+    cancelEditing();
+    
+    alert('Prayer times saved successfully!');
 }
 
 function initializePrayerTimesEditing() {
@@ -2243,75 +1278,5 @@ function initializePrayerTimesEditing() {
             }
         });
     });
-}
-
-// Global function to update notification badge on all pages
-// BarakahPush Notification System – Active
-window.updateNotificationBadge = async function() {
-    try {
-        // Use BarakahPush if available
-        if (typeof updateBarakahPushBadge === 'function') {
-            await updateBarakahPushBadge();
-            return;
-        }
-        
-        // Fallback to old method
-        let unreadCount = 0;
-        
-        // Get from localStorage (Firestore removed)
-        if (unreadCount === 0) {
-            const notificationsData = JSON.parse(localStorage.getItem('notificationsData') || '[]');
-            const readNotifications = JSON.parse(localStorage.getItem('readNotifications') || '[]');
-            unreadCount = notificationsData.filter(n => {
-                const id = n.id || n.notificationId;
-                return !readNotifications.includes(id) && (n.status !== 'read');
-            }).length;
-        }
-        
-        // Update all badge elements on the page
-        document.querySelectorAll('.notifications-btn .badge').forEach(badge => {
-            badge.textContent = unreadCount;
-            badge.style.display = unreadCount > 0 ? 'inline' : 'none';
-        });
-        
-        return unreadCount;
-    } catch (error) {
-        console.error('Error updating notification badge:', error);
-        // Hide badge on error
-        document.querySelectorAll('.notifications-btn .badge').forEach(badge => {
-            badge.style.display = 'none';
-        });
-        return 0;
-    }
-};
-
-// Update badge on page load - BarakahPush Notification System – Active
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', async () => {
-        // Initialize BarakahPush if available
-        if (typeof initializeBarakahPush === 'function') {
-            await initializeBarakahPush();
-        }
-        setTimeout(() => window.updateNotificationBadge(), 500);
-        
-        // Set up periodic badge updates
-        setInterval(() => {
-            window.updateNotificationBadge();
-        }, 30000); // Update every 30 seconds
-    });
-} else {
-    // Initialize BarakahPush if available
-    if (typeof initializeBarakahPush === 'function') {
-        initializeBarakahPush().then(() => {
-            setTimeout(() => window.updateNotificationBadge(), 500);
-        });
-    } else {
-        setTimeout(() => window.updateNotificationBadge(), 500);
-    }
-    
-    // Set up periodic badge updates
-    setInterval(() => {
-        window.updateNotificationBadge();
-    }, 30000); // Update every 30 seconds
 }
 

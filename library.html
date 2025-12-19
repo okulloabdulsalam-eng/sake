@@ -6,39 +6,6 @@
     <title>Library - KIUMA</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script>
-        // Define showAddBookModal immediately in head so it's available for onclick handlers
-        window.showAddBookModal = function() {
-            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
-            if (!adminStatus) {
-                if (typeof window.showAdminLogin === 'function') {
-                    window.showAdminLogin();
-                } else {
-                    alert('Please login as admin first. Click the "Admin Login" button.');
-                }
-                return;
-            }
-            const modal = document.getElementById('addBookModal');
-            if (modal) {
-                modal.style.display = 'flex';
-                modal.style.visibility = 'visible';
-                modal.style.zIndex = '9999';
-                console.log('Add Book modal opened');
-                
-                // Re-attach file input handlers when modal opens (fixes timing issues)
-                setTimeout(function() {
-                    if (typeof window.attachFileInputHandler === 'function') {
-                        window.attachFileInputHandler();
-                    } else if (typeof attachFileInputHandler === 'function') {
-                        attachFileInputHandler();
-                    }
-                }, 100);
-            } else {
-                console.error('Add Book modal not found');
-                alert('Error: Add Book form not found. Please refresh the page.');
-            }
-        };
-    </script>
 </head>
 <body>
     <nav class="nav-menu" id="navMenu">
@@ -60,7 +27,7 @@
             <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
             <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
             <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
-            <li><a href="join-us.html" class="nav-link"><i class="fas fa-user-circle"></i> My Account</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
         </ul>
     </nav>
 
@@ -69,7 +36,7 @@
             <div class="header-content">
                 <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
                 <div class="logo-container">
-                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='block';" onload="this.style.display='block'; if(this.nextElementSibling) this.nextElementSibling.style.display='none';">
+                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
                     <svg class="header-logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="display: none;">
                         <circle cx="100" cy="100" r="95" fill="none" stroke="#4CAF50" stroke-width="4"/>
                         <path id="topArc" d="M 20,100 A 80,80 0 0,1 180,100" fill="none"/>
@@ -94,7 +61,7 @@
                 </div>
                 <button class="notifications-btn" id="notificationsBtn">
                     <i class="fas fa-bell"></i>
-                    <span class="badge" style="display: none;">0</span>
+                    <span class="badge">3</span>
                 </button>
             </div>
         </header>
@@ -107,9 +74,9 @@
                         <a href="about.html">KIUMA</a>
                     </h2>
                 </div>
-                <a href="join-us.html" class="account-icon-btn" id="accountIconBtn">
+                <button class="account-icon-btn" id="accountIconBtn" onclick="toggleAccountModal()">
                     <i class="fas fa-user-circle" id="accountIcon"></i>
-                </a>
+                </button>
             </section>
 
             <section class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -128,620 +95,39 @@
             </section>
 
             <section class="page-content">
-                <!-- Search Bar with Dropdown Suggestions - At Top -->
-                <div style="margin-bottom: 20px; position: relative;">
-                    <div style="position: relative;">
-                        <input 
-                            type="text" 
-                            id="librarySearchInput" 
-                            placeholder="Search books by name..." 
-                            autocomplete="off"
-                            style="
-                                width: 100%;
-                                padding: 14px 50px 14px 16px;
-                                font-size: 16px;
-                                border: 2px solid #e0e0e0;
-                                border-radius: 12px;
-                                background: white;
-                                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-                                transition: all 0.2s ease;
-                                box-sizing: border-box;
-                            "
-                            oninput="handleLibrarySearchDebounced(this.value)"
-                            onfocus="showSearchSuggestions()"
-                            onblur="setTimeout(() => hideSearchSuggestions(), 300)"
-                            aria-label="Search books by name"
-                            aria-autocomplete="list"
-                            role="searchbox"
-                        />
-                        <i class="fas fa-search" style="
-                            position: absolute;
-                            right: 18px;
-                            top: 50%;
-                            transform: translateY(-50%);
-                            color: #9e9e9e;
-                            font-size: 18px;
-                            pointer-events: none;
-                        "></i>
-                    </div>
-                    <div id="searchSuggestions" 
-                         role="listbox" 
-                         aria-label="Search suggestions"
-                         style="
-                        position: absolute;
-                        top: 100%;
-                        left: 0;
-                        right: 0;
-                        background: white;
-                        border: 1px solid #e0e0e0;
-                        border-radius: 12px;
-                        box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-                        margin-top: 8px;
-                        max-height: 300px;
-                        overflow-y: auto;
-                        z-index: 1000;
-                        display: none;
-                    "></div>
-                    <div id="searchResultsInfo" style="
-                        margin-top: 8px;
-                        font-size: 13px;
-                        color: #757575;
-                        display: none;
-                    "></div>
-                </div>
-                
-                <!-- Continue to Books Link -->
-                <div style="margin-bottom: 25px;">
-                    <a href="#sortByCategorySection" onclick="event.preventDefault(); document.getElementById('sortByCategorySection').scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => document.getElementById('sortByCategory').focus(), 500);" style="display: block; padding: 20px; background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); color: white; text-decoration: none; border-radius: 15px; text-align: center; font-size: 18px; font-weight: 600; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3); transition: transform 0.2s;">
-                        <i class="fas fa-arrow-right" style="margin-right: 10px;"></i>
-                        Continue to Books
-                    </a>
-                </div>
-                
-                <!-- Data Saving Options -->
-                <div style="margin-bottom: 30px;">
-                    <!-- Option 1: Want to Save Data -->
-                    <div style="background: linear-gradient(135deg, #E3F2FD, #BBDEFB); border: 3px solid #2196F3; border-radius: 15px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(33, 150, 243, 0.2);">
-                        <h3 style="color: #1976D2; font-size: 20px; font-weight: 700; margin: 0 0 15px 0; display: flex; align-items: center; gap: 10px;">
-                            <i class="fas fa-save" style="font-size: 24px;"></i>
-                            Option 1: Want to Save Data?
-                        </h3>
-                        <p style="color: #333; margin: 0 0 15px 0; line-height: 1.6; font-size: 15px;">
-                            Contact <strong>0703268522 (Males)</strong> for:
-                        </p>
-                        <ul style="color: #333; margin: 0 0 20px 0; padding-left: 25px; line-height: 1.8; font-size: 15px;">
-                            <li>Books</li>
-                            <li>Tafsir Luganda (Sheikh Nkata)</li>
-                            <li>Somali</li>
-                            <li>All audio lectures (KIUMA mosque)</li>
-                            <li>Video on funeral rights</li>
-                            <li>Quran apps and settings</li>
-                        </ul>
-                        <p style="color: #1976D2; font-weight: 600; margin: 0 0 15px 0; font-size: 15px;">
-                            <i class="fas fa-truck" style="margin-right: 8px;"></i>
-                            Delivery free around Ishaka
-                        </p>
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                            <a href="tel:0703268522" style="flex: 1; min-width: 140px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; background: #4CAF50; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; transition: background 0.3s;">
-                                <i class="fas fa-phone"></i> Call: 0703268522
-                            </a>
-                            <a href="https://wa.me/256703268522" target="_blank" style="flex: 1; min-width: 140px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; background: #25D366; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; transition: background 0.3s;">
-                                <i class="fab fa-whatsapp"></i> WhatsApp: 0703268522
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <!-- Option 2: Use Link Below -->
-                    <div style="background: linear-gradient(135deg, #FFF3E0, #FFE0B2); border: 3px solid #FF9800; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(255, 152, 0, 0.2);">
-                        <h3 style="color: #F57C00; font-size: 20px; font-weight: 700; margin: 0 0 15px 0; display: flex; align-items: center; gap: 10px;">
-                            <i class="fas fa-link" style="font-size: 24px;"></i>
-                            Option 2: Use Link Below to Access All Media
-                        </h3>
-                        <p style="color: #333; margin: 0; line-height: 1.6; font-size: 15px;">
-                            Click the link below to access all media content directly online.
-                        </p>
-                    </div>
-                </div>
-                
-                <!-- Sort By Dropdown - Very Visible and Clear -->
-                <div id="sortByCategorySection" style="margin-bottom: 24px; scroll-margin-top: 20px;">
-                    <label for="sortByCategory" style="display: block; margin-bottom: 12px; font-size: 18px; font-weight: 600; color: var(--dark-gray);">
-                        <i class="fas fa-filter" style="color: var(--primary-green); margin-right: 8px;"></i>
-                        Sort By Category
-                    </label>
-                    <select id="sortByCategory" style="
-                        width: 100%;
-                        padding: 18px 20px;
-                        font-size: 18px;
-                        font-weight: 600;
-                        border: 3px solid var(--primary-green);
-                        border-radius: 12px;
-                        background: linear-gradient(135deg, #ffffff, #f5f5f5);
-                        color: var(--dark-gray);
-                        cursor: pointer;
-                        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
-                        transition: all 0.3s;
-                        appearance: none;
-                        background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'20\' height=\'20\' viewBox=\'0 0 20 20\'><path fill=\'%234CAF50\' d=\'M5 7l5 5 5-5z\'/></svg>');
-                        background-repeat: no-repeat;
-                        background-position: right 15px center;
-                        background-size: 20px;
-                        padding-right: 50px;
-                    " onchange="if(typeof window.filterBooks==='function')window.filterBooks(this.value)">
-                        <option value="all">📚 All Books (<span id="count-all-display">0</span>)</option>
-                        <option value="quran">📖 Quran (<span id="count-quran-display">0</span>)</option>
-                        <option value="yasaruna">📘 Yasaruna (<span id="count-yasaruna-display">0</span>)</option>
-                        <option value="hadith">📗 Hadith (<span id="count-hadith-display">0</span>)</option>
-                        <option value="tauheed">⭐ Tauheed (<span id="count-tauheed-display">0</span>)</option>
-                        <option value="swalah">🕌 Swalah (<span id="count-swalah-display">0</span>)</option>
-                        <option value="others">📁 Others (<span id="count-others-display">0</span>)</option>
-                    </select>
-                    <div style="margin-top: 8px; font-size: 14px; color: #666; text-align: center;">
-                        <i class="fas fa-hand-pointer" style="margin-right: 5px;"></i>
-                        👆 Click here to choose a category
-                    </div>
-                </div>
-                
-                <style>
-                    /* Sort By Dropdown Styles */
-                    #sortByCategory:hover {
-                        border-color: #388E3C !important;
-                        box-shadow: 0 6px 16px rgba(76, 175, 80, 0.3) !important;
-                        transform: translateY(-2px);
-                    }
-                    #sortByCategory:focus {
-                        outline: none;
-                        border-color: #388E3C !important;
-                        box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4) !important;
-                    }
-                    
-                    /* Book Card Mobile Styles */
-                    .book-card {
-                        -webkit-tap-highlight-color: transparent;
-                    }
-                    .book-card:active {
-                        transform: scale(0.98) !important;
-                        box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
-                    }
-                    
-                    .book-details-btn:active,
-                    .book-open-btn:active {
-                        transform: scale(0.95);
-                        opacity: 0.9;
-                    }
-                    
-                    .book-details-btn:hover,
-                    .book-open-btn:hover {
-                        transform: translateY(-2px);
-                        box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
-                    }
-                    
-                    /* Mobile-First Document Card Styles */
-                    .media-grid {
-                        display: grid;
-                        grid-template-columns: repeat(2, 1fr);
-                        gap: 8px;
-                        padding: 0;
-                    }
-                    
-                    /* Mobile form styles */
-                    @media (max-width: 767px) {
-                        .modal-content {
-                            max-width: 100% !important;
-                            width: 100% !important;
-                            margin: 0 !important;
-                            border-radius: 0 !important;
-                        }
-                        
-                        .form-input,
-                        .form-group textarea,
-                        select.form-input {
-                            font-size: 16px !important; /* Prevents zoom on iOS */
-                            padding: 16px !important;
-                            min-height: 44px !important; /* Large tap target */
-                        }
-                        
-                        .file-upload-button {
-                            min-height: 120px !important;
-                            padding: 24px 20px !important;
-                        }
-                        
-                        #submitBookBtn {
-                            min-height: 52px !important;
-                            font-size: 18px !important;
-                            padding: 16px !important;
-                        }
-                    }
-                    
-                    @media (min-width: 768px) {
-                        .media-grid {
-                            grid-template-columns: repeat(3, 1fr);
-                            gap: 10px;
-                        }
-                    }
-                    
-                    @media (min-width: 1024px) {
-                        .media-grid {
-                            grid-template-columns: repeat(4, 1fr);
-                            gap: 12px;
-                        }
-                    }
-                    
-                    .media-item {
-                        width: 100%;
-                        max-width: 100%;
-                        min-height: auto;
-                    }
-                    
-                    /* Ultra-Compact Mobile Book Card - Minimal Size */
-                    .document-card {
-                        width: 100%;
-                        background: transparent;
-                        border-radius: 10px;
-                        box-shadow: none;
-                        overflow: visible;
-                        transition: all 0.2s ease;
-                        -webkit-tap-highlight-color: transparent;
-                        cursor: default;
-                        border: none;
-                        display: flex;
-                        flex-direction: column;
-                        position: relative;
-                        margin-bottom: 4px;
-                    }
-                    
-                    .document-card:active {
-                        transform: scale(0.98);
-                    }
-                    
-                    .document-header {
-                        display: flex;
-                        align-items: center;
-                        justify-content: space-between;
-                        padding: 10px 12px;
-                        position: relative;
-                    }
-                    
-                    .document-title-section {
-                        flex: 1;
-                        min-width: 0;
-                        padding-right: 8px;
-                    }
-                    
-                    .document-title {
-                        font-size: 14px;
-                        font-weight: 500;
-                        color: #212121;
-                        line-height: 1.3;
-                        margin: 0 0 4px 0;
-                        display: -webkit-box;
-                        -webkit-line-clamp: 2;
-                        line-clamp: 2;
-                        -webkit-box-orient: vertical;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
-                    }
-                    
-                    .document-category-badge {
-                        display: inline-block;
-                        padding: 2px 6px;
-                        border-radius: 12px;
-                        font-size: 10px;
-                        font-weight: 600;
-                        text-transform: uppercase;
-                        letter-spacing: 0.2px;
-                        background: #4CAF50;
-                        color: white;
-                    }
-                    
-                    .document-body {
-                        padding: 0 12px 10px 12px;
-                    }
-                    
-                    .document-description {
-                        font-size: 12px;
-                        color: #616161;
-                        line-height: 1.4;
-                        margin: 0;
-                        display: -webkit-box;
-                        -webkit-line-clamp: 2;
-                        line-clamp: 2;
-                        -webkit-box-orient: vertical;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
-                    }
-                    
-                    .document-menu-button {
-                        position: absolute;
-                        top: 10px;
-                        right: 12px;
-                        width: 28px;
-                        height: 28px;
-                        min-width: 28px;
-                        min-height: 28px;
-                        border-radius: 50%;
-                        border: none;
-                        background: #f5f5f5;
-                        color: #757575;
-                        cursor: pointer;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        transition: all 0.2s ease;
-                        z-index: 10;
-                        touch-action: manipulation;
-                        flex-shrink: 0;
-                    }
-                    
-                    .document-menu-button:active {
-                        background: #e0e0e0;
-                        transform: scale(0.95);
-                    }
-                    
-                    .document-menu-button i {
-                        font-size: 11px;
-                    }
-                    
-                    .document-menu-button.active {
-                        background: #2196F3;
-                        color: white;
-                    }
-                    
-                    .document-dropdown {
-                        position: absolute;
-                        top: 34px;
-                        right: 12px;
-                        background: white;
-                        border-radius: 8px;
-                        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-                        min-width: 140px;
-                        z-index: 1000;
-                        opacity: 0;
-                        visibility: hidden;
-                        transform: translateY(-10px);
-                        transition: all 0.2s ease;
-                        border: 1px solid #e0e0e0;
-                        overflow: hidden;
-                    }
-                    
-                    .document-dropdown.show {
-                        opacity: 1;
-                        visibility: visible;
-                        transform: translateY(0);
-                    }
-                    
-                    .document-dropdown-item {
-                        display: flex;
-                        align-items: center;
-                        gap: 8px;
-                        padding: 10px 12px;
-                        cursor: pointer;
-                        transition: all 0.2s ease;
-                        border-bottom: 1px solid #f5f5f5;
-                        color: #212121;
-                        font-size: 12px;
-                        font-weight: 500;
-                        text-decoration: none;
-                        touch-action: manipulation;
-                    }
-                    
-                    .document-dropdown-item:last-child {
-                        border-bottom: none;
-                    }
-                    
-                    .document-dropdown-item:active {
-                        background: #f5f5f5;
-                    }
-                    
-                    .document-dropdown-item i {
-                        font-size: 12px;
-                        width: 16px;
-                        text-align: center;
-                    }
-                    
-                    .document-dropdown-item.open i {
-                        color: #4CAF50;
-                    }
-                    
-                    .document-dropdown-item.download i {
-                        color: #2196F3;
-                    }
-                    
-                    .document-dropdown-item.delete i {
-                        color: #f44336;
-                    }
-                    
-                    @media (max-width: 767px) {
-                        .document-card {
-                            border-radius: 10px;
-                            margin-bottom: 4px;
-                        }
-                        
-                        .document-header {
-                            padding: 10px 12px;
-                        }
-                        
-                        .document-title {
-                            font-size: 14px;
-                            padding-right: 36px;
-                        }
-                        
-                        .document-body {
-                            padding: 0 12px 10px 12px;
-                        }
-                        
-                        .document-description {
-                            font-size: 12px;
-                        }
-                        
-                        .document-menu-button {
-                            width: 28px;
-                            height: 28px;
-                            top: 10px;
-                            right: 12px;
-                        }
-                        
-                        .document-menu-button i {
-                            font-size: 11px;
-                        }
-                        
-                        .document-dropdown {
-                            top: 34px;
-                            right: 12px;
-                            left: auto;
-                            min-width: 140px;
-                        }
-                        
-                        .document-dropdown-item {
-                            padding: 10px 12px;
-                            font-size: 12px;
-                        }
-                        
-                        .document-dropdown-item i {
-                            font-size: 12px;
-                            width: 16px;
-                        }
-                    }
-                    
-                    /* Compact Card Layout - Force compact styling */
-                    .compact-card {
-                        padding: 10px !important;
-                        min-height: auto !important;
-                    }
-                    
-                    .compact-card * {
-                        margin-bottom: 4px !important;
-                    }
-                    
-                    .compact-card .document-card {
-                        padding: 0 !important;
-                    }
-                    
-                    .compact-card .document-header {
-                        padding: 8px 10px !important;
-                    }
-                    
-                    .compact-card .document-body {
-                        padding: 0 10px 8px 10px !important;
-                    }
-                    
-                    .compact-card .icon,
-                    .compact-card img,
-                    .compact-card svg {
-                        width: 32px !important;
-                        height: 32px !important;
-                        max-height: 32px !important;
-                    }
-                    
-                    .compact-card h3,
-                    .compact-card .document-title,
-                    .compact-card .title {
-                        font-size: 14px !important;
-                        margin: 4px 0 !important;
-                        line-height: 1.3 !important;
-                    }
-                    
-                    .compact-card p,
-                    .compact-card .document-description,
-                    .compact-card .description {
-                        font-size: 12px !important;
-                        line-height: 1.3 !important;
-                        margin: 0 !important;
-                    }
-                    
-                    .compact-card .document-category-badge,
-                    .compact-card .badge {
-                        font-size: 10px !important;
-                        padding: 2px 6px !important;
-                        margin: 0 !important;
-                    }
-                    
-                    .compact-card .document-menu-button {
-                        width: 26px !important;
-                        height: 26px !important;
-                        padding: 4px !important;
-                    }
-                    
-                    .compact-card .document-dropdown,
-                    .compact-card .menu,
-                    .compact-card .dropdown,
-                    .compact-card .actions {
-                        padding: 4px !important;
-                    }
-                </style>
-
-                <!-- How to Download Box - Collapsible Dropdown -->
-                <div style="margin-bottom: 25px;">
-                    <button id="downloadInstructionsToggle" onclick="toggleDownloadInstructions()" style="
-                        width: 100%;
-                        padding: 18px 20px;
-                        background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
-                        border: 3px solid #2196F3;
-                        border-radius: 15px;
-                        color: #1976D2;
-                        font-size: 20px;
-                        font-weight: 700;
-                        cursor: pointer;
-                        display: flex;
-                        align-items: center;
-                        justify-content: space-between;
-                        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.2);
-                        transition: all 0.3s;
-                    ">
-                        <span style="display: flex; align-items: center; gap: 10px;">
-                            <i class="fas fa-download" style="font-size: 24px;"></i>
-                            How to Download Books
-                        </span>
-                        <i class="fas fa-chevron-down" id="downloadChevron" style="transition: transform 0.3s;"></i>
-                    </button>
-                    
-                    <div id="downloadInstructionsContent" style="
-                        display: none;
-                        background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
-                        border: 3px solid #2196F3;
-                        border-top: none;
-                        border-radius: 0 0 15px 15px;
-                        padding: 20px;
-                        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.2);
-                        margin-top: -5px;
-                    ">
-                        <div style="background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px;">
-                            <h4 style="color: #1976D2; font-size: 16px; font-weight: 600; margin: 0 0 10px 0;">
-                                <i class="fas fa-check-circle" style="color: #4CAF50; margin-right: 8px;"></i>
-                                Option 1: Direct Download
-                            </h4>
-                            <ol style="margin: 0; padding-left: 25px; color: #333; line-height: 1.8; font-size: 15px;">
-                                <li>Click the <strong>3 dots (⋯)</strong> on the book</li>
-                                <li>Click <strong>"Download"</strong></li>
-                                <li>Wait for a few seconds - the download will start automatically</li>
-                            </ol>
-                        </div>
-                        
-                        <div style="background: white; border-radius: 10px; padding: 15px;">
-                            <h4 style="color: #1976D2; font-size: 16px; font-weight: 600; margin: 0 0 10px 0;">
-                                <i class="fas fa-check-circle" style="color: #4CAF50; margin-right: 8px;"></i>
-                                Option 2: Open Then Download
-                            </h4>
-                            <ol style="margin: 0; padding-left: 25px; color: #333; line-height: 1.8; font-size: 15px;">
-                                <li>Click the <strong>3 dots (⋯)</strong> on the book</li>
-                                <li>Click <strong>"Open Document"</strong></li>
-                                <li>When it opens in Chrome, click the <strong>3 dots (⋯)</strong> in the <strong>right corner</strong> of Chrome</li>
-                                <li>Click <strong>"Download"</strong></li>
-                                <li>Click <strong>"Accept"</strong> if asked</li>
-                            </ol>
-                        </div>
-                        
-                        <div style="margin-top: 15px; padding: 12px; background: #FFF3CD; border-left: 4px solid #FFC107; border-radius: 8px;">
-                            <p style="margin: 0; color: #856404; font-size: 14px; line-height: 1.6;">
-                                <i class="fas fa-lightbulb" style="margin-right: 8px;"></i>
-                                <strong>Tip:</strong> If download doesn't start, try Option 2. Make sure you have enough storage space on your device.
-                            </p>
-                        </div>
-                    </div>
+                <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <button class="btn btn-primary" style="flex: 1; min-width: calc(50% - 5px); padding: 12px;" onclick="if(typeof window.filterBooks==='function')window.filterBooks('all')">All</button>
+                    <button class="btn btn-outline" style="flex: 1; min-width: calc(50% - 5px); padding: 12px;" onclick="if(typeof window.filterBooks==='function')window.filterBooks('islamic')">Islamic</button>
+                    <button class="btn btn-outline" style="flex: 1; min-width: calc(50% - 5px); padding: 12px;" onclick="if(typeof window.filterBooks==='function')window.filterBooks('educational')">Educational</button>
+                    <button class="btn btn-outline" style="flex: 1; min-width: calc(50% - 5px); padding: 12px;" onclick="if(typeof window.filterBooks==='function')window.filterBooks('quran')">Quran</button>
                 </div>
 
                 <div class="media-grid" id="libraryGrid">
-                    <!-- Books will be loaded here dynamically -->
+                    <!-- Default book placeholders -->
+                    <div class="media-item" data-category="islamic">
+                        <div style="background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 15px;">
+                            <i class="fas fa-quran" style="font-size: 48px; margin-bottom: 10px;"></i>
+                            <div style="font-size: 12px; text-align: center;">Quran & Tafsir</div>
+                        </div>
+                    </div>
+                    <div class="media-item" data-category="islamic">
+                        <div style="background: linear-gradient(135deg, #4CAF50, #388E3C); width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 15px;">
+                            <i class="fas fa-book" style="font-size: 48px; margin-bottom: 10px;"></i>
+                            <div style="font-size: 12px; text-align: center;">Islamic Studies</div>
+                        </div>
+                    </div>
+                    <div class="media-item" data-category="educational">
+                        <div style="background: linear-gradient(135deg, #2196F3, #1976D2); width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 15px;">
+                            <i class="fas fa-graduation-cap" style="font-size: 48px; margin-bottom: 10px;"></i>
+                            <div style="font-size: 12px; text-align: center;">Educational</div>
+                        </div>
+                    </div>
+                    <div class="media-item" data-category="quran">
+                        <div style="background: linear-gradient(135deg, #9C27B0, #7B1FA2); width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 15px;">
+                            <i class="fas fa-book-open" style="font-size: 48px; margin-bottom: 10px;"></i>
+                            <div style="font-size: 12px; text-align: center;">Quran Study</div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="info-card" style="margin-top: 20px;">
@@ -756,185 +142,46 @@
             <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
             <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
             <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
-            <a href="join-us.html" class="nav-item" id="accountNavItem"><i class="fas fa-user-circle"></i><span id="accountNavText">Account</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
         </nav>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase-config.js"></script>
-    <!-- Load singleton Supabase client first (as module) -->
-    <script type="module" src="services/supabaseClient.js"></script>
-    <script type="module" src="js/library.js"></script>
+    <script src="api-config.js"></script>
     <script src="script.js"></script>
-    <script src="update-navigation.js"></script>
     <script>
-        // Mobile-safe function to open book files
-        window.openBookFileMobile = function(fileUrl, fileType) {
-            if (!fileUrl) {
-                showMobileAlert('File URL not available');
+        // Define showAddBookModal immediately so it's available for onclick handlers
+        window.showAddBookModal = function() {
+            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+            if (!adminStatus) {
+                if (typeof window.showAdminLogin === 'function') {
+                    window.showAdminLogin();
+                } else {
+                    alert('Please login as admin first. Click the "Admin Login" button.');
+                }
                 return;
             }
-            
-            console.log('[Open Book] Opening file:', fileUrl, 'Type:', fileType);
-            
-            // Detect mobile device
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-                            (window.innerWidth <= 768);
-            
-            // Detect iOS Safari specifically
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-            const isAndroid = /Android/.test(navigator.userAgent);
-            
-            // Check if it's a PDF
-            const isPDF = fileType === 'pdf' || fileUrl.toLowerCase().includes('.pdf');
-            
-            if (isMobile) {
-                if (isPDF) {
-                    // Special handling for PDFs on mobile
-                    try {
-                        // Method 1: For iOS Safari - use window.open with specific parameters
-                        if (isIOS) {
-                            console.log('[Open Book] iOS detected, opening PDF in new window');
-                            const pdfWindow = window.open('', '_blank');
-                            if (pdfWindow) {
-                                pdfWindow.location.href = fileUrl;
-                                // Focus the new window
-                                pdfWindow.focus();
-                            } else {
-                                // Popup blocked, try direct navigation
-                                window.location.href = fileUrl;
-                            }
-                        }
-                        // Method 2: For Android - use window.open with noopener
-                        else if (isAndroid) {
-                            console.log('[Open Book] Android detected, opening PDF');
-                            const pdfWindow = window.open(fileUrl, '_blank', 'noopener,noreferrer');
-                            if (!pdfWindow || pdfWindow.closed || typeof pdfWindow.closed === 'undefined') {
-                                // Popup blocked, use direct navigation
-                                window.location.href = fileUrl;
-                            }
-                        }
-                        // Method 3: Fallback - create link without download attribute
-                        else {
-                            console.log('[Open Book] Mobile detected, using link method for PDF');
-                            const link = document.createElement('a');
-                            link.href = fileUrl;
-                            // DO NOT set download attribute - we want to open in browser viewer
-                            link.target = '_blank';
-                            link.rel = 'noopener noreferrer';
-                            link.setAttribute('type', 'application/pdf');
-                            
-                            // Make link invisible but accessible
-                            link.style.position = 'fixed';
-                            link.style.top = '-9999px';
-                            link.style.left = '-9999px';
-                            link.style.width = '1px';
-                            link.style.height = '1px';
-                            link.style.opacity = '0';
-                            link.style.pointerEvents = 'auto';
-                            
-                            document.body.appendChild(link);
-                            
-                            // Trigger click after a short delay
-                            setTimeout(function() {
-                                try {
-                                    link.click();
-                                    console.log('[Open Book] PDF link clicked');
-                                    
-                                    // Clean up after click
-                                    setTimeout(function() {
-                                        if (link.parentNode) {
-                                            link.parentNode.removeChild(link);
-                                        }
-                                    }, 200);
-                                } catch (clickError) {
-                                    console.error('[Open Book] Error clicking PDF link:', clickError);
-                                    // Fallback to direct navigation
-                                    window.location.href = fileUrl;
-                                }
-                            }, 100);
-                        }
-                    } catch (error) {
-                        console.error('[Open Book] Error opening PDF:', error);
-                        // Final fallback: direct navigation
-                        window.location.href = fileUrl;
-                    }
+            const modal = document.getElementById('addBookModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                modal.style.visibility = 'visible';
+                modal.style.zIndex = '9999';
+                console.log('Add Book modal opened');
             } else {
-                    // For non-PDF files (audio, etc.) on mobile
-                    try {
-                        // Use window.open for audio files
-                        if (fileType === 'audio' || /\.(mp3|wav|ogg|m4a|aac)$/i.test(fileUrl)) {
-                            const audioWindow = window.open(fileUrl, '_blank', 'noopener,noreferrer');
-                            if (!audioWindow || audioWindow.closed || typeof audioWindow.closed === 'undefined') {
-                                window.location.href = fileUrl;
-                            }
-                        } else {
-                            // For other file types, use direct navigation
-                            window.location.href = fileUrl;
-                        }
-                    } catch (error) {
-                        console.error('[Open Book] Error opening file:', error);
-                        window.location.href = fileUrl;
-                    }
-                }
-            } else {
-                // Desktop - use window.open
-                try {
-                    const newWindow = window.open(fileUrl, '_blank', 'noopener,noreferrer');
-                    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-                        // Popup blocked, use direct navigation
-                        window.location.href = fileUrl;
-                    }
-                } catch (error) {
-                    console.error('[Open Book] Error opening window:', error);
-                    window.location.href = fileUrl;
-                }
+                console.error('Add Book modal not found');
+                alert('Error: Add Book form not found. Please refresh the page.');
             }
         };
 
         // Check admin status on page load
         window.addEventListener('DOMContentLoaded', function() {
-            // Initialize dropdown to "all" by default
-            const sortDropdown = document.getElementById('sortByCategory');
-            if (sortDropdown && !sortDropdown.value) {
-                sortDropdown.value = 'all';
-            }
-            // Check admin status in background (non-blocking)
+            // Ensure checkAdminStatus is available
             if (typeof window.checkAdminStatus === 'function') {
-                setTimeout(() => {
-                    window.checkAdminStatus();
-                }, 0);
+                window.checkAdminStatus();
             } else if (typeof checkAdminStatus === 'function') {
-                setTimeout(() => {
-                    checkAdminStatus();
-                }, 0);
+                checkAdminStatus();
             }
             
-            loadBooksFromStorage('all', true);
-            
-            // Refresh books in background every 30 seconds (only when page is visible)
-            let refreshInterval = null;
-            const startBackgroundRefresh = () => {
-                if (refreshInterval) clearInterval(refreshInterval);
-                refreshInterval = setInterval(() => {
-                    // Only refresh if page is visible (saves battery/data)
-                    if (!document.hidden) {
-                        loadBooksFromStorage('all', false); // Silent refresh
-                    }
-                }, 30000);
-            };
-            
-            // Start refresh when page is visible
-            startBackgroundRefresh();
-            
-            // Pause refresh when page is hidden, resume when visible
-            document.addEventListener('visibilitychange', () => {
-                if (document.hidden) {
-                    if (refreshInterval) clearInterval(refreshInterval);
-                } else {
-                    startBackgroundRefresh();
-                }
-            });
+            loadBooksFromStorage();
             
             // Initialize admin login modal
             const adminModal = document.getElementById('adminLoginModal');
@@ -945,166 +192,6 @@
                     }
                 });
             }
-            
-            // File input change handler - auto-detect file type and update display
-            // Attached after DOM is fully loaded for mobile compatibility
-            // Make it globally accessible so it can be called when modal opens
-            window.attachFileInputHandler = function attachFileInputHandler() {
-                const bookFileInput = document.getElementById('bookFile');
-                const fileNameDisplay = document.getElementById('fileNameDisplay');
-                const fileTypeDisplay = document.getElementById('fileTypeDisplay');
-                const bookTypeHidden = document.getElementById('bookType');
-                
-                if (!bookFileInput || !fileNameDisplay || !fileTypeDisplay || !bookTypeHidden) {
-                    // Elements not ready yet, try again after a short delay
-                    setTimeout(attachFileInputHandler, 100);
-                    return;
-                }
-                
-                // Get wrapper element (now a label element)
-                const bookFileWrapper = document.getElementById('bookFileWrapper');
-                
-                if (!bookFileWrapper) {
-                    console.warn('[File Upload] bookFileWrapper not found');
-                    return;
-                }
-                
-                // With label pattern, clicking the label automatically triggers the input
-                // We only need to add visual feedback and file handling
-                // No need for complex event handling or cloning!
-                
-                // Visual feedback on interaction (optional enhancement)
-                bookFileWrapper.addEventListener('mousedown', function() {
-                    this.style.background = '#e8f5e9';
-                    this.style.borderColor = '#388E3C';
-                    this.style.transform = 'scale(0.98)';
-                });
-                
-                bookFileWrapper.addEventListener('mouseup', function() {
-                    setTimeout(() => {
-                        this.style.background = '#f0f8f0';
-                        this.style.borderColor = '#4CAF50';
-                        this.style.transform = 'scale(1)';
-                    }, 150);
-                });
-                
-                bookFileWrapper.addEventListener('mouseleave', function() {
-                    this.style.background = '#f0f8f0';
-                    this.style.borderColor = '#4CAF50';
-                    this.style.transform = 'scale(1)';
-                });
-                
-                // Touch feedback for mobile
-                bookFileWrapper.addEventListener('touchstart', function() {
-                    this.style.background = '#e8f5e9';
-                    this.style.borderColor = '#388E3C';
-                    this.style.transform = 'scale(0.98)';
-                }, { passive: true });
-                
-                bookFileWrapper.addEventListener('touchend', function() {
-                    setTimeout(() => {
-                        this.style.background = '#f0f8f0';
-                        this.style.borderColor = '#4CAF50';
-                        this.style.transform = 'scale(1)';
-                    }, 150);
-                }, { passive: true });
-                
-                console.log('[File Upload] Label pattern initialized - works on all devices!');
-                
-                bookFileInput.addEventListener('change', function(e) {
-                    const file = e.target.files && e.target.files[0];
-                    if (file) {
-                        // Show file name
-                        fileNameDisplay.textContent = 'Selected: ' + file.name;
-                        fileNameDisplay.style.display = 'block';
-                        
-                        // Update wrapper visual state when file is selected
-                        const wrapper = document.getElementById('bookFileWrapper');
-                        if (wrapper) {
-                            wrapper.style.background = '#e8f5e9';
-                            wrapper.style.borderColor = '#388E3C';
-                            
-                            // Hide label, show file name
-                            const bookFileLabel = document.getElementById('bookFileLabel');
-                            if (bookFileLabel) {
-                                bookFileLabel.style.display = 'none';
-                            }
-                        }
-                        
-                        // Harden mobile file type detection - use both MIME type AND filename extension
-                        // Handle empty or "application/octet-stream" MIME types
-                        const fileName = file.name.toLowerCase();
-                        const fileMimeType = file.type || '';
-                        
-                        // Audio file detection (check both MIME type and extension)
-                        const audioExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac'];
-                        const isAudioByExtension = audioExtensions.some(ext => fileName.endsWith(ext));
-                        const isAudioByMime = fileMimeType.startsWith('audio/') && 
-                                             fileMimeType !== 'application/octet-stream' &&
-                                             fileMimeType !== '';
-                        const isAudioFile = isAudioByMime || isAudioByExtension;
-                        
-                        // PDF file detection (check both MIME type and extension)
-                        const isPdfByExtension = fileName.endsWith('.pdf');
-                        const isPdfByMime = (fileMimeType === 'application/pdf') && 
-                                          fileMimeType !== 'application/octet-stream' &&
-                                          fileMimeType !== '';
-                        const isPdfFile = isPdfByMime || isPdfByExtension;
-                        
-                        let detectedType = '';
-                        let typeIcon = '';
-                        let typeColor = '#666';
-                        
-                        if (isAudioFile) {
-                            detectedType = 'Audio';
-                            typeIcon = '🎧';
-                            typeColor = '#2e7d32';
-                            bookTypeHidden.value = 'audio';
-                        } else if (isPdfFile) {
-                            detectedType = 'PDF';
-                            typeIcon = '📄';
-                            typeColor = '#c62828';
-                            bookTypeHidden.value = 'pdf';
-                        } else {
-                            detectedType = 'Unknown';
-                            typeIcon = '📁';
-                            typeColor = '#666';
-                            bookTypeHidden.value = '';
-                        }
-                        
-                        // Update file type display
-                        fileTypeDisplay.innerHTML = `<i class="fas fa-${isAudioFile ? 'headphones' : isPdfFile ? 'file-pdf' : 'file'}" style="color: ${typeColor};"></i> ${detectedType} (auto-detected)`;
-                        fileTypeDisplay.style.borderColor = typeColor;
-                        fileTypeDisplay.style.background = isAudioFile ? '#e8f5e9' : isPdfFile ? '#ffebee' : '#f5f5f5';
-                        fileTypeDisplay.style.color = '#212121';
-                    } else {
-                        // No file selected - reset all displays
-                        fileNameDisplay.style.display = 'none';
-                        
-                        // Reset wrapper visual state
-                        const wrapperReset = document.getElementById('bookFileWrapper');
-                        if (wrapperReset) {
-                            wrapperReset.style.background = '#f0f8f0';
-                            wrapperReset.style.borderColor = '#4CAF50';
-                            
-                            // Show label again
-                            const bookFileLabel = document.getElementById('bookFileLabel');
-                            if (bookFileLabel) {
-                                bookFileLabel.style.display = 'block';
-                            }
-                        }
-                        
-                        fileTypeDisplay.innerHTML = '<i class="fas fa-info-circle"></i> Will be detected automatically from file';
-                        fileTypeDisplay.style.borderColor = '#e0e0e0';
-                        fileTypeDisplay.style.background = '#f5f5f5';
-                        fileTypeDisplay.style.color = '#666';
-                        bookTypeHidden.value = '';
-                    }
-                });
-            }
-            
-            // Attach handler after DOM is fully loaded
-            attachFileInputHandler();
             
             // Allow Enter key to submit password
             const passwordInput = document.getElementById('adminPassword');
@@ -1133,104 +220,75 @@
 
         // Filter books function - globally accessible
         window.filterBooks = function(category) {
-            // Clear search bar when category is clicked
-            const searchInput = document.getElementById('librarySearchInput');
-            if (searchInput) {
-                searchInput.value = '';
-            }
+            const filterButtons = document.querySelectorAll('.page-content > div:first-child button');
             
-            // Clear search term
-            currentSearchTerm = '';
-            
-            // Hide search suggestions
-            hideSearchSuggestions();
-            
-            // Hide search results info
-            const searchInfo = document.getElementById('searchResultsInfo');
-            if (searchInfo) {
-                searchInfo.style.display = 'none';
-            }
-            
-            // Update dropdown selection
-            const sortDropdown = document.getElementById('sortByCategory');
-            if (sortDropdown) {
-                sortDropdown.value = category;
-            }
-            
-            // Instant client-side filtering (no reload) - without search term
-            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
-            displayBooks(cachedBooks, category, adminStatus, ''); // Empty search term
-        };
-        
-        // Toggle Download Instructions
-        function toggleDownloadInstructions() {
-            const content = document.getElementById('downloadInstructionsContent');
-            const chevron = document.getElementById('downloadChevron');
-            
-            if (content && chevron) {
-                if (content.style.display === 'none' || !content.style.display) {
-                    content.style.display = 'block';
-                    chevron.style.transform = 'rotate(180deg)';
-                } else {
-                    content.style.display = 'none';
-                    chevron.style.transform = 'rotate(0deg)';
-                }
-            }
-        }
-
-        // Update category counts
-        function updateCategoryCounts(books) {
-            const categories = ['all', 'quran', 'yasaruna', 'hadith', 'tauheed', 'swalah', 'others'];
-            
-            categories.forEach(cat => {
-                // Update old category badges (if they still exist)
-                const badge = document.getElementById(`count-${cat}`);
-                if (badge) {
-                    let count = 0;
-                    if (cat === 'all') {
-                        count = books.length;
-                    } else {
-                        count = books.filter(book => {
-                            const bookCategory = (book.category || 'others').toLowerCase();
-                            return bookCategory === cat.toLowerCase();
-                        }).length;
-                    }
-                    badge.textContent = count;
-                }
+            // Update button styles based on selected filter
+            filterButtons.forEach(btn => {
+                const btnText = btn.textContent.trim().toLowerCase();
+                const isActive = (category === 'all' && btnText === 'all') ||
+                                (category === 'islamic' && btnText === 'islamic') ||
+                                (category === 'educational' && btnText === 'educational') ||
+                                (category === 'quran' && btnText === 'quran');
                 
-                // Update dropdown display counts
-                const displayBadge = document.getElementById(`count-${cat}-display`);
-                if (displayBadge) {
-                    let count = 0;
-                    if (cat === 'all') {
-                        count = books.length;
-                    } else {
-                        count = books.filter(book => {
-                            const bookCategory = (book.category || 'others').toLowerCase();
-                            return bookCategory === cat.toLowerCase();
-                        }).length;
-                    }
-                    displayBadge.textContent = count;
+                if (isActive) {
+                    btn.className = 'btn btn-primary';
+                    btn.style.flex = '1';
+                    btn.style.minWidth = 'calc(50% - 5px)';
+                    btn.style.padding = '12px';
+                } else {
+                    btn.className = 'btn btn-outline';
+                    btn.style.flex = '1';
+                    btn.style.minWidth = 'calc(50% - 5px)';
+                    btn.style.padding = '12px';
                 }
             });
-        }
+            
+            // Reload books with filter
+            loadBooksFromStorage(category);
+        };
 
         window.closeAddBookModal = function() {
             const modal = document.getElementById('addBookModal');
             if (modal) {
                 modal.style.display = 'none';
             }
-            const form = document.getElementById('uploadBookForm');
+            const form = document.getElementById('addBookForm');
             if (form) {
                 form.reset();
             }
+            // Clear preview
+            const coverPreview = document.getElementById('coverPreview');
+            const previewImage = document.getElementById('previewCoverImage');
+            if (coverPreview) coverPreview.style.display = 'none';
+            if (previewImage) previewImage.style.display = 'none';
         };
 
-        /**
-         * New Add Book handler - Supabase-only implementation
-         * Uploads files to Supabase Storage, then inserts into books table
-         */
-        window.addBook = async function(e) {
+        window.handleBookCoverSelect = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const coverPreview = document.getElementById('coverPreview');
+            const previewImage = document.getElementById('previewCoverImage');
+
+            // Hide preview first
+            if (previewImage) previewImage.style.display = 'none';
+            if (coverPreview) coverPreview.style.display = 'none';
+
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    if (previewImage) {
+                        previewImage.src = e.target.result;
+                        previewImage.style.display = 'block';
+                    }
+                    if (coverPreview) coverPreview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+
+        window.addBook = function(e) {
             if (e) {
                 e.preventDefault();
             }
@@ -1245,462 +303,202 @@
                 return false;
             }
 
-            // Get form inputs
-            const nameInput = document.getElementById('bookName');
-            const typeInput = document.getElementById('bookType'); // Hidden input, auto-filled
+            const titleInput = document.getElementById('bookTitle');
+            const authorInput = document.getElementById('bookAuthor');
+            const isbnInput = document.getElementById('bookISBN');
             const categoryInput = document.getElementById('bookCategory');
             const descriptionInput = document.getElementById('bookDescription');
-            const bookFileInput = document.getElementById('bookFile');
+            const coverInput = document.getElementById('bookCover');
+            const coverUrlInput = document.getElementById('bookCoverUrl');
             
-            const title = nameInput ? nameInput.value.trim() : '';
+            const title = titleInput ? titleInput.value.trim() : '';
+            const author = authorInput ? authorInput.value.trim() : '';
+            const isbn = isbnInput ? isbnInput.value.trim() : '';
             const category = categoryInput ? categoryInput.value : '';
             const description = descriptionInput ? descriptionInput.value.trim() : '';
+            const coverUrl = coverUrlInput ? coverUrlInput.value.trim() : '';
             
-            // Validation: Required fields
-            if (!title || !category) {
-                alert('Please fill in book name and category.');
+            if (!title || !author || !category) {
+                alert('Please fill in title, author, and category.');
                 return false;
             }
+
+            // Create FormData for upload
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('author', author);
+            formData.append('isbn', isbn);
+            formData.append('category', category);
+            formData.append('description', description);
+            formData.append('coverImageUrl', coverUrl);
             
-            // Validation: Book file is required
-            if (!bookFileInput || !bookFileInput.files || !bookFileInput.files[0]) {
-                alert('Please select a book file (PDF or audio).');
-                return false;
+            // Add book file if provided
+            const bookFileInput = document.getElementById('bookFile');
+            if (bookFileInput && bookFileInput.files && bookFileInput.files[0]) {
+                formData.append('bookFile', bookFileInput.files[0]);
             }
-            
-            const bookFile = bookFileInput.files[0];
-            
-            // Harden mobile file type detection - use both MIME type AND filename extension
-            // Handle empty or "application/octet-stream" MIME types
-            const fileName = bookFile.name.toLowerCase();
-            const fileMimeType = bookFile.type || '';
-            
-            // Audio file detection (check both MIME type and extension)
-            const audioExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac'];
-            const isAudioByExtension = audioExtensions.some(ext => fileName.endsWith(ext));
-            const isAudioByMime = fileMimeType.startsWith('audio/') && 
-                                 fileMimeType !== 'application/octet-stream' &&
-                                 fileMimeType !== '';
-            const isAudioFile = isAudioByMime || isAudioByExtension;
-            
-            // PDF file detection (check both MIME type and extension)
-            const isPdfByExtension = fileName.endsWith('.pdf');
-            const isPdfByMime = (fileMimeType === 'application/pdf') && 
-                              fileMimeType !== 'application/octet-stream' &&
-                              fileMimeType !== '';
-            const isPdfFile = isPdfByMime || isPdfByExtension;
-            
-            if (!isAudioFile && !isPdfFile) {
-                alert('Please select a PDF or audio file (MP3, WAV, OGG, M4A).');
-                return false;
-            }
-            
-            // Set file type (auto-detected)
-            const bookType = isAudioFile ? 'audio' : 'pdf';
-            if (typeInput) {
-                typeInput.value = bookType;
-            }
-            
-            // Validate file size (max 100MB)
-            const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
-            if (bookFile.size > MAX_FILE_SIZE) {
-                alert(`File size (${(bookFile.size / (1024 * 1024)).toFixed(2)}MB) exceeds maximum of 100MB.`);
-                return false;
-            }
-            
-            // Mobile-specific: Check network connection before upload
-            if (!navigator.onLine) {
-                alert('No internet connection. Please check your network and try again.');
-                return false;
-            }
-            
-            // Mobile-specific: Check if file is accessible (some mobile browsers have issues)
-            try {
-                if (!bookFile.size || bookFile.size === 0) {
-                    alert('File appears to be empty or corrupted. Please select a valid file.');
-                    return false;
-                }
-            } catch (err) {
-                console.error('Error reading file:', err);
-                alert('Unable to read file. Please try selecting the file again.');
-                return false;
-            }
-            
-            // Get submit button and disable it
-            const submitBtn = document.getElementById('submitBookBtn');
-            if (!submitBtn) {
-                console.error('Submit button not found');
-                return false;
-            }
-            
+
+            // Show loading
+            const submitBtn = document.querySelector('#addBookForm button[type="submit"]');
             const originalBtnText = submitBtn.innerHTML;
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
-            
-            let fileUrl = '';
-            const fileType = bookType; // Use the selected book type
-            
-            try {
-                // STEP 1: Upload book file to Supabase Storage
-                // Ensure correct content type for PDFs
-                const uploadOptions = {};
-                if (isPdfFile) {
-                    uploadOptions.contentType = 'application/pdf';
-                }
-                
-                if (window.uploadService && window.uploadService.uploadFile) {
-                    const uploadResult = await window.uploadService.uploadFile(bookFile, 'books', uploadOptions);
-                    if (uploadResult && uploadResult.success) {
-                        fileUrl = uploadResult.url;
-                        console.log('Book file uploaded:', fileUrl);
-                    } else {
-                        throw new Error('Failed to upload book file');
-                    }
-                } else {
-                    throw new Error('Upload service not available');
-                }
-                
-                // STEP 2: Insert record into books table
-                // Normalize category to lowercase for consistency
-                const normalizedCategory = category ? category.toLowerCase() : 'others';
-                const bookData = {
-                    title: title,
-                    author: '', // No author field in new form
-                    category: normalizedCategory,
-                    description: description || null,
-                    cover_url: null, // No cover image in new form
-                    file_url: fileUrl,
-                    file_type: fileType
-                };
-                
-                const supabase = getSupabaseClient();
-                if (!supabase) {
-                    throw new Error('Supabase client not available');
-                }
-                
-                const { data, error } = await supabase
-                    .from('books')
-                    .insert([bookData])
-                    .select();
-                
-                if (error) {
-                    throw error;
-                }
-                
-                if (data && data.length > 0) {
-                    console.log('Book uploaded successfully');
-                    
-                    // STEP 4: Refresh library list
-                    loadBooksFromStorage('all', false);
-                    
-                    // Close modal and reset form
-                    window.closeAddBookModal();
-                    alert('Book added successfully!');
-                } else {
-                    throw new Error('No data returned from insert');
-                }
-                
-            } catch (error) {
-                console.error('Error adding book:', error);
-                alert('Error: Failed to add book. ' + (error.message || 'Please try again.'));
-            } finally {
-                // Re-enable submit button
+
+            // Upload to server
+            fetch(API_BASE_URL + '/upload_book.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnText;
-            }
-        };
-
-
-        // Show book details modal
-        window.showBookDetails = function(bookId) {
-            const cachedBooks = JSON.parse(localStorage.getItem('cachedBooks') || '[]');
-            const book = cachedBooks.find(b => b.id.toString() === bookId.toString());
-            
-            if (!book) {
-                alert('Book not found.');
-                return;
-            }
-            
-            // Sanitize all inputs
-            const safeTitle = sanitizeHTML(book.title || 'Untitled');
-            const safeAuthor = sanitizeHTML(book.author || 'Unknown Author');
-            const safeDescription = sanitizeHTML(book.description || 'No description available.');
-            const safeCover = sanitizeURL(book.cover_image_url || '');
-            const safeISBN = sanitizeHTML(book.isbn || 'N/A');
-            const safeCategory = sanitizeHTML((book.category || 'others').toUpperCase());
-            const safeType = sanitizeHTML((book.type || 'pdf').toUpperCase());
-            
-            // Create modal HTML
-            const modalHTML = `
-                <div class="modal-overlay" id="bookDetailsModal" style="display: flex; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 10000; padding: 20px;">
-                    <div class="modal-content" style="background: white; border-radius: 16px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.3); position: relative;">
-                        <div class="modal-header" style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: white; z-index: 1; border-radius: 16px 16px 0 0;">
-                            <h3 style="margin: 0; font-size: 20px; color: var(--dark-gray);"><i class="fas fa-book-open" style="color: var(--primary-green);"></i> Book Details</h3>
-                            <button onclick="closeBookDetailsModal()" style="background: none; border: none; font-size: 24px; color: #999; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s;" onmouseover="this.style.background='#f5f5f5'; this.style.color='#333';" onmouseout="this.style.background='none'; this.style.color='#999';">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                        <div class="modal-body" style="padding: 20px;">
-                            ${safeCover ? `<img src="${safeCover}" alt="${safeTitle}" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">` : 
-                            `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); display: flex; align-items: center; justify-content: center; color: white; font-size: 64px; border-radius: 12px; margin-bottom: 20px;">
-                                <i class="fas fa-book"></i>
-                            </div>`}
-                            
-                            <h2 style="margin: 0 0 10px 0; font-size: 24px; font-weight: 700; color: var(--dark-gray); line-height: 1.3;">${safeTitle}</h2>
-                            
-                            <div style="margin-bottom: 16px; padding: 12px; background: #f8f9fa; border-radius: 8px;">
-                                <p style="margin: 0 0 8px 0; font-size: 16px; color: var(--text-gray);"><strong style="color: var(--dark-gray);">Author:</strong> ${safeAuthor}</p>
-                                <p style="margin: 0 0 8px 0; font-size: 16px; color: var(--text-gray);"><strong style="color: var(--dark-gray);">Category:</strong> ${safeCategory}</p>
-                                <p style="margin: 0 0 8px 0; font-size: 16px; color: var(--text-gray);"><strong style="color: var(--dark-gray);">Type:</strong> ${safeType}</p>
-                                <p style="margin: 0; font-size: 16px; color: var(--text-gray);"><strong style="color: var(--dark-gray);">ISBN:</strong> ${safeISBN}</p>
-                            </div>
-                            
-                            <div style="margin-bottom: 20px;">
-                                <h4 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: var(--dark-gray);">Description</h4>
-                                <p style="margin: 0; font-size: 15px; color: var(--text-gray); line-height: 1.6;">${safeDescription}</p>
-                            </div>
-                            
-                            ${book.file_url ? `<button onclick="openBookFileMobile('${book.file_url}', '${book.type || 'pdf'}'); closeBookDetailsModal();" style="width: 100%; padding: 14px; background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3); transition: all 0.2s; touch-action: manipulation; display: flex; align-items: center; justify-content: center; gap: 8px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(76, 175, 80, 0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(76, 175, 80, 0.3)';">
-                                <i class="fas fa-external-link-alt"></i> Open Book
-                            </button>` : ''}
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Remove existing modal if any
-            const existingModal = document.getElementById('bookDetailsModal');
-            if (existingModal) {
-                existingModal.remove();
-            }
-            
-            // Add modal to page
-            document.body.insertAdjacentHTML('beforeend', modalHTML);
-            
-            // Close on overlay click
-            const modal = document.getElementById('bookDetailsModal');
-            modal.addEventListener('click', function(e) {
-                if (e.target === modal) {
-                    closeBookDetailsModal();
+                
+                if (data.success) {
+                    alert('Book added successfully!');
+                    window.closeAddBookModal();
+                    loadBooksFromStorage(); // Reload books
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to add book'));
                 }
+            })
+            .catch(error => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+                console.error('Error:', error);
+                alert('Error uploading book. Please try again.');
             });
         };
-        
-        // Close book details modal
-        window.closeBookDetailsModal = function() {
-            const modal = document.getElementById('bookDetailsModal');
-            if (modal) {
-                modal.style.opacity = '0';
-                setTimeout(() => modal.remove(), 200);
+
+        // Helper function to create and add book item
+        function createBookItem(title, author, isbn, category, description, coverImageUrl, libraryData) {
+            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+            const bookItem = {
+                id: Date.now().toString(),
+                title: title,
+                author: author,
+                isbn: isbn,
+                category: category,
+                description: description,
+                coverImage: coverImageUrl || '',
+                date: new Date().toISOString()
+            };
+
+            libraryData.unshift(bookItem); // Add to beginning
+            
+            // Try to save to localStorage with error handling
+            try {
+                const dataString = JSON.stringify(libraryData);
+                localStorage.setItem('libraryData', dataString);
+            } catch (e) {
+                if (e.name === 'QuotaExceededError') {
+                    // Remove the item we just added since we can't save it
+                    libraryData.shift();
+                    
+                    // Try to free up space by removing oldest items
+                    if (libraryData.length > 0) {
+                        const removed = libraryData.pop(); // Remove oldest
+                        try {
+                            localStorage.setItem('libraryData', JSON.stringify(libraryData));
+                            alert('Storage is full! The oldest book was removed to make space. Please try adding your book again, or delete more items manually.');
+                        } catch (e2) {
+                            // Still can't save, need to remove more or clear
+                            alert('Storage is completely full! Please delete some books manually or clear your browser storage, then try again.');
+                        }
+                    } else {
+                        alert('Storage is full and cannot be cleared automatically. Please clear your browser storage or delete books manually.');
+                    }
+                    return false;
+                } else {
+                    alert('Error saving book: ' + e.message);
+                    return false;
+                }
             }
-        };
+
+            // Create and display book item
+            const libraryGrid = document.getElementById('libraryGrid');
+            const newBookItem = document.createElement('div');
+            newBookItem.className = 'media-item';
+            newBookItem.dataset.category = category;
+            newBookItem.dataset.id = bookItem.id;
+
+            const safeTitle = title.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+            const safeAuthor = author.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+            const safeDescription = (description || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+            const safeCover = coverImageUrl ? coverImageUrl.replace(/'/g, "&#39;") : '';
+            
+            // Default cover if no image provided
+            const coverDisplay = safeCover ? 
+                `<img src="${safeCover}" alt="${safeTitle}" style="width: 100%; height: 200px; object-fit: cover;">` :
+                `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-book"></i></div>`;
+            
+            newBookItem.innerHTML = `
+                <div style="width: 100%; height: 100%; position: relative; border-radius: 8px; overflow: hidden; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column;">
+                    ${coverDisplay}
+                    <div style="padding: 12px; flex: 1; display: flex; flex-direction: column;">
+                        <h4 style="margin: 0 0 5px 0; font-size: 14px; font-weight: 600; color: var(--dark-gray); line-height: 1.3;">${safeTitle}</h4>
+                        <p style="margin: 0 0 5px 0; font-size: 12px; color: var(--text-gray);">by ${safeAuthor}</p>
+                        ${isbn ? `<p style="margin: 0 0 5px 0; font-size: 11px; color: var(--text-gray);">ISBN: ${isbn}</p>` : ''}
+                        ${safeDescription ? `<p style="margin: 5px 0 0 0; font-size: 11px; color: var(--text-gray); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${safeDescription}</p>` : ''}
+                    </div>
+                    ${adminStatus ? `<button onclick="deleteBook('${bookItem.id}')" style="position: absolute; top: 8px; right: 8px; background: #f44336; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); font-size: 14px; z-index: 10;">
+                        <i class="fas fa-trash"></i>
+                    </button>` : ''}
+                </div>
+            `;
+
+            // Insert at the beginning
+            if (libraryGrid) {
+                libraryGrid.insertBefore(newBookItem, libraryGrid.firstChild);
+                window.closeAddBookModal();
+                alert('Book added successfully!');
+                // Reload books to ensure consistency
+                setTimeout(function() {
+                    loadBooksFromStorage();
+                }, 100);
+            } else {
+                alert('Error: Could not find library grid container.');
+            }
+        }
 
         // Delete book function - admin only
-        window.deleteBook = async function(bookId) {
+        window.deleteBook = function(bookId) {
             const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
             if (!adminStatus) {
-                showMobileAlert('You must be logged in as admin to delete books.');
+                alert('You must be logged in as admin to delete books.');
                 return;
             }
             
-            // Sanitize bookId to prevent XSS
-            const safeBookId = sanitizeHTML(bookId.toString());
-            
-            // Use custom confirm dialog (mobile-friendly)
-            if (!confirm('Are you sure you want to delete this book? This action cannot be undone.')) {
+            if (!confirm('Are you sure you want to delete this book? This will remove it from Google Drive and the database.')) {
                 return;
             }
             
-            // Verify admin session with Supabase (secure, no hardcoded password)
-            try {
-                const supabase = getSupabaseClient();
-                if (supabase) {
-                    const { data: { session } } = await supabase.auth.getSession();
-                    if (!session || !session.user) {
-                        alert('Session expired. Please login again.');
-                        if (typeof window.showAdminLogin === 'function') {
-                            window.showAdminLogin();
-                        }
-                        return;
-                    }
+            const adminPassword = prompt('Enter admin password to confirm deletion:');
+            if (!adminPassword) {
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('id', bookId);
+            formData.append('password', adminPassword);
+            
+            fetch(API_BASE_URL + '/delete_book.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Book deleted successfully!');
+                    loadBooksFromStorage(); // Reload books
                 } else {
-                    // Fallback: Require re-authentication
-                    alert('Please verify your admin credentials to delete this book.');
-                    if (typeof window.showAdminLogin === 'function') {
-                        window.showAdminLogin();
-                    }
-                    return;
+                    alert('Error: ' + (data.message || 'Failed to delete book'));
                 }
-            } catch (authError) {
-                console.error('Auth verification error:', authError);
-                alert('Unable to verify admin session. Please login again.');
-                if (typeof window.showAdminLogin === 'function') {
-                    window.showAdminLogin();
-                }
-                return;
-            }
-            
-            try {
-                const supabase = getSupabaseClient();
-                if (!supabase) {
-                    throw new Error('Supabase client not available');
-                }
-                
-                console.log('Attempting to delete book with ID:', safeBookId);
-                
-                // Find the book in cache to get file URL for storage deletion
-                const bookToDelete = cachedBooks.find(book => {
-                    const bookIdStr = book.id?.toString() || '';
-                    const supabaseIdStr = book.supabaseId?.toString() || '';
-                    return bookIdStr === safeBookId || supabaseIdStr === safeBookId;
-                });
-                
-                // Step 1: Delete file from storage if URL exists
-                if (bookToDelete && bookToDelete.file_url && bookToDelete.file_url.startsWith('http')) {
-                    try {
-                        // Extract storage path from Supabase public URL
-                        // Format: https://[project].supabase.co/storage/v1/object/public/[bucket]/[path]
-                        const urlMatch = bookToDelete.file_url.match(/\/storage\/v1\/object\/public\/([^\/]+)\/(.+)$/);
-                        if (urlMatch) {
-                            const bucket = urlMatch[1];
-                            const filePath = decodeURIComponent(urlMatch[2]);
-                            
-                            console.log('Deleting file from storage:', { bucket, filePath });
-                            
-                            const { error: storageError } = await supabase.storage
-                                .from(bucket)
-                                .remove([filePath]);
-                            
-                            if (storageError) {
-                                // Log warning but continue (file might not exist)
-                                if (storageError.message && !storageError.message.includes('not found')) {
-                                    console.warn('Storage deletion warning:', storageError);
-                                }
-                            } else {
-                                console.log('File deleted from storage successfully');
-                            }
-                        }
-                    } catch (storageError) {
-                        console.warn('Storage deletion error (continuing):', storageError);
-                        // Continue to database deletion even if storage deletion fails
-                    }
-                }
-                
-                // Step 2: Delete from database - try both string and number ID
-                let deleteResult;
-                let deleteError;
-                
-                // Try with string ID first
-                deleteResult = await supabase
-                    .from('books')
-                    .delete()
-                    .eq('id', safeBookId)
-                    .select();
-                
-                deleteError = deleteResult.error;
-                
-                // If that fails and safeBookId is a string, try converting to number
-                if (deleteError && !isNaN(safeBookId)) {
-                    console.log('Retrying delete with numeric ID:', Number(safeBookId));
-                    deleteResult = await supabase
-                        .from('books')
-                        .delete()
-                        .eq('id', Number(safeBookId))
-                        .select();
-                    deleteError = deleteResult.error;
-                }
-                
-                if (deleteError) {
-                    console.error('Supabase delete error:', deleteError);
-                    throw deleteError;
-                }
-                
-                // Verify deletion was successful
-                const deleteSuccessful = deleteResult.data && deleteResult.data.length > 0;
-                if (!deleteSuccessful) {
-                    console.warn('Delete returned no data - book may not exist or already deleted');
-                    // Still proceed with UI update if we got no error (book might already be deleted)
-                } else {
-                    console.log('Book deleted successfully from Supabase:', deleteResult.data);
-                }
-                
-                // Step 3: Immediately remove from DOM for instant visual feedback
-                const libraryGrid = document.getElementById('libraryGrid');
-                let domRemoved = false;
-                if (libraryGrid) {
-                    // Find and remove the book card by ID (try both string and number matching)
-                    const bookCards = libraryGrid.querySelectorAll('.media-item[data-id]');
-                    bookCards.forEach(card => {
-                        const cardId = card.getAttribute('data-id');
-                        const cardIdStr = cardId?.toString() || '';
-                        const safeBookIdStr = safeBookId.toString();
-                        
-                        // Match by string comparison (handles both string and number IDs)
-                        if (cardIdStr === safeBookIdStr || cardId === safeBookId) {
-                            domRemoved = true;
-                            // Add fade-out animation
-                            card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-                            card.style.opacity = '0';
-                            card.style.transform = 'scale(0.95)';
-                            
-                            // Remove from DOM after animation
-                            setTimeout(() => {
-                                if (card.parentNode) {
-                                    card.parentNode.removeChild(card);
-                                    console.log('[Delete] Book card removed from DOM');
-                                }
-                            }, 300);
-                        }
-                    });
-                    
-                    if (!domRemoved) {
-                        console.warn('[Delete] Book card not found in DOM with ID:', safeBookId);
-                    }
-                }
-                
-                // Step 4: Remove from cache immediately (match by both id and supabaseId)
-                const beforeCount = cachedBooks.length;
-                cachedBooks = cachedBooks.filter(book => {
-                    const bookIdStr = book.id?.toString() || '';
-                    const supabaseIdStr = book.supabaseId?.toString() || '';
-                    // Remove if either ID matches
-                    return bookIdStr !== safeBookId && supabaseIdStr !== safeBookId;
-                });
-                
-                const removedCount = beforeCount - cachedBooks.length;
-                console.log(`[Delete] Removed ${removedCount} book(s) from cache`);
-                
-                // Step 5: Update localStorage cache immediately
-                try {
-                    localStorage.setItem('cachedBooks', JSON.stringify(cachedBooks));
-                    console.log('[Delete] Cache updated in localStorage');
-                } catch (e) {
-                    console.warn('[Delete] Cache save failed:', e);
-                }
-                
-                // Step 6: Update UI immediately with filtered cache (ensures consistency)
-                const sortDropdown = document.getElementById('sortByCategory');
-                const currentCategory = sortDropdown ? sortDropdown.value : 'all';
-                const currentAdminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
-                
-                // Wait for DOM removal animation to complete, then refresh display
-                setTimeout(() => {
-                    displayBooks(cachedBooks, currentCategory, currentAdminStatus);
-                    console.log('[Delete] UI refreshed with updated cache');
-                }, 350);
-                
-                // Step 7: Refresh from database after delay to ensure full sync
-                // This ensures the UI matches the database state
-                setTimeout(() => {
-                    loadBooksFromStorage(currentCategory, false);
-                    console.log('[Delete] Database refresh completed');
-                }, 1500);
-                
-                alert('Book deleted successfully!');
-            } catch (error) {
-                console.error('Error deleting book:', error);
-                alert('Error: Failed to delete book. ' + (error.message || 'Please try again.'));
-            }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error deleting book. Please try again.');
+            });
         };
 
         // Helper function to clear old books (keeps last N items)
@@ -1735,81 +533,8 @@
             }
         };
 
-        // Sanitize HTML to prevent XSS
-        function sanitizeHTML(str) {
-            if (!str) return '';
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
-        }
-        
-        // Sanitize URL to prevent XSS
-        function sanitizeURL(url) {
-            if (!url) return '';
-            // Basic URL validation - only allow http/https/data URLs
-            try {
-                const urlObj = new URL(url);
-                if (!['http:', 'https:', 'data:'].includes(urlObj.protocol)) {
-                    return '';
-                }
-                return url;
-            } catch (e) {
-                // If URL parsing fails, return empty
-                return '';
-            }
-        }
-        
-        // Get Supabase client - Use singleton from services/supabaseClient.js
-        function getSupabaseClient() {
-            // Use the singleton client if available (preferred method)
-            if (typeof window.getSupabaseClient === 'function') {
-                try {
-                    return window.getSupabaseClient();
-                } catch (error) {
-                    console.error('[Library] Error getting singleton client:', error);
-                    throw error;
-                }
-            }
-            
-            // Fallback to deprecated method (for backward compatibility)
-            if (typeof initializeSupabase === 'function') {
-                const client = initializeSupabase();
-                if (client) {
-                    return client;
-                }
-            }
-            
-            throw new Error('Supabase not initialized. Make sure services/supabaseClient.js is loaded with type="module".');
-        }
-        
-        
-        // Validate file before upload
-        function validateBookFile(file) {
-            const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
-            const allowedTypes = ['application/pdf', 'application/epub+zip', 'application/x-mobipocket-ebook'];
-            
-            // Check file size
-            if (file.size > MAX_FILE_SIZE) {
-                return { valid: false, error: `File size (${(file.size / (1024 * 1024)).toFixed(2)}MB) exceeds maximum allowed size of 100MB.` };
-            }
-            
-            // Check file type
-            const isValidType = allowedTypes.includes(file.type) || file.name.toLowerCase().endsWith('.pdf') || file.name.toLowerCase().endsWith('.epub');
-            if (!isValidType) {
-                return { valid: false, error: `File type "${file.type || file.name}" is not supported. Please upload a PDF or EPUB file.` };
-            }
-            
-            return { valid: true };
-        }
-        
-        // Track if we've already logged API warnings (reduce console noise)
-        let cachedBooks = []; // Cache books for instant filtering
-        
-        /**
-         * Load library items from Supabase (read-only)
-         * Uses books table exclusively
-         */
-        async function loadBooksFromStorage(category = 'all', showLoading = true) {
+        // Load books from server
+        function loadBooksFromStorage(category = 'all') {
             const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
             const libraryGrid = document.getElementById('libraryGrid');
             
@@ -1818,476 +543,58 @@
                 return;
             }
             
-            // Try to load from localStorage cache first (instant display)
-            if (cachedBooks.length === 0) {
-                try {
-                    const cached = localStorage.getItem('cachedBooks');
-                    if (cached) {
-                        cachedBooks = JSON.parse(cached);
-                        if (cachedBooks.length > 0) {
-                            displayBooks(cachedBooks, category, adminStatus, currentSearchTerm);
-                            showLoading = false; // Already showing cached data
-                        }
-                    }
-                } catch (e) {
-                    console.log('Cache load failed:', e);
-                }
-            } else if (showLoading) {
-                // Show cached data immediately if available
-                displayBooks(cachedBooks, category, adminStatus, currentSearchTerm);
-                showLoading = false;
-            }
-            
-            // Show loading state if grid is empty
-            if (showLoading) {
-                const existingItems = Array.from(libraryGrid.querySelectorAll('.media-item[data-id]'));
-                if (existingItems.length === 0) {
-                    const loadingDiv = document.createElement('div');
-                    loadingDiv.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 40px; color: #999;';
-                    loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size: 48px; margin-bottom: 10px;"></i><p>Loading books...</p>';
-                    loadingDiv.id = 'booksLoadingDiv';
-                    libraryGrid.appendChild(loadingDiv);
-                } else {
-                    // Clear existing items
-                    existingItems.forEach(item => item.remove());
-                }
-            }
-            
-            // Fetch from Supabase books table (exclusive, no fallbacks)
-            let books = [];
-            let fetchError = null;
-            
-            try {
-                const supabase = getSupabaseClient();
-                if (!supabase) {
-                    throw new Error('Supabase client not initialized');
-                }
-                
-                // Build query: select all from books, ordered by created_at DESC
-                // DO NOT filter by category here - fetch all books and filter client-side
-                let query = supabase
-                    .from('books')
-                    .select('*')
-                    .order('created_at', { ascending: false });
-                
-                // Execute query with timeout protection
-                const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Request timeout: Please check your connection')), 10000)
-                );
-                
-                const { data, error } = await Promise.race([
-                    query,
-                    timeoutPromise.then(() => ({ data: null, error: new Error('Request timeout') }))
-                ]);
-                
-                if (error) {
-                    throw error;
-                }
-                
-                if (data) {
-                    // Log fetched items for verification
-                    console.log('Fetched library items from Supabase:', data.length, 'items');
-                    if (data.length > 0) {
-                        console.log('Sample item:', data[0]);
-                    }
-                    
-                    // Map Supabase data to book objects
-                    books = data.map(item => ({
-                        id: item.id?.toString() || '',
-                        title: item.title || '',
-                        author: item.author || '',
-                        description: item.description || '',
-                        category: item.category || 'other',
-                        cover_image_url: item.cover_url || item.cover_image_url || '',
-                        file_url: item.file_url || '',
-                        isbn: item.isbn || '',
-                        supabaseId: item.id?.toString() || ''
-                    }));
-                }
-            } catch (error) {
-                fetchError = error;
-                console.error('Error fetching library items from Supabase:', error);
-            }
-            
-            // Update cache
-            cachedBooks = books;
-            
-            // Save to localStorage for instant load next time (with quota handling)
-            try {
-                localStorage.setItem('cachedBooks', JSON.stringify(cachedBooks));
-            } catch (e) {
-                console.log('Cache save failed:', e);
-                // If quota exceeded, try to clear old cache
-                if (e.name === 'QuotaExceededError') {
-                    try {
-                        const limitedCache = cachedBooks.slice(0, 50);
-                        localStorage.setItem('cachedBooks', JSON.stringify(limitedCache));
-                    } catch (e2) {
-                        console.error('Error clearing cache:', e2);
-                    }
-                }
-            }
-            
-            // Remove ALL existing content first (loading, empty states, errors, books)
-            // This prevents stacking of multiple states
-            const allExistingContent = Array.from(libraryGrid.querySelectorAll('div'));
-            allExistingContent.forEach(item => item.remove());
+            // Clear existing items first (except default placeholders)
             const existingItems = Array.from(libraryGrid.querySelectorAll('.media-item[data-id]'));
             existingItems.forEach(item => item.remove());
             
-            // Handle states: success, empty, or error
-            if (fetchError) {
-                // Error state: show ONE user-friendly message
-                const errorDiv = document.createElement('div');
-                errorDiv.id = 'booksErrorState';
-                errorDiv.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 40px; color: #999;';
-                errorDiv.innerHTML = `
-                    <i class="fas fa-exclamation-circle" style="font-size: 48px; margin-bottom: 10px; opacity: 0.5; color: #f44336;"></i>
-                    <p style="margin-bottom: 10px;">Unable to load books. Please check your connection.</p>
-                    <button onclick="loadBooksFromStorage('${category}', true)" class="btn btn-primary" style="margin-top: 10px; padding: 8px 16px;">
-                        <i class="fas fa-redo"></i> Retry
-                    </button>
-                `;
-                libraryGrid.appendChild(errorDiv);
-            } else if (books.length === 0) {
-                // Empty state: no books available - let displayBooks handle it
-                displayBooks([], category, adminStatus, currentSearchTerm);
-            } else {
-                // Success state: display books
-                displayBooks(cachedBooks, category, adminStatus, currentSearchTerm);
-            }
-        }
-        
-        // Store current search term globally
-        let currentSearchTerm = '';
-        let searchDebounceTimer = null;
-        
-        // Show search suggestions dropdown
-        window.showSearchSuggestions = function() {
-            const searchInput = document.getElementById('librarySearchInput');
-            const suggestionsDiv = document.getElementById('searchSuggestions');
-            const searchTerm = (searchInput.value || '').trim().toLowerCase();
-            
-            if (!suggestionsDiv) return;
-            
-            // Get current category from dropdown
-            const sortDropdown = document.getElementById('sortByCategory');
-            const currentCategory = sortDropdown ? sortDropdown.value : 'all';
-            
-            // Filter books for suggestions
-            let suggestions = cachedBooks.filter(book => {
-                const title = (book.title || '').toLowerCase();
-                const bookCategory = (book.category || 'others').toLowerCase();
-                const matchesCategory = currentCategory === 'all' || bookCategory === currentCategory.toLowerCase();
-                
-                if (searchTerm) {
-                    return title.includes(searchTerm) && matchesCategory;
-                } else {
-                    // Show recent/popular books when no search term
-                    return matchesCategory;
-                }
-            });
-            
-            // Limit to 5 suggestions
-            suggestions = suggestions.slice(0, 5);
-            
-            if (suggestions.length > 0) {
-                suggestionsDiv.innerHTML = suggestions.map((book, index) => {
-                    const safeTitle = sanitizeHTML(book.title || 'Untitled');
-                    const safeCategory = sanitizeHTML((book.category || 'others').toUpperCase());
-                    // Escape quotes for onclick attribute
-                    const escapedTitle = safeTitle.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                    return `
-                        <div class="search-suggestion-item" 
-                             role="option"
-                             aria-label="Select ${safeTitle}"
-                             tabindex="0"
-                             onclick="selectSearchSuggestion('${escapedTitle}')"
-                             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectSearchSuggestion('${escapedTitle}');}"
-                             style="
-                                padding: 12px 16px;
-                                cursor: pointer;
-                                border-bottom: 1px solid #f5f5f5;
-                                transition: background 0.2s;
-                            " 
-                             onmouseover="this.style.background='#f5f5f5'" 
-                             onmouseout="this.style.background='white'"
-                             onfocus="this.style.background='#f5f5f5'"
-                             onblur="this.style.background='white'">
-                            <div style="font-weight: 600; color: #212121; font-size: 14px; margin-bottom: 4px;">${safeTitle}</div>
-                            <div style="font-size: 12px; color: #757575;">
-                                <span style="background: #4CAF50; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">${safeCategory}</span>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-                suggestionsDiv.style.display = 'block';
-            } else {
-                suggestionsDiv.style.display = 'none';
-            }
-        };
-        
-        // Hide search suggestions
-        window.hideSearchSuggestions = function() {
-            const suggestionsDiv = document.getElementById('searchSuggestions');
-            if (suggestionsDiv) {
-                suggestionsDiv.style.display = 'none';
-            }
-        };
-        
-        // Select search suggestion
-        window.selectSearchSuggestion = function(bookTitle) {
-            // Sanitize input to prevent XSS
-            const safeTitle = sanitizeHTML(bookTitle || '');
-            const searchInput = document.getElementById('librarySearchInput');
-            if (searchInput && safeTitle) {
-                searchInput.value = safeTitle;
-                handleLibrarySearch(safeTitle);
-                hideSearchSuggestions();
-                searchInput.blur();
-            }
-        };
-        
-        // Debounced search handler (300ms delay)
-        window.handleLibrarySearchDebounced = function(searchTerm) {
-            // Clear previous timer
-            if (searchDebounceTimer) {
-                clearTimeout(searchDebounceTimer);
-            }
-            
-            // Set new timer
-            searchDebounceTimer = setTimeout(() => {
-                handleLibrarySearch(searchTerm);
-            }, 300);
-        };
-        
-        // Handle library search
-        window.handleLibrarySearch = function(searchTerm) {
-            currentSearchTerm = searchTerm.trim().toLowerCase();
-            const searchInfo = document.getElementById('searchResultsInfo');
-            
-            // Update suggestions
-            showSearchSuggestions();
-            
-            // Get current category from dropdown
-            const sortDropdown = document.getElementById('sortByCategory');
-            const currentCategory = sortDropdown ? sortDropdown.value : 'all';
-            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
-            
-            // Refresh display with search
-            displayBooks(cachedBooks, currentCategory, adminStatus, currentSearchTerm);
-            
-            // Update search info
-            if (currentSearchTerm) {
-                const filteredCount = cachedBooks.filter(book => {
-                    const title = (book.title || '').toLowerCase();
-                    const matchesSearch = title.includes(currentSearchTerm);
-                    const bookCategory = (book.category || 'others').toLowerCase();
-                    const matchesCategory = currentCategory === 'all' || bookCategory === currentCategory.toLowerCase();
-                    return matchesSearch && matchesCategory;
-                }).length;
-                
-                searchInfo.style.display = 'block';
-                // Sanitize searchTerm before using in innerHTML
-                const safeSearchTerm = sanitizeHTML(searchTerm);
-                searchInfo.innerHTML = `<i class="fas fa-search"></i> Found ${filteredCount} book${filteredCount !== 1 ? 's' : ''} matching "${safeSearchTerm}"`;
-            } else {
-                searchInfo.style.display = 'none';
-            }
-        };
-        
-        // Display books (instant, no loading)
-        function displayBooks(books, category = 'all', adminStatus = false, searchTerm = '') {
-            const libraryGrid = document.getElementById('libraryGrid');
-            if (!libraryGrid) return;
-            
-            // Update category counts
-            updateCategoryCounts(books);
-            
-            // Filter by category (client-side, instant)
-            let filtered = books;
-            if (category !== 'all') {
-                filtered = books.filter(book => {
-                    const bookCategory = (book.category || 'others').toLowerCase();
-                    return bookCategory === category.toLowerCase();
-                });
-            }
-            
-            // Filter by search term (by book title/name)
-            if (searchTerm) {
-                filtered = filtered.filter(book => {
-                    const title = (book.title || '').toLowerCase();
-                    return title.includes(searchTerm.toLowerCase());
-                });
-            }
-            
-            // Remove ALL existing content: loading indicators, empty states, error messages, and book items
-            // This prevents stacking of empty states
-            const allExistingContent = Array.from(libraryGrid.querySelectorAll('div'));
-            allExistingContent.forEach(item => item.remove());
-            
-            // Clear existing book items
-            const existingItems = Array.from(libraryGrid.querySelectorAll('.media-item[data-id]'));
-            existingItems.forEach(item => item.remove());
-            
-            // Show empty state ONLY when appropriate (mobile-friendly)
-            // Rule 1: If total books array is empty, show ONE message for "all" category
-            // Rule 2: If filtering by category and that category has no books, show message for that category only
-            if (books.length === 0 && category === 'all') {
-                // Total books array is empty - show single empty state
-                const emptyDiv = document.createElement('div');
-                emptyDiv.id = 'booksEmptyState';
-                emptyDiv.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 60px 20px; color: #999;';
-                emptyDiv.innerHTML = '<i class="fas fa-book" style="font-size: 64px; margin-bottom: 16px; opacity: 0.3; color: #bdbdbd;"></i><p style="font-size: 16px; margin: 0; color: #757575;">No documents available yet</p>';
-                libraryGrid.appendChild(emptyDiv);
-                return;
-            } else if (filtered.length === 0 && category !== 'all' && books.length > 0 && !searchTerm) {
-                // Category filter active, but no books in that category (other books exist)
-                const emptyDiv = document.createElement('div');
-                emptyDiv.id = 'booksEmptyState';
-                emptyDiv.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 60px 20px; color: #999;';
-                const categoryName = category.charAt(0).toUpperCase() + category.slice(1);
-                emptyDiv.innerHTML = '<i class="fas fa-folder-open" style="font-size: 64px; margin-bottom: 16px; opacity: 0.3; color: #bdbdbd;"></i><p style="font-size: 16px; margin: 0; color: #757575;">No documents in ' + categoryName + ' category</p>';
-                libraryGrid.appendChild(emptyDiv);
-                return;
-            } else if (filtered.length === 0 && searchTerm) {
-                // Search active but no results
-                const emptyDiv = document.createElement('div');
-                emptyDiv.id = 'booksEmptyState';
-                emptyDiv.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 60px 20px; color: #999;';
-                emptyDiv.innerHTML = '<i class="fas fa-search" style="font-size: 64px; margin-bottom: 16px; opacity: 0.3; color: #bdbdbd;"></i><p style="font-size: 16px; margin: 0; color: #757575;">No books found matching "' + searchTerm + '"</p>';
-                libraryGrid.appendChild(emptyDiv);
-                return;
-            }
-            
-            // If we have books to display, ensure no empty state is shown
-            if (filtered.length > 0) {
-                const existingEmptyState = document.getElementById('booksEmptyState');
-                if (existingEmptyState) {
-                    existingEmptyState.remove();
-                }
-            }
-            
-            // Render books as mobile-first document cards
-            filtered.forEach(book => {
-                const newBookItem = document.createElement('div');
-                newBookItem.className = 'media-item compact-card';
-                newBookItem.dataset.category = (book.category || 'others').toLowerCase();
-                newBookItem.dataset.id = book.id;
-                
-                // Sanitize all inputs to prevent XSS
-                const safeTitle = sanitizeHTML(book.title || 'Untitled');
-                const safeAuthor = sanitizeHTML(book.author || '');
-                const safeDescription = sanitizeHTML(book.description || '');
-                const safeCategory = sanitizeHTML((book.category || 'others').toUpperCase());
-                const safeId = sanitizeHTML(book.id.toString());
-                
-                // Use Supabase public URL from books table (file_url column)
-                let fileUrl = '';
-                if (book.file_url && book.file_url.startsWith('http')) {
-                    fileUrl = book.file_url;
-                }
-                
-                // Detect file type from URL or type field
-                let fileType = 'default';
-                let fileIcon = '📄';
-                let fileTypeClass = 'default';
-                
-                if (book.type) {
-                    if (book.type.toLowerCase() === 'audio' || book.type.toLowerCase().includes('audio')) {
-                        fileType = 'audio';
-                        fileIcon = '🎧';
-                        fileTypeClass = 'audio';
-                    } else if (book.type.toLowerCase() === 'pdf' || book.type.toLowerCase().includes('pdf')) {
-                        fileType = 'pdf';
-                        fileIcon = '📄';
-                        fileTypeClass = 'pdf';
-                    }
-                } else if (fileUrl) {
-                    const urlLower = fileUrl.toLowerCase();
-                    if (urlLower.includes('.mp3') || urlLower.includes('.wav') || urlLower.includes('.ogg') || urlLower.includes('.m4a')) {
-                        fileType = 'audio';
-                        fileIcon = '🎧';
-                        fileTypeClass = 'audio';
-                    } else if (urlLower.includes('.pdf')) {
-                        fileType = 'pdf';
-                        fileIcon = '📄';
-                        fileTypeClass = 'pdf';
-                    }
-                }
-                
-                // Format file size if available
-                let fileSizeDisplay = '';
-                if (book.file_size) {
-                    const sizeBytes = parseInt(book.file_size);
-                    if (!isNaN(sizeBytes)) {
-                        if (sizeBytes < 1024) {
-                            fileSizeDisplay = sizeBytes + ' B';
-                        } else if (sizeBytes < 1024 * 1024) {
-                            fileSizeDisplay = (sizeBytes / 1024).toFixed(1) + ' KB';
-                        } else {
-                            fileSizeDisplay = (sizeBytes / (1024 * 1024)).toFixed(1) + ' MB';
-                        }
-                    }
-                }
-                
-                // Format date if available
-                let dateDisplay = '';
-                if (book.created_at) {
-                    try {
-                        const date = new Date(book.created_at);
-                        if (!isNaN(date.getTime())) {
-                            dateDisplay = date.toLocaleDateString('en-US', { 
-                                year: 'numeric', 
-                                month: 'short', 
-                                day: 'numeric' 
-                            });
-                        }
-                    } catch (e) {
-                        // Invalid date, skip
-                    }
-                }
-                
-                // Build meta line
-                const metaItems = [];
-                if (safeCategory) metaItems.push(safeCategory);
-                if (fileSizeDisplay) metaItems.push(fileSizeDisplay);
-                const metaLine = metaItems.join(' • ');
-                
-                // Simple card design - Only Name, About, Category
-                newBookItem.innerHTML = `
-                    <div class="document-card">
-                        <div class="document-header">
-                            <div class="document-title-section">
-                                <h3 class="document-title">${safeTitle}</h3>
-                                ${safeCategory ? `<span class="document-category-badge">${safeCategory}</span>` : ''}
-                            </div>
-                            ${(fileUrl || adminStatus) ? `<button class="document-menu-button" onclick="event.stopPropagation(); toggleBookMenu('${safeId}')" aria-label="Book options menu" aria-haspopup="true" aria-expanded="false" title="Options">
-                                <i class="fas fa-ellipsis-v"></i>
-                            </button>
-                            <div class="document-dropdown" id="book-menu-${safeId}">
-                                ${fileUrl ? `<a href="#" class="document-dropdown-item open" onclick="event.stopPropagation(); closeBookMenu('${safeId}'); openBookFileMobile('${fileUrl}', '${fileType}'); return false;">
-                                    <i class="fas fa-external-link-alt"></i>
-                                    <span>Open Document</span>
-                                </a>` : ''}
-                                ${fileUrl ? `<a href="#" class="document-dropdown-item download" onclick="event.stopPropagation(); closeBookMenu('${safeId}'); handleDownloadBook('${fileUrl}', '${safeTitle}'); return false;">
-                                    <i class="fas fa-download"></i>
-                                    <span>Download</span>
-                                </a>` : ''}
-                                ${adminStatus ? `<a href="#" class="document-dropdown-item delete" onclick="event.stopPropagation(); closeBookMenu('${safeId}'); deleteBook('${safeId}'); return false;">
-                                    <i class="fas fa-trash"></i>
-                                    <span>Delete</span>
-                                </a>` : ''}
-                            </div>` : ''}
-                        </div>
-                        <div class="document-body">
-                            ${safeDescription ? `<p class="document-description">${safeDescription}</p>` : '<p class="document-description" style="color: #999; font-style: italic;">No description available</p>'}
-                        </div>
-                    </div>
-                `;
+            // Fetch books from server
+            const url = category === 'all' ? (API_BASE_URL + '/get_books.php') : (API_BASE_URL + `/get_books.php?category=${category}`);
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.books) {
+                        data.books.forEach(book => {
+                            const newBookItem = document.createElement('div');
+                            newBookItem.className = 'media-item';
+                            newBookItem.dataset.category = book.category || 'other';
+                            newBookItem.dataset.id = book.id;
+                            
+                            const safeTitle = (book.title || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+                            const safeAuthor = (book.author || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+                            const safeDescription = (book.description || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+                            const safeCover = (book.cover_image_url || '').replace(/'/g, "&#39;");
+                            const safeISBN = (book.isbn || '').replace(/'/g, "&#39;");
+                            // Use proxy download endpoint for direct download (only if book file exists)
+                            const downloadLink = book.drive_file_id ? (API_BASE_URL + '/download_book.php?id=' + book.id) : '';
+                            
+                            // Default cover if no image provided
+                            const coverDisplay = safeCover ? 
+                                `<img src="${safeCover}" alt="${safeTitle}" style="width: 100%; height: 200px; object-fit: cover;">` :
+                                `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-book"></i></div>`;
+                            
+                            newBookItem.innerHTML = `
+                                <div style="width: 100%; height: 100%; position: relative; border-radius: 8px; overflow: hidden; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column;">
+                                    ${coverDisplay}
+                                    <div style="padding: 12px; flex: 1; display: flex; flex-direction: column;">
+                                        <h4 style="margin: 0 0 5px 0; font-size: 14px; font-weight: 600; color: var(--dark-gray); line-height: 1.3;">${safeTitle}</h4>
+                                        <p style="margin: 0 0 5px 0; font-size: 12px; color: var(--text-gray);">by ${safeAuthor}</p>
+                                        ${safeISBN ? `<p style="margin: 0 0 5px 0; font-size: 11px; color: var(--text-gray);">ISBN: ${safeISBN}</p>` : ''}
+                                        ${safeDescription ? `<p style="margin: 5px 0 0 0; font-size: 11px; color: var(--text-gray); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${safeDescription}</p>` : ''}
+                                        ${downloadLink ? `<a href="${downloadLink}" download="${safeTitle}.pdf" style="margin-top: 10px; padding: 8px 12px; background: var(--primary-green); color: white; text-decoration: none; border-radius: 5px; text-align: center; font-size: 12px; display: inline-block;"><i class="fas fa-download"></i> Download</a>` : ''}
+                                    </div>
+                                    ${adminStatus ? `<button onclick="deleteBook('${book.id}')" style="position: absolute; top: 8px; right: 8px; background: #f44336; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); font-size: 14px; z-index: 10;">
+                                        <i class="fas fa-trash"></i>
+                                    </button>` : ''}
+                                </div>
+                            `;
 
-                libraryGrid.insertBefore(newBookItem, libraryGrid.firstChild);
-            });
+                            libraryGrid.insertBefore(newBookItem, libraryGrid.firstChild);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading books:', error);
+                });
         }
         
         // Re-render books when admin status changes
@@ -2296,241 +603,6 @@
                 loadBooksFromStorage();
             }
         });
-        
-        // Toggle book dropdown menu
-        window.toggleBookMenu = function(bookId) {
-            // Close all other menus first
-            const allMenus = document.querySelectorAll('.document-dropdown');
-            const allButtons = document.querySelectorAll('.document-menu-button');
-            
-            allMenus.forEach(menu => {
-                if (menu.id !== `book-menu-${bookId}`) {
-                    menu.classList.remove('show');
-                }
-            });
-            
-            allButtons.forEach(button => {
-                button.classList.remove('active');
-            });
-            
-            // Toggle current menu
-            const menu = document.getElementById(`book-menu-${bookId}`);
-            const button = menu ? menu.previousElementSibling : null;
-            
-            if (menu && button) {
-                const isOpen = menu.classList.contains('show');
-                
-                if (isOpen) {
-                    menu.classList.remove('show');
-                    button.classList.remove('active');
-                } else {
-                    menu.classList.add('show');
-                    button.classList.add('active');
-                }
-            }
-        };
-        
-        // Close book dropdown menu
-        window.closeBookMenu = function(bookId) {
-            const menu = document.getElementById(`book-menu-${bookId}`);
-            const button = menu ? menu.previousElementSibling : null;
-            
-            if (menu) {
-                menu.classList.remove('show');
-            }
-            
-            if (button) {
-                button.classList.remove('active');
-            }
-        };
-        
-        // Close all dropdowns when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.document-menu-button') && !e.target.closest('.document-dropdown')) {
-                const allMenus = document.querySelectorAll('.document-dropdown');
-                const allButtons = document.querySelectorAll('.document-menu-button');
-                
-                allMenus.forEach(menu => {
-                    menu.classList.remove('show');
-                });
-                
-                allButtons.forEach(button => {
-                    button.classList.remove('active');
-                });
-            }
-        });
-        
-        // Close dropdowns when scrolling
-        window.addEventListener('scroll', function() {
-            const allMenus = document.querySelectorAll('.document-dropdown');
-            const allButtons = document.querySelectorAll('.document-menu-button');
-            
-            allMenus.forEach(menu => {
-                menu.classList.remove('show');
-            });
-            
-            allButtons.forEach(button => {
-                button.classList.remove('active');
-            });
-        }, true);
-        
-        // Handle download book/document - Fast download with visual feedback
-        window.handleDownloadBook = async function(fileUrl, fileName) {
-            console.log('[Download] Starting download:', { fileUrl, fileName });
-            
-            if (!fileUrl) {
-                console.error('[Download] File URL not provided');
-                showMobileAlert('File URL not available for download.');
-                return;
-            }
-            
-            // Show download feedback
-            const downloadToast = document.createElement('div');
-            downloadToast.style.cssText = 'position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: white; padding: 12px 24px; border-radius: 8px; z-index: 10000; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 10px;';
-            downloadToast.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Starting download...</span>';
-            document.body.appendChild(downloadToast);
-            
-            try {
-                // Extract file name from URL if not provided
-                let downloadFileName = fileName || 'document';
-                if (!fileName && fileUrl) {
-                    const urlParts = fileUrl.split('/');
-                    const lastPart = urlParts[urlParts.length - 1];
-                    downloadFileName = lastPart.split('?')[0] || 'document';
-                }
-                
-                // Clean filename (remove special characters that might cause issues)
-                downloadFileName = downloadFileName.replace(/[^a-zA-Z0-9._-]/g, '_');
-                
-                // Add file extension if missing
-                if (!downloadFileName.includes('.')) {
-                    const urlLower = fileUrl.toLowerCase();
-                    if (urlLower.includes('.pdf')) {
-                        downloadFileName += '.pdf';
-                    } else if (urlLower.includes('.mp3')) {
-                        downloadFileName += '.mp3';
-                    } else if (urlLower.includes('.wav')) {
-                        downloadFileName += '.wav';
-                    } else if (urlLower.includes('.ogg')) {
-                        downloadFileName += '.ogg';
-                    } else if (urlLower.includes('.m4a')) {
-                        downloadFileName += '.m4a';
-                    }
-                }
-                
-                // Method: Use Fetch API with Blob (prevents tab opening) - FAST VERSION
-                try {
-                    console.log('[Download] Fetching file as blob...');
-                    downloadToast.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Downloading...</span>';
-                    
-                    // Fetch the file as blob immediately (no delay)
-                    const response = await fetch(fileUrl, {
-                        method: 'GET',
-                        headers: {
-                            'Cache-Control': 'no-cache'
-                        }
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    
-                    const blob = await response.blob();
-                    console.log('[Download] File fetched, creating download link...');
-                    
-                    // Create blob URL
-                    const blobUrl = window.URL.createObjectURL(blob);
-                    
-                    // Create download link (NO target attribute to prevent tab opening)
-                    const link = document.createElement('a');
-                    link.href = blobUrl;
-                    link.download = downloadFileName;
-                    link.style.display = 'none';
-                    
-                    // Append to body and trigger download immediately
-                    document.body.appendChild(link);
-                    link.click();
-                    
-                    // Update toast to show success
-                    downloadToast.innerHTML = '<i class="fas fa-check-circle" style="color: #4CAF50;"></i> <span>Download started!</span>';
-                    
-                    // Cleanup after short delay
-                    setTimeout(() => {
-                        if (link.parentNode) {
-                            document.body.removeChild(link);
-                        }
-                        window.URL.revokeObjectURL(blobUrl);
-                        if (downloadToast.parentNode) {
-                            document.body.removeChild(downloadToast);
-                        }
-                        console.log('[Download] Download completed:', downloadFileName);
-                    }, 1500);
-                    
-                } catch (fetchError) {
-                    console.error('[Download] Fetch method failed:', fetchError);
-                    
-                    // Remove toast
-                    if (downloadToast.parentNode) {
-                        document.body.removeChild(downloadToast);
-                    }
-                    
-                    // Fallback: Try direct download without opening tab (fast)
-                    const link = document.createElement('a');
-                    link.href = fileUrl;
-                    link.download = downloadFileName;
-                    // DO NOT set target - prevents tab opening
-                    link.style.display = 'none';
-                    
-                    document.body.appendChild(link);
-                    link.click();
-                    
-                    // Show success toast
-                    const fallbackToast = document.createElement('div');
-                    fallbackToast.style.cssText = 'position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: white; padding: 12px 24px; border-radius: 8px; z-index: 10000; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);';
-                    fallbackToast.innerHTML = '<i class="fas fa-check-circle" style="color: #4CAF50;"></i> <span>Download started!</span>';
-                    document.body.appendChild(fallbackToast);
-                    
-                    setTimeout(() => {
-                        if (link.parentNode) {
-                            document.body.removeChild(link);
-                        }
-                        if (fallbackToast.parentNode) {
-                            document.body.removeChild(fallbackToast);
-                        }
-                    }, 1500);
-                    
-                    console.log('[Download] Fallback download method used');
-                }
-                
-            } catch (error) {
-                console.error('[Download] Error initiating download:', error);
-                
-                // Remove toast if still present
-                if (downloadToast.parentNode) {
-                    document.body.removeChild(downloadToast);
-                }
-                
-                showMobileAlert('Download failed. Please check your connection and try again.');
-            }
-        };
-        
-        // Mobile-friendly alert function
-        function showMobileAlert(message) {
-            const alertDiv = document.createElement('div');
-            alertDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10001; max-width: 80%; text-align: center;';
-            alertDiv.innerHTML = `
-                <p style="margin: 0 0 16px 0; font-size: 16px; color: #212121;">${sanitizeHTML(message)}</p>
-                <button onclick="this.parentElement.remove()" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; font-weight: 600;">OK</button>
-            `;
-            document.body.appendChild(alertDiv);
-            
-            // Auto-remove after 5 seconds
-            setTimeout(() => {
-                if (alertDiv.parentNode) {
-                    alertDiv.remove();
-                }
-            }, 5000);
-        }
     </script>
 
     <!-- Admin Login Modal -->
@@ -2543,15 +615,11 @@
                 </button>
             </div>
             <div class="modal-body">
-                <p style="margin-bottom: 15px;">Sign in with your account to access admin features.</p>
-                <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <input type="email" class="form-input" id="adminEmail" placeholder="Enter your email">
-                </div>
+                <p style="margin-bottom: 15px;">Enter admin password to access admin features.</p>
                 <div class="form-group">
                     <label class="form-label">Password</label>
-                    <input type="password" class="form-input" id="adminPassword" placeholder="Enter your password">
-                    <p id="passwordError" style="color: #f44336; font-size: 14px; margin-top: 5px; display: none;">Incorrect email or password.</p>
+                    <input type="password" class="form-input" id="adminPassword" placeholder="Enter admin password">
+                    <p id="passwordError" style="color: #f44336; font-size: 14px; margin-top: 5px; display: none;">Incorrect password. Please try again.</p>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button class="btn btn-primary" onclick="if(typeof window.verifyAdminPassword==='function')window.verifyAdminPassword()" style="flex: 1;">
@@ -2565,141 +633,72 @@
         </div>
     </div>
 
-    <!-- Add Book Modal - Simple Mobile-First Form -->
+    <!-- Add Book Modal -->
     <div class="modal-overlay" id="addBookModal" style="display: none;">
-        <div class="modal-content" style="max-width: 100%; width: 100%; margin: 0; border-radius: 0; height: 100vh; max-height: 100vh; display: flex; flex-direction: column;">
-            <div class="modal-header" style="flex-shrink: 0;">
+        <div class="modal-content">
+            <div class="modal-header">
                 <h3><i class="fas fa-book"></i> Add New Book</h3>
                 <button class="modal-close" onclick="if(typeof window.closeAddBookModal==='function')window.closeAddBookModal()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 100px;">
-                <form id="uploadBookForm" onsubmit="event.preventDefault(); if(typeof window.addBook==='function'){window.addBook(event);} return false;" enctype="multipart/form-data">
-                    <!-- Book Name -->
-                    <div class="form-group" style="margin-bottom: 24px;">
-                        <label class="form-label" style="font-size: 16px; font-weight: 600; margin-bottom: 10px; display: block; color: var(--dark-gray, #333);">Book Name *</label>
-                        <input type="text" class="form-input" id="bookName" placeholder="Enter book name" required maxlength="200" style="width: 100%; padding: 16px; font-size: 16px; border: 2px solid #ddd; border-radius: 12px; box-sizing: border-box; -webkit-appearance: none; appearance: none;">
+            <div class="modal-body">
+                <form id="addBookForm" onsubmit="event.preventDefault(); if(typeof window.addBook==='function'){window.addBook(event);} return false;" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label class="form-label">Book Title *</label>
+                        <input type="text" class="form-input" id="bookTitle" placeholder="Enter book title" required>
                     </div>
-                    
-                    <!-- File Type (Auto-detected, read-only display) -->
-                    <div class="form-group" style="margin-bottom: 24px;">
-                        <label class="form-label" style="font-size: 16px; font-weight: 600; margin-bottom: 10px; display: block; color: var(--dark-gray, #333);">File Type</label>
-                        <div id="fileTypeDisplay" style="width: 100%; padding: 16px; font-size: 16px; border: 2px solid #e0e0e0; border-radius: 12px; box-sizing: border-box; background: #f5f5f5; color: #666;">
-                            <i class="fas fa-info-circle"></i> Will be detected automatically from file
-                        </div>
-                        <input type="hidden" id="bookType" value="">
+                    <div class="form-group">
+                        <label class="form-label">Author *</label>
+                        <input type="text" class="form-input" id="bookAuthor" placeholder="Enter author name" required>
                     </div>
-                    
-                    <!-- Category -->
-                    <div class="form-group" style="margin-bottom: 24px;">
-                        <label class="form-label" style="font-size: 16px; font-weight: 600; margin-bottom: 10px; display: block; color: var(--dark-gray, #333);">Category *</label>
-                        <select class="form-input" id="bookCategory" required style="width: 100%; padding: 16px; font-size: 16px; border: 2px solid #ddd; border-radius: 12px; box-sizing: border-box; -webkit-appearance: none; appearance: none; background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E&quot;); background-repeat: no-repeat; background-position: right 12px center; background-size: 20px; padding-right: 40px;">
+                    <div class="form-group">
+                        <label class="form-label">ISBN (Optional)</label>
+                        <input type="text" class="form-input" id="bookISBN" placeholder="Enter ISBN number">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Category *</label>
+                        <select class="form-input" id="bookCategory" required>
                             <option value="">Select category</option>
+                            <option value="islamic">Islamic</option>
                             <option value="quran">Quran</option>
-                            <option value="yasaruna">Yasaruna</option>
-                            <option value="hadith">Hadith</option>
-                            <option value="tauheed">Tauheed</option>
-                            <option value="swalah">Swalah</option>
-                            <option value="others">Others</option>
+                            <option value="educational">Educational</option>
+                            <option value="other">Other</option>
                         </select>
                     </div>
-                    
-                    <!-- Description -->
-                    <div class="form-group" style="margin-bottom: 24px;">
-                        <label class="form-label" style="font-size: 16px; font-weight: 600; margin-bottom: 10px; display: block; color: var(--dark-gray, #333);">Description (Optional)</label>
-                        <textarea class="form-input" id="bookDescription" rows="4" placeholder="Enter book description" maxlength="2000" style="width: 100%; padding: 16px; font-size: 16px; border: 2px solid #ddd; border-radius: 12px; resize: vertical; box-sizing: border-box; font-family: inherit; min-height: 100px;"></textarea>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-input" id="bookDescription" rows="3" placeholder="Enter book description"></textarea>
                     </div>
-                    
-                    <!-- File Upload (Mobile-First) - Using Label Pattern (Industry Standard) -->
-                    <div class="form-group" style="margin-bottom: 24px;">
-                        <label class="form-label" style="font-size: 16px; font-weight: 600; margin-bottom: 10px; display: block; color: var(--dark-gray, #333);">Upload File *</label>
-                        
-                        <!-- Label Pattern: Most reliable method used by Dropbox, Google Drive, etc. -->
-                        <label for="bookFile" id="bookFileWrapper" style="
-                            display: block;
-                            position: relative;
-                            width: 100%;
-                            min-height: 140px;
-                            border: 3px dashed #4CAF50;
-                            border-radius: 16px;
-                            background: #f0f8f0;
-                            padding: 20px;
-                            text-align: center;
-                            box-sizing: border-box;
-                            touch-action: manipulation;
-                            -webkit-tap-highlight-color: transparent;
-                            transition: all 0.2s ease;
-                            cursor: pointer;
-                        ">
-                            <input
-                                type="file"
-                                id="bookFile"
-                                name="bookFile"
-                                accept=".pdf,.mp3,.wav,.ogg,.m4a,audio/*,application/pdf"
-                                required
-                                style="
-                                    position: absolute;
-                                    opacity: 0;
-                                    width: 0;
-                                    height: 0;
-                                    overflow: hidden;
-                                    font-size: 16px;
-                                "
-                            />
-                            
-                            <div id="bookFileLabel" style="
-                                pointer-events: none;
-                                position: relative;
-                            ">
-                                <i class="fas fa-cloud-upload-alt" style="
-                                    font-size: 48px;
-                                    color: #4CAF50;
-                                    display: block;
-                                    margin-bottom: 12px;
-                                "></i>
-                                <div style="
-                                    font-size: 18px;
-                                    font-weight: 600;
-                                    color: #212121;
-                                    margin-bottom: 6px;
-                                ">Tap to Choose File</div>
-                                <div style="
-                                    font-size: 14px;
-                                    color: #666;
-                                ">PDF or Audio (max 100MB)</div>
-                            </div>
-                            
-                            <div id="fileNameDisplay" style="
-                                display: none;
-                                margin-top: 16px;
-                                padding: 12px 16px;
-                                background: white;
-                                border-radius: 8px;
-                                border: 2px solid #4CAF50;
-                                font-weight: 600;
-                                color: #2e7d32;
-                                font-size: 14px;
-                                word-break: break-word;
-                            "></div>
+                    <div class="form-group">
+                        <label class="form-label">Cover Image</label>
+                        <input type="file" class="form-input" id="bookCover" accept="image/*" onchange="if(typeof window.handleBookCoverSelect==='function')window.handleBookCoverSelect(event)">
+                        <p style="font-size: 12px; color: var(--text-gray); margin-top: 5px;">Upload book cover image (max 2MB)</p>
+                        <div id="coverPreview" style="margin-top: 10px; display: none;">
+                            <img id="previewCoverImage" src="" alt="Cover Preview" style="max-width: 100%; max-height: 200px; border-radius: 8px; display: none; border: 2px solid var(--light-gray);">
                         </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Or Enter Cover Image URL (Optional)</label>
+                        <input type="url" class="form-input" id="bookCoverUrl" placeholder="https://example.com/book-cover.jpg">
+                        <p style="font-size: 12px; color: var(--text-gray); margin-top: 5px;">Alternative: Enter a URL for the book cover image</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Book File (PDF, DOC, DOCX, EPUB, TXT) - Optional</label>
+                        <input type="file" class="form-input" id="bookFile" accept=".pdf,.doc,.docx,.epub,.txt">
+                        <p style="font-size: 12px; color: var(--text-gray); margin-top: 5px;">Upload the book file to Google Drive (Max 500MB)</p>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button type="submit" class="btn btn-primary" style="flex: 1;">
+                            <i class="fas fa-plus"></i> Add Book
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="if(typeof window.closeAddBookModal==='function')window.closeAddBookModal()" style="flex: 1;">
+                            Cancel
+                        </button>
                     </div>
                 </form>
             </div>
-            
-            <!-- Sticky Submit Button -->
-            <div style="position: sticky; bottom: 0; left: 0; right: 0; background: white; padding: 16px 20px; border-top: 1px solid #eee; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 10; flex-shrink: 0;">
-                <button type="submit" id="submitBookBtn" form="uploadBookForm" class="btn btn-primary" style="width: 100%; padding: 16px; font-size: 18px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; touch-action: manipulation;">
-                    <i class="fas fa-upload"></i> Upload Book
-                </button>
-            </div>
         </div>
-    </div>
-
-    <!-- Floating Important Lessons Button -->
-    <div class="floating-lessons-btn" onclick="showLessonsModal()">
-        <i class="fas fa-fire"></i>
-        <span>Important Lessons</span>
     </div>
 
     <!-- Floating Kizumu Visit Button -->
@@ -2764,9 +763,6 @@
             </div>
         </div>
     </div>
-    <script>
-    </script>
 </body>
 </html>
-
 
