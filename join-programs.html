@@ -281,33 +281,31 @@
                 'arabic-classes': 'Arabic classes'
             };
 
-            // Prepare email content
-            const subject = encodeURIComponent('New Course Enrollment - Weekly Teachings');
-            const body = encodeURIComponent(`Assalam Alaikum,
+            // Prepare WhatsApp message
+            let message = `*Course Enrollment Request*\n\n`;
+            message += `Assalam Alaikum,\n\n`;
+            message += `I would like to enroll in the Weekly Teachings program.\n\n`;
+            message += `*Student Information:*\n`;
+            message += `• Full Name: ${name}\n`;
+            message += `• Registration Number: ${regNo}\n`;
+            message += `• Gender: ${gender}\n`;
+            message += `• Course/Program: ${course}\n`;
+            message += `• Year: ${year}\n`;
+            message += `• Semester: ${semester}\n\n`;
+            message += `*Selected Courses:*\n`;
+            selectedCourses.forEach((course, index) => {
+                message += `${index + 1}. ${course}\n`;
+            });
+            message += `\n_Please process this enrollment and send a confirmation._\n\n`;
+            message += `Jazakallahu Khairan`;
 
-A new student has enrolled in the Weekly Teachings program:
-
-*Student Information:*
-- Full Name: ${name}
-- Registration Number: ${regNo}
-- Gender: ${gender}
-- Course/Program: ${course}
-- Year: ${year}
-- Semester: ${semester}
-
-*Selected Courses:*
-${selectedCourses.map((course, index) => `${index + 1}. ${course}`).join('\n')}
-
-Please process this enrollment and send a confirmation email to the student.
-
-Jazakallahu Khairan
-KIUMA Website`);
-
-            // Create mailto link
-            const mailtoLink = `mailto:aworshibah2006@gmail.com?subject=${subject}&body=${body}`;
+            // Create WhatsApp link
+            const whatsappNumber = '256703268522';
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappLink = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
             
-            // Open email client
-            window.location.href = mailtoLink;
+            // Open WhatsApp
+            window.location.href = whatsappLink;
 
             // Save user data for future auto-fill
             const userData = {
@@ -320,14 +318,14 @@ KIUMA Website`);
                 semester: semester
             };
             localStorage.setItem('userData', JSON.stringify(userData));
-
-            // Show confirmation
-            setTimeout(() => {
-                alert('Thank you, ' + name + '!\n\nAn email has been prepared with your enrollment details for ' + selectedCourses.length + ' course(s).\n\nRegistration Number: ' + regNo + '\n\nPlease send the email to complete your enrollment. You will receive a confirmation email shortly.');
-                document.getElementById('programForm').reset();
-            }, 500);
         }
     </script>
+
+    <!-- Floating Important Lessons Button -->
+    <div class="floating-lessons-btn" onclick="window.location.href='important-lessons.html'">
+        <i class="fas fa-fire"></i>
+        <span>Important Lessons</span>
+    </div>
 
     <!-- Floating Kizumu Visit Button -->
     <div class="floating-kizumu-btn" onclick="showActivitiesModal()">
