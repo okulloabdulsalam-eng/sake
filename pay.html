@@ -609,7 +609,7 @@
                     membershipPlans.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }, 100);
             } else if (type === 'zakat') {
-                // Special Zakat form
+                // Special Zakat form - ONLY show Zakat calculation form
                 membershipPlans.style.display = 'none';
                 paymentForm.style.display = 'block';
                 const unifiedForm = document.getElementById('unifiedPaymentForm');
@@ -618,6 +618,10 @@
                 if (zakatForm) zakatForm.style.display = 'block';
                 selectedPlanInfo.style.display = 'none';
                 document.getElementById('amirDaawaNotice').style.display = 'none';
+                
+                // Hide payment methods section for Zakat
+                const recommendedMethods = document.getElementById('recommendedPaymentMethods');
+                if (recommendedMethods) recommendedMethods.style.display = 'none';
                 
                 // Scroll to zakat form
                 setTimeout(() => {
