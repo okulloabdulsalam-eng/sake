@@ -10,6 +10,8 @@
     <title>Counselling - KIUMA</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Service Worker Registration (for offline functionality) -->
@@ -263,11 +265,11 @@
             <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
             <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
             <li><a href="quran.html" class="nav-link"><i class="fas fa-quran"></i> Quran</a></li>
-            <li><a href="counselling.html" class="nav-link active"><i class="fas fa-comments"></i> Counselling</a></li>
             <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
             <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
             <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
             <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="counselling.html" class="nav-link active"><i class="fas fa-hands-helping"></i> Counselling</a></li>
             <li><a href="library.html" class="nav-link"><i class="fas fa-book-open"></i> Library</a></li>
             <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
             <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
@@ -288,10 +290,15 @@
                     <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none';">
                     <span class="header-text">KIUMA</span>
                 </div>
-                <button class="notifications-btn" id="notificationsBtn">
-                    <i class="fas fa-bell"></i>
-                    <span class="badge" style="display: none;">0</span>
-                </button>
+                <div class="header-actions" style="display: flex; gap: 10px; align-items: center;">
+                    <button class="account-icon-btn" id="accountIconBtn" onclick="toggleAccountModal()">
+                        <i class="fas fa-user-circle" id="accountIcon"></i>
+                    </button>
+                    <button class="notifications-btn" id="notificationsBtn">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge" style="display: none;">0</span>
+                    </button>
+                </div>
             </div>
         </header>
 
@@ -842,6 +849,11 @@
         </nav>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
     <script src="script.js"></script>
     <script src="update-navigation.js"></script>
     <script>
@@ -1223,17 +1235,6 @@
                     <div class="activity-modal-text">
                         <h4>Tuition for Brothers</h4>
                         <p>Support brothers' education and learning</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-                
-                <div class="activity-modal-item" onclick="navigateToActivity('kisilaahe')">
-                    <div class="activity-modal-icon" style="background: #9C27B0;">
-                        <i class="fas fa-donate"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Donate to Kisilaahe</h4>
-                        <p>Support Kisilaahe with essential items</p>
                     </div>
                     <i class="fas fa-chevron-right"></i>
                 </div>

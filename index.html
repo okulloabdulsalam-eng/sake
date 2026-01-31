@@ -6,6 +6,10 @@
     <meta name="description" content="KIUMA - Kampala International University Muslim Students Association - Your guide to Islamic values, programs, and activities">
     <title>KIUMA - Kampala International University Muslim Students Association</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="home-page">
@@ -23,6 +27,7 @@
             <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
             <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
             <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="counselling.html" class="nav-link"><i class="fas fa-hands-helping"></i> Counselling</a></li>
             <li><a href="library.html" class="nav-link"><i class="fas fa-book-open"></i> Library</a></li>
             <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
             <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
@@ -117,9 +122,6 @@
             <section class="prayer-times-list" id="prayerTimesList">
                 <div class="prayer-times-header">
                     <h3 style="margin: 0 0 15px 0; color: var(--dark-gray); font-size: 18px;">Prayer Times</h3>
-                    <button class="admin-edit-btn" onclick="showAdminLogin()" id="adminEditBtn">
-                        <i class="fas fa-edit"></i> Edit Times
-                    </button>
                 </div>
                 
                 <div class="prayer-table-header">
@@ -128,56 +130,54 @@
                     <div class="header-cell">Iqaama</div>
                 </div>
                 
+                <!-- Prayer times - Edit times directly here in HTML -->
                 <div class="prayer-item">
                     <span class="prayer-name">Fajr</span>
-                    <span class="prayer-time adhan-time editable" data-prayer="fajr" data-type="adhan" id="fajrAdhan" contenteditable="false">05:35</span>
-                    <span class="prayer-time iqaama-time editable" data-prayer="fajr" data-type="iqaama" id="fajrIqaama" contenteditable="false">06:00</span>
+                    <span class="prayer-time adhan-time" id="fajrAdhan">05:40</span>
+                    <span class="prayer-time iqaama-time" id="fajrIqaama">06:10</span>
                 </div>
                 <div class="prayer-item">
                     <span class="prayer-name">Dhuhr</span>
-                    <span class="prayer-time adhan-time editable" data-prayer="dhuhr" data-type="adhan" id="dhuhrAdhan" contenteditable="false">13:00</span>
-                    <span class="prayer-time iqaama-time editable" data-prayer="dhuhr" data-type="iqaama" id="dhuhrIqaama" contenteditable="false">13:15</span>
+                    <span class="prayer-time adhan-time" id="dhuhrAdhan">13:00</span>
+                    <span class="prayer-time iqaama-time" id="dhuhrIqaama">13:30</span>
                 </div>
-                <div class="prayer-item active">
+                <div class="prayer-item">
                     <span class="prayer-name">Asr</span>
-                    <span class="prayer-time adhan-time editable" data-prayer="asr" data-type="adhan" id="asrAdhan" contenteditable="false">16:00</span>
-                    <span class="prayer-time iqaama-time editable" data-prayer="asr" data-type="iqaama" id="asrIqaama" contenteditable="false">16:15</span>
+                    <span class="prayer-time adhan-time" id="asrAdhan">16:00</span>
+                    <span class="prayer-time iqaama-time" id="asrIqaama">16:30</span>
                 </div>
                 <div class="prayer-item">
                     <span class="prayer-name">Maghrib</span>
-                    <span class="prayer-time adhan-time editable" data-prayer="maghrib" data-type="adhan" id="maghribAdhan" contenteditable="false">18:55</span>
-                    <span class="prayer-time iqaama-time editable" data-prayer="maghrib" data-type="iqaama" id="maghribIqaama" contenteditable="false">19:00</span>
+                    <span class="prayer-time adhan-time" id="maghribAdhan">19:05</span>
+                    <span class="prayer-time iqaama-time" id="maghribIqaama">19:20</span>
                 </div>
                 <div class="prayer-item">
                     <span class="prayer-name">Isha</span>
-                    <span class="prayer-time adhan-time editable" data-prayer="isha" data-type="adhan" id="ishaAdhan" contenteditable="false">20:00</span>
-                    <span class="prayer-time iqaama-time editable" data-prayer="isha" data-type="iqaama" id="ishaIqaama" contenteditable="false">20:15</span>
+                    <span class="prayer-time adhan-time" id="ishaAdhan">20:05</span>
+                    <span class="prayer-time iqaama-time" id="ishaIqaama">20:20</span>
                 </div>
             </section>
-
-            <!-- Admin Login Modal -->
-            <div class="modal-overlay" id="adminLoginModal" style="display: none;">
-                <div class="modal-content">
-                    <h3><i class="fas fa-lock"></i> Admin Login</h3>
-                    <p>Enter password to edit prayer times</p>
-                    <div class="form-group">
-                        <input type="password" class="form-input" id="adminPassword" placeholder="Enter admin password">
-                    </div>
-                    <div style="display: flex; gap: 10px;">
-                        <button class="btn btn-primary" onclick="verifyAdminPassword()" style="flex: 1;">Login</button>
-                        <button class="btn btn-secondary" onclick="closeAdminLogin()" style="flex: 1;">Cancel</button>
-                    </div>
-                    <p id="passwordError" style="color: #F44336; font-size: 12px; margin: 10px 0 0 0; display: none;">Incorrect password. Please try again.</p>
-                </div>
-            </div>
 
             <!-- Search Bar -->
             <section class="search-section">
-                <div class="search-bar">
-                    <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Search here..." id="searchInput">
+                <div class="search-bar" onclick="document.getElementById('searchInput').focus()">
+                    <i class="fas fa-search" style="cursor: pointer;"></i>
+                    <input type="text" placeholder="Search here..." id="searchInput" autocomplete="off">
+                    <button class="search-clear-btn" id="searchClear" style="display: none; background: none; border: none; color: #666; cursor: pointer; padding: 4px;">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
             </section>
+
+            <!-- Inline Search Results -->
+            <div id="searchContainer" style="display: none; margin: 0 20px 20px 20px;">
+                <div id="searchLoading" class="search-loading" style="display: none; text-align: center; padding: 20px;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: var(--primary-green);"></i>
+                    <p style="margin-top: 10px; color: #666;">Searching...</p>
+                </div>
+                <div id="searchResults"></div>
+                <div id="searchPagination"></div>
+            </div>
 
             <!-- Quick Access Grid -->
             <section class="quick-access">
@@ -319,17 +319,6 @@
                     <i class="fas fa-chevron-right"></i>
                 </div>
                 
-                <div class="activity-modal-item" onclick="navigateToActivity('kisilaahe')">
-                    <div class="activity-modal-icon" style="background: #9C27B0;">
-                        <i class="fas fa-donate"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Donate to Kisilaahe</h4>
-                        <p>Support Kisilaahe with essential items</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-                
                 <div class="activity-modal-item" onclick="navigateToActivity('activities')">
                     <div class="activity-modal-icon" style="background: #FF9800;">
                         <i class="fas fa-running"></i>
@@ -413,6 +402,17 @@
                         </select>
                     </div>
                     <div class="form-group">
+                        <label class="form-label">Position</label>
+                        <select class="form-input" id="signupPosition" required>
+                            <option value="">Select your position</option>
+                            <option value="Student">Student</option>
+                            <option value="Lecturer">Lecturer</option>
+                            <option value="Staff">Staff</option>
+                            <option value="Alumni">Alumni</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label class="form-label">Password</label>
                         <input type="password" class="form-input" id="signupPassword" placeholder="At least 6 characters" required minlength="6">
                     </div>
@@ -429,32 +429,304 @@
                 </form>
 
                 <!-- Account Info -->
-                <div id="accountInfo" style="display: none;">
-                    <div class="account-info-card">
+                <div id="accountInfo" style="display: none; max-height: 70vh; overflow-y: auto;">
+                    <!-- User Profile Section -->
+                    <div class="account-info-card" style="margin-bottom: 15px;">
                         <div class="account-avatar">
                             <i class="fas fa-user-circle"></i>
                         </div>
                         <h3 id="accountName" style="text-align: center; margin: 15px 0 5px 0; color: var(--dark-gray);"></h3>
-                        <p style="text-align: center; color: var(--text-gray); margin-bottom: 20px;">
+                        <p style="text-align: center; color: var(--text-gray); margin-bottom: 5px;">
                             <i class="fas fa-envelope"></i> <span id="accountEmail"></span>
                         </p>
-                        <p style="text-align: center; color: var(--text-gray); margin-bottom: 20px;">
+                        <p style="text-align: center; color: var(--text-gray); margin-bottom: 5px;">
                             <i class="fas fa-venus-mars"></i> <span id="accountGender"></span>
                         </p>
+                        <p style="text-align: center; color: var(--text-gray); margin-bottom: 15px;">
+                            <i class="fas fa-briefcase"></i> <span id="accountPosition"></span>
+                        </p>
+                        <button class="btn btn-outline" onclick="showEditProfile()" style="width: 100%; margin-bottom: 10px;">
+                            <i class="fas fa-edit"></i> Edit Profile
+                        </button>
                         <button class="btn btn-secondary" onclick="handleLogout()" style="width: 100%;">
                             <i class="fas fa-sign-out-alt"></i> Logout
                         </button>
+                    </div>
+                    
+                    <!-- Edit Profile Form (hidden by default) -->
+                    <div id="editProfileForm" style="display: none; margin-bottom: 15px; padding: 15px; background: #f9f9f9; border-radius: 10px;">
+                        <h4 style="margin: 0 0 15px 0; color: var(--dark-gray);"><i class="fas fa-user-edit"></i> Edit Profile</h4>
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label class="form-label" style="font-size: 13px;">First Name</label>
+                            <input type="text" class="form-input" id="editFirstName" style="padding: 10px;">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label class="form-label" style="font-size: 13px;">Last Name</label>
+                            <input type="text" class="form-input" id="editLastName" style="padding: 10px;">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label class="form-label" style="font-size: 13px;">WhatsApp Number</label>
+                            <input type="tel" class="form-input" id="editWhatsApp" style="padding: 10px;">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label class="form-label" style="font-size: 13px;">Position/Role</label>
+                            <input type="text" class="form-input" id="editPosition" style="padding: 10px;">
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-primary" onclick="saveProfileChanges()" style="flex: 1; padding: 10px;">
+                                <i class="fas fa-save"></i> Save
+                            </button>
+                            <button class="btn btn-secondary" onclick="hideEditProfile()" style="flex: 1; padding: 10px;">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Contact Developers -->
+                    <div style="margin-bottom: 15px; padding: 15px; background: #f0f7f0; border-radius: 10px;">
+                        <h4 style="margin: 0 0 12px 0; color: var(--dark-gray);"><i class="fas fa-code"></i> Contact Developers</h4>
+                        <p style="font-size: 12px; color: var(--text-gray); margin-bottom: 12px;">Technical support or bug reports:</p>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <a href="https://wa.me/256700000001" target="_blank" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #25D366; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px;">
+                                <i class="fab fa-whatsapp" style="font-size: 18px;"></i> Developer 1
+                            </a>
+                            <a href="https://wa.me/256700000002" target="_blank" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #25D366; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px;">
+                                <i class="fab fa-whatsapp" style="font-size: 18px;"></i> Developer 2
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- KIUMA Contacts -->
+                    <div style="padding: 15px; background: #f5f5f5; border-radius: 10px;">
+                        <h4 style="margin: 0 0 12px 0; color: var(--dark-gray);"><i class="fas fa-phone-alt"></i> KIUMA Contacts</h4>
+                        <div style="font-size: 13px; color: var(--text-gray);">
+                            <p style="margin: 8px 0; display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-phone" style="color: var(--primary-green);"></i>
+                                <a href="tel:+256703268522" style="color: var(--dark-gray);">+256 703 268 522</a>
+                            </p>
+                            <p style="margin: 8px 0; display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-envelope" style="color: var(--primary-green);"></i>
+                                <a href="mailto:info@kiuma.kiu.ac.ug" style="color: var(--dark-gray);">info@kiuma.kiu.ac.ug</a>
+                            </p>
+                            <p style="margin: 8px 0; display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-map-marker-alt" style="color: var(--primary-green);"></i>
+                                <span>KIU Western Campus, Ishaka</span>
+                            </p>
+                            <a href="https://wa.me/256703268522" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; padding: 10px; background: #25D366; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px;">
+                                <i class="fab fa-whatsapp"></i> WhatsApp KIUMA
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
     <script src="script.js"></script>
+    <script src="js/search-data.js"></script>
     <script>
+        // Inline search functionality for home page
+        class HomeSearch {
+            constructor() {
+                this.searchInput = document.getElementById('searchInput');
+                this.searchClear = document.getElementById('searchClear');
+                this.searchContainer = document.getElementById('searchContainer');
+                this.searchResults = document.getElementById('searchResults');
+                this.searchLoading = document.getElementById('searchLoading');
+                this.searchPagination = document.getElementById('searchPagination');
+                this.quickAccess = document.querySelector('.quick-access');
+                
+                this.currentPage = 1;
+                this.resultsPerPage = 6;
+                this.currentResults = [];
+                this.debounceTimer = null;
+                
+                this.init();
+            }
+            
+            init() {
+                if (!this.searchInput) return;
+                
+                this.searchInput.addEventListener('input', (e) => {
+                    this.handleInput(e.target.value);
+                });
+                
+                if (this.searchClear) {
+                    this.searchClear.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.clearSearch();
+                    });
+                }
+            }
+            
+            handleInput(query) {
+                if (this.searchClear) {
+                    this.searchClear.style.display = query.length > 0 ? 'block' : 'none';
+                }
+                
+                clearTimeout(this.debounceTimer);
+                this.debounceTimer = setTimeout(() => {
+                    this.performSearch(query);
+                }, 300);
+            }
+            
+            performSearch(query) {
+                query = query.trim().toLowerCase();
+                
+                if (query.length === 0) {
+                    this.hideResults();
+                    return;
+                }
+                
+                if (query.length < 2) return;
+                
+                this.showLoading();
+                
+                setTimeout(() => {
+                    const results = this.search(query);
+                    this.currentResults = results;
+                    this.currentPage = 1;
+                    this.displayResults(results);
+                }, 150);
+            }
+            
+            search(query) {
+                if (typeof SEARCH_DATA === 'undefined') return [];
+                
+                const queryWords = query.split(/\s+/).filter(w => w.length > 0);
+                const results = [];
+                
+                SEARCH_DATA.forEach(item => {
+                    let score = 0;
+                    const titleLower = item.title.toLowerCase();
+                    const descLower = item.description.toLowerCase();
+                    const keywordsStr = item.keywords.join(' ').toLowerCase();
+                    
+                    queryWords.forEach(word => {
+                        if (titleLower === word) score += 100;
+                        else if (titleLower.includes(word)) score += 50;
+                        if (item.keywords.some(k => k.toLowerCase() === word)) score += 40;
+                        else if (keywordsStr.includes(word)) score += 20;
+                        if (descLower.includes(word)) score += 10;
+                    });
+                    
+                    if (score > 0) results.push({...item, score});
+                });
+                
+                return results.sort((a, b) => b.score - a.score);
+            }
+            
+            displayResults(results) {
+                this.hideLoading();
+                
+                if (results.length === 0) {
+                    this.showNoResults();
+                    return;
+                }
+                
+                if (this.quickAccess) this.quickAccess.style.display = 'none';
+                if (this.searchContainer) this.searchContainer.style.display = 'block';
+                
+                const startIndex = (this.currentPage - 1) * this.resultsPerPage;
+                const pageResults = results.slice(startIndex, startIndex + this.resultsPerPage);
+                
+                let html = `<div style="margin-bottom: 12px; color: #666; font-size: 14px;">${results.length} result${results.length !== 1 ? 's' : ''} found</div>`;
+                html += '<div style="display: flex; flex-direction: column; gap: 10px;">';
+                
+                pageResults.forEach(item => {
+                    const color = CATEGORY_COLORS[item.category] || '#4CAF50';
+                    html += `
+                        <a href="${item.url}" style="display: flex; align-items: center; gap: 12px; background: white; border-radius: 12px; padding: 12px; text-decoration: none; box-shadow: 0 2px 6px rgba(0,0,0,0.08); border: 1px solid #e0e0e0; transition: all 0.2s;">
+                            <div style="width: 40px; height: 40px; border-radius: 10px; background: ${color}; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <i class="fas ${item.icon}" style="color: white; font-size: 16px;"></i>
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 600; color: #333; font-size: 14px;">${item.title}</div>
+                                <div style="font-size: 12px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.description}</div>
+                            </div>
+                            <i class="fas fa-chevron-right" style="color: #ccc; font-size: 12px;"></i>
+                        </a>`;
+                });
+                
+                html += '</div>';
+                if (this.searchResults) this.searchResults.innerHTML = html;
+                
+                this.renderPagination(results.length);
+            }
+            
+            renderPagination(total) {
+                if (!this.searchPagination) return;
+                const totalPages = Math.ceil(total / this.resultsPerPage);
+                if (totalPages <= 1) { this.searchPagination.innerHTML = ''; return; }
+                
+                let html = '<div style="display: flex; justify-content: center; gap: 8px; margin-top: 15px;">';
+                for (let i = 1; i <= totalPages; i++) {
+                    const active = i === this.currentPage;
+                    html += `<button onclick="homeSearch.goToPage(${i})" style="padding: 6px 12px; border: 1px solid ${active ? '#4CAF50' : '#e0e0e0'}; background: ${active ? '#4CAF50' : 'white'}; color: ${active ? 'white' : '#333'}; border-radius: 6px; cursor: pointer;">${i}</button>`;
+                }
+                html += '</div>';
+                this.searchPagination.innerHTML = html;
+            }
+            
+            goToPage(page) {
+                this.currentPage = page;
+                this.displayResults(this.currentResults);
+            }
+            
+            showLoading() {
+                if (this.quickAccess) this.quickAccess.style.display = 'none';
+                if (this.searchContainer) this.searchContainer.style.display = 'block';
+                if (this.searchLoading) this.searchLoading.style.display = 'block';
+                if (this.searchResults) this.searchResults.innerHTML = '';
+                if (this.searchPagination) this.searchPagination.innerHTML = '';
+            }
+            
+            hideLoading() {
+                if (this.searchLoading) this.searchLoading.style.display = 'none';
+            }
+            
+            hideResults() {
+                if (this.searchContainer) this.searchContainer.style.display = 'none';
+                if (this.quickAccess) this.quickAccess.style.display = 'block';
+                if (this.searchClear) this.searchClear.style.display = 'none';
+            }
+            
+            showNoResults() {
+                if (this.quickAccess) this.quickAccess.style.display = 'none';
+                if (this.searchContainer) this.searchContainer.style.display = 'block';
+                if (this.searchResults) {
+                    this.searchResults.innerHTML = `
+                        <div style="text-align: center; padding: 40px 20px; color: #666;">
+                            <i class="fas fa-search" style="font-size: 40px; color: #ccc; margin-bottom: 15px;"></i>
+                            <h3 style="color: #333; margin-bottom: 8px;">No results found</h3>
+                            <p style="font-size: 14px;">Try different keywords</p>
+                        </div>`;
+                }
+                if (this.searchPagination) this.searchPagination.innerHTML = '';
+            }
+            
+            clearSearch() {
+                if (this.searchInput) {
+                    this.searchInput.value = '';
+                    this.searchInput.focus();
+                }
+                this.hideResults();
+                this.currentResults = [];
+                this.currentPage = 1;
+            }
+        }
+        
+        let homeSearch;
+        
         // Initialize user display and modals
         window.addEventListener('DOMContentLoaded', function() {
             loadUserData();
+            homeSearch = new HomeSearch();
             
             // Close modals on overlay click
             document.getElementById('activitiesModal')?.addEventListener('click', function(e) {
@@ -484,6 +756,17 @@
                 }, 300);
             }
         });
+    </script>
+    
+    <!-- Service Worker Registration for Offline Support -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Service Worker registered:', reg.scope))
+                    .catch(err => console.log('Service Worker registration failed:', err));
+            });
+        }
     </script>
 </body>
 </html>

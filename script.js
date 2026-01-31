@@ -1,3 +1,12 @@
+// Service Worker Registration for Offline Support
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('Service Worker registered:', reg.scope))
+            .catch(err => console.log('Service Worker registration failed:', err));
+    });
+}
+
 // Navigation Menu Toggle
 const menuToggle = document.getElementById('menuToggle');
 const navMenu = document.getElementById('navMenu');
@@ -5,6 +14,38 @@ const navClose = document.getElementById('navClose');
 const overlay = document.createElement('div');
 overlay.className = 'overlay';
 document.body.appendChild(overlay);
+
+// Firebase Auth State Listener - handles persistent login
+if (typeof firebase !== 'undefined' && firebase.auth) {
+    firebase.auth().onAuthStateChanged(async function(user) {
+        if (user) {
+            // User is signed in - fetch their data from Firestore
+            try {
+                const userDoc = await firebase.firestore().collection('users').doc(user.uid).get();
+                if (userDoc.exists) {
+                    currentUser = { uid: user.uid, email: user.email, ...userDoc.data() };
+                } else {
+                    currentUser = { uid: user.uid, email: user.email, name: user.displayName || user.email.split('@')[0] };
+                }
+                localStorage.setItem('userData', JSON.stringify(currentUser));
+                updateUserDisplay();
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+                // Fallback to localStorage data
+                const storedUser = localStorage.getItem('userData');
+                if (storedUser) {
+                    currentUser = JSON.parse(storedUser);
+                    updateUserDisplay();
+                }
+            }
+        } else {
+            // User is signed out
+            currentUser = null;
+            localStorage.removeItem('userData');
+            updateUserDisplay();
+        }
+    });
+}
 
 if (menuToggle) {
     menuToggle.addEventListener('click', () => {
@@ -25,201 +66,70 @@ overlay.addEventListener('click', () => {
     overlay.classList.remove('active');
 });
 
-// Update dates (auto-updates) - Hijri from Ummah API and Gregorian
+// Update dates (auto-updates) - Hijri from Aladhan API (Umm al-Qura/Makkah method)
+// Source: https://aladhan.com - The most reliable Islamic calendar API
+// Uses Umm al-Qura calculation method - the official calendar of Saudi Arabia used in Makkah & Madina
 async function updateDates() {
     const now = new Date();
     const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     
-    // Display Gregorian date (below Hijri)
+    // Display Gregorian date
     const dateDisplay = document.getElementById('dateDisplay');
     if (dateDisplay) {
         dateDisplay.textContent = now.toLocaleDateString('en-US', dateOptions);
     }
     
-    // Fetch and display Hijri date from Ummah API (main date, shown first)
-    const hijriDate = document.getElementById('hijriDate');
-    if (hijriDate) {
+    // Hijri month names
+    const hijriMonths = ['Muharram', 'Safar', 'Rabi\' al-awwal', 'Rabi\' al-thani', 
+                       'Jumada al-awwal', 'Jumada al-thani', 'Rajab', 'Sha\'ban', 
+                       'Ramadan', 'Shawwal', 'Dhu al-Qi\'dah', 'Dhu al-Hijjah'];
+    
+    // Fetch Hijri date from Aladhan API - Umm al-Qura method (official Saudi/Makkah calendar)
+    const hijriDateEl = document.getElementById('hijriDate');
+    if (hijriDateEl) {
         try {
-            // Get current date in YYYY-MM-DD format
-            const yyyy = now.getFullYear();
-            const mm = String(now.getMonth() + 1).padStart(2, '0');
             const dd = String(now.getDate()).padStart(2, '0');
-            const currentDate = `${yyyy}-${mm}-${dd}`;
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const yyyy = now.getFullYear();
             
-            // Use Aladhan API with Umm al-Qura (Makkah/Madina) method for accurate Hijri dates
-            // This is the official Saudi calendar used in Makkah and Madina
-            // Method 4 = Umm al-Qura, Makkah
-            const apiEndpoints = [
-                `https://api.aladhan.com/v1/gToH/${dd}-${mm}-${yyyy}?method=4`, // Umm al-Qura (Makkah/Madina)
-                `https://api.aladhan.com/v1/gToH/${dd}-${mm}-${yyyy}?method=2`, // Islamic Society of North America (fallback)
-                `https://api.aladhan.com/v1/gToH/${dd}-${mm}-${yyyy}` // Default method
-            ];
+            // Aladhan API - Umm al-Qura University, Makkah (official Saudi calendar)
+            // This is the BEST and most authoritative source for Hijri dates
+            const apiUrl = `https://api.aladhan.com/v1/gToH/${dd}-${mm}-${yyyy}`;
             
-            let data = null;
-            let response = null;
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
             
-            // Try each endpoint until one works
-            for (const apiUrl of apiEndpoints) {
-                try {
-                    // Add timeout to fetch request
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-                    
-                    response = await fetch(apiUrl, {
-                        signal: controller.signal,
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    });
-                    
-                    clearTimeout(timeoutId);
-                    
-                    if (response.ok) {
-                        data = await response.json();
-                        break; // Success, exit loop
-                    }
-                } catch (fetchError) {
-                    // Continue to next endpoint
-                    console.log(`API endpoint failed: ${apiUrl}`, fetchError.message);
-                    continue;
-                }
-            }
+            const response = await fetch(apiUrl, {
+                signal: controller.signal,
+                headers: { 'Accept': 'application/json' }
+            });
             
-            if (!data || !response || !response.ok) {
-                throw new Error('All API endpoints failed');
-            }
+            clearTimeout(timeoutId);
             
-            // Format and display Hijri date based on API response
-            // Also check for white days notification
-            // Format: "16 Jumada al-thani, 1447 AH"
-            const hijriMonths = ['Muharram', 'Safar', 'Rabi\' al-awwal', 'Rabi\' al-thani', 
-                               'Jumada al-awwal', 'Jumada al-thani', 'Rajab', 'Sha\'ban', 
-                               'Ramadan', 'Shawwal', 'Dhu al-Qi\'dah', 'Dhu al-Hijjah'];
+            if (!response.ok) throw new Error('API request failed');
             
-            // Helper function to format Hijri date consistently
-            const formatHijriDate = (day, month, year) => {
-                if (!day || !month || !year) return null;
-                const monthName = typeof month === 'number' ? hijriMonths[month - 1] : month;
-                return `${day} ${monthName}, ${year} AH`;
-            };
+            const data = await response.json();
             
-            let hijriDay = null;
-            let hijriMonth = null;
-            let hijriYear = null;
-            
-            // Handle Aladhan API response format (Umm al-Qura / Makkah method)
-            if (data.data && Array.isArray(data.data)) {
-                // Aladhan calendar format - get today's date (exact match)
-                const todayData = data.data.find(d => {
-                    const gregDay = parseInt(d.gregorian.day);
-                    const gregMonth = parseInt(d.gregorian.month.number);
-                    return gregDay === parseInt(dd) && gregMonth === parseInt(mm);
-                }) || data.data[0];
-                if (todayData && todayData.hijri) {
-                    hijriDay = parseInt(todayData.hijri.day);
-                    hijriMonth = parseInt(todayData.hijri.month.number);
-                    hijriYear = parseInt(todayData.hijri.year);
-                    if (hijriDay && hijriMonth && hijriYear) {
-                        hijriDate.textContent = formatHijriDate(hijriDay, hijriMonth, hijriYear);
-                    }
-                }
-            } else if (data.data && data.data.hijri) {
-                // Aladhan single date format (Umm al-Qura method) - This is the primary format
-                hijriDay = parseInt(data.data.hijri.day);
-                hijriMonth = parseInt(data.data.hijri.month.number);
-                hijriYear = parseInt(data.data.hijri.year);
+            if (data.code === 200 && data.data && data.data.hijri) {
+                const hijri = data.data.hijri;
+                const hijriDay = parseInt(hijri.day);
+                const hijriMonth = parseInt(hijri.month.number);
+                const hijriYear = parseInt(hijri.year);
                 
-                // Verify we got valid data from Makkah/Madina calculation
-                if (hijriDay && hijriMonth && hijriYear) {
-                    hijriDate.textContent = formatHijriDate(hijriDay, hijriMonth, hijriYear);
-                } else {
-                    console.error('Invalid Hijri date from API:', data.data.hijri);
-                    throw new Error('Invalid date data from API');
-                }
-            } else if (data.hijri) {
-                // Ummah API format
-                if (typeof data.hijri.day === 'number') {
-                    hijriDay = data.hijri.day;
-                } else if (data.hijri.date) {
-                    const dayMatch = data.hijri.date.match(/(\d+)/);
-                    if (dayMatch) hijriDay = parseInt(dayMatch[1]);
-                }
+                // Format: "3 Sha'ban, 1447 AH"
+                hijriDateEl.textContent = `${hijriDay} ${hijriMonths[hijriMonth - 1]}, ${hijriYear} AH`;
                 
-                if (typeof data.hijri.month === 'number') {
-                    hijriMonth = data.hijri.month;
-                } else if (data.hijri.monthNumber) {
-                    hijriMonth = data.hijri.monthNumber;
+                // Check for white days (13th, 14th, 15th of each month)
+                if (hijriDay >= 13 && hijriDay <= 15) {
+                    checkAndCreateWhiteDaysNotification(hijriDay, hijriMonth, hijriYear, hijriMonths);
                 }
-                
-                hijriYear = data.hijri.year;
-                
-                // Format for display - ensure consistent format: "16 Jumada al-thani, 1447 AH"
-                if (hijriDay && hijriMonth && hijriYear) {
-                    const monthName = typeof hijriMonth === 'number' 
-                        ? hijriMonths[hijriMonth - 1] 
-                        : hijriMonth;
-                    hijriDate.textContent = `${hijriDay} ${monthName}, ${hijriYear} AH`;
-                } else if (data.hijri.date) {
-                    // Try to parse and reformat if needed
-                    const dateStr = data.hijri.date;
-                    if (dateStr.match(/\d+\s+\w+.*\d{4}/)) {
-                        hijriDate.textContent = dateStr;
-                    } else {
-                        // Fallback: try to construct from available data
-                        const day = data.hijri.day || hijriDay || '';
-                        const month = data.hijri.month || (hijriMonth ? hijriMonths[hijriMonth - 1] : '');
-                        const year = data.hijri.year || hijriYear || '';
-                        if (day && month && year) {
-                            hijriDate.textContent = `${day} ${month}, ${year} AH`;
-                        } else {
-                            hijriDate.textContent = dateStr;
-                        }
-                    }
-                } else if (data.hijri.formatted) {
-                    // Use formatted if available, but ensure it has the right format
-                    hijriDate.textContent = data.hijri.formatted;
-                } else {
-                    const day = data.hijri.day || '';
-                    const month = data.hijri.month || '';
-                    const year = data.hijri.year || '';
-                    hijriDate.textContent = `${day} ${month}, ${year} AH`;
-                }
-            } else if (data.date) {
-                // Try to ensure consistent format
-                hijriDate.textContent = data.date;
             } else {
-                console.log('API response format not recognized:', data);
-                throw new Error('Unexpected API response format');
-            }
-            
-            // Check for white days (10th, 11th, 12th) and create notification
-            if (hijriDay && hijriDay >= 10 && hijriDay <= 12) {
-                checkAndCreateWhiteDaysNotification(hijriDay, hijriMonth, hijriYear, hijriMonths);
+                throw new Error('Invalid API response');
             }
         } catch (error) {
-            // Silently fallback to approximate calculation if all APIs fail
-            // Don't show error to user, just use calculation
-            const gregorianYear = now.getFullYear();
-            const gregorianMonth = now.getMonth();
-            const gregorianDay = now.getDate();
-            
-            // More accurate Hijri date calculation
-            const daysSinceEpoch = Math.floor((now - new Date(622, 6, 16)) / (24 * 60 * 60 * 1000));
-            const hijriYear = Math.floor(daysSinceEpoch / 354.37) + 1;
-            const hijriMonths = ['Muharram', 'Safar', 'Rabi\' al-awwal', 'Rabi\' al-thani', 
-                               'Jumada al-awwal', 'Jumada al-thani', 'Rajab', 'Sha\'ban', 
-                               'Ramadan', 'Shawwal', 'Dhu al-Qi\'dah', 'Dhu al-Hijjah'];
-            const remainingDays = daysSinceEpoch % 354.37;
-            const hijriMonthIndex = Math.min(Math.floor(remainingDays / 29.5), 11);
-            const hijriDay = Math.max(1, Math.floor(remainingDays % 29.5) + 1);
-            
-            // Use consistent format: "16 Jumada al-thani, 1447 AH (approx)"
-            hijriDate.textContent = `${hijriDay} ${hijriMonths[hijriMonthIndex]}, ${hijriYear} AH (approx)`;
-            
-            // Check for white days with approximate date
-            if (hijriDay >= 10 && hijriDay <= 12) {
-                checkAndCreateWhiteDaysNotification(hijriDay, hijriMonthIndex + 1, hijriYear, hijriMonths);
-            }
+            console.log('Hijri API error:', error.message);
+            // Fallback: show loading or approximate
+            hijriDateEl.textContent = 'Loading Hijri date...';
         }
     }
 }
@@ -600,59 +510,63 @@ function initFastingReminderChecker() {
     setInterval(checkAndCreateFastingReminder, 60000); // 1 minute = 60000ms
 }
 
-// Load prayer times from localStorage (NO auto-calculation - only manual admin updates)
+// Prayer times are now static in HTML - edit directly in index.html
+// This function finds the next prayer and highlights it
 function loadPrayerTimes() {
-    const defaultPrayers = {
-        fajr: { adhan: '05:30', iqaama: '05:40' },
-        dhuhr: { adhan: '12:15', iqaama: '12:25' },
-        asr: { adhan: '15:45', iqaama: '15:55' },
-        maghrib: { adhan: '18:20', iqaama: '18:25' },
-        isha: { adhan: '19:45', iqaama: '19:55' }
-    };
+    // Read times directly from the HTML elements
+    const prayerNames = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+    const prayerTimes = [];
     
-    // Only load from localStorage - no calculation
-    const storedPrayers = JSON.parse(localStorage.getItem('prayerTimes'));
-    const prayers = storedPrayers || defaultPrayers;
-    
-    // If no stored prayers, save defaults once
-    if (!storedPrayers) {
-        localStorage.setItem('prayerTimes', JSON.stringify(defaultPrayers));
-    }
-    
-    // Update prayer times display (from stored values only)
-    Object.keys(prayers).forEach(prayer => {
-        const adhanEl = document.getElementById(prayer + 'Adhan');
-        const iqaamaEl = document.getElementById(prayer + 'Iqaama');
-        if (adhanEl) adhanEl.textContent = prayers[prayer].adhan;
-        if (iqaamaEl) iqaamaEl.textContent = prayers[prayer].iqaama;
+    prayerNames.forEach(name => {
+        const adhanEl = document.getElementById(name + 'Adhan');
+        if (adhanEl) {
+            prayerTimes.push({
+                name: name.charAt(0).toUpperCase() + name.slice(1),
+                id: name,
+                time: adhanEl.textContent.trim(),
+                element: adhanEl.closest('.prayer-item')
+            });
+        }
     });
     
-    // Find next prayer (using stored adhan times only)
+    // Find next prayer
     const now = new Date();
     const currentTime = now.getHours() * 60 + now.getMinutes();
-    const prayerTimes = [
-        { name: 'Fajr', time: prayers.fajr.adhan },
-        { name: 'Dhuhr', time: prayers.dhuhr.adhan },
-        { name: 'Asr', time: prayers.asr.adhan },
-        { name: 'Maghrib', time: prayers.maghrib.adhan },
-        { name: 'Isha', time: prayers.isha.adhan }
-    ];
     
-    let nextPrayer = prayerTimes[prayerTimes.length - 1];
-    for (let prayer of prayerTimes) {
+    let nextPrayer = prayerTimes[prayerTimes.length - 1]; // Default to Isha
+    let nextPrayerIndex = prayerTimes.length - 1;
+    
+    for (let i = 0; i < prayerTimes.length; i++) {
+        const prayer = prayerTimes[i];
         const [hours, minutes] = prayer.time.split(':').map(Number);
         const prayerMinutes = hours * 60 + minutes;
         if (prayerMinutes > currentTime) {
             nextPrayer = prayer;
+            nextPrayerIndex = i;
             break;
         }
     }
     
+    // Remove active class from all prayer items and add to next prayer
+    prayerTimes.forEach((prayer, index) => {
+        if (prayer.element) {
+            if (index === nextPrayerIndex) {
+                prayer.element.classList.add('active');
+            } else {
+                prayer.element.classList.remove('active');
+            }
+        }
+    });
+    
+    // Update next prayer display
     const nextPrayerTime = document.getElementById('nextPrayerTime');
-    if (nextPrayerTime) {
+    if (nextPrayerTime && nextPrayer) {
         nextPrayerTime.textContent = nextPrayer.name + ' (' + nextPrayer.time + ')';
     }
 }
+
+// Update prayer highlight every minute
+setInterval(loadPrayerTimes, 60000);
 
 // Update dates on load and continuously (auto-update)
 updateDates();
@@ -713,9 +627,148 @@ function updateUserDisplay() {
     }
 }
 
+// Inject account modal into pages that don't have it
+function injectAccountModal() {
+    if (document.getElementById('accountModal')) return; // Already exists
+    
+    const modalHTML = `
+    <!-- Account Modal (Login/Create Account/Account Info) -->
+    <div class="modal-overlay" id="accountModal" style="display: none;">
+        <div class="modal-content account-modal">
+            <!-- Login/Signup Tabs -->
+            <div id="accountTabs" style="display: none;">
+                <div class="account-tabs">
+                    <button class="account-tab active" id="loginTab" onclick="showLoginTab()">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                    <button class="account-tab" id="signupTab" onclick="showSignupTab()">
+                        <i class="fas fa-user-plus"></i> Create Account
+                    </button>
+                </div>
+            </div>
+
+            <div class="modal-header">
+                <h3 id="accountModalTitle"><i class="fas fa-user-circle"></i> Account</h3>
+                <button class="modal-close" onclick="closeAccountModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Login Form -->
+                <form id="loginFormElement" onsubmit="handleLogin(event)" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="loginEmail" placeholder="your.email@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="loginPassword" placeholder="Enter your password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 15px;">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                    <p style="text-align: center; margin-top: 15px; font-size: 14px; color: var(--text-gray);">
+                        Don't have an account? <a href="#" onclick="showSignupTab(); return false;" style="color: var(--primary-green); font-weight: 600;">Create one</a>
+                    </p>
+                </form>
+
+                <!-- Signup Form -->
+                <form id="signupFormElement" onsubmit="handleSignup(event)" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">First Name</label>
+                        <input type="text" class="form-input" id="signupFirstName" placeholder="Enter your first name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" class="form-input" id="signupLastName" placeholder="Enter your last name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="signupEmail" placeholder="your.email@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">WhatsApp Number</label>
+                        <input type="tel" class="form-input" id="signupWhatsApp" placeholder="+256 703 268 522" required>
+                        <p style="font-size: 12px; color: var(--text-gray); margin-top: 5px;">Include country code (e.g., +256)</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Gender</label>
+                        <select class="form-input" id="signupGender" required>
+                            <option value="">Select gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Position</label>
+                        <select class="form-input" id="signupPosition" required>
+                            <option value="">Select your position</option>
+                            <option value="Student">Student</option>
+                            <option value="Lecturer">Lecturer</option>
+                            <option value="Staff">Staff</option>
+                            <option value="Alumni">Alumni</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="signupPassword" placeholder="At least 6 characters" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Confirm Password</label>
+                        <input type="password" class="form-input" id="signupConfirmPassword" placeholder="Confirm your password" required minlength="6">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 15px;">
+                        <i class="fas fa-user-plus"></i> Create Account
+                    </button>
+                    <p style="text-align: center; margin-top: 15px; font-size: 14px; color: var(--text-gray);">
+                        Already have an account? <a href="#" onclick="showLoginTab(); return false;" style="color: var(--primary-green); font-weight: 600;">Login</a>
+                    </p>
+                </form>
+
+                <!-- Account Info -->
+                <div id="accountInfo" style="display: none;">
+                    <div class="account-info-card">
+                        <div class="account-avatar">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <h3 id="accountName" style="text-align: center; margin: 15px 0 5px 0; color: var(--dark-gray);"></h3>
+                        <p style="text-align: center; color: var(--text-gray); margin-bottom: 20px;">
+                            <i class="fas fa-envelope"></i> <span id="accountEmail"></span>
+                        </p>
+                        <p style="text-align: center; color: var(--text-gray); margin-bottom: 10px;">
+                            <i class="fas fa-venus-mars"></i> <span id="accountGender"></span>
+                        </p>
+                        <p style="text-align: center; color: var(--text-gray); margin-bottom: 20px;">
+                            <i class="fas fa-briefcase"></i> <span id="accountPosition"></span>
+                        </p>
+                        <button class="btn btn-secondary" onclick="handleLogout()" style="width: 100%;">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>`;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Add click handler to close modal on overlay click
+    const modal = document.getElementById('accountModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeAccountModal();
+            }
+        });
+    }
+}
+
 // Initialize user data on page load
 if (typeof window !== 'undefined') {
     window.addEventListener('DOMContentLoaded', function() {
+        injectAccountModal();
         loadUserData();
     });
 }
@@ -774,27 +827,57 @@ window.closeAccountModal = function() {
     }
 };
 
-window.handleLogin = function(e) {
+window.handleLogin = async function(e) {
     e.preventDefault();
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
+    const submitBtn = e.target.querySelector('button[type="submit"]');
     
-    // Get stored users
-    const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-    const user = storedUsers.find(u => u.email === email && u.password === password);
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+    }
     
-    if (user) {
-        currentUser = user;
-        localStorage.setItem('userData', JSON.stringify(user));
+    try {
+        // Sign in with Firebase Auth
+        const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+        const firebaseUser = userCredential.user;
+        
+        // Get additional user data from Firestore
+        const userDoc = await firebase.firestore().collection('users').doc(firebaseUser.uid).get();
+        
+        if (userDoc.exists) {
+            currentUser = { uid: firebaseUser.uid, email: firebaseUser.email, ...userDoc.data() };
+        } else {
+            currentUser = { uid: firebaseUser.uid, email: firebaseUser.email, name: firebaseUser.displayName || email.split('@')[0] };
+        }
+        
+        localStorage.setItem('userData', JSON.stringify(currentUser));
         updateUserDisplay();
         window.closeAccountModal();
-        alert('Welcome back, ' + user.firstName + '!');
-    } else {
-        alert('Invalid email or password. Please try again.');
+        alert('Welcome back, ' + (currentUser.firstName || currentUser.name || 'User') + '!');
+    } catch (error) {
+        console.error('Login error:', error);
+        let errorMessage = 'Login failed. Please try again.';
+        if (error.code === 'auth/user-not-found') {
+            errorMessage = 'No account found with this email. Please sign up first.';
+        } else if (error.code === 'auth/wrong-password') {
+            errorMessage = 'Incorrect password. Please try again.';
+        } else if (error.code === 'auth/invalid-email') {
+            errorMessage = 'Invalid email address.';
+        } else if (error.code === 'auth/too-many-requests') {
+            errorMessage = 'Too many failed attempts. Please try again later.';
+        }
+        alert(errorMessage);
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+        }
     }
 };
 
-window.handleSignup = function(e) {
+window.handleSignup = async function(e) {
     e.preventDefault();
     const firstName = document.getElementById('signupFirstName').value;
     const lastName = document.getElementById('signupLastName').value;
@@ -803,6 +886,8 @@ window.handleSignup = function(e) {
     const password = document.getElementById('signupPassword').value;
     const confirmPassword = document.getElementById('signupConfirmPassword').value;
     const gender = document.getElementById('signupGender').value;
+    const position = document.getElementById('signupPosition')?.value || '';
+    const submitBtn = e.target.querySelector('button[type="submit"]');
     
     if (password !== confirmPassword) {
         alert('Passwords do not match!');
@@ -814,36 +899,58 @@ window.handleSignup = function(e) {
         return;
     }
     
-    // Get stored users
-    const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-    
-    // Check if email already exists
-    if (storedUsers.find(u => u.email === email)) {
-        alert('This email is already registered. Please login instead.');
-        window.showLoginTab();
-        return;
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...';
     }
     
-    // Create new user
-    const newUser = {
-        id: Date.now().toString(),
-        firstName: firstName,
-        lastName: lastName,
-        name: firstName + ' ' + lastName,
-        email: email,
-        whatsapp: whatsapp,
-        gender: gender,
-        createdAt: new Date().toISOString()
-    };
-    
-    storedUsers.push({...newUser, password: password});
-    localStorage.setItem('users', JSON.stringify(storedUsers));
-    
-    currentUser = newUser;
-    localStorage.setItem('userData', JSON.stringify(newUser));
-    updateUserDisplay();
-    window.closeAccountModal();
-    alert('Account created successfully! Welcome, ' + firstName + '!');
+    try {
+        // Create user with Firebase Auth
+        const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+        const firebaseUser = userCredential.user;
+        
+        // Update display name
+        await firebaseUser.updateProfile({
+            displayName: firstName + ' ' + lastName
+        });
+        
+        // Create user document in Firestore
+        const userData = {
+            firstName: firstName,
+            lastName: lastName,
+            name: firstName + ' ' + lastName,
+            email: email,
+            whatsapp: whatsapp,
+            gender: gender,
+            position: position,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        await firebase.firestore().collection('users').doc(firebaseUser.uid).set(userData);
+        
+        currentUser = { uid: firebaseUser.uid, ...userData };
+        localStorage.setItem('userData', JSON.stringify(currentUser));
+        updateUserDisplay();
+        window.closeAccountModal();
+        alert('Account created successfully! Welcome, ' + firstName + '!');
+    } catch (error) {
+        console.error('Signup error:', error);
+        let errorMessage = 'Signup failed. Please try again.';
+        if (error.code === 'auth/email-already-in-use') {
+            errorMessage = 'This email is already registered. Please login instead.';
+            window.showLoginTab();
+        } else if (error.code === 'auth/invalid-email') {
+            errorMessage = 'Invalid email address.';
+        } else if (error.code === 'auth/weak-password') {
+            errorMessage = 'Password is too weak. Please use a stronger password.';
+        }
+        alert(errorMessage);
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
+        }
+    }
 };
 
 window.showAccountInfo = function() {
@@ -859,19 +966,126 @@ window.showAccountInfo = function() {
             document.getElementById('accountName').textContent = currentUser.name || (currentUser.firstName + ' ' + currentUser.lastName);
             document.getElementById('accountEmail').textContent = currentUser.email;
             document.getElementById('accountGender').textContent = currentUser.gender || 'Not specified';
+            const positionEl = document.getElementById('accountPosition');
+            if (positionEl) {
+                positionEl.textContent = currentUser.position || 'Not specified';
+            }
         }
         
         modal.style.display = 'flex';
     }
 }
 
-window.handleLogout = function() {
+window.handleLogout = async function() {
     if (confirm('Are you sure you want to logout?')) {
-        currentUser = null;
-        localStorage.removeItem('userData');
+        try {
+            await firebase.auth().signOut();
+            currentUser = null;
+            localStorage.removeItem('userData');
+            updateUserDisplay();
+            window.closeAccountModal();
+            alert('You have been logged out.');
+        } catch (error) {
+            console.error('Logout error:', error);
+            // Still clear local data even if Firebase logout fails
+            currentUser = null;
+            localStorage.removeItem('userData');
+            updateUserDisplay();
+            window.closeAccountModal();
+        }
+    }
+};
+
+// Edit Profile Functions
+window.showEditProfile = function() {
+    const editForm = document.getElementById('editProfileForm');
+    if (editForm && currentUser) {
+        // Populate form with current user data
+        document.getElementById('editFirstName').value = currentUser.firstName || '';
+        document.getElementById('editLastName').value = currentUser.lastName || '';
+        document.getElementById('editWhatsApp').value = currentUser.whatsapp || '';
+        document.getElementById('editPosition').value = currentUser.position || '';
+        editForm.style.display = 'block';
+    }
+};
+
+window.hideEditProfile = function() {
+    const editForm = document.getElementById('editProfileForm');
+    if (editForm) {
+        editForm.style.display = 'none';
+    }
+};
+
+window.saveProfileChanges = async function() {
+    if (!currentUser) return;
+    
+    const firstName = document.getElementById('editFirstName').value.trim();
+    const lastName = document.getElementById('editLastName').value.trim();
+    const whatsapp = document.getElementById('editWhatsApp').value.trim();
+    const position = document.getElementById('editPosition').value.trim();
+    const saveBtn = document.querySelector('#editProfileForm button[type="button"]');
+    
+    if (!firstName || !lastName) {
+        alert('First name and last name are required.');
+        return;
+    }
+    
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    }
+    
+    try {
+        // Update Firestore if user has uid
+        if (currentUser.uid) {
+            await firebase.firestore().collection('users').doc(currentUser.uid).update({
+                firstName: firstName,
+                lastName: lastName,
+                name: firstName + ' ' + lastName,
+                whatsapp: whatsapp,
+                position: position,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            // Update Firebase Auth display name
+            const user = firebase.auth().currentUser;
+            if (user) {
+                await user.updateProfile({ displayName: firstName + ' ' + lastName });
+            }
+        }
+        
+        // Update current user
+        currentUser.firstName = firstName;
+        currentUser.lastName = lastName;
+        currentUser.name = firstName + ' ' + lastName;
+        currentUser.whatsapp = whatsapp;
+        currentUser.position = position;
+        
+        // Save to localStorage
+        localStorage.setItem('userData', JSON.stringify(currentUser));
+        
+        // Update display
+        document.getElementById('accountName').textContent = currentUser.name;
+        const positionEl = document.getElementById('accountPosition');
+        if (positionEl) {
+            positionEl.textContent = position || 'Not specified';
+        }
+        
+        // Hide edit form
+        window.hideEditProfile();
+        
+        // Update user display on page
         updateUserDisplay();
-        window.closeAccountModal();
-        alert('You have been logged out.');
+        
+        alert('Profile updated successfully!');
+    } catch (error) {
+        console.error('Profile update error:', error);
+        alert('Failed to update profile. Please try again.');
+    } finally {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+        }
     }
 };
 
@@ -906,8 +1120,6 @@ function navigateToActivity(type) {
         window.location.href = 'activities.html#charity-visit';
     } else if (type === 'tuition-brothers') {
         window.location.href = 'pay.html?type=charity&donation=tuition-brothers';
-    } else if (type === 'kisilaahe') {
-        window.location.href = 'activities.html#kisilaahe';
     } else if (type === 'activities') {
         window.location.href = 'activities.html';
     }
@@ -1016,267 +1228,5 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Initialize prayer times editing
-    initializePrayerTimesEditing();
 });
-
-// Admin Password (in production, this should be stored securely on the backend)
-const ADMIN_PASSWORD = 'kiuma2024'; // Change this to your desired password
-
-// Check if admin is logged in from localStorage
-let isAdminLoggedIn = localStorage.getItem('isAdminLoggedIn') === 'true' || false;
-
-window.showAdminLogin = function() {
-    const modal = document.getElementById('adminLoginModal');
-    if (!modal) {
-        console.error('Admin login modal not found');
-        alert('Error: Admin login modal not found. Please refresh the page.');
-        return;
-    }
-    
-    // Show modal immediately
-    modal.style.display = 'flex';
-    modal.style.visibility = 'visible';
-    
-    const passwordInput = document.getElementById('adminPassword');
-    const passwordError = document.getElementById('passwordError');
-    
-    if (passwordInput) {
-        passwordInput.value = '';
-        // Focus immediately
-        passwordInput.focus();
-    }
-    
-    if (passwordError) {
-        passwordError.style.display = 'none';
-    }
-};
-
-window.closeAdminLogin = function() {
-    const modal = document.getElementById('adminLoginModal');
-    const passwordInput = document.getElementById('adminPassword');
-    const passwordError = document.getElementById('passwordError');
-    
-    if (modal) {
-        modal.style.display = 'none';
-    }
-    if (passwordInput) {
-        passwordInput.value = '';
-    }
-    if (passwordError) {
-        passwordError.style.display = 'none';
-    }
-}
-
-window.verifyAdminPassword = function() {
-    const passwordInput = document.getElementById('adminPassword');
-    if (!passwordInput) {
-        console.error('Admin password input not found');
-        alert('Error: Admin login form not found. Please refresh the page.');
-        return;
-    }
-    
-    const password = passwordInput.value.trim();
-    if (!password) {
-        alert('Please enter a password');
-        passwordInput.focus();
-        return;
-    }
-    
-    // Verify password immediately
-    if (password === ADMIN_PASSWORD) {
-        isAdminLoggedIn = true;
-        localStorage.setItem('isAdminLoggedIn', 'true');
-        
-        // Close login modal immediately
-        window.closeAdminLogin();
-        
-        // Enable editing only if on prayer times page (index.html has prayerTimesList)
-        const prayerTimesList = document.getElementById('prayerTimesList');
-        if (prayerTimesList) {
-            try {
-                enableEditing();
-            } catch (error) {
-                console.error('Error enabling editing:', error);
-                // Continue even if enableEditing fails
-            }
-        }
-        
-        // Update UI for notifications/media pages immediately
-        if (typeof window.checkAdminStatus === 'function') {
-            window.checkAdminStatus();
-        } else if (typeof checkAdminStatus === 'function') {
-            checkAdminStatus();
-        }
-        
-        alert('Admin mode enabled. You can now edit content.');
-    } else {
-        const passwordError = document.getElementById('passwordError');
-        if (passwordError) {
-            passwordError.style.display = 'block';
-            passwordError.textContent = 'Incorrect password. Please try again.';
-        }
-        passwordInput.value = '';
-        passwordInput.focus();
-    }
-}
-
-window.logoutAdmin = function() {
-    isAdminLoggedIn = false;
-    localStorage.removeItem('isAdminLoggedIn');
-    checkAdminStatus();
-    alert('Logged out of admin mode.');
-}
-
-// Make checkAdminStatus globally accessible
-window.checkAdminStatus = function() {
-    // Get current admin status from localStorage (in case variable is not set)
-    isAdminLoggedIn = localStorage.getItem('isAdminLoggedIn') === 'true';
-    
-    // Update UI elements based on admin status
-    const adminButtons = document.querySelectorAll('.admin-only');
-    adminButtons.forEach(btn => {
-        if (btn) {
-            btn.style.display = isAdminLoggedIn ? 'block' : 'none';
-        }
-    });
-    
-    const adminLogoutBtns = document.querySelectorAll('.admin-logout');
-    adminLogoutBtns.forEach(btn => {
-        if (btn) {
-            btn.style.display = isAdminLoggedIn ? 'block' : 'none';
-        }
-    });
-    
-    // Hide Admin Login button when logged in, show when logged out
-    const adminLoginBtns = document.querySelectorAll('#adminLoginBtn');
-    adminLoginBtns.forEach(btn => {
-        if (btn) {
-            btn.style.display = isAdminLoggedIn ? 'none' : 'block';
-        }
-    });
-};
-
-// Also keep the non-window version for backward compatibility
-function checkAdminStatus() {
-    window.checkAdminStatus();
-}
-
-function enableEditing() {
-    const editableElements = document.querySelectorAll('.editable');
-    editableElements.forEach(el => {
-        el.contentEditable = 'true';
-        el.classList.add('editing');
-    });
-    
-    // Update edit button
-    const editBtn = document.getElementById('adminEditBtn');
-    editBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
-    editBtn.onclick = savePrayerTimes;
-    
-    // Add save/cancel buttons
-    if (!document.getElementById('saveCancelBtns')) {
-        const btnContainer = document.createElement('div');
-        btnContainer.id = 'saveCancelBtns';
-        btnContainer.style.cssText = 'display: flex; gap: 10px; margin-top: 15px;';
-        btnContainer.innerHTML = `
-            <button class="btn btn-primary" onclick="savePrayerTimes()" style="flex: 1;">
-                <i class="fas fa-save"></i> Save
-            </button>
-            <button class="btn btn-secondary" onclick="cancelEditing()" style="flex: 1;">
-                <i class="fas fa-times"></i> Cancel
-            </button>
-        `;
-        document.getElementById('prayerTimesList').appendChild(btnContainer);
-    }
-}
-
-function cancelEditing() {
-    isAdminLoggedIn = false;
-    const editableElements = document.querySelectorAll('.editable');
-    editableElements.forEach(el => {
-        el.contentEditable = 'false';
-        el.classList.remove('editing');
-    });
-    
-    // Reload prayer times (from storage, no calculation)
-    loadPrayerTimes();
-    
-    // Update edit button
-    const editBtn = document.getElementById('adminEditBtn');
-    editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Times';
-    editBtn.onclick = showAdminLogin;
-    
-    // Remove save/cancel buttons
-    const btnContainer = document.getElementById('saveCancelBtns');
-    if (btnContainer) btnContainer.remove();
-}
-
-function savePrayerTimes() {
-    const prayers = {};
-    const prayerNames = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
-    
-    prayerNames.forEach(prayer => {
-        const adhanEl = document.getElementById(prayer + 'Adhan');
-        const iqaamaEl = document.getElementById(prayer + 'Iqaama');
-        
-        if (adhanEl && iqaamaEl) {
-            // Validate time format
-            const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
-            const adhanTime = adhanEl.textContent.trim();
-            const iqaamaTime = iqaamaEl.textContent.trim();
-            
-            if (!timeRegex.test(adhanTime) || !timeRegex.test(iqaamaTime)) {
-                alert(`Invalid time format for ${prayer}. Please use HH:MM format (e.g., 05:30)`);
-                return;
-            }
-            
-            prayers[prayer] = {
-                adhan: adhanTime,
-                iqaama: iqaamaTime
-            };
-        }
-    });
-    
-    // Save to localStorage
-    localStorage.setItem('prayerTimes', JSON.stringify(prayers));
-    
-    // Disable editing
-    cancelEditing();
-    
-    alert('Prayer times saved successfully!');
-}
-
-function initializePrayerTimesEditing() {
-    // Close modal on overlay click
-    const modal = document.getElementById('adminLoginModal');
-    if (modal) {
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                closeAdminLogin();
-            }
-        });
-    }
-    
-    // Allow Enter key to submit password
-    const passwordInput = document.getElementById('adminPassword');
-    if (passwordInput) {
-        passwordInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                verifyAdminPassword();
-            }
-        });
-    }
-    
-    // Prevent accidental editing when not logged in
-    const editableElements = document.querySelectorAll('.editable');
-    editableElements.forEach(el => {
-        el.addEventListener('click', function(e) {
-            if (!isAdminLoggedIn) {
-                e.preventDefault();
-                showAdminLogin();
-            }
-        });
-    });
-}
 

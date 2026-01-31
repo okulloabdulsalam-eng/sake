@@ -89,7 +89,6 @@ The following payment systems continue to work normally:
 - Zakat payments
 - Charity donations
 - General donations
-- Kisilaahe subscriptions
 - WhatsApp integration with Amir Finance
 
 **Status:** ✅ Fully functional and unaffected by Pesapal lock

@@ -1,0 +1,27 @@
+{
+    "name": "KIUMA - Kampala International University Muslim Association",
+    "short_name": "KIUMA",
+    "description": "Official app for Kampala International University Muslim Association",
+    "start_url": "/index.html",
+    "display": "standalone",
+    "background_color": "#1a1a2e",
+    "theme_color": "#4CAF50",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "images/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "images/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": ["education", "lifestyle", "social"],
+    "lang": "en",
+    "dir": "ltr"
+}

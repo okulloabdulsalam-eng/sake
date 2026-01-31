@@ -11,7 +11,7 @@
 - Zakat payments
 - Charity donations
 - General donations
-- Kisilaahe subscriptions
+
 
 **Features:**
 - WhatsApp integration with Amir Finance
@@ -112,10 +112,9 @@ Features available:
 - ✅ Semester/Monthly subscriptions
 - ✅ Zakat payments
 - ✅ Charity donations
-- ✅ Kisilaahe subscriptions
+- ✅ General donations
 - ✅ WhatsApp contact with Amir Finance
 - ✅ Mobile Money payments
 - ✅ Bank transfers
 
 **No changes needed - everything works as before!**
-

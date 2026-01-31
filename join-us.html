@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Join Us - KIUMA</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -21,6 +23,7 @@
             <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
             <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
             <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="counselling.html" class="nav-link"><i class="fas fa-hands-helping"></i> Counselling</a></li>
             <li><a href="library.html" class="nav-link"><i class="fas fa-book-open"></i> Library</a></li>
             <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
             <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
@@ -89,34 +92,36 @@
                     <p>Become part of a vibrant Islamic community dedicated to faith, knowledge, and service. Join Muslim students at Kampala International University who are making a difference.</p>
                 </div>
 
-                <form id="joinForm" onsubmit="handleJoinSubmit(event)">
-                    <div id="formMessage" style="display: none; padding: 15px; margin-bottom: 20px; border-radius: 8px; font-size: 14px;"></div>
+                <!-- Join/Login Options -->
+                <div class="info-card" style="text-align: center; padding: 30px;">
+                    <div id="notLoggedInSection">
+                        <h3 style="margin-bottom: 20px; color: var(--dark-green);"><i class="fas fa-user-plus"></i> Join Our Community</h3>
+                        <p style="color: #666; margin-bottom: 25px;">Create an account to become a member of KIUMA</p>
+                        
+                        <button onclick="openSignupModal()" class="btn btn-primary" style="width: 100%; max-width: 300px; padding: 15px 30px; font-size: 16px; margin-bottom: 15px;">
+                            <i class="fas fa-user-plus"></i> Create Account
+                        </button>
+                        
+                        <p style="color: #666; margin-top: 20px;">
+                            Already have an account? 
+                            <a href="#" onclick="openLoginModal(); return false;" style="color: var(--primary-green); font-weight: 600;">Login here</a>
+                        </p>
+                    </div>
                     
-                    <div class="form-group">
-                        <label class="form-label">Full Name *</label>
-                        <input type="text" class="form-input" id="fullname" name="fullname" placeholder="Enter your full name" required>
+                    <div id="loggedInSection" style="display: none;">
+                        <div class="account-avatar" style="margin: 0 auto 15px;">
+                            <i class="fas fa-user-circle" style="font-size: 60px; color: var(--primary-green);"></i>
+                        </div>
+                        <h3 id="welcomeUserName" style="margin-bottom: 10px; color: var(--dark-green);">Welcome!</h3>
+                        <p style="color: #666; margin-bottom: 20px;">You are already a member of KIUMA</p>
+                        <button onclick="toggleAccountModal()" class="btn btn-secondary" style="margin-right: 10px;">
+                            <i class="fas fa-user"></i> View Account
+                        </button>
+                        <button onclick="navigateTo('index.html')" class="btn btn-primary">
+                            <i class="fas fa-home"></i> Go Home
+                        </button>
                     </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Email Address *</label>
-                        <input type="email" class="form-input" id="email" name="email" placeholder="Enter your email" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Phone Number *</label>
-                        <input type="tel" class="form-input" id="phone" name="phone" placeholder="Enter your phone number" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Role/Position (Optional)</label>
-                        <input type="text" class="form-input" id="role" name="role" placeholder="e.g., Student, Member, Volunteer">
-                    </div>
-
-
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-user-plus"></i> Join Now
-                    </button>
-                </form>
+                </div>
 
                 <div class="info-card" style="margin-top: 20px; background: #E8F5E9;">
                     <h3 style="color: var(--dark-green); margin-bottom: 10px;"><i class="fas fa-heart"></i> Why Join?</h3>
@@ -140,103 +145,75 @@
         </nav>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
     <script src="script.js"></script>
     <script>
-        // PHP Backend API URL - Update this to match your server path
-        const API_URL = 'api/submit_recruit.php'; // Relative path to PHP API
-        
-        async function handleJoinSubmit(e) {
-            e.preventDefault();
-            
-            const submitBtn = document.querySelector('#joinForm button[type="submit"]');
-            const messageDiv = document.getElementById('formMessage');
-            const form = e.target;
-            
-            // Get form values
-            const fullname = document.getElementById('fullname').value.trim();
-            const email = document.getElementById('email').value.trim();
-            const phone = document.getElementById('phone').value.trim();
-            const role = document.getElementById('role').value.trim();
-            
-            // Validation
-            if (!fullname || !email || !phone) {
-                messageDiv.style.display = 'block';
-                messageDiv.style.backgroundColor = '#FFEBEE';
-                messageDiv.style.color = '#C62828';
-                messageDiv.style.border = '1px solid #F44336';
-                messageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please fill in all required fields.';
-                return;
-            }
-            
-            // Validate email format
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                messageDiv.style.display = 'block';
-                messageDiv.style.backgroundColor = '#FFEBEE';
-                messageDiv.style.color = '#C62828';
-                messageDiv.style.border = '1px solid #F44336';
-                messageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please enter a valid email address.';
-                return;
-            }
-            
-            // Disable submit button
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
-            messageDiv.style.display = 'none';
-            
-            // Prepare form data
-            const formData = new FormData();
-            formData.append('fullname', fullname);
-            formData.append('email', email);
-            formData.append('phone', phone);
-            formData.append('role', role);
-            
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    messageDiv.style.display = 'block';
-                    messageDiv.style.backgroundColor = '#E8F5E9';
-                    messageDiv.style.color = '#2E7D32';
-                    messageDiv.style.border = '1px solid #4CAF50';
-                    messageDiv.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message + '<br><small>You will receive a confirmation email and WhatsApp notification has been sent.</small>';
-                    
-                    // Reset form
-                    form.reset();
-                    
-                    // Store user name for greeting
-                    const firstName = fullname.split(' ')[0];
-                    localStorage.setItem('userName', firstName);
-                    
-                    // Redirect after 3 seconds
-                    setTimeout(() => {
-                        window.location.href = 'index.html';
-                    }, 3000);
-                } else {
-                    messageDiv.style.display = 'block';
-                    messageDiv.style.backgroundColor = '#FFEBEE';
-                    messageDiv.style.color = '#C62828';
-                    messageDiv.style.border = '1px solid #F44336';
-                    messageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.message || 'An error occurred. Please try again.');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                messageDiv.style.display = 'block';
-                messageDiv.style.backgroundColor = '#FFEBEE';
-                messageDiv.style.color = '#C62828';
-                messageDiv.style.border = '1px solid #F44336';
-                messageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Network error. Please check your connection and try again. If the problem persists, contact support.';
-            } finally {
-                // Re-enable submit button
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Join Now';
+        // Open signup modal
+        function openSignupModal() {
+            const modal = document.getElementById('accountModal');
+            if (modal) {
+                document.getElementById('accountTabs').style.display = 'block';
+                document.getElementById('accountModalTitle').innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
+                document.getElementById('loginTab').classList.remove('active');
+                document.getElementById('signupTab').classList.add('active');
+                document.getElementById('loginFormElement').style.display = 'none';
+                document.getElementById('signupFormElement').style.display = 'block';
+                document.getElementById('accountInfo').style.display = 'none';
+                modal.style.display = 'flex';
             }
         }
+        
+        // Open login modal
+        function openLoginModal() {
+            const modal = document.getElementById('accountModal');
+            if (modal) {
+                document.getElementById('accountTabs').style.display = 'block';
+                document.getElementById('accountModalTitle').innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+                document.getElementById('loginTab').classList.add('active');
+                document.getElementById('signupTab').classList.remove('active');
+                document.getElementById('loginFormElement').style.display = 'block';
+                document.getElementById('signupFormElement').style.display = 'none';
+                document.getElementById('accountInfo').style.display = 'none';
+                modal.style.display = 'flex';
+            }
+        }
+        
+        // Check login state and update UI
+        function updateJoinPageUI() {
+            const userData = localStorage.getItem('userData');
+            const notLoggedInSection = document.getElementById('notLoggedInSection');
+            const loggedInSection = document.getElementById('loggedInSection');
+            const welcomeUserName = document.getElementById('welcomeUserName');
+            
+            if (userData) {
+                const user = JSON.parse(userData);
+                if (notLoggedInSection) notLoggedInSection.style.display = 'none';
+                if (loggedInSection) loggedInSection.style.display = 'block';
+                if (welcomeUserName) {
+                    welcomeUserName.textContent = 'Welcome, ' + (user.firstName || user.name || 'Member') + '!';
+                }
+            } else {
+                if (notLoggedInSection) notLoggedInSection.style.display = 'block';
+                if (loggedInSection) loggedInSection.style.display = 'none';
+            }
+        }
+        
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            updateJoinPageUI();
+            
+            // Check if URL has signup parameter to auto-open signup modal
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('action') === 'signup') {
+                setTimeout(() => openSignupModal(), 300);
+            } else if (urlParams.get('action') === 'login') {
+                setTimeout(() => openLoginModal(), 300);
+            }
+        });
     </script>
 
     <!-- Floating Kizumu Visit Button -->
@@ -273,17 +250,6 @@
                     <div class="activity-modal-text">
                         <h4>Tuition for Brothers</h4>
                         <p>Support brothers' education and learning</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-                
-                <div class="activity-modal-item" onclick="navigateToActivity('kisilaahe')">
-                    <div class="activity-modal-icon" style="background: #9C27B0;">
-                        <i class="fas fa-donate"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Donate to Kisilaahe</h4>
-                        <p>Support Kisilaahe with essential items</p>
                     </div>
                     <i class="fas fa-chevron-right"></i>
                 </div>

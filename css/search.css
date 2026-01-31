@@ -320,6 +320,180 @@
     box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
 }
 
+/* Search Results List */
+.search-results-header {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--light-gray, #e0e0e0);
+}
+
+.results-count {
+    color: var(--medium-gray, #666);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.search-results-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.search-result-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid var(--light-gray, #e0e0e0);
+}
+
+.search-result-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    border-color: var(--primary-color, #4CAF50);
+}
+
+.result-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.result-icon i {
+    color: white;
+    font-size: 20px;
+}
+
+.result-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.result-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--dark-gray, #333);
+    margin: 0 0 4px 0;
+}
+
+.result-title mark {
+    background: #fff9c4;
+    color: var(--dark-gray, #333);
+    padding: 1px 3px;
+    border-radius: 3px;
+}
+
+.result-description {
+    font-size: 14px;
+    color: var(--medium-gray, #666);
+    margin: 0 0 8px 0;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.result-description mark {
+    background: #fff9c4;
+    color: var(--dark-gray, #333);
+    padding: 1px 3px;
+    border-radius: 3px;
+}
+
+.result-category {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.result-arrow {
+    color: var(--medium-gray, #ccc);
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.search-result-item:hover .result-arrow {
+    color: var(--primary-color, #4CAF50);
+}
+
+/* No Results State */
+.no-results {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--medium-gray, #666);
+}
+
+.no-results i {
+    font-size: 48px;
+    color: var(--light-gray, #ccc);
+    margin-bottom: 20px;
+}
+
+.no-results h3 {
+    font-size: 20px;
+    color: var(--dark-gray, #333);
+    margin-bottom: 8px;
+}
+
+.no-results p {
+    font-size: 14px;
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.pagination-btn {
+    background: white;
+    border: 1px solid var(--light-gray, #e0e0e0);
+    color: var(--dark-gray, #333);
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+    min-width: 38px;
+    text-align: center;
+}
+
+.pagination-btn:hover:not(.active) {
+    background: var(--light-gray, #f5f5f5);
+    border-color: var(--primary-color, #4CAF50);
+    color: var(--primary-color, #4CAF50);
+}
+
+.pagination-btn.active {
+    background: var(--primary-color, #4CAF50);
+    color: white;
+    border-color: var(--primary-color, #4CAF50);
+    cursor: default;
+}
+
+.pagination-dots {
+    padding: 8px 4px;
+    color: var(--medium-gray, #666);
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
     .search-section-full {
@@ -346,6 +520,38 @@
         padding: 6px 12px;
         font-size: 13px;
         min-width: 36px;
+    }
+
+    .search-result-item {
+        padding: 12px;
+        gap: 12px;
+    }
+
+    .result-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .result-icon i {
+        font-size: 16px;
+    }
+
+    .result-title {
+        font-size: 14px;
+    }
+
+    .result-description {
+        font-size: 13px;
+    }
+
+    .result-category {
+        font-size: 10px;
+    }
+
+    .pagination-btn {
+        padding: 6px 10px;
+        font-size: 13px;
+        min-width: 32px;
     }
 }
 

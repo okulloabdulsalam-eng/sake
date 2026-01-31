@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Notifications - KIUMA</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -21,6 +23,7 @@
             <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
             <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
             <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="counselling.html" class="nav-link"><i class="fas fa-hands-helping"></i> Counselling</a></li>
             <li><a href="library.html" class="nav-link"><i class="fas fa-book-open"></i> Library</a></li>
             <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
             <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
@@ -79,19 +82,8 @@
                 </button>
             </section>
 
-            <section class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <section class="page-header">
                 <h2 class="page-title">Notifications</h2>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button class="btn btn-secondary" id="adminLoginBtn" onclick="showAdminLogin()" style="padding: 10px 15px;">
-                        <i class="fas fa-lock"></i> Admin Login
-                    </button>
-                    <button class="btn btn-primary admin-only" onclick="window.showAddNotificationModal()" style="padding: 10px 15px; display: none;">
-                        <i class="fas fa-plus"></i> Add Notification
-                    </button>
-                    <button class="btn btn-secondary admin-logout" onclick="logoutAdmin()" style="padding: 10px 15px; display: none;">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </button>
-                </div>
             </section>
 
             <section class="page-content">
@@ -188,61 +180,24 @@
         </nav>
     </div>
 
-    <script src="api-config.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
     <script src="script.js"></script>
     <script>
-        // Check admin status on page load
+        // Initialize on page load
         window.addEventListener('DOMContentLoaded', function() {
-            // Ensure checkAdminStatus is available and call it
-            setTimeout(function() {
-                if (typeof window.checkAdminStatus === 'function') {
-                    window.checkAdminStatus();
-                } else if (typeof checkAdminStatus === 'function') {
-                    checkAdminStatus();
-                }
-            }, 100);
-            
             loadNotificationsFromStorage();
             
-            // Check for white days notification after a short delay to ensure dates are updated
+            // Check for white days notification after a short delay
             setTimeout(function() {
-                // Trigger date update to check for white days
                 if (typeof updateDates === 'function') {
                     updateDates();
                 }
-                // Reload notifications after date check
                 loadNotificationsFromStorage();
             }, 1000);
-            
-            // Initialize admin login modal
-            const adminModal = document.getElementById('adminLoginModal');
-            if (adminModal) {
-                adminModal.addEventListener('click', function(e) {
-                    if (e.target === adminModal) {
-                        closeAdminLogin();
-                    }
-                });
-            }
-            
-            // Allow Enter key to submit password
-            const passwordInput = document.getElementById('adminPassword');
-            if (passwordInput) {
-                passwordInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        verifyAdminPassword();
-                    }
-                });
-            }
-
-            // Close add notification modal on overlay click
-            const addNotifModal = document.getElementById('addNotificationModal');
-            if (addNotifModal) {
-                addNotifModal.addEventListener('click', function(e) {
-                    if (e.target === addNotifModal) {
-                        window.closeAddNotificationModal();
-                    }
-                });
-            }
         });
 
         function filterNotifications(status) {
@@ -288,149 +243,6 @@
                 }
             });
         });
-
-        window.showAddNotificationModal = function() {
-            // Check admin status from localStorage
-            const isAdmin = localStorage.getItem('isAdminLoggedIn') === 'true';
-            console.log('showAddNotificationModal called, isAdmin:', isAdmin);
-            if (!isAdmin) {
-                console.log('Not admin, showing login');
-                if (typeof showAdminLogin === 'function') {
-                    showAdminLogin();
-                } else if (typeof window.showAdminLogin === 'function') {
-                    window.showAdminLogin();
-                }
-                return;
-            }
-            const modal = document.getElementById('addNotificationModal');
-            if (modal) {
-                console.log('Showing modal');
-                modal.style.display = 'flex';
-            } else {
-                console.error('Add notification modal not found');
-                alert('Error: Notification modal not found. Please refresh the page.');
-            }
-        };
-
-        window.closeAddNotificationModal = function() {
-            const modal = document.getElementById('addNotificationModal');
-            if (modal) {
-                modal.style.display = 'none';
-            }
-            const form = document.getElementById('addNotificationForm');
-            if (form) {
-                form.reset();
-            }
-        };
-
-        window.addNotification = async function(e) {
-            e.preventDefault();
-            if (!isAdminLoggedIn) {
-                alert('You must be logged in as admin to add notifications.');
-                return;
-            }
-
-            const title = document.getElementById('notifTitle').value;
-            const message = document.getElementById('notifMessage').value;
-            const icon = document.getElementById('notifIcon').value || 'fas fa-bell';
-            
-            if (!title || !message) {
-                alert('Please fill in all required fields.');
-                return;
-            }
-
-            // Get admin password from localStorage or prompt
-            const adminPassword = localStorage.getItem('adminPassword') || prompt('Enter admin password to save notification:');
-            if (!adminPassword) {
-                alert('Admin password required to save notification.');
-                return;
-            }
-
-            // Save to database via API
-            try {
-                const formData = new FormData();
-                formData.append('title', title);
-                formData.append('message', message);
-                formData.append('type', 'announcement');
-                formData.append('target_audience', 'all');
-                formData.append('icon', icon);
-                formData.append('admin_password', adminPassword);
-
-                const API_BASE_URL = window.API_BASE_URL || '/api';
-                const response = await fetch(API_BASE_URL + '/save_notification.php', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const data = await response.json();
-
-                if (!data.success) {
-                    throw new Error(data.message || 'Failed to save notification');
-                }
-
-                // Also save to localStorage for immediate display (fallback)
-                let notificationsData = JSON.parse(localStorage.getItem('notificationsData') || '[]');
-                const notification = {
-                    id: data.notification.id.toString(),
-                    title: title,
-                    message: message,
-                    icon: icon,
-                    status: 'unread',
-                    date: data.notification.created_date || new Date().toISOString(),
-                    timeDisplay: 'Just now'
-                };
-
-                notificationsData.unshift(notification);
-                localStorage.setItem('notificationsData', JSON.stringify(notificationsData));
-
-                // Create and display notification element
-                const notificationsContainer = document.querySelector('.page-content');
-                const firstNotification = notificationsContainer.querySelector('.notification-item');
-                const newNotification = document.createElement('div');
-                newNotification.className = 'notification-item';
-                newNotification.dataset.status = 'unread';
-                newNotification.dataset.id = notification.id;
-                newNotification.innerHTML = `
-                    <div class="notification-icon">
-                        <i class="${icon}"></i>
-                    </div>
-                    <div class="notification-content">
-                        <h4>${title}</h4>
-                        <p>${message}</p>
-                        <span class="notification-time">Just now</span>
-                    </div>
-                `;
-
-                // Insert at the top
-                if (firstNotification) {
-                    notificationsContainer.insertBefore(newNotification, firstNotification);
-                } else {
-                    notificationsContainer.appendChild(newNotification);
-                }
-
-                // Mark as read on click
-                newNotification.addEventListener('click', function() {
-                    if (this.dataset.status === 'unread') {
-                        this.dataset.status = 'read';
-                        this.style.opacity = '0.7';
-                        // Update in localStorage
-                        updateNotificationStatus(notification.id, 'read');
-                    }
-                });
-
-                window.closeAddNotificationModal();
-                alert('Notification saved successfully!');
-                
-                // Optionally send to all users
-                if (confirm('Do you want to send this notification to all users via WhatsApp and Email?')) {
-                    sendNotificationToAllUsers(title, message, data.notification.id);
-                }
-                
-            } catch (error) {
-                console.error('Error saving notification:', error);
-                alert('Error saving notification: ' + error.message);
-            }
-        };
 
         function updateNotificationStatus(id, status) {
             let notificationsData = JSON.parse(localStorage.getItem('notificationsData') || '[]');
@@ -568,115 +380,7 @@
             });
         }
         
-        // Send notification to all users via WhatsApp and Email
-        async function sendNotificationToAllUsers(subject, message, notificationId = null) {
-            try {
-                const adminPassword = localStorage.getItem('adminPassword') || prompt('Enter admin password to send notifications:');
-                if (!adminPassword) {
-                    alert('Admin password required to send notifications.');
-                    return;
-                }
-                
-                const formData = new FormData();
-                formData.append('subject', subject);
-                formData.append('message', message);
-                if (notificationId) {
-                    formData.append('notification_id', notificationId);
-                }
-                formData.append('admin_password', adminPassword);
-                
-                const API_BASE_URL = window.API_BASE_URL || '/api';
-                const response = await fetch(API_BASE_URL + '/send_notifications_to_all.php', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    alert(`Notifications sent to ${data.totalUsers} users!\nWhatsApp: ${data.whatsappSent}\nEmail: ${data.emailSent}`);
-                } else {
-                    throw new Error(data.message || 'Failed to send notifications');
-                }
-            } catch (error) {
-                console.error('Error sending notifications:', error);
-                alert('Error sending notifications: ' + error.message);
-            }
-        }
     </script>
-
-    <!-- Admin Login Modal -->
-    <div class="modal-overlay" id="adminLoginModal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-shield-alt"></i> Admin Login</h3>
-                <button class="modal-close" onclick="closeAdminLogin()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p style="margin-bottom: 15px;">Enter admin password to access admin features.</p>
-                <div class="form-group">
-                    <label class="form-label">Password</label>
-                    <input type="password" class="form-input" id="adminPassword" placeholder="Enter admin password">
-                    <p id="passwordError" style="color: #f44336; font-size: 14px; margin-top: 5px; display: none;">Incorrect password. Please try again.</p>
-                </div>
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button class="btn btn-primary" onclick="verifyAdminPassword()" style="flex: 1;">
-                        <i class="fas fa-sign-in-alt"></i> Login
-                    </button>
-                    <button class="btn btn-secondary" onclick="closeAdminLogin()" style="flex: 1;">
-                        Cancel
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add Notification Modal -->
-    <div class="modal-overlay" id="addNotificationModal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-bell"></i> Add New Notification</h3>
-                <button class="modal-close" onclick="window.closeAddNotificationModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="addNotificationForm" onsubmit="addNotification(event)">
-                    <div class="form-group">
-                        <label class="form-label">Title *</label>
-                        <input type="text" class="form-input" id="notifTitle" placeholder="Notification title" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Message *</label>
-                        <textarea class="form-input" id="notifMessage" rows="4" placeholder="Notification message" required></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Icon</label>
-                        <select class="form-input" id="notifIcon">
-                            <option value="fas fa-bell">Bell</option>
-                            <option value="fas fa-calendar-check">Calendar</option>
-                            <option value="fas fa-book">Book</option>
-                            <option value="fas fa-hand-holding-heart">Donation</option>
-                            <option value="fas fa-clock">Time</option>
-                            <option value="fas fa-users">Users</option>
-                            <option value="fas fa-graduation-cap">Education</option>
-                            <option value="fas fa-star-and-crescent">Star</option>
-                        </select>
-                    </div>
-                    <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button type="submit" class="btn btn-primary" style="flex: 1;">
-                            <i class="fas fa-plus"></i> Add Notification
-                        </button>
-                        <button type="button" class="btn btn-secondary" onclick="window.closeAddNotificationModal()" style="flex: 1;">
-                            Cancel
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
 
     <!-- Floating Kizumu Visit Button -->
     <div class="floating-kizumu-btn" onclick="showActivitiesModal()">
@@ -712,17 +416,6 @@
                     <div class="activity-modal-text">
                         <h4>Tuition for Brothers</h4>
                         <p>Support brothers' education and learning</p>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-                
-                <div class="activity-modal-item" onclick="navigateToActivity('kisilaahe')">
-                    <div class="activity-modal-icon" style="background: #9C27B0;">
-                        <i class="fas fa-donate"></i>
-                    </div>
-                    <div class="activity-modal-text">
-                        <h4>Donate to Kisilaahe</h4>
-                        <p>Support Kisilaahe with essential items</p>
                     </div>
                     <i class="fas fa-chevron-right"></i>
                 </div>

@@ -270,6 +270,22 @@ body {
     transform: translateY(-50%) scale(1.05);
 }
 
+/* Account icon in header-actions (non-absolute positioning) */
+.header-actions .account-icon-btn {
+    position: static;
+    transform: none;
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+}
+
+.header-actions .account-icon-btn:hover {
+    transform: scale(1.05);
+}
+
+.header-actions .account-icon-btn.logged-in:hover {
+    transform: scale(1.05);
+}
 
 .account-modal {
     max-width: 400px;
