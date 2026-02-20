@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Programs - KIUMA</title>
+    <script>
+        (function() {
+            var t;
+            try { t = localStorage.getItem('themePreference'); } catch(e) {}
+            if (t === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    <!-- Font Awesome: CDN primary, local fallback -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="fonts/fontawesome.min.css">
+</head>
+<body>
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link active"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="counselling.html" class="nav-link"><i class="fas fa-hands-helping"></i> Counselling</a></li>
+            <li><a href="library.html" class="nav-link"><i class="fas fa-book-open"></i> Library</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="media-settings.html" class="nav-link"><i class="fas fa-sliders-h"></i> Media Settings</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <div class="logo-container">
+                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
+                    <svg class="header-logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+                        <circle cx="100" cy="100" r="95" fill="none" stroke="#4CAF50" stroke-width="4"/>
+                        <path id="topArc" d="M 20,100 A 80,80 0 0,1 180,100" fill="none"/>
+                        <text fill="#4CAF50" font-size="9" font-weight="bold" font-family="Arial, sans-serif" letter-spacing="0.5">
+                            <textPath href="#topArc" startOffset="50%" text-anchor="middle">KAMPALA INTERNATIONAL UNIVERSITY</textPath>
+                        </text>
+                        <path id="bottomArc" d="M 180,100 A 80,80 0 0,1 20,100" fill="none"/>
+                        <text fill="#4CAF50" font-size="9" font-weight="bold" font-family="Arial, sans-serif" letter-spacing="0.5">
+                            <textPath href="#bottomArc" startOffset="50%" text-anchor="middle">MUSLIM ASSOCIATION</textPath>
+                        </text>
+                        <path d="M 50,75 L 50,115 L 58,115 L 58,105 L 63,100 L 58,95 L 58,85 Z" fill="none" stroke="#4CAF50" stroke-width="2"/>
+                        <circle cx="56.5" cy="100" r="2" fill="#4CAF50"/>
+                        <rect x="88" y="65" width="10" height="45" fill="none" stroke="#4CAF50" stroke-width="2"/>
+                        <rect x="90" y="75" width="6" height="2" fill="#4CAF50"/>
+                        <rect x="90" y="85" width="6" height="2" fill="#4CAF50"/>
+                        <rect x="90" y="95" width="6" height="2" fill="#4CAF50"/>
+                        <polygon points="93,60 90,65 96,65" fill="#4CAF50"/>
+                        <path d="M 140,92 A 12,12 0 0,1 128,92 A 10,10 0 0,0 140,92 Z" fill="#4CAF50"/>
+                        <path d="M 130,88 L 131.5,92 L 136,92 L 132.5,94.5 L 134,99 L 130,96.5 L 126,99 L 127.5,94.5 L 124,92 L 128.5,92 Z" fill="#4CAF50"/>
+                        <text x="100" y="145" font-size="22" font-weight="bold" fill="#4CAF50" text-anchor="middle" font-family="Arial, sans-serif" letter-spacing="2">KIUMA</text>
+                    </svg>
+                </div>
+                <button class="notifications-btn" id="notificationsBtn">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">3</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Welcome Section -->
+            <section class="welcome-section">
+                <div>
+                    <h2 class="greeting">
+                        <a href="about.html">KIUMA</a>
+                    </h2>
+                </div>
+                <button class="account-icon-btn" id="accountIconBtn" onclick="toggleAccountModal()">
+                    <i class="fas fa-user-circle" id="accountIcon"></i>
+                </button>
+            </section>
+
+            <section class="page-header">
+                <h2 class="page-title">Our Programs</h2>
+            </section>
+
+            <section class="page-content">
+                <!-- Quran Study Classes -->
+                <div class="info-card" style="margin-bottom: 25px; background: linear-gradient(135deg, #1a472a, #2d5a3f); color: white; border: none;">
+                    <h3 style="color: white; margin-bottom: 10px;"><i class="fas fa-quran"></i> Quran Memorization Classes</h3>
+                    <p style="color: white; opacity: 0.9; margin-bottom: 15px;">Enroll in our dedicated Quran memorization programs. Click to enroll!</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <!-- Yasaruna & Juz Amma -->
+                        <div onclick="showQuranEnrollModal('yasaruna')" style="background: linear-gradient(135deg, #4CAF50, #2E7D32); border-radius: 10px; padding: 15px; color: white; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-book-reader" style="font-size: 18px;"></i>
+                                </div>
+                                <div style="flex: 1;">
+                                    <h4 style="margin: 0; font-size: 16px;">Yasaruna & Juz Amma 30</h4>
+                                    <p style="color: white; margin: 3px 0 0 0; font-size: 12px; opacity: 0.9;">Beginner - Learn to read & memorize Juz 30</p>
+                                </div>
+                                <i class="fas fa-chevron-right" style="opacity: 0.7;"></i>
+                            </div>
+                        </div>
+
+                        <!-- Juz Qadsamia -->
+                        <div onclick="showQuranEnrollModal('qadsamia')" style="background: linear-gradient(135deg, #9C27B0, #673AB7); border-radius: 10px; padding: 15px; color: white; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-quran" style="font-size: 18px;"></i>
+                                </div>
+                                <div style="flex: 1;">
+                                    <h4 style="margin: 0; font-size: 16px;">Juz Qadsamia (Juz 28)</h4>
+                                    <p style="color: white; margin: 3px 0 0 0; font-size: 12px; opacity: 0.9;">Memorize Surah Al-Mujadila to At-Tahrim</p>
+                                </div>
+                                <i class="fas fa-chevron-right" style="opacity: 0.7;"></i>
+                            </div>
+                        </div>
+
+                        <!-- Juz Tabaraka -->
+                        <div onclick="showQuranEnrollModal('tabaraka')" style="background: linear-gradient(135deg, #FF9800, #F57C00); border-radius: 10px; padding: 15px; color: white; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-star" style="font-size: 18px;"></i>
+                                </div>
+                                <div style="flex: 1;">
+                                    <h4 style="margin: 0; font-size: 16px;">Juz Tabaraka (Juz 29)</h4>
+                                    <p style="color: white; margin: 3px 0 0 0; font-size: 12px; opacity: 0.9;">Memorize Surah Al-Mulk to Al-Mursalat</p>
+                                </div>
+                                <i class="fas fa-chevron-right" style="opacity: 0.7;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weekly Teachings Schedule -->
+                <div class="info-card" style="margin-bottom: 25px;">
+                    <h3 class="section-title" style="margin-bottom: 15px;">
+                        <i class="fas fa-calendar-week"></i> Weekly Teachings Schedule
+                    </h3>
+                    <div class="schedule-table-container">
+                        <table class="schedule-table">
+                            <thead>
+                                <tr>
+                                    <th>Day</th>
+                                    <th>Time</th>
+                                    <th>Lecture</th>
+                                    <th>Teacher</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Mon - Thur</td>
+                                    <td>After Maghrib to Isha</td>
+                                    <td>Quran and Yasaruna</td>
+                                    <td>Iman Fahad</td>
+                                </tr>
+                                <tr>
+                                    <td>Tuesday</td>
+                                    <td>After Maghrib to Isha</td>
+                                    <td>Hadith memorisation</td>
+                                    <td>Imam Abdurrahman</td>
+                                </tr>
+                                <tr>
+                                    <td>Friday</td>
+                                    <td>After Maghrib to Isha</td>
+                                    <td>Hadith Explanation</td>
+                                    <td>Sheikh Abdulswabur</td>
+                                </tr>
+                                <tr>
+                                    <td>Saturday</td>
+                                    <td>After Maghrib to Isha</td>
+                                    <td>Kitaabu Tawheed</td>
+                                    <td>Imam Abdurrahman</td>
+                                </tr>
+                                <tr>
+                                    <td>Sunday</td>
+                                    <td>After Dhuhr</td>
+                                    <td>Fiqh Swalah</td>
+                                    <td>Prof. Twaib</td>
+                                </tr>
+                                <tr>
+                                    <td>Sunday</td>
+                                    <td>After Asr</td>
+                                    <td>Arbauna Nawawi</td>
+                                    <td>Dr. Jega</td>
+                                </tr>
+                                <tr>
+                                    <td>Sunday</td>
+                                    <td>After Maghrib to Isha</td>
+                                    <td>Tafsir</td>
+                                    <td>Imam Fahad</td>
+                                </tr>
+                                <tr>
+                                    <td>Sat & Sun</td>
+                                    <td>1 hour after Fajr</td>
+                                    <td>Arabic classes</td>
+                                    <td>Imam Fahad</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Important Information -->
+                <div class="info-notifications">
+                    <div class="info-notification-item">
+                        <div class="info-icon" style="background: #E1BEE7;">
+                            <i class="fas fa-calendar-alt" style="color: #7B1FA2;"></i>
+                        </div>
+                        <div class="info-content">
+                            <h4>Schedule Updates</h4>
+                            <p>Schedule Updates: The schedule may be adjusted during Ramadan, holidays, or special events. Please check our <a href="events.html" style="color: var(--primary-green); text-decoration: underline;">Events page</a> for updates.</p>
+                        </div>
+                    </div>
+
+                    <div class="info-notification-item">
+                        <div class="info-icon" style="background: #FFCDD2;">
+                            <i class="fas fa-map-marker-alt" style="color: #C62828;"></i>
+                        </div>
+                        <div class="info-content">
+                            <h4>Venue</h4>
+                            <p>Venue: All sessions are held at the KIUMA Masjid/Office unless otherwise announced.</p>
+                        </div>
+                    </div>
+
+                    <div class="info-notification-item">
+                        <div class="info-icon" style="background: #E1BEE7;">
+                            <i class="fas fa-users" style="color: #7B1FA2;"></i>
+                        </div>
+                        <div class="info-content">
+                            <h4>Attendance</h4>
+                            <p>Attendance: All students are welcome to attend. No prior registration required (except for a few classes), but regular attendance is encouraged.</p>
+                        </div>
+                    </div>
+
+                    <div class="info-notification-item">
+                        <div class="info-icon" style="background: #C8E6C9;">
+                            <i class="fas fa-book" style="color: var(--primary-green);"></i>
+                        </div>
+                        <div class="info-content">
+                            <h4>Materials</h4>
+                            <p>Materials: Some sessions may require textbooks or materials. Contact the office for more information.</p>
+                        </div>
+                    </div>
+
+                    <div class="info-notification-item">
+                        <div class="info-icon" style="background: #FFCDD2;">
+                            <i class="fas fa-clock" style="color: #C62828;"></i>
+                        </div>
+                        <div class="info-content">
+                            <h4>Prayer Times</h4>
+                            <p>Prayer Times: Sessions are scheduled around prayer times. Please arrive on time and be ready for prayer.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="event-card">
+                    <div class="event-image">
+                        <i class="fas fa-quran"></i>
+                    </div>
+                    <div class="event-content">
+                        <div class="event-date"><i class="fas fa-calendar"></i> Weekly</div>
+                        <h3 class="event-title">Quran Study Circle</h3>
+                        <p class="event-description">Join us every Monday to thursday evening for in-depth study of the Holy Quran. Learn tafsir, tajweed, and memorization techniques in a supportive environment.</p>
+                        <button class="event-btn" onclick="window.location.href='join-programs.html'">Join Now</button>
+                    </div>
+                </div>
+
+                <div class="event-card">
+                    <div class="event-image">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    <div class="event-content">
+                        <div class="event-date"><i class="fas fa-calendar"></i> Monthly</div>
+                        <h3 class="event-title">Islamic Studies Course</h3>
+                        <p class="event-description">Comprehensive courses covering Aqeedah, Fiqh, Seerah, and Islamic History. Suitable for beginners and advanced students.</p>
+                        <button class="event-btn" onclick="window.location.href='join-programs.html'">Join Now</button>
+                    </div>
+                </div>
+
+                <div class="event-card">
+                    <div class="event-image">
+                        <i class="fas fa-child"></i>
+                    </div>
+                    <div class="event-content">
+                        <div class="event-date"><i class="fas fa-calendar"></i> Teusday </div>
+                        <h3 class="event-title">Hadith memorisation circle</h3>
+                        <p class="event-description">Learn the ways of the prophet PBUH(worship and daily living), memorise them and get there application.</p>
+                        <button class="event-btn" onclick="window.location.href='join-programs.html'">Join Now</button>
+                    </div>
+                </div>
+
+                <div class="event-card">
+                    <div class="event-image">
+                        <i class="fas fa-language"></i>
+                    </div>
+                    <div class="event-content">
+                        <div class="event-date"><i class="fas fa-calendar"></i> Saturday & Sunday</div>
+                        <h3 class="event-title">Arabic Language Classes</h3>
+                        <p class="event-description">Learn Arabic from beginner to advanced levels. Focus on reading, writing, speaking, and understanding Classical Arabic.</p>
+                        <button class="event-btn" onclick="window.location.href='join-programs.html'">Join Now</button>
+                    </div>
+                </div>
+
+                <div class="event-card">
+                    <div class="event-image">
+                        <i class="fas fa-female"></i>
+                    </div>
+                    <div class="event-content">
+                        <div class="event-date"><i class="fas fa-calendar"></i> Weekly</div>
+                        <h3 class="event-title">Sisters Circle</h3>
+                        <p class="event-description">A safe space for sisters to learn, share, and grow together. Topics include Islamic jurisprudence, family matters, and personal development.</p>
+                        <button class="event-btn" onclick="window.location.href='join-programs.html'">Join Now</button>
+                    </div>
+                </div>
+
+                <div class="event-card">
+                    <div class="event-image">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="event-content">
+                        <div class="event-date"><i class="fas fa-calendar"></i> Flexible</div>
+                        <h3 class="event-title">Online Learning Platform</h3>
+                        <p class="event-description">Access courses, lectures, and resources anytime, anywhere. Perfect for those with busy schedules.</p>
+                        <button class="event-btn" onclick="window.location.href='join-programs.html'">Join Now</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="programs.html" class="nav-item active"><i class="fas fa-book"></i><span>Programs</span></a>
+            <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
+            <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
+        </nav>
+    </div>
+
+    <!-- Floating Hot Events Button -->
+    <div class="floating-kizumu-btn" onclick="showActivitiesModal()" style="background: linear-gradient(135deg, #ff6b35, #e74c3c); animation: pulse-hot 1.5s infinite; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5);">
+        <i class="fas fa-fire" style="color: #fff;"></i>
+        <span style="font-weight: bold;">HOT EVENTS!</span>
+    </div>
+    <style>
+    @keyframes pulse-hot {
+        0%, 100% { transform: scale(1); box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5); }
+        50% { transform: scale(1.05); box-shadow: 0 6px 20px rgba(231, 76, 60, 0.7); }
+    }
+    </style>
+
+    <!-- Activities Modal -->
+    <div class="modal-overlay" id="activitiesModal" style="display: none;">
+        <div class="modal-content activities-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-fire" style="color: #ff6b35;"></i> Hot Events - Act Now!</h3>
+                <button class="modal-close" onclick="closeActivitiesModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="activities-modal-list">
+                <div class="activity-modal-item" onclick="window.location.href='activities.html#charity-visit'" style="border-left: 4px solid #ff6b35;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #ff6b35, #e74c3c);">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4 style="color: #e74c3c;">Kizumu Tahfiz Visit - March 1st</h4>
+                        <p>Support Quran students this Ramadan!</p>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color: #e74c3c;"></i>
+                </div>
+
+                <div class="activity-modal-item" onclick="window.location.href='activities.html#quran-competition'" style="border-left: 4px solid #9c27b0;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #9c27b0, #673ab7);">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4 style="color: #9c27b0;">Quran Competition - Feb 28th</h4>
+                        <p>Prepare to compete or come watch!</p>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color: #9c27b0;"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="window.location.href='pay.html?type=charity&donation=tuition-brothers'">
+                    <div class="activity-modal-icon" style="background: var(--primary-green);">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Tuition for Brothers</h4>
+                        <p>Support brothers' education and learning</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="script.js"></script>
+    <script>
+        // Quran Class Enrollment
+        const quranClasses = {
+            yasaruna: { name: 'Yasaruna & Juz Amma 30', level: 'Beginner', color: '#4CAF50' },
+            qadsamia: { name: 'Juz Qadsamia (Juz 28)', level: 'Intermediate', color: '#9C27B0' },
+            tabaraka: { name: 'Juz Tabaraka (Juz 29)', level: 'Intermediate', color: '#FF9800' }
+        };
+
+        function showQuranEnrollModal(classType) {
+            const classInfo = quranClasses[classType];
+            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+            const userName = userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : '';
+            
+            const modal = document.createElement('div');
+            modal.id = 'quranEnrollModal';
+            modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:99999;padding:20px;';
+            modal.innerHTML = `
+                <div style="background:white;border-radius:16px;max-width:400px;width:100%;max-height:90vh;overflow-y:auto;">
+                    <div style="background:${classInfo.color};color:white;padding:20px;border-radius:16px 16px 0 0;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <h3 style="margin:0;"><i class="fas fa-quran"></i> Enroll Now</h3>
+                            <button onclick="closeQuranModal()" style="background:none;border:none;color:white;font-size:24px;cursor:pointer;">&times;</button>
+                        </div>
+                        <p style="margin:10px 0 0 0;opacity:0.9;">${classInfo.name}</p>
+                    </div>
+                    <form onsubmit="submitQuranEnroll(event, '${classType}')" style="padding:20px;">
+                        <div style="margin-bottom:15px;">
+                            <label style="display:block;margin-bottom:5px;font-weight:600;">Full Name *</label>
+                            <input type="text" id="qeName" value="${userName}" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;">
+                        </div>
+                        <div style="margin-bottom:15px;">
+                            <label style="display:block;margin-bottom:5px;font-weight:600;">University Course *</label>
+                            <input type="text" id="qeCourse" placeholder="e.g., Medicine Year 2" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;">
+                        </div>
+                        <div style="margin-bottom:15px;">
+                            <label style="display:block;margin-bottom:5px;font-weight:600;">WhatsApp Number *</label>
+                            <input type="tel" id="qePhone" placeholder="e.g., 0771234567" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;">
+                        </div>
+                        <button type="submit" style="width:100%;padding:15px;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border:none;border-radius:8px;font-size:16px;cursor:pointer;">
+                            <i class="fab fa-whatsapp"></i> Enroll via WhatsApp
+                        </button>
+                    </form>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.onclick = (e) => { if(e.target === modal) closeQuranModal(); };
+        }
+
+        function closeQuranModal() {
+            const modal = document.getElementById('quranEnrollModal');
+            if(modal) modal.remove();
+        }
+
+        function submitQuranEnroll(e, classType) {
+            e.preventDefault();
+            const classInfo = quranClasses[classType];
+            const name = document.getElementById('qeName').value;
+            const course = document.getElementById('qeCourse').value;
+            const phone = document.getElementById('qePhone').value;
+
+            const message = `*QURAN CLASS ENROLLMENT*
+
+*Class:* ${classInfo.name}
+*Level:* ${classInfo.level}
+
+*Student Details:*
+Name: ${name}
+Course: ${course}
+WhatsApp: ${phone}
+
+Assalamu Alaikum, I would like to enroll in the ${classInfo.name} class. Please confirm my enrollment.
+
+Jazakallahu Khairan`;
+
+            const whatsappLink = `https://wa.me/256777351331?text=${encodeURIComponent(message)}`;
+            window.open(whatsappLink, '_blank');
+            closeQuranModal();
+            alert('Enrollment sent! Please complete sending the WhatsApp message.');
+        }
+    </script>
+</body>
+</html>
+
+
+

@@ -1,0 +1,27 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme for KIUMA -->
+    <style name="Theme.KIUMA2026" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Primary brand color - Green -->
+        <item name="colorPrimary">@color/kiuma_green</item>
+        <item name="colorPrimaryVariant">@color/kiuma_green_dark</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <!-- Secondary brand color -->
+        <item name="colorSecondary">@color/kiuma_green_light</item>
+        <item name="colorSecondaryVariant">@color/kiuma_green</item>
+        <item name="colorOnSecondary">@color/black</item>
+        <!-- Background colors -->
+        <item name="android:colorBackground">@color/kiuma_dark_bg</item>
+        <item name="colorSurface">@color/kiuma_dark_surface</item>
+        <!-- Status bar color -->
+        <item name="android:statusBarColor">@color/kiuma_dark_bg</item>
+        <item name="android:navigationBarColor">@color/kiuma_dark_bg</item>
+        <!-- No window title -->
+        <item name="windowNoTitle">true</item>
+        <item name="windowActionBar">false</item>
+    </style>
+
+    <!-- Splash screen theme -->
+    <style name="Theme.KIUMA2026.Splash" parent="Theme.KIUMA2026">
+        <item name="android:windowBackground">@color/kiuma_dark_bg</item>
+    </style>
+</resources>

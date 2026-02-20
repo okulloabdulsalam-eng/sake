@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment - KIUMA</title>
+    <script>
+        (function() {
+            var t;
+            try { t = localStorage.getItem('themePreference'); } catch(e) {}
+            if (t === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    <!-- Font Awesome: CDN primary, local fallback -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="fonts/fontawesome.min.css">
+</head>
+<body>
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="counselling.html" class="nav-link"><i class="fas fa-hands-helping"></i> Counselling</a></li>
+            <li><a href="library.html" class="nav-link"><i class="fas fa-book-open"></i> Library</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="media-settings.html" class="nav-link"><i class="fas fa-sliders-h"></i> Media Settings</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link active"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <div class="logo-container">
+                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
+                    <svg class="header-logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+                        <circle cx="100" cy="100" r="95" fill="none" stroke="#4CAF50" stroke-width="4"/>
+                        <path id="topArc" d="M 20,100 A 80,80 0 0,1 180,100" fill="none"/>
+                        <text fill="#4CAF50" font-size="9" font-weight="bold" font-family="Arial, sans-serif" letter-spacing="0.5">
+                            <textPath href="#topArc" startOffset="50%" text-anchor="middle">KAMPALA INTERNATIONAL UNIVERSITY</textPath>
+                        </text>
+                        <path id="bottomArc" d="M 180,100 A 80,80 0 0,1 20,100" fill="none"/>
+                        <text fill="#4CAF50" font-size="9" font-weight="bold" font-family="Arial, sans-serif" letter-spacing="0.5">
+                            <textPath href="#bottomArc" startOffset="50%" text-anchor="middle">MUSLIM ASSOCIATION</textPath>
+                        </text>
+                        <path d="M 50,75 L 50,115 L 58,115 L 58,105 L 63,100 L 58,95 L 58,85 Z" fill="none" stroke="#4CAF50" stroke-width="2"/>
+                        <circle cx="56.5" cy="100" r="2" fill="#4CAF50"/>
+                        <rect x="88" y="65" width="10" height="45" fill="none" stroke="#4CAF50" stroke-width="2"/>
+                        <rect x="90" y="75" width="6" height="2" fill="#4CAF50"/>
+                        <rect x="90" y="85" width="6" height="2" fill="#4CAF50"/>
+                        <rect x="90" y="95" width="6" height="2" fill="#4CAF50"/>
+                        <polygon points="93,60 90,65 96,65" fill="#4CAF50"/>
+                        <path d="M 140,92 A 12,12 0 0,1 128,92 A 10,10 0 0,0 140,92 Z" fill="#4CAF50"/>
+                        <path d="M 130,88 L 131.5,92 L 136,92 L 132.5,94.5 L 134,99 L 130,96.5 L 126,99 L 127.5,94.5 L 124,92 L 128.5,92 Z" fill="#4CAF50"/>
+                        <text x="100" y="145" font-size="22" font-weight="bold" fill="#4CAF50" text-anchor="middle" font-family="Arial, sans-serif" letter-spacing="2">KIUMA</text>
+                    </svg>
+                </div>
+                <button class="notifications-btn" id="notificationsBtn">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">3</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Welcome Section -->
+            <section class="welcome-section">
+                <div>
+                    <h2 class="greeting">
+                        <a href="about.html">KIUMA</a>
+                    </h2>
+                </div>
+                <button class="account-icon-btn" id="accountIconBtn" onclick="toggleAccountModal()">
+                    <i class="fas fa-user-circle" id="accountIcon"></i>
+                </button>
+            </section>
+
+            <section class="page-header">
+                <h2 class="page-title">Payment</h2>
+            </section>
+
+            <style>
+                .pay-card-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px; }
+                .pay-card { border-radius: 14px; padding: 18px 14px; text-align: center; cursor: pointer; border: 2px solid #e8e8e8; background: white; transition: all 0.25s; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+                .pay-card:active { transform: scale(0.97); }
+                .pay-card.active { border-color: var(--primary-green); background: #f0faf2; box-shadow: 0 4px 16px rgba(76,175,80,0.15); }
+                .pay-card-icon { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; }
+                .pay-card-label { font-size: 13px; font-weight: 700; color: #333; line-height: 1.3; }
+                .pay-card-desc { font-size: 11px; color: #999; line-height: 1.3; }
+                .pay-card.full-width { grid-column: 1 / -1; flex-direction: row; gap: 14px; text-align: left; padding: 16px 20px; }
+                .pay-card.full-width .pay-card-text { flex: 1; }
+            </style>
+
+            <section class="page-content">
+                <!-- Payment Type Selection -->
+                <div class="pay-card-grid">
+                    <div class="pay-card" data-type="semester" onclick="selectPaymentType('semester')">
+                        <div class="pay-card-icon" style="background:linear-gradient(135deg,#4CAF50,#2E7D32);"><i class="fas fa-calendar-check"></i></div>
+                        <div class="pay-card-label">Semester</div>
+                        <div class="pay-card-desc">Semester subscription</div>
+                    </div>
+                    <div class="pay-card" data-type="monthly" onclick="selectPaymentType('monthly')">
+                        <div class="pay-card-icon" style="background:linear-gradient(135deg,#2196F3,#1565C0);"><i class="fas fa-sync-alt"></i></div>
+                        <div class="pay-card-label">Monthly</div>
+                        <div class="pay-card-desc">Monthly subscription</div>
+                    </div>
+                    <div class="pay-card" data-type="zakat" onclick="selectPaymentType('zakat')">
+                        <div class="pay-card-icon" style="background:linear-gradient(135deg,#FF9800,#E65100);"><i class="fas fa-hand-holding-usd"></i></div>
+                        <div class="pay-card-label">Zakat</div>
+                        <div class="pay-card-desc">Calculate & pay Zakat</div>
+                    </div>
+                    <div class="pay-card" data-type="charity" onclick="selectPaymentType('charity')">
+                        <div class="pay-card-icon" style="background:linear-gradient(135deg,#E91E63,#C2185B);"><i class="fas fa-heart"></i></div>
+                        <div class="pay-card-label">Charity</div>
+                        <div class="pay-card-desc">Support a cause</div>
+                    </div>
+                    <div class="pay-card full-width" data-type="donate" onclick="selectPaymentType('donate')">
+                        <div class="pay-card-icon" style="background:linear-gradient(135deg,#9C27B0,#6A1B9A);"><i class="fas fa-gift"></i></div>
+                        <div class="pay-card-text">
+                            <div class="pay-card-label">General Donation</div>
+                            <div class="pay-card-desc">Make a general donation to KIUMA</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Membership Plans Section (shown when Semester or Monthly Subscription is selected) -->
+                <div id="membershipPlans" style="display: none;">
+                    <h3 class="section-title">Membership Plans</h3>
+                    <div class="membership-plans-grid">
+                        <!-- Undergraduate Plan -->
+                        <div class="membership-plan-card">
+                            <h4 class="plan-title">Undergraduate</h4>
+                            <div class="plan-price">
+                                <span class="price-amount">10,000</span>
+                                <span class="price-currency">UGX</span>
+                            </div>
+                            <p class="plan-frequency">Per Semester (and above)</p>
+                            <button class="plan-button" onclick="selectPlan('undergraduate', 10000)">Pay Now</button>
+                        </div>
+
+                        <!-- Postgraduate Plan -->
+                        <div class="membership-plan-card">
+                            <h4 class="plan-title">Postgraduate</h4>
+                            <div class="plan-price">
+                                <span class="price-amount">20,000</span>
+                                <span class="price-currency">UGX</span>
+                            </div>
+                            <p class="plan-frequency">Per Semester (and above)</p>
+                            <button class="plan-button" onclick="selectPlan('postgraduate', 20000)">Pay Now</button>
+                        </div>
+
+                        <!-- University Staff Plan -->
+                        <div class="membership-plan-card">
+                            <h4 class="plan-title">University Staff</h4>
+                            <div class="plan-price">
+                                <span class="price-amount">50,000</span>
+                                <span class="price-currency">UGX</span>
+                            </div>
+                            <p class="plan-frequency">Per Semester (and above)</p>
+                            <button class="plan-button" onclick="selectPlan('university-staff', 50000)">Pay Now</button>
+                        </div>
+
+                        <!-- Elders Plan -->
+                        <div class="membership-plan-card">
+                            <h4 class="plan-title">Elders</h4>
+                            <div class="plan-price">
+                                <span class="price-amount">50,000</span>
+                                <span class="price-currency">UGX</span>
+                            </div>
+                            <p class="plan-frequency">Per Semester (and above)</p>
+                            <button class="plan-button" onclick="selectPlan('elders', 50000)">Pay Now</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Form (shown when a plan or other payment type is selected) -->
+                <div id="paymentForm" style="display: none;">
+                    <h3 class="section-title">Complete Payment</h3>
+                    
+                    <div class="info-card" id="selectedPlanInfo" style="margin-bottom: 20px; display: none;">
+                        <h4 id="selectedPlanName"></h4>
+                        <p><strong>Amount:</strong> <span id="selectedAmount"></span> UGX</p>
+                        <p><strong>Type:</strong> <span id="selectedType"></span></p>
+                    </div>
+
+                    <!-- Donor Name (for Charity and Donate) -->
+                    <div class="form-group" id="donorNameGroup" style="display: none;">
+                        <label class="form-label">Your Name <span style="color: #888; font-weight: normal;">(optional)</span></label>
+                        <input type="text" class="form-input" id="donorName" placeholder="Enter your name">
+                    </div>
+
+                    <!-- Donation Type Dropdown (for Charity and Donate) -->
+                    <div class="form-group" id="donationTypeGroup" style="display: none;">
+                        <label class="form-label">Donation Type</label>
+                        <select class="form-input" id="donationType" onchange="handleDonationTypeChange(this.value)">
+                            <option value="">Select donation type</option>
+                            <option value="general">General Donation</option>
+                            <option value="zakat">Zakat</option>
+                            <option value="sadaqah">Sadaqah</option>
+                            <option value="iftar">Iftar Sponsorship</option>
+                            <option value="education">Education Fund</option>
+                            <option value="mosque">Mosque Building Fund</option>
+                            <option value="kizumu-tahfiz-visit">Kizumu Tahfiz Charity Visit</option>
+                            <option value="tuition-brothers">Tuition for Brothers</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <!-- Reason Field (for Charity and Donate) -->
+                    <div class="form-group" id="reasonGroup" style="display: none;">
+                        <label class="form-label">Reason for Donation</label>
+                        <textarea class="form-input" id="donationReason" rows="3" placeholder="Please specify the reason for your donation..."></textarea>
+                    </div>
+
+                    <!-- Amount Input (for Zakat, Charity, Donate) -->
+                    <div class="form-group" id="customAmountGroup" style="display: none;">
+                        <label class="form-label">Amount (UGX)</label>
+                        <input type="number" class="form-input" id="amount" placeholder="Enter amount" min="1">
+                    </div>
+
+                    <!-- WhatsApp Submit Button for Donations -->
+                    <div id="donationWhatsappBtn" style="display: none; margin: 20px 0;">
+                        <button type="button" class="btn" onclick="submitDonationViaWhatsApp()" style="width: 100%; padding: 15px 30px; background: linear-gradient(135deg, #25D366, #128C7E); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                            <i class="fab fa-whatsapp"></i> Submit Donation via WhatsApp
+                        </button>
+                    </div>
+
+                    <!-- Payment Methods Dropdowns -->
+                    <div class="form-group">
+                        <label class="form-label" style="margin-bottom: 15px; font-size: 18px; font-weight: 600;">Recommended Payment Methods</label>
+                        
+                        <style>
+                            .payment-dropdown {
+                                border: 2px solid #e0e0e0;
+                                border-radius: 12px;
+                                margin-bottom: 12px;
+                                overflow: hidden;
+                                transition: border-color 0.3s;
+                            }
+                            .payment-dropdown:hover {
+                                border-color: var(--primary-green);
+                            }
+                            .payment-dropdown-header {
+                                display: flex;
+                                align-items: center;
+                                justify-content: space-between;
+                                padding: 15px 18px;
+                                background: #f9f9f9;
+                                cursor: pointer;
+                                user-select: none;
+                                transition: background 0.3s;
+                            }
+                            .payment-dropdown-header:hover {
+                                background: #f0f0f0;
+                            }
+                            .payment-dropdown-header .header-left {
+                                display: flex;
+                                align-items: center;
+                                gap: 12px;
+                            }
+                            .payment-dropdown-header .header-left i {
+                                font-size: 1.5rem;
+                                width: 30px;
+                                text-align: center;
+                            }
+                            .payment-dropdown-header h4 {
+                                margin: 0;
+                                font-size: 1rem;
+                                color: var(--dark-gray);
+                            }
+                            .payment-dropdown-header .chevron {
+                                transition: transform 0.3s;
+                                color: #888;
+                            }
+                            .payment-dropdown.open .chevron {
+                                transform: rotate(180deg);
+                            }
+                            .payment-dropdown-content {
+                                max-height: 0;
+                                overflow: hidden;
+                                transition: max-height 0.3s ease-out;
+                                background: white;
+                            }
+                            .payment-dropdown.open .payment-dropdown-content {
+                                max-height: 300px;
+                            }
+                            .payment-dropdown-inner {
+                                padding: 15px 18px;
+                                border-top: 1px solid #e0e0e0;
+                            }
+                            .payment-detail-row {
+                                display: flex;
+                                align-items: center;
+                                justify-content: space-between;
+                                padding: 8px 0;
+                                border-bottom: 1px solid #f0f0f0;
+                            }
+                            .payment-detail-row:last-child {
+                                border-bottom: none;
+                            }
+                            .payment-detail-row .detail-label {
+                                color: #666;
+                                font-size: 0.9rem;
+                            }
+                            .payment-detail-row .detail-value {
+                                font-weight: 600;
+                                color: var(--dark-gray);
+                                display: flex;
+                                align-items: center;
+                                gap: 8px;
+                            }
+                            .payment-detail-row .copy-btn {
+                                padding: 5px 8px;
+                                border: none;
+                                background: #e8f5e9;
+                                color: var(--primary-green);
+                                border-radius: 5px;
+                                cursor: pointer;
+                                font-size: 0.8rem;
+                            }
+                            .payment-detail-row .copy-btn:hover {
+                                background: var(--primary-green);
+                                color: white;
+                            }
+                            .payment-ref-note {
+                                margin-top: 10px;
+                                padding: 10px;
+                                background: #fff3e0;
+                                border-radius: 8px;
+                                font-size: 0.85rem;
+                                color: #e65100;
+                            }
+                        </style>
+                        
+                        <!-- Kizumu Visit Direct Payment - Special -->
+                        <div class="payment-dropdown" id="kizumuPaymentOption" onclick="togglePaymentDropdown(this)" style="border: 2px solid #E91E63; display: none;">
+                            <div class="payment-dropdown-header" style="background: linear-gradient(135deg, #FCE4EC, #F8BBD9);">
+                                <div class="header-left">
+                                    <i class="fas fa-heart" style="color: #E91E63;"></i>
+                                    <h4 style="color: #C2185B;">Kizumu Tahfiz Visit - Direct Payment</h4>
+                                </div>
+                                <i class="fas fa-chevron-down chevron" style="color: #E91E63;"></i>
+                            </div>
+                            <div class="payment-dropdown-content">
+                                <div class="payment-dropdown-inner" style="background: #FFF0F5;">
+                                    <div style="padding: 10px; background: #E91E63; color: white; border-radius: 8px; margin-bottom: 15px; text-align: center;">
+                                        <i class="fas fa-star"></i> <strong>RECOMMENDED</strong> - Send directly to support Kizumu Tahfiz students!
+                                    </div>
+                                    <div class="payment-detail-row">
+                                        <span class="detail-label">Account Name</span>
+                                        <span class="detail-value">
+                                            Nakamaanya Kurusuumu
+                                            <button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('Nakamaanya Kurusuumu')"><i class="fas fa-copy"></i></button>
+                                        </span>
+                                    </div>
+                                    <div class="payment-detail-row">
+                                        <span class="detail-label">Phone Number</span>
+                                        <span class="detail-value">
+                                            0742890067
+                                            <button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('0742890067')"><i class="fas fa-copy"></i></button>
+                                        </span>
+                                    </div>
+                                    <div class="payment-ref-note" style="background: #FCE4EC; color: #C2185B;">
+                                        <i class="fas fa-heart"></i> Your donation will directly support Quran students at Kizumu Tahfiz this Ramadan!
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- MTN Mobile Money Dropdown -->
+                        <div class="payment-dropdown" onclick="togglePaymentDropdown(this)">
+                            <div class="payment-dropdown-header">
+                                <div class="header-left">
+                                    <i class="fas fa-mobile-alt" style="color: #FFCC00;"></i>
+                                    <h4>MTN Mobile Money</h4>
+                                </div>
+                                <i class="fas fa-chevron-down chevron"></i>
+                            </div>
+                            <div class="payment-dropdown-content">
+                                <div class="payment-dropdown-inner">
+                                    <div class="payment-detail-row">
+                                        <span class="detail-label">Account Name</span>
+                                        <span class="detail-value">
+                                            KIUMA Finance
+                                            <button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('KIUMA Finance')"><i class="fas fa-copy"></i></button>
+                                        </span>
+                                    </div>
+                                    <div class="payment-detail-row">
+                                        <span class="detail-label">Phone Number</span>
+                                        <span class="detail-value">
+                                            +256 XXX XXX XXX
+                                            <button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('+256 XXX XXX XXX')"><i class="fas fa-copy"></i></button>
+                                        </span>
+                                    </div>
+                                    <div class="payment-ref-note">
+                                        <i class="fas fa-info-circle"></i> Use your name or student ID as reference
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Airtel Money Dropdown -->
+                        <div class="payment-dropdown" onclick="togglePaymentDropdown(this)">
+                            <div class="payment-dropdown-header">
+                                <div class="header-left">
+                                    <i class="fas fa-mobile-alt" style="color: #E60012;"></i>
+                                    <h4>Airtel Money</h4>
+                                </div>
+                                <i class="fas fa-chevron-down chevron"></i>
+                            </div>
+                            <div class="payment-dropdown-content">
+                                <div class="payment-dropdown-inner">
+                                    <div class="payment-detail-row">
+                                        <span class="detail-label">Account Name</span>
+                                        <span class="detail-value">
+                                            KIUMA Finance
+                                            <button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('KIUMA Finance')"><i class="fas fa-copy"></i></button>
+                                        </span>
+                                    </div>
+                                    <div class="payment-detail-row">
+                                        <span class="detail-label">Phone Number</span>
+                                        <span class="detail-value">
+                                            +256 XXX XXX XXX
+                                            <button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('+256 XXX XXX XXX')"><i class="fas fa-copy"></i></button>
+                                        </span>
+                                    </div>
+                                    <div class="payment-ref-note">
+                                        <i class="fas fa-info-circle"></i> Use your name or student ID as reference
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bank Account Dropdown -->
+                        <div class="payment-dropdown" onclick="togglePaymentDropdown(this)">
+                            <div class="payment-dropdown-header">
+                                <div class="header-left">
+                                    <i class="fas fa-university" style="color: var(--primary-green);"></i>
+                                    <h4>Bank Transfer</h4>
+                                </div>
+                                <i class="fas fa-chevron-down chevron"></i>
+                            </div>
+                            <div class="payment-dropdown-content">
+                                <div class="payment-dropdown-inner">
+                                    <div class="payment-detail-row">
+                                        <span class="detail-label">Bank Name</span>
+                                        <span class="detail-value">
+                                            [Bank Name]
+                                            <button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('[Bank Name]')"><i class="fas fa-copy"></i></button>
+                                        </span>
+                                    </div>
+                                    <div class="payment-detail-row">
+                                        <span class="detail-label">Account Name</span>
+                                        <span class="detail-value">
+                                            KIUMA Finance
+                                            <button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('KIUMA Finance')"><i class="fas fa-copy"></i></button>
+                                        </span>
+                                    </div>
+                                    <div class="payment-detail-row">
+                                        <span class="detail-label">Account Number</span>
+                                        <span class="detail-value">
+                                            XXXXXXXXXX
+                                            <button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('XXXXXXXXXX')"><i class="fas fa-copy"></i></button>
+                                        </span>
+                                    </div>
+                                    <div class="payment-detail-row">
+                                        <span class="detail-label">Branch</span>
+                                        <span class="detail-value">
+                                            [Branch Name]
+                                            <button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('[Branch Name]')"><i class="fas fa-copy"></i></button>
+                                        </span>
+                                    </div>
+                                    <div class="payment-ref-note">
+                                        <i class="fas fa-info-circle"></i> Use your name or student ID as reference
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Instructions -->
+                    <div class="info-card" style="background: #FFF3E0; margin-top: 20px;">
+                        <h4 style="color: #F57C00; margin-bottom: 10px;">
+                            <i class="fas fa-info-circle"></i> Payment Instructions
+                        </h4>
+                        <ol style="margin: 0; padding-left: 20px; color: var(--dark-gray); line-height: 1.8;">
+                            <li>Select your payment type and amount above</li>
+                            <li>Choose your preferred payment method (MTN, Airtel, or Bank)</li>
+                            <li>Copy the account details and make your payment</li>
+                            <li>Use your name or student ID as the payment reference</li>
+                            <li>Submit your payment details via WhatsApp below</li>
+                        </ol>
+                    </div>
+
+                    <!-- Make Payment Button -->
+                    <button class="btn" onclick="submitPaymentViaWhatsApp()" style="width: 100%; padding: 15px 30px; background: linear-gradient(135deg, #25D366, #128C7E); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                        <i class="fab fa-whatsapp"></i> Submit Payment Details via WhatsApp
+                    </button>
+
+                    <!-- Security Notice -->
+                    <div class="info-card" style="margin-top: 20px; background: #E8F5E9;">
+                        <p style="font-size: 14px; color: var(--dark-green); margin: 0;">
+                            <i class="fas fa-shield-alt"></i> Your payment is secure and encrypted. We use industry-standard security measures to protect your information.
+                        </p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
+            <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
+            <a href="pay.html" class="nav-item active"><i class="fas fa-credit-card"></i><span>Pay</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
+        </nav>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="script.js"></script>
+    <script>
+        let selectedPaymentType = '';
+        let selectedPlan = null;
+        let selectedAmount = 0;
+
+        // Autofill donor name from login data
+        function autofillDonorName() {
+            try {
+                const userData = localStorage.getItem('userData') || localStorage.getItem('kiuma_user');
+                if (userData) {
+                    const user = JSON.parse(userData);
+                    const name = user.firstName && user.lastName 
+                        ? user.firstName + ' ' + user.lastName 
+                        : (user.name || user.displayName || '');
+                    if (name) {
+                        document.getElementById('donorName').value = name;
+                    }
+                }
+            } catch (e) {
+                console.log('Could not autofill donor name:', e);
+            }
+        }
+
+        // Check URL parameters for Kizumu visit
+        window.addEventListener('DOMContentLoaded', function() {
+            // Autofill donor name
+            autofillDonorName();
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const type = urlParams.get('type');
+            const donation = urlParams.get('donation');
+            
+            if (type === 'charity' && donation) {
+                selectPaymentType('charity');
+                setTimeout(() => {
+                    const donationTypeEl = document.getElementById('donationType');
+                    if (donationTypeEl) {
+                        donationTypeEl.value = donation;
+                        // Trigger the change handler to show Kizumu payment option if applicable
+                        handleDonationTypeChange(donation);
+                    }
+                }, 300);
+            }
+        });
+
+        function selectPaymentType(type) {
+            selectedPaymentType = type;
+            
+            // Update UI
+            document.querySelectorAll('.pay-card').forEach(item => {
+                item.classList.remove('active');
+            });
+            const sel = document.querySelector(`.pay-card[data-type="${type}"]`);
+            if (sel) sel.classList.add('active');
+
+            // Show/hide sections
+            const membershipPlans = document.getElementById('membershipPlans');
+            const paymentForm = document.getElementById('paymentForm');
+            const customAmountGroup = document.getElementById('customAmountGroup');
+            const selectedPlanInfo = document.getElementById('selectedPlanInfo');
+
+            if (type === 'semester' || type === 'monthly') {
+                membershipPlans.style.display = 'block';
+                paymentForm.style.display = 'none';
+                selectedPlan = null;
+            } else if (type === 'zakat') {
+                // Redirect to zakat form
+                window.location.href = 'zakat-form.html';
+            } else {
+                membershipPlans.style.display = 'none';
+                paymentForm.style.display = 'block';
+                customAmountGroup.style.display = 'block';
+                selectedPlanInfo.style.display = 'none';
+                
+                // Show donation type and reason fields for Charity and Donate
+                const donationTypeGroup = document.getElementById('donationTypeGroup');
+                const reasonGroup = document.getElementById('reasonGroup');
+                
+                if (type === 'charity' || type === 'donate') {
+                    document.getElementById('donorNameGroup').style.display = 'block';
+                    donationTypeGroup.style.display = 'block';
+                    reasonGroup.style.display = 'block';
+                    document.getElementById('donationWhatsappBtn').style.display = 'block';
+                } else {
+                    document.getElementById('donorNameGroup').style.display = 'none';
+                    donationTypeGroup.style.display = 'none';
+                    reasonGroup.style.display = 'none';
+                    document.getElementById('donationWhatsappBtn').style.display = 'none';
+                }
+                
+                // Set payment type info
+                const typeNames = {
+                    'charity': 'Charity',
+                    'donate': 'Donation'
+                };
+                document.getElementById('selectedType').textContent = typeNames[type] || type;
+            }
+        }
+
+        function selectPlan(planName, amount) {
+            // Redirect to subscription form with plan details
+            const subscriptionType = selectedPaymentType || 'semester';
+            window.location.href = `subscription-form.html?plan=${planName}&amount=${amount}&type=${subscriptionType}`;
+        }
+
+        function processPayment() {
+            if (!selectedPaymentType) {
+                alert('Please select a payment type first');
+                return;
+            }
+
+            let amount = selectedAmount;
+            if (!amount) {
+                amount = document.getElementById('amount').value;
+                if (!amount || amount <= 0) {
+                    alert('Please enter a valid amount');
+                    return;
+                }
+            }
+
+            // Payment confirmation
+            const paymentTypeNames = {
+                'semester': 'Semester Subscription',
+                'monthly': 'Monthly Subscription',
+                'zakat': 'Zakat',
+                'charity': 'Charity',
+                'donate': 'Donation'
+            };
+
+            alert(`Payment Instructions:\n\nAmount: ${amount.toLocaleString()} UGX\nType: ${paymentTypeNames[selectedPaymentType]}\n\nPlease make payment using one of the recommended methods above.\n\nAfter payment, contact the Finance Minister via WhatsApp to confirm your deposit.`);
+        }
+
+        function submitPaymentViaWhatsApp() {
+            if (!selectedPaymentType) {
+                alert('Please select a payment type first');
+                return;
+            }
+
+            let amount = selectedAmount;
+            if (!amount) {
+                amount = document.getElementById('amount').value;
+                if (!amount || amount <= 0) {
+                    alert('Please enter a valid amount');
+                    return;
+                }
+            }
+
+            // Get user data if logged in
+            const userData = localStorage.getItem('userData');
+            let userName = 'Not provided';
+            let userEmail = '';
+            let userPhone = '';
+            
+            if (userData) {
+                const user = JSON.parse(userData);
+                userName = (user.firstName && user.lastName) 
+                    ? user.firstName + ' ' + user.lastName 
+                    : (user.firstName || user.name || 'Member');
+                userEmail = user.email || '';
+                userPhone = user.phone || user.phoneNumber || '';
+            }
+
+            // Payment type names
+            const paymentTypeNames = {
+                'semester': 'Semester Subscription',
+                'monthly': 'Monthly Subscription',
+                'zakat': 'Zakat',
+                'charity': 'Charity',
+                'donate': 'Donation'
+            };
+
+            // Get donation details if applicable
+            let donationType = '';
+            let donationReason = '';
+            if (selectedPaymentType === 'charity' || selectedPaymentType === 'donate') {
+                const donorNameEl = document.getElementById('donorName');
+                if (donorNameEl && donorNameEl.value.trim()) {
+                    userName = donorNameEl.value.trim();
+                }
+                const donationTypeEl = document.getElementById('donationType');
+                if (donationTypeEl) {
+                    donationType = donationTypeEl.options[donationTypeEl.selectedIndex].text || '';
+                }
+                const donationReasonEl = document.getElementById('donationReason');
+                if (donationReasonEl) {
+                    donationReason = donationReasonEl.value.trim();
+                }
+            }
+
+            // Build WhatsApp message
+            let message = `*KIUMA Payment Submission*\n\n`;
+            message += `💳 *Payment Type:* ${paymentTypeNames[selectedPaymentType] || selectedPaymentType}\n`;
+            message += `💰 *Amount:* ${parseInt(amount).toLocaleString()} UGX\n`;
+            message += `👤 *Name:* ${userName}\n`;
+            
+            if (userEmail) {
+                message += `📧 *Email:* ${userEmail}\n`;
+            }
+            if (userPhone) {
+                message += `📱 *Phone:* ${userPhone}\n`;
+            }
+            if (donationType) {
+                message += `🏷️ *Category:* ${donationType}\n`;
+            }
+            if (donationReason) {
+                message += `📝 *Reason:* ${donationReason}\n`;
+            }
+            
+            message += `\n⏰ *Date:* ${new Date().toLocaleDateString()}\n`;
+            message += `\n_Submitted via KIUMA App_\n`;
+            message += `\n*Please confirm payment method used and transaction ID after making deposit.*`;
+
+            // Encode message for WhatsApp URL
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${AMIR_FINANCE_WHATSAPP}?text=${encodedMessage}`;
+
+            // Open WhatsApp
+            window.open(whatsappUrl, '_blank');
+        }
+
+        // Amir Finance WhatsApp number
+        const AMIR_FINANCE_WHATSAPP = '256757591824';
+
+        function submitDonationViaWhatsApp() {
+            const donorName = document.getElementById('donorName').value.trim() || 'Anonymous';
+            const donationType = document.getElementById('donationType').value;
+            const donationReason = document.getElementById('donationReason').value.trim();
+            const amount = document.getElementById('amount').value;
+
+            // Validation
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid amount');
+                return;
+            }
+
+            // Get donation type label
+            const donationTypeSelect = document.getElementById('donationType');
+            const donationTypeLabel = donationTypeSelect.options[donationTypeSelect.selectedIndex].text || 'Not specified';
+
+            // Build WhatsApp message
+            let message = `*KIUMA Donation Submission*\n\n`;
+            message += `👤 *Name:* ${donorName}\n`;
+            message += `💰 *Amount:* ${parseInt(amount).toLocaleString()} UGX\n`;
+            message += `📋 *Type:* ${selectedPaymentType === 'charity' ? 'Charity' : 'Donation'}\n`;
+            message += `🏷️ *Category:* ${donationTypeLabel}\n`;
+            
+            if (donationReason) {
+                message += `📝 *Reason:* ${donationReason}\n`;
+            }
+            
+            message += `\n_Submitted via KIUMA App_`;
+
+            // Encode message for WhatsApp URL
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${AMIR_FINANCE_WHATSAPP}?text=${encodedMessage}`;
+
+            // Open WhatsApp
+            window.open(whatsappUrl, '_blank');
+        }
+
+        function handleDonationTypeChange(value) {
+            const kizumuPaymentOption = document.getElementById('kizumuPaymentOption');
+            if (value === 'kizumu-tahfiz-visit') {
+                kizumuPaymentOption.style.display = 'block';
+                // Auto-expand the Kizumu payment option
+                kizumuPaymentOption.classList.add('open');
+            } else {
+                kizumuPaymentOption.style.display = 'none';
+                kizumuPaymentOption.classList.remove('open');
+            }
+        }
+
+        function togglePaymentDropdown(element) {
+            // Close other dropdowns
+            document.querySelectorAll('.payment-dropdown.open').forEach(dropdown => {
+                if (dropdown !== element) {
+                    dropdown.classList.remove('open');
+                }
+            });
+            // Toggle current dropdown
+            element.classList.toggle('open');
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                // Show feedback
+                const btn = event.target.closest('.copy-btn');
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i>';
+                btn.style.background = 'var(--primary-green)';
+                btn.style.color = 'white';
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.style.background = '';
+                    btn.style.color = '';
+                }, 2000);
+            }).catch(function(err) {
+                alert('Failed to copy. Please copy manually: ' + text);
+            });
+        }
+    </script>
+
+    <!-- Floating Hot Events Button -->
+    <div class="floating-kizumu-btn" onclick="showActivitiesModal()" style="background: linear-gradient(135deg, #ff6b35, #e74c3c); animation: pulse-hot 1.5s infinite; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5);">
+        <i class="fas fa-fire" style="color: #fff;"></i>
+        <span style="font-weight: bold;">HOT EVENTS!</span>
+    </div>
+    <style>
+    @keyframes pulse-hot {
+        0%, 100% { transform: scale(1); box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5); }
+        50% { transform: scale(1.05); box-shadow: 0 6px 20px rgba(231, 76, 60, 0.7); }
+    }
+    </style>
+
+    <!-- Activities Modal -->
+    <div class="modal-overlay" id="activitiesModal" style="display: none;">
+        <div class="modal-content activities-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-fire" style="color: #ff6b35;"></i> Hot Events - Act Now!</h3>
+                <button class="modal-close" onclick="closeActivitiesModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="activities-modal-list">
+                <div class="activity-modal-item" onclick="window.location.href='activities.html#charity-visit'" style="border-left: 4px solid #ff6b35;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #ff6b35, #e74c3c);">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4 style="color: #e74c3c;">Kizumu Tahfiz Visit - March 1st</h4>
+                        <p>Support Quran students this Ramadan!</p>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color: #e74c3c;"></i>
+                </div>
+
+                <div class="activity-modal-item" onclick="window.location.href='activities.html#quran-competition'" style="border-left: 4px solid #9c27b0;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #9c27b0, #673ab7);">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4 style="color: #9c27b0;">Quran Competition - Feb 28th</h4>
+                        <p>Prepare to compete or come watch!</p>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color: #9c27b0;"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="window.location.href='pay.html?type=charity&donation=tuition-brothers'">
+                    <div class="activity-modal-icon" style="background: var(--primary-green);">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Tuition for Brothers</h4>
+                        <p>Support brothers' education and learning</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

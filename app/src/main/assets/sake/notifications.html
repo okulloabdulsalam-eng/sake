@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications - KIUMA</title>
+    <script>
+        (function() {
+            var t;
+            try { t = localStorage.getItem('themePreference'); } catch(e) {}
+            if (t === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    <!-- Font Awesome: CDN primary, local fallback -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="fonts/fontawesome.min.css">
+</head>
+<body>
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="counselling.html" class="nav-link"><i class="fas fa-hands-helping"></i> Counselling</a></li>
+            <li><a href="library.html" class="nav-link"><i class="fas fa-book-open"></i> Library</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="media-settings.html" class="nav-link"><i class="fas fa-sliders-h"></i> Media Settings</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link active"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <div class="logo-container">
+                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
+                    <svg class="header-logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+                        <circle cx="100" cy="100" r="95" fill="none" stroke="#4CAF50" stroke-width="4"/>
+                        <path id="topArc" d="M 20,100 A 80,80 0 0,1 180,100" fill="none"/>
+                        <text fill="#4CAF50" font-size="9" font-weight="bold" font-family="Arial, sans-serif" letter-spacing="0.5">
+                            <textPath href="#topArc" startOffset="50%" text-anchor="middle">KAMPALA INTERNATIONAL UNIVERSITY</textPath>
+                        </text>
+                        <path id="bottomArc" d="M 180,100 A 80,80 0 0,1 20,100" fill="none"/>
+                        <text fill="#4CAF50" font-size="9" font-weight="bold" font-family="Arial, sans-serif" letter-spacing="0.5">
+                            <textPath href="#bottomArc" startOffset="50%" text-anchor="middle">MUSLIM ASSOCIATION</textPath>
+                        </text>
+                        <path d="M 50,75 L 50,115 L 58,115 L 58,105 L 63,100 L 58,95 L 58,85 Z" fill="none" stroke="#4CAF50" stroke-width="2"/>
+                        <circle cx="56.5" cy="100" r="2" fill="#4CAF50"/>
+                        <rect x="88" y="65" width="10" height="45" fill="none" stroke="#4CAF50" stroke-width="2"/>
+                        <rect x="90" y="75" width="6" height="2" fill="#4CAF50"/>
+                        <rect x="90" y="85" width="6" height="2" fill="#4CAF50"/>
+                        <rect x="90" y="95" width="6" height="2" fill="#4CAF50"/>
+                        <polygon points="93,60 90,65 96,65" fill="#4CAF50"/>
+                        <path d="M 140,92 A 12,12 0 0,1 128,92 A 10,10 0 0,0 140,92 Z" fill="#4CAF50"/>
+                        <path d="M 130,88 L 131.5,92 L 136,92 L 132.5,94.5 L 134,99 L 130,96.5 L 126,99 L 127.5,94.5 L 124,92 L 128.5,92 Z" fill="#4CAF50"/>
+                        <text x="100" y="145" font-size="22" font-weight="bold" fill="#4CAF50" text-anchor="middle" font-family="Arial, sans-serif" letter-spacing="2">KIUMA</text>
+                    </svg>
+                </div>
+                <button class="notifications-btn" id="notificationsBtn">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">3</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Welcome Section -->
+            <section class="welcome-section">
+                <div>
+                    <h2 class="greeting">
+                        <a href="about.html">KIUMA</a>
+                    </h2>
+                </div>
+                <button class="account-icon-btn" id="accountIconBtn" onclick="toggleAccountModal()">
+                    <i class="fas fa-user-circle" id="accountIcon"></i>
+                </button>
+            </section>
+
+            <section class="page-header">
+                <h2 class="page-title">Notifications</h2>
+            </section>
+
+            <section class="page-content">
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <button class="btn btn-primary" style="flex: 1; padding: 12px;" onclick="filterNotifications('all')">All</button>
+                    <button class="btn btn-outline" style="flex: 1; padding: 12px;" onclick="filterNotifications('unread')">Unread</button>
+                </div>
+
+                <div id="notificationsList"></div>
+                <div id="notificationsEmptyState" style="text-align: center; color: #888; padding: 30px; display: none;">
+                    <i class="fas fa-bell-slash" style="font-size: 48px; margin-bottom: 10px;"></i>
+                    <p>No notifications yet. Check back later.</p>
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
+            <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
+            <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
+        </nav>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="script.js"></script>
+    <script>
+        const notificationsEmptyState = document.getElementById('notificationsEmptyState');
+        const notificationsListEl = document.getElementById('notificationsList');
+        let currentNotifications = [];
+        let notificationsFilter = 'all';
+        const NOTIFICATION_STATUS_KEY = 'notificationStatusOverrides';
+        let notificationStatusOverrides = {};
+        const githubNotificationsConfig = window.githubNotificationsConfig || {
+            owner: 'okulloabdulsalam-eng',
+            repo: 'kiuma-storage',
+            branch: 'main',
+            path: 'notifications/notifications.json'
+        };
+        const githubNotificationsUrl = buildGitHubRawUrl(githubNotificationsConfig);
+
+        try {
+            notificationStatusOverrides = JSON.parse(localStorage.getItem(NOTIFICATION_STATUS_KEY) || '{}');
+        } catch (error) {
+            notificationStatusOverrides = {};
+        }
+
+        window.addEventListener('DOMContentLoaded', function() {
+            initializeNotifications();
+            setTimeout(function() {
+                if (typeof updateDates === 'function') {
+                    updateDates();
+                }
+            }, 1000);
+        });
+
+        function buildGitHubRawUrl(config) {
+            const owner = config.owner || 'okulloabdulsalam-eng';
+            const repo = config.repo || 'kiuma-storage';
+            const branch = config.branch || 'main';
+            const path = (config.path || 'notifications/notifications.json').replace(/^\/+/, '');
+            return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`;
+        }
+
+        let firestoreUnsubscribe = null;
+
+        async function initializeNotifications() {
+            // Load from localStorage as instant cache while Firestore connects
+            loadNotificationsFromLocalStorage();
+            renderNotificationList();
+
+            // Start Firestore real-time listener (primary source)
+            startFirestoreListener();
+
+            updateActiveFilterButtons();
+        }
+
+        function startFirestoreListener() {
+            try {
+                if (!window.firebaseDb) {
+                    console.warn('Firebase not available, using cached notifications');
+                    return;
+                }
+                firestoreUnsubscribe = window.firebaseDb.collection('notifications')
+                    .orderBy('createdAt', 'desc')
+                    .limit(50)
+                    .onSnapshot(function(snapshot) {
+                        const firestoreNotifs = [];
+                        snapshot.forEach(function(doc) {
+                            const data = doc.data();
+                            firestoreNotifs.push({
+                                id: doc.id,
+                                title: data.title || 'Notification',
+                                message: data.message || '',
+                                icon: data.icon || 'fas fa-bell',
+                                category: data.category || 'general',
+                                status: data.status || 'unread',
+                                date: data.createdAt ? new Date(data.createdAt.seconds * 1000).toISOString() : new Date().toISOString(),
+                                source: 'firebase'
+                            });
+                        });
+
+                        currentNotifications = firestoreNotifs;
+                        localStorage.setItem('notificationsData', JSON.stringify(currentNotifications));
+                        renderNotificationList();
+                    }, function(error) {
+                        console.warn('Firestore notifications listener error:', error);
+                    });
+            } catch(e) {
+                console.warn('Could not start Firestore listener:', e);
+            }
+        }
+
+        async function fetchNotificationsFromGitHub() {
+            const url = `${githubNotificationsUrl}?t=${Date.now()}`;
+            const response = await fetch(url, { cache: 'no-cache' });
+            if (!response.ok) {
+                throw new Error('Failed to load notifications');
+            }
+            const text = await response.text();
+            try {
+                return JSON.parse(text || '[]');
+            } catch (error) {
+                console.warn('Invalid notifications JSON:', error);
+                throw error;
+            }
+        }
+
+        function loadNotificationsFromLocalStorage() {
+            try {
+                const localData = JSON.parse(localStorage.getItem('notificationsData') || '[]');
+                currentNotifications = Array.isArray(localData) ? localData : [];
+            } catch (error) {
+                currentNotifications = [];
+            }
+        }
+
+        function setNotificationsEmptyState(isEmpty) {
+            if (notificationsEmptyState) {
+                notificationsEmptyState.style.display = isEmpty ? 'block' : 'none';
+            }
+            if (notificationsListEl) {
+                notificationsListEl.style.display = isEmpty ? 'none' : 'block';
+            }
+        }
+
+        function filterNotifications(status) {
+            notificationsFilter = status;
+            updateActiveFilterButtons();
+            renderNotificationList();
+        }
+
+        function updateActiveFilterButtons() {
+            const buttons = document.querySelectorAll('.page-content > div button');
+            buttons.forEach(btn => {
+                const label = btn.textContent.trim().toLowerCase();
+                const isActive = (notificationsFilter === 'all' && label === 'all') || (notificationsFilter === 'unread' && label === 'unread');
+                btn.className = isActive ? 'btn btn-primary' : 'btn btn-outline';
+            });
+        }
+
+        function renderNotificationList() {
+            if (!notificationsListEl) return;
+            const sorted = [...currentNotifications].map(normalizeNotification).sort(sortNotifications);
+            const filtered = sorted.filter(notif => notificationsFilter === 'all' ? true : getNotificationDisplayStatus(notif) === 'unread');
+            notificationsListEl.innerHTML = '';
+            if (!filtered.length) {
+                setNotificationsEmptyState(true);
+                return;
+            }
+            setNotificationsEmptyState(false);
+            filtered.forEach(notif => notificationsListEl.appendChild(createNotificationElement(notif)));
+        }
+
+        function sortNotifications(a, b) {
+            const statusA = getNotificationDisplayStatus(a);
+            const statusB = getNotificationDisplayStatus(b);
+            if (statusA === 'unread' && statusB !== 'unread') return -1;
+            if (statusA !== 'unread' && statusB === 'unread') return 1;
+            const dateA = Date.parse(a.date || a.createdAt || 0);
+            const dateB = Date.parse(b.date || b.createdAt || 0);
+            return dateB - dateA;
+        }
+
+        function getNotificationDisplayStatus(notification) {
+            return (notificationStatusOverrides[notification.id] || notification.status || 'read').toLowerCase();
+        }
+
+        function normalizeNotification(notification) {
+            const normalizedDate = notification.date || notification.createdAt || new Date().toISOString();
+            return {
+                ...notification,
+                date: normalizedDate,
+                status: (notification.status || 'read').toLowerCase()
+            };
+        }
+
+        function createNotificationElement(notification) {
+            const status = getNotificationDisplayStatus(notification);
+            const item = document.createElement('div');
+            item.className = 'notification-item';
+            item.dataset.status = status;
+            item.dataset.id = notification.id;
+            item.dataset.date = notification.date;
+            if (status !== 'unread') {
+                item.style.opacity = '0.7';
+            }
+            item.innerHTML = `
+                <div class="notification-icon">
+                    <i class="${notification.icon || 'fas fa-bell'}"></i>
+                </div>
+                <div class="notification-content">
+                    <h4>${notification.title}</h4>
+                    <p>${notification.message}</p>
+                    <span class="notification-time">${formatTimeAgo(notification.date)}</span>
+                </div>
+            `;
+            item.addEventListener('click', function() {
+                if (getNotificationDisplayStatus(notification) === 'unread') {
+                    updateNotificationStatus(notification.id, 'read');
+                    item.dataset.status = 'read';
+                    item.style.opacity = '0.7';
+                }
+            });
+            return item;
+        }
+
+        function updateNotificationStatus(id, status) {
+            notificationStatusOverrides[id] = status;
+            localStorage.setItem(NOTIFICATION_STATUS_KEY, JSON.stringify(notificationStatusOverrides));
+            // Also update the global read list for badge sync
+            if (status === 'read' && typeof markNotificationAsRead === 'function') {
+                markNotificationAsRead(id);
+            }
+            if (typeof updateNotificationBadge === 'function') {
+                updateNotificationBadge();
+            }
+        }
+
+        function formatTimeAgo(dateInput) {
+            const now = new Date();
+            const date = dateInput ? new Date(dateInput) : new Date();
+            const diffInSeconds = Math.floor((now - date) / 1000);
+            if (diffInSeconds < 60) return 'Just now';
+            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+            if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+            return date.toLocaleDateString();
+        }
+    </script>
+
+    <!-- Floating Hot Events Button -->
+    <div class="floating-kizumu-btn" onclick="showActivitiesModal()" style="background: linear-gradient(135deg, #ff6b35, #e74c3c); animation: pulse-hot 1.5s infinite; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5);">
+        <i class="fas fa-fire" style="color: #fff;"></i>
+        <span style="font-weight: bold;">HOT EVENTS!</span>
+    </div>
+    <style>
+    @keyframes pulse-hot {
+        0%, 100% { transform: scale(1); box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5); }
+        50% { transform: scale(1.05); box-shadow: 0 6px 20px rgba(231, 76, 60, 0.7); }
+    }
+    </style>
+
+    <!-- Activities Modal -->
+    <div class="modal-overlay" id="activitiesModal" style="display: none;">
+        <div class="modal-content activities-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-fire" style="color: #ff6b35;"></i> Hot Events - Act Now!</h3>
+                <button class="modal-close" onclick="closeActivitiesModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="activities-modal-list">
+                <div class="activity-modal-item" onclick="window.location.href='activities.html#charity-visit'" style="border-left: 4px solid #ff6b35;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #ff6b35, #e74c3c);">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4 style="color: #e74c3c;">Kizumu Tahfiz Visit - March 1st</h4>
+                        <p>Support Quran students this Ramadan!</p>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color: #e74c3c;"></i>
+                </div>
+
+                <div class="activity-modal-item" onclick="window.location.href='activities.html#quran-competition'" style="border-left: 4px solid #9c27b0;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #9c27b0, #673ab7);">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4 style="color: #9c27b0;">Quran Competition - Feb 28th</h4>
+                        <p>Prepare to compete or come watch!</p>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color: #9c27b0;"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="window.location.href='pay.html?type=charity&donation=tuition-brothers'">
+                    <div class="activity-modal-icon" style="background: var(--primary-green);">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Tuition for Brothers</h4>
+                        <p>Support brothers' education and learning</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+
+
