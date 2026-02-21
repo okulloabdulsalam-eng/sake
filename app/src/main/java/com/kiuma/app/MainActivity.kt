@@ -82,7 +82,7 @@ class MainActivity : AppCompatActivity() {
         private const val REQUEST_PERMISSIONS = 1001
         private const val REQUEST_MEDIA_PERMISSIONS = 1003
         private const val PREF_OFFLINE_BANNER_DISMISSED = "offlineBannerDismissed"
-        private const val UPGRADE_CHECK_INTERVAL_MS = 1500L
+        private const val UPGRADE_CHECK_INTERVAL_MS = 4000L
         private const val UPGRADE_STABLE_REQUIRED_SUCCESSES = 2
         private const val UPGRADE_HTTP_TIMEOUT_MS = 2000
         private const val UPGRADE_MAX_STABLE_RTT_MS = 1500L
@@ -865,7 +865,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
-            Log.d(TAG, "WebView Console: ${consoleMessage?.message()}")
+            val level = consoleMessage?.messageLevel()
+            if (level == ConsoleMessage.MessageLevel.ERROR || level == ConsoleMessage.MessageLevel.WARNING) {
+                Log.w(TAG, "WebView Console ($level): ${consoleMessage?.message()}")
+                return true
+            }
             return true
         }
 
