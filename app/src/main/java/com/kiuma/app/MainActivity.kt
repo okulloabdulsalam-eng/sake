@@ -288,7 +288,9 @@ class MainActivity : AppCompatActivity() {
             webViewClient = KiumaWebViewClient()
             webChromeClient = KiumaWebChromeClient()
 
-            addJavascriptInterface(WebAppInterface(this@MainActivity), "AndroidApp")
+            val bridge = WebAppInterface(this@MainActivity)
+            addJavascriptInterface(bridge, "AndroidApp")
+            addJavascriptInterface(bridge, "Android")
 
             setDownloadListener { url, userAgent, contentDisposition, mimeType, contentLength ->
                 handleDownload(url, userAgent, contentDisposition, mimeType, contentLength)
