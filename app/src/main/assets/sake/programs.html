@@ -103,50 +103,128 @@
             <section class="page-content">
                 <!-- Quran Study Classes -->
                 <div class="info-card" style="margin-bottom: 25px; background: linear-gradient(135deg, #1a472a, #2d5a3f); color: white; border: none;">
-                    <h3 style="color: white; margin-bottom: 10px;"><i class="fas fa-quran"></i> Quran Memorization Classes</h3>
-                    <p style="color: white; opacity: 0.9; margin-bottom: 15px;">Enroll in our dedicated Quran memorization programs. Click to enroll!</p>
+                    <h3 style="color: white; margin-bottom: 10px;"><i class="fas fa-quran"></i> Weekly Qur’an Program <span style="font-size: 12px; font-weight: 600; opacity: 0.95;">(Male Only)</span></h3>
+                    <p style="color: white; opacity: 0.9; margin-bottom: 15px;">After Maghrib — Campus Mosque. Tap a class to enroll.</p>
                     
                     <div style="display: flex; flex-direction: column; gap: 12px;">
                         <!-- Yasaruna & Juz Amma -->
-                        <div onclick="showQuranEnrollModal('yasaruna')" style="background: linear-gradient(135deg, #4CAF50, #2E7D32); border-radius: 10px; padding: 15px; color: white; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                        <div onclick="window.location.href='join-programs.html?gender=male&courses=quran-yasaruna'" style="background: linear-gradient(135deg, #4CAF50, #2E7D32); border-radius: 10px; padding: 15px; color: white; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                             <div style="display: flex; align-items: center; gap: 12px;">
                                 <div style="background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
                                     <i class="fas fa-book-reader" style="font-size: 18px;"></i>
                                 </div>
                                 <div style="flex: 1;">
-                                    <h4 style="margin: 0; font-size: 16px;">Yasaruna & Juz Amma 30</h4>
-                                    <p style="color: white; margin: 3px 0 0 0; font-size: 12px; opacity: 0.9;">Beginner - Learn to read & memorize Juz 30</p>
+                                    <h4 style="margin: 0; font-size: 16px;">Yasaruna and Juzu Amma (30)</h4>
+                                    <p style="color: white; margin: 3px 0 0 0; font-size: 12px; opacity: 0.9;">Mon–Thu • Teacher: Kimuli Najib</p>
                                 </div>
                                 <i class="fas fa-chevron-right" style="opacity: 0.7;"></i>
                             </div>
                         </div>
 
                         <!-- Juz Qadsamia -->
-                        <div onclick="showQuranEnrollModal('qadsamia')" style="background: linear-gradient(135deg, #9C27B0, #673AB7); border-radius: 10px; padding: 15px; color: white; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                        <div onclick="window.location.href='join-programs.html?gender=male&courses=quran-juzu-qadsamia-28'" style="background: linear-gradient(135deg, #9C27B0, #673AB7); border-radius: 10px; padding: 15px; color: white; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                             <div style="display: flex; align-items: center; gap: 12px;">
                                 <div style="background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
                                     <i class="fas fa-quran" style="font-size: 18px;"></i>
                                 </div>
                                 <div style="flex: 1;">
-                                    <h4 style="margin: 0; font-size: 16px;">Juz Qadsamia (Juz 28)</h4>
-                                    <p style="color: white; margin: 3px 0 0 0; font-size: 12px; opacity: 0.9;">Memorize Surah Al-Mujadila to At-Tahrim</p>
+                                    <h4 style="margin: 0; font-size: 16px;">Juzu Qadsamia’ (28)</h4>
+                                    <p style="color: white; margin: 3px 0 0 0; font-size: 12px; opacity: 0.9;">Mon–Wed • Teachers: Adam Ubaidah, Ngoobi Hudhaifah</p>
                                 </div>
                                 <i class="fas fa-chevron-right" style="opacity: 0.7;"></i>
                             </div>
                         </div>
 
                         <!-- Juz Tabaraka -->
-                        <div onclick="showQuranEnrollModal('tabaraka')" style="background: linear-gradient(135deg, #FF9800, #F57C00); border-radius: 10px; padding: 15px; color: white; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                        <div onclick="window.location.href='join-programs.html?gender=male&courses=quran-juzu-tabaraka-29'" style="background: linear-gradient(135deg, #FF9800, #F57C00); border-radius: 10px; padding: 15px; color: white; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                             <div style="display: flex; align-items: center; gap: 12px;">
                                 <div style="background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
                                     <i class="fas fa-star" style="font-size: 18px;"></i>
                                 </div>
                                 <div style="flex: 1;">
-                                    <h4 style="margin: 0; font-size: 16px;">Juz Tabaraka (Juz 29)</h4>
-                                    <p style="color: white; margin: 3px 0 0 0; font-size: 12px; opacity: 0.9;">Memorize Surah Al-Mulk to Al-Mursalat</p>
+                                    <h4 style="margin: 0; font-size: 16px;">Juzu Tabaaraka (29)</h4>
+                                    <p style="color: white; margin: 3px 0 0 0; font-size: 12px; opacity: 0.9;">Mon–Wed • Teachers: Kiwuuwa Fahad, Lubega Abdurrahman, Abdallah Ahmed</p>
                                 </div>
                                 <i class="fas fa-chevron-right" style="opacity: 0.7;"></i>
                             </div>
+                        </div>
+
+                        <!-- Four Juzz and Above -->
+                        <div onclick="window.location.href='join-programs.html?gender=male&courses=quran-four-juzz-plus'" style="background: linear-gradient(135deg, #26A69A, #00796B); border-radius: 10px; padding: 15px; color: white; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-layer-group" style="font-size: 18px;"></i>
+                                </div>
+                                <div style="flex: 1;">
+                                    <h4 style="margin: 0; font-size: 16px;">Four Juzz and Above</h4>
+                                    <p style="color: white; margin: 3px 0 0 0; font-size: 12px; opacity: 0.9;">Mon–Wed • Teacher: Abdulwahid Said</p>
+                                </div>
+                                <i class="fas fa-chevron-right" style="opacity: 0.7;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-card" style="margin-bottom: 25px;">
+                    <h3 class="section-title" style="margin-bottom: 15px;">
+                        <i class="fas fa-calendar-week"></i> Weekend Program
+                    </h3>
+
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <div style="background: var(--gray); border-radius: 12px; padding: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 700; color: var(--dark-gray);">Friday — After Maghrib</div>
+                                <div style="font-size: 13px; color: var(--text-gray);">Hadith Explanation • Imam Abdulswabur</div>
+                            </div>
+                            <button class="event-btn" style="padding: 10px 12px;" onclick="event.stopPropagation(); window.location.href='join-programs.html?courses=hadith-explanation'">Join</button>
+                        </div>
+
+                        <div style="background: var(--gray); border-radius: 12px; padding: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 700; color: var(--dark-gray);">Saturday — After Asr</div>
+                                <div style="font-size: 13px; color: var(--text-gray);">Hadith Memorization • Imam Kiwuuwa Fahad</div>
+                            </div>
+                            <button class="event-btn" style="padding: 10px 12px;" onclick="event.stopPropagation(); window.location.href='join-programs.html?courses=hadith-memorisation'">Join</button>
+                        </div>
+
+                        <div style="background: var(--gray); border-radius: 12px; padding: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 700; color: var(--dark-gray);">Saturday — After Maghrib</div>
+                                <div style="font-size: 13px; color: var(--text-gray);">Kitaabu Tawheed • Imam Abdurrahman</div>
+                            </div>
+                            <button class="event-btn" style="padding: 10px 12px;" onclick="event.stopPropagation(); window.location.href='join-programs.html?courses=kitaabu-tawheed'">Join</button>
+                        </div>
+
+                        <div style="background: var(--gray); border-radius: 12px; padding: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 700; color: var(--dark-gray);">Sunday — After Dhuhr</div>
+                                <div style="font-size: 13px; color: var(--text-gray);">Fiqh of Fasting & Prayer • Prof. Twaib</div>
+                            </div>
+                            <button class="event-btn" style="padding: 10px 12px;" onclick="event.stopPropagation(); window.location.href='join-programs.html?courses=fiqh-swalah'">Join</button>
+                        </div>
+
+                        <div style="background: var(--gray); border-radius: 12px; padding: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 700; color: var(--dark-gray);">Sunday — After Asr</div>
+                                <div style="font-size: 13px; color: var(--text-gray);">40 Hadith (Arbauuna Nawawi) • Dr. Jega</div>
+                            </div>
+                            <button class="event-btn" style="padding: 10px 12px;" onclick="event.stopPropagation(); window.location.href='join-programs.html?courses=arbauna-nawawi'">Join</button>
+                        </div>
+
+                        <div style="background: var(--gray); border-radius: 12px; padding: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 700; color: var(--dark-gray);">Sunday — After Maghrib</div>
+                                <div style="font-size: 13px; color: var(--text-gray);">Detailed Tafsir (Juzu Amma) • Imam Kiwuuwa Fahad Luyirika</div>
+                            </div>
+                            <button class="event-btn" style="padding: 10px 12px;" onclick="event.stopPropagation(); window.location.href='join-programs.html?courses=tafsir'">Join</button>
+                        </div>
+
+                        <div style="background: #fff3e0; border-radius: 12px; padding: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid rgba(245, 124, 0, 0.25);">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 700; color: #e65100;">Exclusive</div>
+                                <div style="font-size: 13px; color: #e65100;">Arabic class — Sat & Sun (1 hour after Fajr). Register with Amir / Amirat Daawa.</div>
+                            </div>
+                            <button class="event-btn" style="padding: 10px 12px;" onclick="event.stopPropagation(); window.location.href='join-programs.html?courses=arabic-classes'">Join</button>
                         </div>
                     </div>
                 </div>
@@ -259,8 +337,8 @@
                     <div class="event-content">
                         <div class="event-date"><i class="fas fa-calendar"></i> Weekly</div>
                         <h3 class="event-title">Sisters Circle</h3>
-                        <p class="event-description">A safe space for sisters to learn, share, and grow together. Topics include Islamic jurisprudence, family matters, and personal development.</p>
-                        <button class="event-btn" onclick="window.location.href='join-programs.html'">Join Now</button>
+                        <p class="event-description">A safe space for sisters to learn, share, and grow together. Topics include Islamic jurisprudence, family matters, and personal development. Sisters’ Quran classes happen over the weekend.</p>
+                        <button class="event-btn" onclick="window.location.href='join-programs.html?gender=female'">Join Now</button>
                     </div>
                 </div>
 

@@ -230,7 +230,23 @@
                         <div style="margin-top: 10px;">
                             <label class="course-checkbox">
                                 <input type="checkbox" name="courses" value="quran-yasaruna">
-                                <span><strong>Quran and Yasaruna</strong> - Mon-Thur (After Maghrib to Isha) - Iman Fahad</span>
+                                <span><strong>Yasaruna and Juzu Amma (30)</strong> - Mon–Thu (After Maghrib) - Campus Mosque - Kimuli Najib</span>
+                            </label>
+                            <label class="course-checkbox">
+                                <input type="checkbox" name="courses" value="quran-juzu-tabaraka-29">
+                                <span><strong>Juzu Tabaaraka (29)</strong> - Mon–Wed (After Maghrib) - Campus Mosque - Kiwuuwa Fahad, Lubega Abdurrahman, Abdallah Ahmed</span>
+                            </label>
+                            <label class="course-checkbox">
+                                <input type="checkbox" name="courses" value="quran-juzu-qadsamia-28">
+                                <span><strong>Juzu Qadsamia’ (28)</strong> - Mon–Wed (After Maghrib) - Campus Mosque - Adam Ubaidah, Ngoobi Hudhaifah</span>
+                            </label>
+                            <label class="course-checkbox">
+                                <input type="checkbox" name="courses" value="quran-four-juzz-plus">
+                                <span><strong>Four Juzz and Above</strong> - Mon–Wed (After Maghrib) - Campus Mosque - Abdulwahid Said</span>
+                            </label>
+                            <label class="course-checkbox">
+                                <input type="checkbox" name="courses" value="sisters-quran-weekend">
+                                <span><strong>Sisters Quran Classes (Weekend)</strong> - Weekend - Sisters Only</span>
                             </label>
                             <label class="course-checkbox">
                                 <input type="checkbox" name="courses" value="hadith-memorisation">
@@ -328,6 +344,28 @@
                     yearField.value = userData.year;
                 }
             }
+
+            try {
+                const params = new URLSearchParams(window.location.search);
+
+                const genderParam = params.get('gender');
+                if (genderParam) {
+                    const genderField = document.getElementById('gender');
+                    if (genderField) {
+                        genderField.value = genderParam;
+                    }
+                }
+
+                const coursesParam = params.get('courses');
+                if (coursesParam) {
+                    const codes = coursesParam.split(',').map(s => s.trim()).filter(Boolean);
+                    codes.forEach(code => {
+                        const cb = document.querySelector('input[name="courses"][value="' + code + '"]');
+                        if (cb) cb.checked = true;
+                    });
+                }
+            } catch (e) {
+            }
         });
 
         function handleProgramRegistration(e) {
@@ -339,7 +377,9 @@
             const course = document.getElementById('course').value;
             const year = document.getElementById('year').value;
             const semester = document.getElementById('semester').value;
-            const selectedCourses = Array.from(document.querySelectorAll('input[name="courses"]:checked')).map(cb => {
+            const selectedCourseInputs = Array.from(document.querySelectorAll('input[name="courses"]:checked'));
+            const selectedCourseCodes = selectedCourseInputs.map(cb => cb.value);
+            const selectedCourses = selectedCourseInputs.map(cb => {
                 const label = cb.parentElement.querySelector('span').textContent;
                 return label;
             });
@@ -349,9 +389,23 @@
                 return;
             }
 
+            const maleOnly = ['quran-yasaruna', 'quran-juzu-tabaraka-29', 'quran-juzu-qadsamia-28', 'quran-four-juzz-plus'];
+            if (gender === 'female' && selectedCourseCodes.some(c => maleOnly.includes(c))) {
+                alert('Weekly Qur’an Program is for male only. Please unselect the male-only Quran classes.');
+                return;
+            }
+            if (gender === 'male' && selectedCourseCodes.includes('sisters-quran-weekend')) {
+                alert('Sisters Quran Classes (Weekend) is for sisters only. Please unselect it.');
+                return;
+            }
+
             // Course name mappings
             const courseNames = {
-                'quran-yasaruna': 'Quran and Yasaruna',
+                'quran-yasaruna': 'Yasaruna and Juzu Amma (30)',
+                'quran-juzu-tabaraka-29': 'Juzu Tabaaraka (29)',
+                'quran-juzu-qadsamia-28': 'Juzu Qadsamia’ (28)',
+                'quran-four-juzz-plus': 'Four Juzz and Above',
+                'sisters-quran-weekend': 'Sisters Quran Classes (Weekend)',
                 'hadith-memorisation': 'Hadith memorisation',
                 'hadith-explanation': 'Hadith Explanation',
                 'kitaabu-tawheed': 'Kitaabu Tawheed',
