@@ -217,7 +217,8 @@
     <script src="script.js"></script>
     <script src="update-navigation.js"></script>
     <script>
-        var isInApp = typeof Android !== 'undefined';
+        var AndroidBridge = window.AndroidApp || window.Android;
+        var isInApp = typeof AndroidBridge !== 'undefined' && AndroidBridge !== null;
         var recording = false;
         var recSeconds = 0;
         var recInterval = null;
@@ -244,7 +245,7 @@
                 return;
             }
             try {
-                var status = JSON.parse(Android.getMediaPermissionsStatus());
+                var status = JSON.parse(AndroidBridge.getMediaPermissionsStatus());
                 var html = '';
                 permDefs.forEach(function(p) {
                     var granted = status[p.key] === true;
@@ -262,13 +263,13 @@
 
         function requestAllPermissions() {
             if (!isInApp) { alert('Only available in the KIUMA app.'); return; }
-            try { Android.requestMediaPermissions(); } catch(e) {}
+            try { AndroidBridge.requestMediaPermissions(); } catch(e) {}
             setTimeout(refreshPermissions, 1500);
         }
 
         function openSystemSettings() {
             if (!isInApp) { alert('Only available in the KIUMA app.'); return; }
-            try { Android.openAppSettings(); } catch(e) {}
+            try { AndroidBridge.openAppSettings(); } catch(e) {}
         }
 
         // === Audio Recorder ===
@@ -279,11 +280,11 @@
 
         function startRec() {
             try {
-                if (!Android.hasRecordAudioPermission()) {
-                    Android.requestRecordAudioPermission();
+                if (!AndroidBridge.hasRecordAudioPermission()) {
+                    AndroidBridge.requestRecordAudioPermission();
                     return;
                 }
-                var result = JSON.parse(Android.startRecording());
+                var result = JSON.parse(AndroidBridge.startRecording());
                 if (result.status === 'recording') {
                     recording = true;
                     recSeconds = 0;
@@ -305,7 +306,7 @@
 
         function stopRec() {
             try {
-                var result = JSON.parse(Android.stopRecording());
+                var result = JSON.parse(AndroidBridge.stopRecording());
                 recording = false;
                 clearInterval(recInterval);
                 stopAmplitudeViz();
@@ -329,7 +330,7 @@
             ampInterval = setInterval(function() {
                 if (!recording) return;
                 try {
-                    var amp = Android.getRecordingAmplitude();
+                    var amp = AndroidBridge.getRecordingAmplitude();
                     var bars = container.children;
                     for (var i = 0; i < bars.length; i++) {
                         var h = Math.max(4, Math.min(40, (amp / 32767) * 40 * (0.5 + Math.random() * 0.5)));
@@ -353,7 +354,7 @@
                 return;
             }
             try {
-                var recs = JSON.parse(Android.listRecordings());
+                var recs = JSON.parse(AndroidBridge.listRecordings());
                 if (!recs || recs.length === 0) {
                     list.innerHTML = '<div class="ms-empty"><i class="fas fa-folder-open"></i>No recordings yet. Use the recorder above to create one.</div>';
                     return;
@@ -381,11 +382,11 @@
             if (!isInApp) return;
             try {
                 if (currentlyPlayingPath === path) {
-                    Android.stopAudio();
+                    AndroidBridge.stopAudio();
                     currentlyPlayingPath = null;
                 } else {
-                    Android.stopAudio();
-                    var result = JSON.parse(Android.playAudio(path));
+                    AndroidBridge.stopAudio();
+                    var result = JSON.parse(AndroidBridge.playAudio(path));
                     if (result.status === 'playing') {
                         currentlyPlayingPath = path;
                     }
@@ -397,9 +398,9 @@
         function deleteRec(path) {
             if (!confirm('Delete this recording?')) return;
             try {
-                Android.deleteRecording(path);
+                AndroidBridge.deleteRecording(path);
                 if (currentlyPlayingPath === path) {
-                    Android.stopAudio();
+                    AndroidBridge.stopAudio();
                     currentlyPlayingPath = null;
                 }
                 loadRecordings();
@@ -410,8 +411,8 @@
         function initVolume() {
             if (!isInApp) return;
             try {
-                var max = Android.getMaxVolume();
-                var cur = Android.getVolume();
+                var max = AndroidBridge.getMaxVolume();
+                var cur = AndroidBridge.getVolume();
                 var slider = document.getElementById('volumeSlider');
                 slider.max = max;
                 slider.value = cur;
@@ -422,7 +423,7 @@
         function changeVolume(val) {
             if (!isInApp) return;
             try {
-                Android.setVolume(parseInt(val));
+                AndroidBridge.setVolume(parseInt(val));
                 var max = document.getElementById('volumeSlider').max;
                 document.getElementById('volumeLabel').textContent = 'Volume: ' + val + ' / ' + max;
             } catch(e) {}
