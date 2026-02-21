@@ -282,7 +282,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
-                WebSettingsCompat.setForceDark(settings, WebSettingsCompat.FORCE_DARK_AUTO)
+                applyForceDarkMode()
             }
 
             webViewClient = KiumaWebViewClient()
@@ -296,6 +296,18 @@ class MainActivity : AppCompatActivity() {
                 handleDownload(url, userAgent, contentDisposition, mimeType, contentLength)
             }
         }
+    }
+
+    private fun applyForceDarkMode() {
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) return
+
+        val forceLight = isOfflineMode || isShowingAssets
+        val mode = if (forceLight) {
+            WebSettingsCompat.FORCE_DARK_OFF
+        } else {
+            WebSettingsCompat.FORCE_DARK_AUTO
+        }
+        WebSettingsCompat.setForceDark(binding.webView.settings, mode)
     }
 
     private fun setupSwipeRefresh() {
@@ -533,6 +545,8 @@ class MainActivity : AppCompatActivity() {
         binding.webView.settings.cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
         binding.webView.loadUrl(WEB_URL)
         lastLoadedUrl = WEB_URL
+
+        applyForceDarkMode()
     }
 
     private fun loadOfflineAssetFallback() {
@@ -546,6 +560,8 @@ class MainActivity : AppCompatActivity() {
         binding.webView.loadUrl(url)
         lastLoadedUrl = url
         startOnlineUpgradeMonitoring()
+
+        applyForceDarkMode()
     }
 
     private fun isNetworkAvailable(): Boolean {
@@ -653,6 +669,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             
+            applyForceDarkMode()
             injectJavaScript()
         }
 
@@ -903,8 +920,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun injectJavaScript() {
+        val forceLight = isOfflineMode || isShowingAssets
         val jsCode = """
             (function() {
+                var forceLight = ${forceLight};
+                if (forceLight) {
+                    try { localStorage.setItem('themePreference', 'light'); } catch(e) {}
+                    try { document.documentElement.setAttribute('data-theme', 'light'); } catch(e) {}
+                }
+
                 // Notify Android app that page is ready
                 if (window.AndroidApp) {
                     window.AndroidApp.onPageReady();
