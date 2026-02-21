@@ -1,6 +1,6 @@
 // KIUMA Service Worker - Enables offline functionality
 // Cache version - UPDATE THIS when you deploy changes to force refresh
-const CACHE_VERSION = '2026-02-20-v8';
+const CACHE_VERSION = '2026-02-21-v9';
 const CACHE_NAME = 'kiuma-cache-' + CACHE_VERSION;
 const OFFLINE_URL = 'offline.html';
 

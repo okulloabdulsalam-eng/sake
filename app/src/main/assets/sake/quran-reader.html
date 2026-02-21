@@ -390,6 +390,121 @@
             width: 100%;
             max-width: 350px;
         }
+
+        .qrec-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--dark-gray);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .qrec-title i { color: var(--primary-green); }
+        .qrec-timer {
+            font-size: 26px;
+            font-weight: 700;
+            text-align: center;
+            color: var(--dark-gray);
+            font-variant-numeric: tabular-nums;
+            margin-top: 8px;
+        }
+        .qrec-status {
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-gray);
+            margin: 6px 0 12px;
+        }
+        .qrec-amplitude {
+            width: 100%;
+            height: 40px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 3px;
+            margin-bottom: 14px;
+        }
+        .qrec-bar {
+            width: 4px;
+            background: var(--primary-green);
+            border-radius: 2px;
+            transition: height 0.1s;
+            min-height: 4px;
+        }
+        .qrec-actions {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 14px;
+        }
+        .qrec-mic-btn {
+            width: 76px;
+            height: 76px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
+            border: none;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(46, 125, 50, 0.35);
+            transition: all 0.3s;
+            position: relative;
+        }
+        .qrec-mic-btn.recording {
+            background: linear-gradient(135deg, #e53935, #c62828);
+            box-shadow: 0 4px 20px rgba(229, 57, 53, 0.35);
+            animation: pulse-mic 1.5s infinite;
+        }
+        .qrec-list {
+            max-height: 240px;
+            overflow: auto;
+        }
+        .qrec-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: var(--gray);
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+        .qrec-item .qrec-play {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: var(--primary-green);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+        .qrec-item .qrec-play.playing { background: #e53935; }
+        .qrec-item .qrec-meta { flex: 1; min-width: 0; }
+        .qrec-item .qrec-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--dark-gray);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .qrec-item .qrec-sub {
+            font-size: 11px;
+            color: var(--text-gray);
+            margin-top: 2px;
+        }
+        .qrec-item .qrec-del {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            border: none;
+            background: #ffebee;
+            color: #e53935;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
         .settings-title {
             font-size: 18px;
             font-weight: 600;
@@ -1556,6 +1671,7 @@
                 <div class="quran-actions">
                     <button onclick="toggleBookmark()" id="bookmarkBtn" title="Bookmark"><i class="far fa-bookmark"></i></button>
                     <button class="notifications-btn" id="notificationsBtn" title="Notifications" style="position:relative;"><i class="fas fa-bell"></i><span class="badge" style="display:none;">0</span></button>
+                    <button onclick="showQuranRecorder()" title="Quran Recorder"><i class="fas fa-microphone-alt"></i></button>
                     <button onclick="showSettings()" title="Settings"><i class="fas fa-cog"></i></button>
                 </div>
             </div>
@@ -1691,6 +1807,24 @@
         </div>
     </div>
 
+    <div class="settings-modal" id="quranRecorderModal" onclick="if(event.target===this){hideQuranRecorder();}">
+        <div class="settings-content">
+            <h3 class="qrec-title"><i class="fas fa-microphone-alt"></i> Quran Recorder</h3>
+            <div class="qrec-timer" id="qrecTimer">00:00</div>
+            <div class="qrec-status" id="qrecStatus">Tap to start recording</div>
+            <div class="qrec-amplitude" id="qrecAmplitude"></div>
+            <div class="qrec-actions">
+                <button class="qrec-mic-btn" id="qrecMicBtn" onclick="toggleQuranRecording()"><i class="fas fa-microphone"></i></button>
+            </div>
+            <div style="display:flex;gap:10px;margin-bottom:12px;">
+                <button class="download-all-btn" style="margin-top:0;flex:1;" onclick="refreshQuranRecordings()"><i class="fas fa-sync-alt"></i> Refresh</button>
+                <button class="download-all-btn" style="margin-top:0;flex:1;background:#fff;border:2px solid var(--primary-green);color:var(--primary-green);" onclick="openQuranRecorderSettings()"><i class="fas fa-key"></i> Permission</button>
+            </div>
+            <div class="qrec-list" id="qrecList"></div>
+            <button class="close-settings" onclick="hideQuranRecorder()">Close</button>
+        </div>
+    </div>
+
     <script src="script.js"></script>
     <script>
         const QURAN_CACHE_KEY = 'quran_offline_cache';
@@ -1698,6 +1832,14 @@
         const QURAN_SETTINGS_KEY = 'quran_settings';
         const QURAN_STATS_KEY = 'quran_recite_stats';
         const QURAN_STREAK_KEY = 'quran_streak';
+
+        const AndroidBridge = window.AndroidApp || window.Android;
+        const isInApp = typeof AndroidBridge !== 'undefined' && AndroidBridge !== null;
+        let qrecRecording = false;
+        let qrecSeconds = 0;
+        let qrecTimerInterval = null;
+        let qrecAmpInterval = null;
+        let qrecPlayingPath = null;
         
         let currentSurah = null;
         let settings = { 
@@ -1711,6 +1853,213 @@
         };
         let continuousData = null;
         let bookmarks = [];
+
+        function showQuranRecorder() {
+            const modal = document.getElementById('quranRecorderModal');
+            if (modal) {
+                modal.classList.add('show');
+            }
+            refreshQuranRecordings();
+            initQrecAmplitudeBars();
+        }
+
+        function hideQuranRecorder() {
+            const modal = document.getElementById('quranRecorderModal');
+            if (modal) {
+                modal.classList.remove('show');
+            }
+
+            if (qrecRecording) {
+                stopQuranRecording();
+            }
+            if (qrecPlayingPath) {
+                try { AndroidBridge.stopAudio(); } catch (e) {}
+                qrecPlayingPath = null;
+            }
+        }
+
+        function openQuranRecorderSettings() {
+            if (!isInApp) {
+                alert('This feature works in the KIUMA app.');
+                return;
+            }
+            try {
+                if (!AndroidBridge.hasRecordAudioPermission()) {
+                    AndroidBridge.requestRecordAudioPermission();
+                    setTimeout(refreshQuranRecordings, 1200);
+                    return;
+                }
+            } catch (e) {}
+            alert('Microphone permission is already granted.');
+        }
+
+        function toggleQuranRecording() {
+            if (!isInApp) {
+                alert('Recording is only available in the KIUMA app.');
+                return;
+            }
+            if (qrecRecording) {
+                stopQuranRecording();
+            } else {
+                startQuranRecording();
+            }
+        }
+
+        function startQuranRecording() {
+            try {
+                if (!AndroidBridge.hasRecordAudioPermission()) {
+                    AndroidBridge.requestRecordAudioPermission();
+                    return;
+                }
+                const res = JSON.parse(AndroidBridge.startRecording());
+                if (res.status !== 'recording') {
+                    alert(res.error || 'Could not start recording');
+                    return;
+                }
+                qrecRecording = true;
+                qrecSeconds = 0;
+                updateQrecUi();
+                qrecTimerInterval = setInterval(function() {
+                    qrecSeconds++;
+                    updateQrecUi();
+                }, 1000);
+                qrecAmpInterval = setInterval(updateQrecAmplitude, 100);
+            } catch (e) {
+                alert('Recording error: ' + e.message);
+            }
+        }
+
+        function stopQuranRecording() {
+            try {
+                JSON.parse(AndroidBridge.stopRecording());
+            } catch (e) {}
+            qrecRecording = false;
+            clearInterval(qrecTimerInterval);
+            clearInterval(qrecAmpInterval);
+            qrecTimerInterval = null;
+            qrecAmpInterval = null;
+            qrecSeconds = 0;
+            resetQrecAmplitude();
+            updateQrecUi();
+            refreshQuranRecordings();
+        }
+
+        function updateQrecUi() {
+            const t = document.getElementById('qrecTimer');
+            const s = document.getElementById('qrecStatus');
+            const b = document.getElementById('qrecMicBtn');
+            if (t) {
+                const mm = String(Math.floor(qrecSeconds / 60)).padStart(2, '0');
+                const ss = String(qrecSeconds % 60).padStart(2, '0');
+                t.textContent = mm + ':' + ss;
+            }
+            if (s) {
+                s.textContent = qrecRecording ? 'Recording...' : 'Tap to start recording';
+            }
+            if (b) {
+                b.className = 'qrec-mic-btn' + (qrecRecording ? ' recording' : '');
+                b.innerHTML = '<i class="fas fa-' + (qrecRecording ? 'stop' : 'microphone') + '"></i>';
+            }
+        }
+
+        function initQrecAmplitudeBars() {
+            const container = document.getElementById('qrecAmplitude');
+            if (!container) return;
+            if (container.children.length > 0) return;
+            for (let i = 0; i < 20; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'qrec-bar';
+                bar.style.height = '4px';
+                container.appendChild(bar);
+            }
+        }
+
+        function updateQrecAmplitude() {
+            if (!qrecRecording) return;
+            const container = document.getElementById('qrecAmplitude');
+            if (!container) return;
+            try {
+                const amp = AndroidBridge.getRecordingAmplitude();
+                const bars = container.children;
+                for (let i = 0; i < bars.length; i++) {
+                    const h = Math.max(4, Math.min(40, (amp / 32767) * 40 * (0.5 + Math.random() * 0.5)));
+                    bars[i].style.height = h + 'px';
+                }
+            } catch (e) {}
+        }
+
+        function resetQrecAmplitude() {
+            const container = document.getElementById('qrecAmplitude');
+            if (!container) return;
+            const bars = container.children;
+            for (let i = 0; i < bars.length; i++) {
+                bars[i].style.height = '4px';
+            }
+        }
+
+        function refreshQuranRecordings() {
+            const list = document.getElementById('qrecList');
+            if (!list) return;
+
+            if (!isInApp) {
+                list.innerHTML = '<div class="tafsir-unavailable">Open this page in the KIUMA app to record and manage audio.</div>';
+                return;
+            }
+
+            try {
+                const recs = JSON.parse(AndroidBridge.listRecordings());
+                if (!recs || recs.length === 0) {
+                    list.innerHTML = '<div class="tafsir-unavailable">No recordings yet.</div>';
+                    return;
+                }
+
+                const show = recs.slice(0, 15);
+                let html = '';
+                show.forEach(function(rec) {
+                    const date = new Date(rec.modified);
+                    const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+                    const playing = qrecPlayingPath === rec.path;
+                    html += '<div class="qrec-item">';
+                    html += '<div class="qrec-play' + (playing ? ' playing' : '') + '" onclick="toggleQrecPlayback(\'' + rec.path.replace(/\\/g,'\\\\') + '\')"><i class="fas ' + (playing ? 'fa-stop' : 'fa-play') + '"></i></div>';
+                    html += '<div class="qrec-meta"><div class="qrec-name">' + rec.name + '</div><div class="qrec-sub">' + rec.sizeKB + ' KB · ' + dateStr + '</div></div>';
+                    html += '<button class="qrec-del" onclick="deleteQrec(\'' + rec.path.replace(/\\/g,'\\\\') + '\')"><i class="fas fa-trash"></i></button>';
+                    html += '</div>';
+                });
+                list.innerHTML = html;
+            } catch (e) {
+                list.innerHTML = '<div class="tafsir-unavailable">Could not load recordings.</div>';
+            }
+        }
+
+        function toggleQrecPlayback(path) {
+            if (!isInApp) return;
+            try {
+                if (qrecPlayingPath === path) {
+                    AndroidBridge.stopAudio();
+                    qrecPlayingPath = null;
+                } else {
+                    AndroidBridge.stopAudio();
+                    const res = JSON.parse(AndroidBridge.playAudio(path));
+                    if (res.status === 'playing') {
+                        qrecPlayingPath = path;
+                    }
+                }
+            } catch (e) {}
+            refreshQuranRecordings();
+        }
+
+        function deleteQrec(path) {
+            if (!isInApp) return;
+            if (!confirm('Delete this recording?')) return;
+            try {
+                AndroidBridge.deleteRecording(path);
+                if (qrecPlayingPath === path) {
+                    AndroidBridge.stopAudio();
+                    qrecPlayingPath = null;
+                }
+            } catch (e) {}
+            refreshQuranRecordings();
+        }
 
         // Mushaf page mode variables
         const MUSHAF_CACHE_KEY = 'mushaf_page_cache';
