@@ -122,8 +122,15 @@
                 .dl-category-header i { font-size: 16px; color: var(--primary-green, #4CAF50); }
                 .dl-category-header span { font-weight: 700; font-size: 14px; color: #333; }
                 .dl-category-header .dl-count { font-size: 12px; color: #999; margin-left: auto; }
-                .lib-card-dl { position: absolute; bottom: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%; background: rgba(0,0,0,0.6); color: white; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 13px; backdrop-filter: blur(4px); }
                 .lib-card-body { padding: 10px 12px 14px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+                .card-more-btn { position: absolute; top: 6px; right: 6px; width: 30px; height: 30px; border-radius: 50%; background: rgba(0,0,0,0.55); color: #fff; border: none; display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; backdrop-filter: blur(4px); z-index: 10; letter-spacing: 0; line-height: 1; }
+                .card-more-btn:active { background: rgba(0,0,0,0.8); }
+                .card-more-menu { position: absolute; top: 40px; right: 6px; background: #fff; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.18); z-index: 100; min-width: 160px; overflow: hidden; display: none; }
+                .card-more-menu.open { display: block; }
+                .card-more-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 16px; border: none; background: none; font-size: 14px; font-weight: 500; color: #333; cursor: pointer; text-align: left; }
+                .card-more-menu button:active { background: #f5f5f5; }
+                .card-more-menu button.danger { color: #e53935; }
+                .card-more-menu button i { width: 16px; text-align: center; }
                 .lib-card-cat { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; padding: 2px 8px; border-radius: 4px; display: inline-block; width: fit-content; }
                 .lib-card-title { font-size: 13px; font-weight: 700; color: #333; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
                 .lib-card-meta { font-size: 11px; color: #999; margin-top: auto; }
@@ -507,6 +514,22 @@
         }
         window.inAppDownload = inAppDownload;
 
+        function toggleMoreMenu(id) {
+            const menu = document.getElementById(id);
+            if (!menu) return;
+            const isOpen = menu.classList.contains('open');
+            closeAllMoreMenus();
+            if (!isOpen) menu.classList.add('open');
+        }
+        function closeAllMoreMenus() {
+            document.querySelectorAll('.card-more-menu.open').forEach(m => m.classList.remove('open'));
+        }
+        window.toggleMoreMenu = toggleMoreMenu;
+        window.closeAllMoreMenus = closeAllMoreMenus;
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.card-more-btn') && !e.target.closest('.card-more-menu')) closeAllMoreMenus();
+        });
+
         function fmtSize(b) {
             if (!b && b !== 0) return '';
             if (b >= 1073741824) return (b/1073741824).toFixed(1)+' GB';
@@ -663,22 +686,28 @@
                 const saved = isFileSavedOffline(book.url);
                 const isPdf = book.name.toLowerCase().endsWith('.pdf');
                 const coverId = 'cover-' + Math.random().toString(36).substr(2, 9);
+                const menuId = 'lm-' + Math.random().toString(36).substr(2, 8);
+                const encodedMeta = encodeURIComponent(JSON.stringify({url:book.url,name:book.name,category:book.category,title:t,author:a,size:book.size}));
                 const card = document.createElement('div');
                 card.className = 'lib-card';
                 card.style.cursor = 'pointer';
                 card.onclick = function(e) {
-                    if (e.target.closest('.lib-card-dl') || e.target.closest('.lib-card-save')) return;
+                    if (e.target.closest('.card-more-btn') || e.target.closest('.card-more-menu')) return;
                     openBookViewer(book.url, book.name, t);
                 };
-
-                const saveBtn = isOffline
-                    ? '<button class="lib-card-save" onclick="event.stopPropagation();handleRemoveOfflineLib(this,\''+encodeURIComponent(book.url)+'\')"><i class="fas fa-trash"></i></button>'
-                    : '<button class="lib-card-save" onclick="event.stopPropagation();handleSaveOfflineLib(this,\''+encodeURIComponent(JSON.stringify({url:book.url,name:book.name,category:book.category,title:t,author:a,size:book.size}))+'\')" title="'+(saved?'Saved offline':'Save for offline')+'" style="position:absolute;bottom:8px;left:8px;width:32px;height:32px;border-radius:50%;background:'+(saved?'rgba(76,175,80,0.9)':'rgba(0,0,0,0.6)')+';color:#fff;border:none;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;backdrop-filter:blur(4px);"><i class="fas '+(saved?'fa-check':'fa-arrow-down')+'"></i></button>';
-
+                const saveAction = isOffline
+                    ? 'event.stopPropagation();closeAllMoreMenus();handleRemoveOfflineLib(this.closest(\'.lib-card\').querySelector(\'.card-more-btn\'),\''+encodeURIComponent(book.url)+'\')'
+                    : 'event.stopPropagation();closeAllMoreMenus();handleSaveOfflineLib(this.closest(\'.lib-card\').querySelector(\'.card-more-btn\'),\''+encodedMeta+'\')'
+                const saveLabel = isOffline ? 'Remove Download' : (saved ? 'Saved to Phone' : 'Save to Phone');
+                const saveIcon = isOffline ? 'fa-trash' : (saved ? 'fa-check-circle' : 'fa-download');
+                const saveCls = isOffline ? 'danger' : '';
                 card.innerHTML =
                     '<div class="lib-card-cover" id="'+coverId+'"><div class="cover-placeholder" style="background:'+s.gradient+'"><i class="fas '+(isPdf?'fa-file-pdf':s.icon)+'"></i><span>'+book.category+'</span></div>'+
-                    saveBtn+
-                    '<button class="lib-card-dl" aria-label="Download" onclick="event.stopPropagation();inAppDownload(\''+book.url+'\',\''+encodeURIComponent(book.name||'download')+'\')" style="border:none;cursor:pointer;"><i class="fas fa-download"></i></button></div>'+
+                    '<button class="card-more-btn" onclick="event.stopPropagation();toggleMoreMenu(\''+menuId+'\');">&#8942;</button>'+
+                    '<div class="card-more-menu" id="'+menuId+'">'+
+                        '<button onclick="'+saveAction+'" class="'+saveCls+'"><i class="fas '+saveIcon+'"></i>'+saveLabel+'</button>'+
+                        '<button onclick="event.stopPropagation();closeAllMoreMenus();inAppDownload(\''+book.url+'\',\''+encodeURIComponent(book.name||'download')+'\')" ><i class="fas fa-mobile-alt"></i>Download</button>'+
+                    '</div></div>'+
                     '<div class="lib-card-body"><span class="lib-card-cat" style="background:'+s.catBg+';color:'+s.catColor+';">'+book.category+'</span>'+
                     '<div class="lib-card-title">'+safeTitle+'</div>'+
                     '<div class="lib-card-meta"><i class="fas fa-user" style="margin-right:3px;"></i>'+safeAuthor+' &middot; '+fmtSize(book.size)+'</div></div>';

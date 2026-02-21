@@ -113,10 +113,17 @@
                 .media-card-badge.video { background: rgba(244,67,54,0.85); }
                 .media-card-badge.audio { background: rgba(156,39,176,0.85); }
                 .media-card-badge.image { background: rgba(33,150,243,0.85); }
-                .media-card-dl { position: absolute; bottom: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%; background: rgba(0,0,0,0.6); color: white; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 13px; backdrop-filter: blur(4px); }
                 .media-card-body { padding: 10px 12px 14px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
                 .media-card-title { font-size: 13px; font-weight: 700; color: #333; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
                 .media-card-meta { font-size: 11px; color: #999; display: flex; align-items: center; gap: 6px; margin-top: auto; }
+                .card-more-btn { position: absolute; top: 6px; right: 6px; width: 30px; height: 30px; border-radius: 50%; background: rgba(0,0,0,0.55); color: #fff; border: none; display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; backdrop-filter: blur(4px); z-index: 10; letter-spacing: 0; line-height: 1; }
+                .card-more-btn:active { background: rgba(0,0,0,0.8); }
+                .card-more-menu { position: absolute; top: 40px; right: 6px; background: #fff; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.18); z-index: 100; min-width: 160px; overflow: hidden; display: none; }
+                .card-more-menu.open { display: block; }
+                .card-more-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 16px; border: none; background: none; font-size: 14px; font-weight: 500; color: #333; cursor: pointer; text-align: left; }
+                .card-more-menu button:active { background: #f5f5f5; }
+                .card-more-menu button.danger { color: #e53935; }
+                .card-more-menu button i { width: 16px; text-align: center; }
             </style>
 
             <section class="page-content">
@@ -273,6 +280,22 @@
             }
         }
         window.inAppDownload = inAppDownload;
+
+        function toggleMoreMenu(id) {
+            const menu = document.getElementById(id);
+            if (!menu) return;
+            const isOpen = menu.classList.contains('open');
+            closeAllMoreMenus();
+            if (!isOpen) menu.classList.add('open');
+        }
+        function closeAllMoreMenus() {
+            document.querySelectorAll('.card-more-menu.open').forEach(m => m.classList.remove('open'));
+        }
+        window.toggleMoreMenu = toggleMoreMenu;
+        window.closeAllMoreMenus = closeAllMoreMenus;
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.card-more-btn') && !e.target.closest('.card-more-menu')) closeAllMoreMenus();
+        });
 
         function fmtSize(b) {
             if (!b && b !== 0) return '';
@@ -454,23 +477,31 @@
                 }
 
                 const saved = isFileSavedOffline(media.url);
+                const menuId = 'mm-' + Math.random().toString(36).substr(2, 8);
+                const encodedMeta = encodeURIComponent(JSON.stringify({url:media.url,name:media.name,type:media.type,title:t,author:a,size:media.size}));
                 const card = document.createElement('div');
                 card.className = 'media-card';
                 card.style.cursor = 'pointer';
                 card.onclick = function(e) {
-                    if (e.target.closest('.media-card-dl') || e.target.closest('.media-card-save')) return;
+                    if (e.target.closest('.card-more-btn') || e.target.closest('.card-more-menu')) return;
                     openMediaViewer(media.url, media.type, t);
                 };
 
-                const saveBtn = isOffline
-                    ? '<button class="media-card-save" onclick="event.stopPropagation();handleRemoveOffline(this,\''+encodeURIComponent(media.url)+'\')" title="Remove offline" style="position:absolute;bottom:8px;left:8px;width:32px;height:32px;border-radius:50%;background:rgba(244,67,54,0.85);color:#fff;border:none;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;backdrop-filter:blur(4px);"><i class="fas fa-trash"></i></button>'
-                    : '<button class="media-card-save" onclick="event.stopPropagation();handleSaveOffline(this,\''+encodeURIComponent(JSON.stringify({url:media.url,name:media.name,type:media.type,title:t,author:a,size:media.size}))+'\')" title="'+(saved?'Saved offline':'Save for offline')+'" style="position:absolute;bottom:8px;left:8px;width:32px;height:32px;border-radius:50%;background:'+(saved?'rgba(76,175,80,0.9)':'rgba(0,0,0,0.6)')+';color:#fff;border:none;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;backdrop-filter:blur(4px);"><i class="fas '+(saved?'fa-check':'fa-arrow-down')+'"></i></button>';
+                const saveAction = isOffline
+                    ? 'event.stopPropagation();closeAllMoreMenus();handleRemoveOffline(this.closest(\'.media-card\').querySelector(\'.card-more-btn\'),\''+encodeURIComponent(media.url)+'\')'
+                    : 'event.stopPropagation();closeAllMoreMenus();handleSaveOffline(this.closest(\'.media-card\').querySelector(\'.card-more-btn\'),\''+encodedMeta+'\')';
+                const saveLabel = isOffline ? 'Remove Download' : (saved ? 'Saved to Phone' : 'Save to Phone');
+                const saveIcon = isOffline ? 'fa-trash' : (saved ? 'fa-check-circle' : 'fa-download');
+                const saveCls = isOffline ? 'danger' : '';
 
                 card.innerHTML =
                     '<div class="media-card-thumb">'+thumb+
                     '<span class="media-card-badge '+media.type+'">'+media.type+'</span>'+
-                    saveBtn+
-                    '<button class="media-card-dl" aria-label="Download" onclick="event.stopPropagation();inAppDownload(\''+media.url+'\',\''+encodeURIComponent(media.name||'download')+'\')" style="border:none;cursor:pointer;"><i class="fas fa-download"></i></button></div>'+
+                    '<button class="card-more-btn" onclick="event.stopPropagation();toggleMoreMenu(\''+menuId+'\')">&#8942;</button>'+
+                    '<div class="card-more-menu" id="'+menuId+'">'+
+                        '<button onclick="'+saveAction+'" class="'+saveCls+'"><i class="fas '+saveIcon+'"></i>'+saveLabel+'</button>'+
+                        '<button onclick="event.stopPropagation();closeAllMoreMenus();inAppDownload(\''+media.url+'\',\''+encodeURIComponent(media.name||'download')+'\')" ><i class="fas fa-mobile-alt"></i>Download</button>'+
+                    '</div></div>'+
                     '<div class="media-card-body"><div class="media-card-title">'+safeName+'</div>'+
                     '<div class="media-card-meta"><span><i class="fas fa-user" style="margin-right:3px;"></i>'+safeAuthor+'</span>'+
                     '<span>&middot; '+fmtSize(media.size)+'</span></div></div>';
