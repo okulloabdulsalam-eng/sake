@@ -847,9 +847,9 @@
             dlBtn.dataset.name = (title || 'book').replace(/[^a-zA-Z0-9._-]/g, '_');
 
             if (ext === 'pdf') {
-                // Use Google Docs viewer as fallback for mobile PDF viewing
+                // Use Google Docs viewer for mobile PDF viewing (works on all devices)
                 const gdocUrl = 'https://docs.google.com/gview?embedded=true&url=' + encodeURIComponent(url);
-                content.innerHTML = '<iframe src="'+url+'" style="width:100%;height:100%;border:none;background:#fff;" onerror="this.src=\''+gdocUrl+'\'"></iframe>';
+                content.innerHTML = '<iframe src="'+gdocUrl+'" style="width:100%;height:100%;border:none;background:#fff;"></iframe>';
             } else if (['jpg','jpeg','png','gif','webp','svg'].includes(ext)) {
                 content.innerHTML = '<img src="'+url+'" style="max-width:100%;max-height:100%;object-fit:contain;">';
             } else if (ext === 'txt') {

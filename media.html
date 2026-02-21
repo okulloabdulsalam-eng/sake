@@ -608,9 +608,9 @@
             dlBtn.dataset.name = (title || 'media').replace(/[^a-zA-Z0-9._-]/g, '_');
 
             if (type === 'video') {
-                content.innerHTML = '<video controls autoplay playsinline style="max-width:100%;max-height:100%;border-radius:8px;"><source src="'+url+'">Your browser does not support video.</video>';
+                content.innerHTML = '<video controls playsinline style="max-width:100%;max-height:100%;border-radius:8px;"><source src="'+url+'">Your browser does not support video.</video>';
             } else if (type === 'audio') {
-                content.innerHTML = '<div style="text-align:center;width:100%;max-width:360px;"><div style="width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#7B1FA2,#4A148C);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;"><i class="fas fa-music" style="font-size:40px;color:#fff;"></i></div><div style="color:#fff;font-size:16px;font-weight:600;margin-bottom:16px;">'+san(title)+'</div><audio controls autoplay style="width:100%;"><source src="'+url+'">Your browser does not support audio.</audio></div>';
+                content.innerHTML = '<div style="text-align:center;width:100%;max-width:360px;"><div style="width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#7B1FA2,#4A148C);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;"><i class="fas fa-music" style="font-size:40px;color:#fff;"></i></div><div style="color:#fff;font-size:16px;font-weight:600;margin-bottom:16px;">'+san(title)+'</div><audio controls style="width:100%;"><source src="'+url+'">Your browser does not support audio.</audio></div>';
             } else if (type === 'image') {
                 content.innerHTML = '<img src="'+url+'" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:4px;" onclick="closeMediaViewer()">';
             } else {

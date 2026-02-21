@@ -440,9 +440,9 @@
                         <label for="mediaFileInput" style="display:block; cursor:pointer; padding: 20px;">
                             <i class="fas fa-folder-open" style="font-size: 48px; color: var(--primary-green); margin-bottom: 10px;"></i>
                             <p style="margin: 0; font-weight: 600;">Tap to browse files</p>
-                            <p id="mediaUploadHint" style="margin: 5px 0 0 0; color: #888; font-size: 14px;">Select any media file</p>
+                            <p id="mediaUploadHint" style="margin: 5px 0 0 0; color: #888; font-size: 14px;">Select one or more media files</p>
                         </label>
-                        <input type="file" id="mediaFileInput" accept="*/*" onchange="handleMediaUpload(this.files)" style="position:absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer;">
+                        <input type="file" id="mediaFileInput" accept="*/*" multiple onchange="handleMediaUpload(this.files)" style="position:absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer;">
                     </div>
                     <div class="progress-bar" id="mediaProgressBar">
                         <div class="progress" id="mediaProgress"></div>
@@ -496,9 +496,9 @@
                         <label for="libraryFileInput" style="display:block; cursor:pointer; padding: 20px;">
                             <i class="fas fa-folder-open" style="font-size: 48px; color: var(--primary-green); margin-bottom: 10px;"></i>
                             <p style="margin: 0; font-weight: 600;">Tap to browse files</p>
-                            <p style="margin: 5px 0 0 0; color: #888; font-size: 14px;">Select PDF, DOCX, EPUB, TXT</p>
+                            <p style="margin: 5px 0 0 0; color: #888; font-size: 14px;">Select one or more books (PDF, DOCX, EPUB, TXT)</p>
                         </label>
-                        <input type="file" id="libraryFileInput" accept="*/*" onchange="handleLibraryUpload(this.files)" style="position:absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer;">
+                        <input type="file" id="libraryFileInput" accept="*/*" multiple onchange="handleLibraryUpload(this.files)" style="position:absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer;">
                     </div>
                     <div class="progress-bar" id="libraryProgressBar">
                         <div class="progress" id="libraryProgress"></div>
@@ -2033,17 +2033,14 @@
             }
         }
 
-        // Media Upload — smart multi-account R2 routing with 10GB auto-rotation
+        // Media Upload — multi-select with parallel uploads and per-file progress
         async function handleMediaUpload(files) {
             if (!files || files.length === 0) return;
             
-            const file = files[0];
-            const title = document.getElementById('mediaTitle').value.trim() || file.name;
+            const title = document.getElementById('mediaTitle').value.trim() || '';
             const author = document.getElementById('mediaAuthor').value.trim() || '';
             const type = document.getElementById('mediaType').value;
             const category = (document.getElementById('mediaCategory').value.trim() || 'general').toLowerCase().replace(/[^a-z0-9\-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'general';
-
-            // Determine storage type: video/image → video accounts, audio → audio account
             const storageType = (type === 'audio') ? 'audio' : 'video';
 
             // Check if any account of the right type has an admin token
@@ -2063,68 +2060,81 @@
                 }
             }
 
-            const progressBar = document.getElementById('mediaProgressBar');
-            const progress = document.getElementById('mediaProgress');
-            progressBar.style.display = 'block';
-            progress.style.width = '0%';
-            
-            try {
-                // Build filename: timestamp_hash_title[_by_author].ext
-                const ext = file.name.split('.').pop();
-                const safeName = (title.replace(/\s+/g, '_') + (author ? '_by_' + author.replace(/\s+/g, '_') : '')).replace(/[^a-zA-Z0-9_\-]/g, '');
-                const key = 'media/' + type + '/' + category + '/' + Date.now() + '_' + safeName + '.' + ext;
-                // Save category for autocomplete reuse
-                saveMediaCategory(category);
+            // Save category for autocomplete reuse
+            saveMediaCategory(category);
 
-                if (hasConfiguredAccount) {
-                    if (storageType === 'video') {
-                        // Smart routing: find first video account under 10GB
-                        showStatus('mediaUploadStatus', 'Checking storage across video accounts...', 'success');
-                        const available = await findAvailableVideoAccount(file.size);
-                        if (!available) {
-                            showStatus('mediaUploadStatus', 'All 5 video accounts are full (10 GB each = 50 GB total). Please free up space or contact admin.', 'error');
-                            progressBar.style.display = 'none';
-                            return;
-                        }
-                        const pct = available.storage.usagePercent || 0;
-                        let warning = '';
-                        if (pct >= 90) warning = ' ⚠️ This account is almost full!';
-                        else if (pct >= 75) warning = ' (storage getting high)';
-                        showStatus('mediaUploadStatus', 'Uploading to ' + available.account.label + ' (' + (available.storage.totalGB || 0) + ' GB used)...' + warning, 'success');
-                        await uploadToR2Account(available.account, file, key, (percent) => { progress.style.width = percent + '%'; });
-                        
-                        // Post-upload: warn if account is now very full
-                        const postStorage = await checkAccountStorage(available.account.workerUrl);
-                        if (postStorage && postStorage.usagePercent >= 95) {
-                            showStatus('mediaUploadStatus', 'Upload successful! ⚠️ ' + available.account.label + ' is now at ' + postStorage.usagePercent + '% — next upload will go to the next account.', 'success');
+            // Create per-file progress UI
+            const progressContainer = document.createElement('div');
+            progressContainer.id = 'mediaMultiProgress';
+            progressContainer.style.marginTop = '15px';
+            const statusEl = document.getElementById('mediaUploadStatus');
+            statusEl.parentNode.insertBefore(progressContainer, statusEl.nextSibling);
+
+            const results = [];
+            const total = files.length;
+            showStatus('mediaUploadStatus', `Uploading ${total} file${total>1?'s':''}...`, 'success');
+
+            // Upload files in parallel (limit concurrency to 3)
+            const concurrency = 3;
+            for (let i = 0; i < files.length; i += concurrency) {
+                const batch = Array.from(files).slice(i, i + concurrency);
+                await Promise.all(batch.map(async (file, idx) => {
+                    const fileIdx = i + idx;
+                    const fileTitle = title || file.name;
+                    const fileAuthor = author || '';
+                    const ext = file.name.split('.').pop();
+                    const safeName = (fileTitle.replace(/\s+/g, '_') + (fileAuthor ? '_by_' + fileAuthor.replace(/\s+/g, '_') : '')).replace(/[^a-zA-Z0-9_\-]/g, '');
+                    const key = 'media/' + type + '/' + category + '/' + Date.now() + '_' + fileIdx + '_' + safeName + '.' + ext;
+
+                    // Create per-file progress bar
+                    const fileDiv = document.createElement('div');
+                    fileDiv.style.marginBottom = '8px';
+                    fileDiv.innerHTML = `<div style="font-size:12px;color:#555;margin-bottom:4px;">${file.name}</div><div class="progress-bar" style="height:6px;"><div class="progress" style="width:0%;background:var(--primary-green);"></div></div>`;
+                    progressContainer.appendChild(fileDiv);
+                    const fileProgress = fileDiv.querySelector('.progress');
+
+                    try {
+                        if (hasConfiguredAccount) {
+                            if (storageType === 'video') {
+                                const available = await findAvailableVideoAccount(file.size);
+                                if (!available) throw new Error('All video accounts are full');
+                                await uploadToR2Account(available.account, file, key, (p) => { fileProgress.style.width = p + '%'; });
+                            } else {
+                                await uploadToR2Account(mc.audio, file, key, (p) => { fileProgress.style.width = p + '%'; });
+                            }
                         } else {
-                            showStatus('mediaUploadStatus', 'Upload successful! Stored in ' + available.account.label, 'success');
+                            await window.githubStorage.upload(file, 'media', type, (p) => { fileProgress.style.width = p + '%'; });
                         }
-                    } else {
-                        // Audio: upload to audio account
-                        showStatus('mediaUploadStatus', 'Uploading audio to Audio account...', 'success');
-                        await uploadToR2Account(mc.audio, file, key, (percent) => { progress.style.width = percent + '%'; });
-                        showStatus('mediaUploadStatus', 'Audio upload successful!', 'success');
+                        fileProgress.style.background = '#4CAF50';
+                        results.push({ success: true, file: file.name });
+                    } catch (e) {
+                        fileProgress.style.background = '#f44336';
+                        results.push({ success: false, file: file.name, error: e.message });
                     }
-                } else {
-                    showStatus('mediaUploadStatus', 'Uploading to GitHub...', 'success');
-                    await window.githubStorage.upload(file, 'media', type, (percent) => { progress.style.width = percent + '%'; });
-                    showStatus('mediaUploadStatus', 'Upload successful!', 'success');
-                }
-                
+                }));
+            }
+
+            // Summary
+            const success = results.filter(r => r.success).length;
+            const failed = results.filter(r => !r.success).length;
+            if (failed === 0) {
+                showStatus('mediaUploadStatus', `✅ All ${success} file${success>1?'s':''} uploaded successfully!`, 'success');
+            } else {
+                showStatus('mediaUploadStatus', `⚠️ ${success} uploaded, ${failed} failed. Check console for details.`, 'error');
+                results.filter(r => !r.success).forEach(r => console.error('Failed to upload:', r.file, r.error));
+            }
+
+            // Cleanup
+            setTimeout(() => {
+                progressContainer.remove();
                 document.getElementById('mediaTitle').value = '';
                 document.getElementById('mediaAuthor').value = '';
                 document.getElementById('mediaCategory').value = '';
                 document.getElementById('mediaFileInput').value = '';
                 loadMediaList();
                 updateStats();
-                checkAllR2Storage(); // Refresh storage bars
-                
-            } catch (error) {
-                showStatus('mediaUploadStatus', 'Upload failed: ' + error.message, 'error');
-            } finally {
-                setTimeout(() => { progressBar.style.display = 'none'; }, 1000);
-            }
+                checkAllR2Storage();
+            }, 1500);
         }
 
         async function saveMediaMetadata(data) {
@@ -2143,18 +2153,10 @@
             return response.json();
         }
 
-        // Library Upload — dedicated library R2 account
+        // Library Upload — multi-select with parallel uploads and per-file progress
         async function handleLibraryUpload(files) {
             if (!files || files.length === 0) return;
             
-            const mc = getR2MultiConfig();
-            const hasLibrary = !!(mc.library && mc.library.workerUrl && mc.library.adminToken);
-            if (!hasLibrary && (!window.githubStorage || !window.githubStorage.isConfigured())) {
-                showStatus('libraryUploadStatus', 'Please configure Library R2 Admin Token in Settings first', 'error');
-                return;
-            }
-            
-            const file = files[0];
             const title = document.getElementById('bookTitle').value.trim();
             const author = document.getElementById('bookAuthor').value.trim();
             const category = document.getElementById('bookCategory').value;
@@ -2166,37 +2168,79 @@
                 return;
             }
             
-            const progressBar = document.getElementById('libraryProgressBar');
-            const progress = document.getElementById('libraryProgress');
-            progressBar.style.display = 'block';
-            progress.style.width = '0%';
+            const mc = getR2MultiConfig();
+            const hasLibrary = !!(mc.library && mc.library.workerUrl && mc.library.adminToken);
+            if (!hasLibrary && (!window.githubStorage || !window.githubStorage.isConfigured())) {
+                showStatus('libraryUploadStatus', 'Please configure Library R2 Admin Token in Settings first', 'error');
+                return;
+            }
             
-            try {
-                const ext = file.name.split('.').pop();
-                const safeName = (title.replace(/\s+/g, '_') + (author ? '_by_' + author.replace(/\s+/g, '_') : '')).replace(/[^a-zA-Z0-9_\-]/g, '');
-                const key = collection
-                    ? 'library/' + category + '/' + collection + '/' + Date.now() + '_' + safeName + '.' + ext
-                    : 'library/' + category + '/' + Date.now() + '_' + safeName + '.' + ext;
-                if (collection) saveBookCollection(collection);
+            if (collection) saveBookCollection(collection);
 
-                if (hasLibrary) {
-                    // Check library account storage first
-                    const storage = await checkAccountStorage(mc.library.workerUrl);
-                    if (storage && storage.totalBytes + file.size > MAX_BYTES_PER_ACCOUNT) {
-                        showStatus('libraryUploadStatus', 'Library storage is full (10 GB). Please free up space first.', 'error');
-                        progressBar.style.display = 'none';
-                        return;
+            // Create per-file progress UI
+            const progressContainer = document.createElement('div');
+            progressContainer.id = 'libraryMultiProgress';
+            progressContainer.style.marginTop = '15px';
+            const statusEl = document.getElementById('libraryUploadStatus');
+            statusEl.parentNode.insertBefore(progressContainer, statusEl.nextSibling);
+
+            const results = [];
+            const total = files.length;
+            showStatus('libraryUploadStatus', `Uploading ${total} file${total>1?'s':''}...`, 'success');
+
+            // Upload files in parallel (limit concurrency to 3)
+            const concurrency = 3;
+            for (let i = 0; i < files.length; i += concurrency) {
+                const batch = Array.from(files).slice(i, i + concurrency);
+                await Promise.all(batch.map(async (file, idx) => {
+                    const fileIdx = i + idx;
+                    const fileTitle = title || file.name.replace(/\.[^/.]+$/, '');
+                    const fileAuthor = author || '';
+                    const ext = file.name.split('.').pop();
+                    const safeName = (fileTitle.replace(/\s+/g, '_') + (fileAuthor ? '_by_' + fileAuthor.replace(/\s+/g, '_') : '')).replace(/[^a-zA-Z0-9_\-]/g, '');
+                    const key = collection
+                        ? 'library/' + category + '/' + collection + '/' + Date.now() + '_' + fileIdx + '_' + safeName + '.' + ext
+                        : 'library/' + category + '/' + Date.now() + '_' + fileIdx + '_' + safeName + '.' + ext;
+
+                    // Create per-file progress bar
+                    const fileDiv = document.createElement('div');
+                    fileDiv.style.marginBottom = '8px';
+                    fileDiv.innerHTML = `<div style="font-size:12px;color:#555;margin-bottom:4px;">${file.name}</div><div class="progress-bar" style="height:6px;"><div class="progress" style="width:0%;background:var(--primary-green);"></div></div>`;
+                    progressContainer.appendChild(fileDiv);
+                    const fileProgress = fileDiv.querySelector('.progress');
+
+                    try {
+                        if (hasLibrary) {
+                            const storage = await checkAccountStorage(mc.library.workerUrl);
+                            if (storage && storage.totalBytes + file.size > MAX_BYTES_PER_ACCOUNT) {
+                                throw new Error('Library storage is full (10 GB)');
+                            }
+                            await uploadToR2Account(mc.library, file, key, (p) => { fileProgress.style.width = p + '%'; });
+                        } else {
+                            await window.githubStorage.upload(file, 'library', category, (p) => { fileProgress.style.width = p + '%'; });
+                        }
+                        fileProgress.style.background = '#4CAF50';
+                        results.push({ success: true, file: file.name });
+                    } catch (e) {
+                        fileProgress.style.background = '#f44336';
+                        results.push({ success: false, file: file.name, error: e.message });
                     }
-                    const usedGB = storage ? storage.totalGB : '?';
-                    showStatus('libraryUploadStatus', 'Uploading to Library storage (' + usedGB + ' GB used)...', 'success');
-                    await uploadToR2Account(mc.library, file, key, (percent) => { progress.style.width = percent + '%'; });
-                    showStatus('libraryUploadStatus', 'Upload successful! Stored in Library account.', 'success');
-                } else {
-                    showStatus('libraryUploadStatus', 'Uploading to GitHub...', 'success');
-                    await window.githubStorage.upload(file, 'library', category, (percent) => { progress.style.width = percent + '%'; });
-                    showStatus('libraryUploadStatus', 'Upload successful!', 'success');
-                }
-                
+                }));
+            }
+
+            // Summary
+            const success = results.filter(r => r.success).length;
+            const failed = results.filter(r => !r.success).length;
+            if (failed === 0) {
+                showStatus('libraryUploadStatus', `✅ All ${success} file${success>1?'s':''} uploaded successfully!`, 'success');
+            } else {
+                showStatus('libraryUploadStatus', `⚠️ ${success} uploaded, ${failed} failed. Check console for details.`, 'error');
+                results.filter(r => !r.success).forEach(r => console.error('Failed to upload:', r.file, r.error));
+            }
+
+            // Cleanup
+            setTimeout(() => {
+                progressContainer.remove();
                 document.getElementById('bookTitle').value = '';
                 document.getElementById('bookAuthor').value = '';
                 document.getElementById('bookCollection').value = '';
@@ -2205,12 +2249,7 @@
                 loadLibraryList();
                 updateStats();
                 checkAllR2Storage();
-                
-            } catch (error) {
-                showStatus('libraryUploadStatus', 'Upload failed: ' + error.message, 'error');
-            } finally {
-                setTimeout(() => { progressBar.style.display = 'none'; }, 1000);
-            }
+            }, 1500);
         }
 
         async function saveBookMetadata(data) {
