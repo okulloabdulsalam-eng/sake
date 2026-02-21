@@ -535,9 +535,14 @@
 
         async function fetchFromR2(type) {
             const allFiles = [];
+            const seen = new Set();
             const types = type === 'all' ? ['video', 'audio', 'image'] : [type];
             for (const t of types) {
-                const accounts = getR2AccountsForType(t);
+                // Get dedicated accounts for this type + all video accounts as fallback
+                // (files may have been uploaded to video accounts before dedicated accounts were configured)
+                const dedicated = getR2AccountsForType(t);
+                const videoAccts = (t !== 'video' && t !== 'image') ? getR2AccountsForType('video') : [];
+                const accounts = [...dedicated, ...videoAccts.filter(va => !dedicated.some(d => d.workerUrl === va.workerUrl))];
                 const prefix = 'media/' + t;
                 for (const acct of accounts) {
                     try {
@@ -545,7 +550,10 @@
                         if (!res.ok) continue;
                         const data = await res.json();
                         (data.files || []).forEach(f => {
-                            allFiles.push({ name: f.name, type: fileType(f.name), url: acct.workerUrl + '/file/' + encodeURIComponent(f.key), size: f.size, playlist: extractPlaylist(f.key) });
+                            const url = acct.workerUrl + '/file/' + encodeURIComponent(f.key);
+                            if (seen.has(f.key)) return;
+                            seen.add(f.key);
+                            allFiles.push({ name: f.name, type: fileType(f.name), url: url, size: f.size, playlist: extractPlaylist(f.key) });
                         });
                     } catch(e) {}
                 }

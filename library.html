@@ -445,10 +445,13 @@
         }
         function getLibraryR2Accounts() {
             const mc = getR2MultiConfig();
-            if (mc.library && mc.library.workerUrl) return [mc.library];
-            // Fallback: try first video account (backward compat)
-            if (mc.video && mc.video.length > 0 && mc.video[0].workerUrl) return [mc.video[0]];
-            return [];
+            const accounts = [];
+            const seen = new Set();
+            // Dedicated library account first
+            if (mc.library && mc.library.workerUrl) { accounts.push(mc.library); seen.add(mc.library.workerUrl); }
+            // Also check all video accounts (files may have been uploaded there before library account was configured)
+            (mc.video || []).forEach(a => { if (a.workerUrl && !seen.has(a.workerUrl)) { accounts.push(a); seen.add(a.workerUrl); } });
+            return accounts;
         }
         const GITHUB_OWNER = 'okulloabdulsalam-eng';
         const GITHUB_REPO  = 'kiuma-storage';

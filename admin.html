@@ -2611,45 +2611,66 @@
         // Load lists from GitHub
         async function loadMediaList() {
             const list = document.getElementById('mediaFileList');
-            const config = getGitHubConfig();
-            
-            console.log('Loading media, config:', config.owner, config.repo, config.token ? 'token set' : 'no token');
-            
-            if (!config.owner || !config.repo) {
-                list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">Configure GitHub settings first</p>';
-                return;
-            }
             
             list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Loading media...</p>';
             
             try {
-                const folders = ['video', 'audio', 'image'];
-                const headers = config.token ? { 'Authorization': `token ${config.token}` } : {};
-                
                 let allFiles = [];
+                const seen = new Set();
                 
-                for (const folder of folders) {
-                    try {
-                        const apiUrl = `https://api.github.com/repos/${config.owner}/${config.repo}/contents/media/${folder}`;
-                        console.log('Fetching media:', apiUrl);
-                        const response = await fetch(apiUrl, { headers });
-                        console.log('Response for', folder, ':', response.status);
-                        if (response.ok) {
-                            const files = await response.json();
-                            if (Array.isArray(files)) {
-                                files.filter(f => f.type === 'file').forEach(file => {
-                                    allFiles.push({
-                                        name: file.name,
-                                        path: file.path,
-                                        sha: file.sha,
-                                        type: folder,
-                                        downloadUrl: file.download_url,
-                                        size: file.size
-                                    });
+                // 1. Fetch from ALL R2 accounts (video + audio) for media files
+                const mc = getR2MultiConfig();
+                const r2Accounts = [...(mc.video || []), ...(mc.audio && mc.audio.workerUrl ? [mc.audio] : [])].filter(a => a.workerUrl);
+                const mediaPrefixes = ['media/video/', 'media/audio/', 'media/image/'];
+                for (const acct of r2Accounts) {
+                    for (const prefix of mediaPrefixes) {
+                        try {
+                            const res = await fetch(acct.workerUrl + '/list?prefix=' + encodeURIComponent(prefix), { cache: 'no-store' });
+                            if (!res.ok) continue;
+                            const data = await res.json();
+                            (data.files || []).forEach(f => {
+                                if (seen.has(f.key)) return;
+                                seen.add(f.key);
+                                const folder = f.key.split('/')[1] || 'video';
+                                allFiles.push({
+                                    name: f.name,
+                                    path: f.key,
+                                    sha: '',
+                                    type: folder,
+                                    downloadUrl: acct.workerUrl + '/file/' + encodeURIComponent(f.key),
+                                    size: f.size,
+                                    source: 'r2',
+                                    workerUrl: acct.workerUrl
                                 });
+                            });
+                        } catch(e) {}
+                    }
+                }
+
+                // 2. Also fetch from GitHub (merge, skip duplicates by name)
+                const config = getGitHubConfig();
+                if (config.owner && config.repo) {
+                    const folders = ['video', 'audio', 'image'];
+                    const headers = config.token ? { 'Authorization': `token ${config.token}` } : {};
+                    for (const folder of folders) {
+                        try {
+                            const response = await fetch(`https://api.github.com/repos/${config.owner}/${config.repo}/contents/media/${folder}`, { headers });
+                            if (response.ok) {
+                                const files = await response.json();
+                                if (Array.isArray(files)) {
+                                    files.filter(f => f.type === 'file').forEach(file => {
+                                        if (seen.has(file.name)) return;
+                                        seen.add(file.name);
+                                        allFiles.push({
+                                            name: file.name, path: file.path, sha: file.sha,
+                                            type: folder, downloadUrl: file.download_url, size: file.size,
+                                            source: 'github'
+                                        });
+                                    });
+                                }
                             }
-                        }
-                    } catch (e) { console.log('Error fetching', folder, ':', e.message); }
+                        } catch(e) {}
+                    }
                 }
                 
                 console.log('Total media files found:', allFiles.length);
@@ -2657,20 +2678,20 @@
                 if (allFiles.length > 0) {
                     list.innerHTML = allFiles.map(item => {
                         const displayName = item.name.replace(/^\d+_[a-z0-9]+_/, '').replace(/_/g, ' ');
+                        const srcBadge = item.source === 'r2' ? '<span style="font-size:9px;background:#e3f2fd;color:#1565C0;padding:1px 5px;border-radius:4px;margin-left:4px;">R2</span>' : '<span style="font-size:9px;background:#f3e5f5;color:#7B1FA2;padding:1px 5px;border-radius:4px;margin-left:4px;">GitHub</span>';
+                        const deleteBtn = item.source === 'r2'
+                            ? `<button class="btn-icon btn-danger" onclick="deleteR2File('${encodeURIComponent(item.path)}','${encodeURIComponent(item.workerUrl||'')}')" title="Delete"><i class="fas fa-trash"></i></button>`
+                            : `<button class="btn-icon btn-danger" onclick="deleteMediaFile('${item.path}', '${item.sha}')" title="Delete"><i class="fas fa-trash"></i></button>`;
                         return `
-                        <div class="file-item" data-path="${item.path}" data-sha="${item.sha}">
+                        <div class="file-item" data-path="${item.path}" data-sha="${item.sha||''}">
                             <i class="file-icon fas ${getMediaIcon(item.type)}"></i>
                             <div class="file-info">
-                                <div class="file-name">${escapeHtml(displayName)}</div>
+                                <div class="file-name">${escapeHtml(displayName)} ${srcBadge}</div>
                                 <div class="file-meta">${item.type} • ${formatFileSize(item.size)}</div>
                             </div>
                             <div class="file-actions">
-                                <a href="${item.downloadUrl}" target="_blank" class="btn-icon btn-primary" title="Download">
-                                    <i class="fas fa-download"></i>
-                                </a>
-                                <button class="btn-icon btn-danger" onclick="deleteMediaFile('${item.path}', '${item.sha}')" title="Delete">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                                <a href="${item.downloadUrl}" target="_blank" class="btn-icon btn-primary" title="Download"><i class="fas fa-download"></i></a>
+                                ${deleteBtn}
                             </div>
                         </div>
                     `}).join('');
@@ -2685,69 +2706,83 @@
 
         async function loadLibraryList() {
             const list = document.getElementById('libraryFileList');
-            const config = getGitHubConfig();
-            
-            console.log('Loading library, config:', config.owner, config.repo, config.token ? 'token set' : 'no token');
-            
-            if (!config.owner || !config.repo) {
-                list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">Configure GitHub settings first</p>';
-                return;
-            }
             
             list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Loading library...</p>';
             
             try {
-                const folders = ['islamic', 'educational', 'quran', 'other'];
-                const headers = config.token ? { 'Authorization': `token ${config.token}` } : {};
-                
                 let allFiles = [];
-                
-                // Fetch folders one by one with timeout
-                for (const folder of folders) {
-                    try {
-                        const apiUrl = `https://api.github.com/repos/${config.owner}/${config.repo}/contents/library/${folder}`;
-                        console.log('Fetching:', apiUrl);
-                        const response = await fetch(apiUrl, { headers });
-                        console.log('Response for', folder, ':', response.status);
-                        if (response.ok) {
-                            const files = await response.json();
-                            if (Array.isArray(files)) {
-                                files.filter(f => f.type === 'file').forEach(file => {
-                                    allFiles.push({
-                                        name: file.name,
-                                        path: file.path,
-                                        sha: file.sha,
-                                        category: folder,
-                                        downloadUrl: file.download_url,
-                                        size: file.size
-                                    });
+                const seen = new Set();
+
+                // 1. Fetch from ALL R2 accounts (library + video) for library files
+                const mc = getR2MultiConfig();
+                const r2Accounts = [...(mc.library && mc.library.workerUrl ? [mc.library] : []), ...(mc.video || [])].filter(a => a.workerUrl);
+                const libPrefixes = ['library/islamic/', 'library/educational/', 'library/quran/', 'library/other/', 'library/'];
+                for (const acct of r2Accounts) {
+                    for (const prefix of libPrefixes) {
+                        try {
+                            const res = await fetch(acct.workerUrl + '/list?prefix=' + encodeURIComponent(prefix), { cache: 'no-store' });
+                            if (!res.ok) continue;
+                            const data = await res.json();
+                            (data.files || []).forEach(f => {
+                                if (seen.has(f.key)) return;
+                                seen.add(f.key);
+                                const parts = f.key.split('/');
+                                const cat = parts[1] || 'other';
+                                allFiles.push({
+                                    name: f.name, path: f.key, sha: '',
+                                    category: cat, downloadUrl: acct.workerUrl + '/file/' + encodeURIComponent(f.key),
+                                    size: f.size, source: 'r2', workerUrl: acct.workerUrl
                                 });
+                            });
+                        } catch(e) {}
+                    }
+                }
+
+                // 2. Also fetch from GitHub (merge, skip duplicates by name)
+                const config = getGitHubConfig();
+                if (config.owner && config.repo) {
+                    const folders = ['islamic', 'educational', 'quran', 'other'];
+                    const headers = config.token ? { 'Authorization': `token ${config.token}` } : {};
+                    for (const folder of folders) {
+                        try {
+                            const response = await fetch(`https://api.github.com/repos/${config.owner}/${config.repo}/contents/library/${folder}`, { headers });
+                            if (response.ok) {
+                                const files = await response.json();
+                                if (Array.isArray(files)) {
+                                    files.filter(f => f.type === 'file').forEach(file => {
+                                        if (seen.has(file.name)) return;
+                                        seen.add(file.name);
+                                        allFiles.push({
+                                            name: file.name, path: file.path, sha: file.sha,
+                                            category: folder, downloadUrl: file.download_url, size: file.size,
+                                            source: 'github'
+                                        });
+                                    });
+                                }
                             }
-                        }
-                    } catch (e) { 
-                        console.log('Error fetching', folder, ':', e.message);
+                        } catch(e) {}
                     }
                 }
                 
-                console.log('Total files found:', allFiles.length);
+                console.log('Total library files found:', allFiles.length);
                 
                 if (allFiles.length > 0) {
                     list.innerHTML = allFiles.map(item => {
                         const displayName = item.name.replace(/^\d+_[a-z0-9]+_/, '').replace(/_/g, ' ').replace(/\.[^/.]+$/, '');
+                        const srcBadge = item.source === 'r2' ? '<span style="font-size:9px;background:#e3f2fd;color:#1565C0;padding:1px 5px;border-radius:4px;margin-left:4px;">R2</span>' : '<span style="font-size:9px;background:#f3e5f5;color:#7B1FA2;padding:1px 5px;border-radius:4px;margin-left:4px;">GitHub</span>';
+                        const deleteBtn = item.source === 'r2'
+                            ? `<button class="btn-icon btn-danger" onclick="deleteR2File('${encodeURIComponent(item.path)}','${encodeURIComponent(item.workerUrl||'')}')" title="Delete"><i class="fas fa-trash"></i></button>`
+                            : `<button class="btn-icon btn-danger" onclick="deleteLibraryFile('${item.path}', '${item.sha}')" title="Delete"><i class="fas fa-trash"></i></button>`;
                         return `
-                        <div class="file-item" data-path="${item.path}" data-sha="${item.sha}">
+                        <div class="file-item" data-path="${item.path}" data-sha="${item.sha||''}">
                             <i class="file-icon fas fa-book"></i>
                             <div class="file-info">
-                                <div class="file-name">${escapeHtml(displayName)}</div>
+                                <div class="file-name">${escapeHtml(displayName)} ${srcBadge}</div>
                                 <div class="file-meta">${item.category} • ${formatFileSize(item.size)}</div>
                             </div>
                             <div class="file-actions">
-                                <a href="${item.downloadUrl}" target="_blank" class="btn-icon btn-primary" title="Download">
-                                    <i class="fas fa-download"></i>
-                                </a>
-                                <button class="btn-icon btn-danger" onclick="deleteLibraryFile('${item.path}', '${item.sha}')" title="Delete">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                                <a href="${item.downloadUrl}" target="_blank" class="btn-icon btn-primary" title="Download"><i class="fas fa-download"></i></a>
+                                ${deleteBtn}
                             </div>
                         </div>
                     `}).join('');
@@ -2758,6 +2793,35 @@
                 console.error('Error loading library:', error);
                 list.innerHTML = '<p style="text-align: center; color: #f44336; padding: 20px;">Error loading library</p>';
             }
+        }
+
+        async function deleteR2File(encodedKey, encodedWorkerUrl) {
+            if (!confirm('Are you sure you want to delete this file from R2?')) return;
+            const key = decodeURIComponent(encodedKey);
+            const workerUrl = decodeURIComponent(encodedWorkerUrl);
+            // Find admin token for this worker
+            const mc = getR2MultiConfig();
+            let token = '';
+            (mc.video || []).forEach(a => { if (a.workerUrl === workerUrl) token = a.adminToken; });
+            if (mc.audio && mc.audio.workerUrl === workerUrl) token = mc.audio.adminToken;
+            if (mc.library && mc.library.workerUrl === workerUrl) token = mc.library.adminToken;
+            if (!token) { alert('No admin token found for this R2 account. Set it in Settings.'); return; }
+            try {
+                const res = await fetch(workerUrl + '/file/' + encodeURIComponent(key), {
+                    method: 'DELETE',
+                    headers: { 'X-Admin-Token': token }
+                });
+                if (res.ok) {
+                    alert('File deleted from R2!');
+                    loadMediaList();
+                    loadLibraryList();
+                    updateStats();
+                    checkAllR2Storage();
+                } else {
+                    const data = await res.json();
+                    alert('Delete failed: ' + (data.error || 'Unknown error'));
+                }
+            } catch(e) { alert('Delete error: ' + e.message); }
         }
 
         async function deleteMediaFile(path, sha) {
