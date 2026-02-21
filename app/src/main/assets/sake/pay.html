@@ -502,13 +502,13 @@
                             <li>Choose your preferred payment method (MTN, Airtel, or Bank)</li>
                             <li>Copy the account details and make your payment</li>
                             <li>Use your name or student ID as the payment reference</li>
-                            <li>Submit your payment details via WhatsApp below</li>
+                            <li>Submit your payment details for finance confirmation</li>
                         </ol>
                     </div>
 
                     <!-- Make Payment Button -->
-                    <button class="btn" onclick="submitPaymentViaWhatsApp()" style="width: 100%; padding: 15px 30px; background: linear-gradient(135deg, #25D366, #128C7E); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;">
-                        <i class="fab fa-whatsapp"></i> Submit Payment Details via WhatsApp
+                    <button class="btn" onclick="submitPaymentViaWhatsApp()" style="width: 100%; padding: 15px 30px; background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                        <i class="fas fa-paper-plane"></i> Submit Payment Details
                     </button>
 
                     <!-- Security Notice -->
@@ -663,7 +663,7 @@
                 'donate': 'Donation'
             };
 
-            alert(`Payment Instructions:\n\nAmount: ${amount.toLocaleString()} UGX\nType: ${paymentTypeNames[selectedPaymentType]}\n\nPlease make payment using one of the recommended methods above.\n\nAfter payment, contact the Finance Minister via WhatsApp to confirm your deposit.`);
+            alert(`Payment Instructions:\n\nAmount: ${amount.toLocaleString()} UGX\nType: ${paymentTypeNames[selectedPaymentType]}\n\nPlease make payment using one of the recommended methods above.\n\nAfter payment, contact the Finance Minister to confirm your deposit.`);
         }
 
         function submitPaymentViaWhatsApp() {
