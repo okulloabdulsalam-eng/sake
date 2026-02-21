@@ -131,6 +131,7 @@
                 .card-more-menu button:active { background: #f5f5f5; }
                 .card-more-menu button.danger { color: #e53935; }
                 .card-more-menu button i { width: 16px; text-align: center; }
+                .lib-card-dl { position: absolute; bottom: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%; background: rgba(0,0,0,0.6); color: white; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 13px; backdrop-filter: blur(4px); border: none; cursor: pointer; }
                 .lib-card-cat { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; padding: 2px 8px; border-radius: 4px; display: inline-block; width: fit-content; }
                 .lib-card-title { font-size: 13px; font-weight: 700; color: #333; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
                 .lib-card-meta { font-size: 11px; color: #999; margin-top: auto; }
@@ -460,15 +461,44 @@
         }
         function saveOfflineIndex(idx) { localStorage.setItem(OFFLINE_INDEX_KEY, JSON.stringify(idx)); }
 
-        async function saveFileOffline(url, meta) {
+        async function saveFileOffline(url, meta, onProgress) {
             try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Fetch failed');
+                const contentLength = response.headers.get('Content-Length');
+                const total = contentLength ? parseInt(contentLength, 10) : 0;
+                let loaded = 0;
+                
+                const reader = response.body.getReader();
+                const chunks = [];
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    chunks.push(value);
+                    loaded += value.length;
+                    if (onProgress && total > 0) {
+                        const percent = Math.round((loaded / total) * 100);
+                        onProgress(percent);
+                    }
+                }
+                
+                // Combine all chunks into a single blob
+                const blob = new Blob(chunks);
+                
+                // Store in cache
                 const cache = await caches.open(OFFLINE_CACHE_NAME);
-                const res = await fetch(url);
-                if (!res.ok) throw new Error('Fetch failed');
-                await cache.put(url, res.clone());
+                const newResponse = new Response(blob, {
+                    status: 200,
+                    statusText: 'OK',
+                    headers: { 'Content-Type': response.headers.get('Content-Type') || 'application/octet-stream' }
+                });
+                await cache.put(url, newResponse);
+                
+                // Update index
                 const idx = getOfflineIndex();
                 if (!idx.find(f => f.url === url)) {
-                    idx.push({ url, name: meta.name, category: meta.category, title: meta.title, author: meta.author, size: meta.size, savedAt: Date.now() });
+                    idx.push({ url, name: meta.name, category: meta.category, title: meta.title, author: meta.author, size: meta.size || blob.size, savedAt: Date.now() });
                     saveOfflineIndex(idx);
                 }
                 return true;
@@ -686,28 +716,33 @@
                 const saved = isFileSavedOffline(book.url);
                 const isPdf = book.name.toLowerCase().endsWith('.pdf');
                 const coverId = 'cover-' + Math.random().toString(36).substr(2, 9);
-                const menuId = 'lm-' + Math.random().toString(36).substr(2, 8);
-                const encodedMeta = encodeURIComponent(JSON.stringify({url:book.url,name:book.name,category:book.category,title:t,author:a,size:book.size}));
                 const card = document.createElement('div');
                 card.className = 'lib-card';
                 card.style.cursor = 'pointer';
                 card.onclick = function(e) {
-                    if (e.target.closest('.card-more-btn') || e.target.closest('.card-more-menu')) return;
+                    if (e.target.closest('.card-more-btn') || e.target.closest('.card-more-menu') || e.target.closest('.lib-card-dl')) return;
                     openBookViewer(book.url, book.name, t);
                 };
-                const saveAction = isOffline
-                    ? 'event.stopPropagation();closeAllMoreMenus();handleRemoveOfflineLib(this.closest(\'.lib-card\').querySelector(\'.card-more-btn\'),\''+encodeURIComponent(book.url)+'\')'
-                    : 'event.stopPropagation();closeAllMoreMenus();handleSaveOfflineLib(this.closest(\'.lib-card\').querySelector(\'.card-more-btn\'),\''+encodedMeta+'\')'
-                const saveLabel = isOffline ? 'Remove Download' : (saved ? 'Saved to Phone' : 'Save to Phone');
-                const saveIcon = isOffline ? 'fa-trash' : (saved ? 'fa-check-circle' : 'fa-download');
-                const saveCls = isOffline ? 'danger' : '';
+
+                let actionButton = '';
+                if (saved) {
+                    // Downloaded: show 3-dot menu with Delete option
+                    const menuId = 'lm-' + Math.random().toString(36).substr(2, 8);
+                    actionButton = 
+                        '<button class="card-more-btn" onclick="event.stopPropagation();toggleMoreMenu(\''+menuId+'\');">&#8942;</button>'+
+                        '<div class="card-more-menu" id="'+menuId+'">'+
+                            '<button onclick="event.stopPropagation();closeAllMoreMenus();handleRemoveOfflineLib(this.closest(\'.lib-card\').querySelector(\'.card-more-btn\'),\''+encodeURIComponent(book.url)+'\')" class="danger"><i class="fas fa-trash"></i>Remove Download</button>'+
+                        '</div>';
+                } else {
+                    // Not downloaded: show download icon
+                    const encodedMeta = encodeURIComponent(JSON.stringify({url:book.url,name:book.name,category:book.category,title:t,author:a,size:book.size}));
+                    actionButton = '<button class="lib-card-dl" aria-label="Download" onclick="event.stopPropagation();handleSaveOfflineLib(this,\''+encodedMeta+'\')"><i class="fas fa-download"></i></button>';
+                }
+
                 card.innerHTML =
                     '<div class="lib-card-cover" id="'+coverId+'"><div class="cover-placeholder" style="background:'+s.gradient+'"><i class="fas '+(isPdf?'fa-file-pdf':s.icon)+'"></i><span>'+book.category+'</span></div>'+
-                    '<button class="card-more-btn" onclick="event.stopPropagation();toggleMoreMenu(\''+menuId+'\');">&#8942;</button>'+
-                    '<div class="card-more-menu" id="'+menuId+'">'+
-                        '<button onclick="'+saveAction+'" class="'+saveCls+'"><i class="fas '+saveIcon+'"></i>'+saveLabel+'</button>'+
-                        '<button onclick="event.stopPropagation();closeAllMoreMenus();inAppDownload(\''+book.url+'\',\''+encodeURIComponent(book.name||'download')+'\')" ><i class="fas fa-mobile-alt"></i>Download</button>'+
-                    '</div></div>'+
+                    actionButton+
+                    '</div>'+
                     '<div class="lib-card-body"><span class="lib-card-cat" style="background:'+s.catBg+';color:'+s.catColor+';">'+book.category+'</span>'+
                     '<div class="lib-card-title">'+safeTitle+'</div>'+
                     '<div class="lib-card-meta"><i class="fas fa-user" style="margin-right:3px;"></i>'+safeAuthor+' &middot; '+fmtSize(book.size)+'</div></div>';
@@ -811,18 +846,27 @@
         // ==============================
         async function handleSaveOfflineLib(btn, encodedData) {
             const data = JSON.parse(decodeURIComponent(encodedData));
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            const card = btn.closest('.lib-card');
+            
+            // Show progress on the button
+            btn.innerHTML = '<span style="font-size:10px;">0%</span>';
             btn.disabled = true;
-            const ok = await saveFileOffline(data.url, data);
+            
+            const ok = await saveFileOffline(data.url, data, (percent) => {
+                btn.innerHTML = '<span style="font-size:10px;">'+percent+'%</span>';
+            });
+            
             if (ok) {
-                btn.style.background = 'rgba(76,175,80,0.9)';
-                btn.innerHTML = '<i class="fas fa-check"></i>';
-                btn.title = 'Saved offline';
+                // Re-render the card to show 3-dot menu instead of download button
+                const container = card.parentNode;
+                const wasOffline = false;
+                const bookArray = [data]; // Create array with current book item
+                renderBookCards(container, bookArray, wasOffline);
                 renderOfflineLibSection();
             } else {
                 btn.innerHTML = '<i class="fas fa-exclamation"></i>';
                 btn.style.background = 'rgba(244,67,54,0.85)';
-                setTimeout(() => { btn.innerHTML = '<i class="fas fa-arrow-down"></i>'; btn.style.background = 'rgba(0,0,0,0.6)'; btn.disabled = false; }, 2000);
+                setTimeout(() => { btn.innerHTML = '<i class="fas fa-download"></i>'; btn.style.background = 'rgba(0,0,0,0.6)'; btn.disabled = false; }, 2000);
             }
         }
         window.handleSaveOfflineLib = handleSaveOfflineLib;

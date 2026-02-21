@@ -124,6 +124,7 @@
                 .card-more-menu button:active { background: #f5f5f5; }
                 .card-more-menu button.danger { color: #e53935; }
                 .card-more-menu button i { width: 16px; text-align: center; }
+                .media-card-dl { position: absolute; bottom: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%; background: rgba(0,0,0,0.6); color: white; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 13px; backdrop-filter: blur(4px); border: none; cursor: pointer; }
             </style>
 
             <section class="page-content">
@@ -227,15 +228,44 @@
         }
         function saveOfflineIndex(idx) { localStorage.setItem(OFFLINE_INDEX_KEY, JSON.stringify(idx)); }
 
-        async function saveFileOffline(url, meta) {
+        async function saveFileOffline(url, meta, onProgress) {
             try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Fetch failed');
+                const contentLength = response.headers.get('Content-Length');
+                const total = contentLength ? parseInt(contentLength, 10) : 0;
+                let loaded = 0;
+                
+                const reader = response.body.getReader();
+                const chunks = [];
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    chunks.push(value);
+                    loaded += value.length;
+                    if (onProgress && total > 0) {
+                        const percent = Math.round((loaded / total) * 100);
+                        onProgress(percent);
+                    }
+                }
+                
+                // Combine all chunks into a single blob
+                const blob = new Blob(chunks);
+                
+                // Store in cache
                 const cache = await caches.open(OFFLINE_CACHE_NAME);
-                const res = await fetch(url);
-                if (!res.ok) throw new Error('Fetch failed');
-                await cache.put(url, res.clone());
+                const newResponse = new Response(blob, {
+                    status: 200,
+                    statusText: 'OK',
+                    headers: { 'Content-Type': response.headers.get('Content-Type') || 'application/octet-stream' }
+                });
+                await cache.put(url, newResponse);
+                
+                // Update index
                 const idx = getOfflineIndex();
                 if (!idx.find(f => f.url === url)) {
-                    idx.push({ url, name: meta.name, type: meta.type, title: meta.title, author: meta.author, size: meta.size, savedAt: Date.now() });
+                    idx.push({ url, name: meta.name, type: meta.type, title: meta.title, author: meta.author, size: meta.size || blob.size, savedAt: Date.now() });
                     saveOfflineIndex(idx);
                 }
                 return true;
@@ -477,31 +507,33 @@
                 }
 
                 const saved = isFileSavedOffline(media.url);
-                const menuId = 'mm-' + Math.random().toString(36).substr(2, 8);
-                const encodedMeta = encodeURIComponent(JSON.stringify({url:media.url,name:media.name,type:media.type,title:t,author:a,size:media.size}));
                 const card = document.createElement('div');
                 card.className = 'media-card';
                 card.style.cursor = 'pointer';
                 card.onclick = function(e) {
-                    if (e.target.closest('.card-more-btn') || e.target.closest('.card-more-menu')) return;
+                    if (e.target.closest('.card-more-btn') || e.target.closest('.card-more-menu') || e.target.closest('.media-card-dl')) return;
                     openMediaViewer(media.url, media.type, t);
                 };
 
-                const saveAction = isOffline
-                    ? 'event.stopPropagation();closeAllMoreMenus();handleRemoveOffline(this.closest(\'.media-card\').querySelector(\'.card-more-btn\'),\''+encodeURIComponent(media.url)+'\')'
-                    : 'event.stopPropagation();closeAllMoreMenus();handleSaveOffline(this.closest(\'.media-card\').querySelector(\'.card-more-btn\'),\''+encodedMeta+'\')';
-                const saveLabel = isOffline ? 'Remove Download' : (saved ? 'Saved to Phone' : 'Save to Phone');
-                const saveIcon = isOffline ? 'fa-trash' : (saved ? 'fa-check-circle' : 'fa-download');
-                const saveCls = isOffline ? 'danger' : '';
+                let actionButton = '';
+                if (saved) {
+                    // Downloaded: show 3-dot menu with Save to Phone and Delete
+                    const menuId = 'mm-' + Math.random().toString(36).substr(2, 8);
+                    actionButton = 
+                        '<button class="card-more-btn" onclick="event.stopPropagation();toggleMoreMenu(\''+menuId+'\')">&#8942;</button>'+
+                        '<div class="card-more-menu" id="'+menuId+'">'+
+                            '<button onclick="event.stopPropagation();closeAllMoreMenus();handleRemoveOffline(this.closest(\'.media-card\').querySelector(\'.card-more-btn\'),\''+encodeURIComponent(media.url)+'\')" class="danger"><i class="fas fa-trash"></i>Remove Download</button>'+
+                        '</div>';
+                } else {
+                    // Not downloaded: show download icon
+                    actionButton = '<button class="media-card-dl" aria-label="Download" onclick="event.stopPropagation();handleSaveOffline(this,\''+encodeURIComponent(JSON.stringify({url:media.url,name:media.name,type:media.type,title:t,author:a,size:media.size}))+'\')"><i class="fas fa-download"></i></button>';
+                }
 
                 card.innerHTML =
                     '<div class="media-card-thumb">'+thumb+
                     '<span class="media-card-badge '+media.type+'">'+media.type+'</span>'+
-                    '<button class="card-more-btn" onclick="event.stopPropagation();toggleMoreMenu(\''+menuId+'\')">&#8942;</button>'+
-                    '<div class="card-more-menu" id="'+menuId+'">'+
-                        '<button onclick="'+saveAction+'" class="'+saveCls+'"><i class="fas '+saveIcon+'"></i>'+saveLabel+'</button>'+
-                        '<button onclick="event.stopPropagation();closeAllMoreMenus();inAppDownload(\''+media.url+'\',\''+encodeURIComponent(media.name||'download')+'\')" ><i class="fas fa-mobile-alt"></i>Download</button>'+
-                    '</div></div>'+
+                    actionButton+
+                    '</div>'+
                     '<div class="media-card-body"><div class="media-card-title">'+safeName+'</div>'+
                     '<div class="media-card-meta"><span><i class="fas fa-user" style="margin-right:3px;"></i>'+safeAuthor+'</span>'+
                     '<span>&middot; '+fmtSize(media.size)+'</span></div></div>';
@@ -573,18 +605,27 @@
         // ==============================
         async function handleSaveOffline(btn, encodedData) {
             const data = JSON.parse(decodeURIComponent(encodedData));
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            const card = btn.closest('.media-card');
+            
+            // Show progress on the button
+            btn.innerHTML = '<span style="font-size:10px;">0%</span>';
             btn.disabled = true;
-            const ok = await saveFileOffline(data.url, data);
+            
+            const ok = await saveFileOffline(data.url, data, (percent) => {
+                btn.innerHTML = '<span style="font-size:10px;">'+percent+'%</span>';
+            });
+            
             if (ok) {
-                btn.style.background = 'rgba(76,175,80,0.9)';
-                btn.innerHTML = '<i class="fas fa-check"></i>';
-                btn.title = 'Saved offline';
+                // Re-render the card to show 3-dot menu instead of download button
+                const container = card.parentNode;
+                const wasOffline = false;
+                const mediaArray = [data]; // Create array with current media item
+                renderMediaCards(container, mediaArray, wasOffline);
                 renderOfflineMediaSection();
             } else {
                 btn.innerHTML = '<i class="fas fa-exclamation"></i>';
                 btn.style.background = 'rgba(244,67,54,0.85)';
-                setTimeout(() => { btn.innerHTML = '<i class="fas fa-arrow-down"></i>'; btn.style.background = 'rgba(0,0,0,0.6)'; btn.disabled = false; }, 2000);
+                setTimeout(() => { btn.innerHTML = '<i class="fas fa-download"></i>'; btn.style.background = 'rgba(0,0,0,0.6)'; btn.disabled = false; }, 2000);
             }
         }
         window.handleSaveOffline = handleSaveOffline;
