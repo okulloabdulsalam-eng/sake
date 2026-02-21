@@ -1,6 +1,6 @@
 {
-  "version": "2.0.0",
+  "version": "2.1.0",
   "build": "2026-02-21",
   "minAppVersion": "1.0.0",
-  "changelog": "Multi-account R2 storage (70GB), native app permissions, hybrid OTA updates"
+  "changelog": "Smart upload routing with 10GB auto-rotation, in-app downloads, no external download links"
 }

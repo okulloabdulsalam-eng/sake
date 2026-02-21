@@ -1979,47 +1979,88 @@
             }
         }
 
-        // Media Upload — R2 first, GitHub fallback
+        // Media Upload — smart multi-account R2 routing with 10GB auto-rotation
         async function handleMediaUpload(files) {
             if (!files || files.length === 0) return;
-            
-            const r2c = getR2Config();
-            const useR2 = !!(r2c && r2c.adminToken);
-            if (!useR2 && (!window.githubStorage || !window.githubStorage.isConfigured())) {
-                showStatus('mediaUploadStatus', 'Please configure R2 Admin Token or GitHub storage in Settings first', 'error');
-                return;
-            }
             
             const file = files[0];
             const title = document.getElementById('mediaTitle').value.trim() || file.name;
             const author = document.getElementById('mediaAuthor').value.trim() || '';
             const type = document.getElementById('mediaType').value;
-            
+
+            // Determine storage type: video/image → video accounts, audio → audio account
+            const storageType = (type === 'audio') ? 'audio' : 'video';
+
+            // Check if any account of the right type has an admin token
+            const mc = getR2MultiConfig();
+            let hasConfiguredAccount = false;
+            if (storageType === 'video') {
+                hasConfiguredAccount = (mc.video || []).some(a => a.workerUrl && a.adminToken);
+            } else if (storageType === 'audio') {
+                hasConfiguredAccount = !!(mc.audio && mc.audio.workerUrl && mc.audio.adminToken);
+            }
+
+            if (!hasConfiguredAccount) {
+                // Fallback to GitHub
+                if (!window.githubStorage || !window.githubStorage.isConfigured()) {
+                    showStatus('mediaUploadStatus', 'Please configure R2 Admin Tokens for ' + storageType + ' accounts in Settings first', 'error');
+                    return;
+                }
+            }
+
             const progressBar = document.getElementById('mediaProgressBar');
             const progress = document.getElementById('mediaProgress');
             progressBar.style.display = 'block';
             progress.style.width = '0%';
             
             try {
-                showStatus('mediaUploadStatus', 'Uploading to ' + (useR2 ? 'Cloudflare R2' : 'GitHub') + '...', 'success');
-                
                 // Build filename: timestamp_hash_title[_by_author].ext
                 const ext = file.name.split('.').pop();
                 const safeName = (title.replace(/\s+/g, '_') + (author ? '_by_' + author.replace(/\s+/g, '_') : '')).replace(/[^a-zA-Z0-9_\-]/g, '');
                 const key = 'media/' + type + '/' + Date.now() + '_' + safeName + '.' + ext;
 
-                if (useR2) {
-                    await uploadToR2(file, key, (percent) => { progress.style.width = percent + '%'; });
+                if (hasConfiguredAccount) {
+                    if (storageType === 'video') {
+                        // Smart routing: find first video account under 10GB
+                        showStatus('mediaUploadStatus', 'Checking storage across video accounts...', 'success');
+                        const available = await findAvailableVideoAccount(file.size);
+                        if (!available) {
+                            showStatus('mediaUploadStatus', 'All 5 video accounts are full (10 GB each = 50 GB total). Please free up space or contact admin.', 'error');
+                            progressBar.style.display = 'none';
+                            return;
+                        }
+                        const pct = available.storage.usagePercent || 0;
+                        let warning = '';
+                        if (pct >= 90) warning = ' ⚠️ This account is almost full!';
+                        else if (pct >= 75) warning = ' (storage getting high)';
+                        showStatus('mediaUploadStatus', 'Uploading to ' + available.account.label + ' (' + (available.storage.totalGB || 0) + ' GB used)...' + warning, 'success');
+                        await uploadToR2Account(available.account, file, key, (percent) => { progress.style.width = percent + '%'; });
+                        
+                        // Post-upload: warn if account is now very full
+                        const postStorage = await checkAccountStorage(available.account.workerUrl);
+                        if (postStorage && postStorage.usagePercent >= 95) {
+                            showStatus('mediaUploadStatus', 'Upload successful! ⚠️ ' + available.account.label + ' is now at ' + postStorage.usagePercent + '% — next upload will go to the next account.', 'success');
+                        } else {
+                            showStatus('mediaUploadStatus', 'Upload successful! Stored in ' + available.account.label, 'success');
+                        }
+                    } else {
+                        // Audio: upload to audio account
+                        showStatus('mediaUploadStatus', 'Uploading audio to Audio account...', 'success');
+                        await uploadToR2Account(mc.audio, file, key, (percent) => { progress.style.width = percent + '%'; });
+                        showStatus('mediaUploadStatus', 'Audio upload successful!', 'success');
+                    }
                 } else {
+                    showStatus('mediaUploadStatus', 'Uploading to GitHub...', 'success');
                     await window.githubStorage.upload(file, 'media', type, (percent) => { progress.style.width = percent + '%'; });
+                    showStatus('mediaUploadStatus', 'Upload successful!', 'success');
                 }
                 
-                showStatus('mediaUploadStatus', 'Upload successful!', 'success');
                 document.getElementById('mediaTitle').value = '';
                 document.getElementById('mediaAuthor').value = '';
                 document.getElementById('mediaFileInput').value = '';
                 loadMediaList();
                 updateStats();
+                checkAllR2Storage(); // Refresh storage bars
                 
             } catch (error) {
                 showStatus('mediaUploadStatus', 'Upload failed: ' + error.message, 'error');
@@ -2044,14 +2085,14 @@
             return response.json();
         }
 
-        // Library Upload — R2 first, GitHub fallback
+        // Library Upload — dedicated library R2 account
         async function handleLibraryUpload(files) {
             if (!files || files.length === 0) return;
             
-            const r2c = getR2Config();
-            const useR2 = !!(r2c && r2c.adminToken);
-            if (!useR2 && (!window.githubStorage || !window.githubStorage.isConfigured())) {
-                showStatus('libraryUploadStatus', 'Please configure R2 Admin Token or GitHub storage in Settings first', 'error');
+            const mc = getR2MultiConfig();
+            const hasLibrary = !!(mc.library && mc.library.workerUrl && mc.library.adminToken);
+            if (!hasLibrary && (!window.githubStorage || !window.githubStorage.isConfigured())) {
+                showStatus('libraryUploadStatus', 'Please configure Library R2 Admin Token in Settings first', 'error');
                 return;
             }
             
@@ -2072,26 +2113,35 @@
             progress.style.width = '0%';
             
             try {
-                showStatus('libraryUploadStatus', 'Uploading to ' + (useR2 ? 'Cloudflare R2' : 'GitHub') + '...', 'success');
-                
-                // Build filename
                 const ext = file.name.split('.').pop();
                 const safeName = (title.replace(/\s+/g, '_') + (author ? '_by_' + author.replace(/\s+/g, '_') : '')).replace(/[^a-zA-Z0-9_\-]/g, '');
                 const key = 'library/' + category + '/' + Date.now() + '_' + safeName + '.' + ext;
 
-                if (useR2) {
-                    await uploadToR2(file, key, (percent) => { progress.style.width = percent + '%'; });
+                if (hasLibrary) {
+                    // Check library account storage first
+                    const storage = await checkAccountStorage(mc.library.workerUrl);
+                    if (storage && storage.totalBytes + file.size > MAX_BYTES_PER_ACCOUNT) {
+                        showStatus('libraryUploadStatus', 'Library storage is full (10 GB). Please free up space first.', 'error');
+                        progressBar.style.display = 'none';
+                        return;
+                    }
+                    const usedGB = storage ? storage.totalGB : '?';
+                    showStatus('libraryUploadStatus', 'Uploading to Library storage (' + usedGB + ' GB used)...', 'success');
+                    await uploadToR2Account(mc.library, file, key, (percent) => { progress.style.width = percent + '%'; });
+                    showStatus('libraryUploadStatus', 'Upload successful! Stored in Library account.', 'success');
                 } else {
+                    showStatus('libraryUploadStatus', 'Uploading to GitHub...', 'success');
                     await window.githubStorage.upload(file, 'library', category, (percent) => { progress.style.width = percent + '%'; });
+                    showStatus('libraryUploadStatus', 'Upload successful!', 'success');
                 }
                 
-                showStatus('libraryUploadStatus', 'Upload successful!', 'success');
                 document.getElementById('bookTitle').value = '';
                 document.getElementById('bookAuthor').value = '';
                 document.getElementById('bookDescription').value = '';
                 document.getElementById('libraryFileInput').value = '';
                 loadLibraryList();
                 updateStats();
+                checkAllR2Storage();
                 
             } catch (error) {
                 showStatus('libraryUploadStatus', 'Upload failed: ' + error.message, 'error');
