@@ -232,33 +232,48 @@
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error('Fetch failed');
-                const contentLength = response.headers.get('Content-Length');
-                const total = contentLength ? parseInt(contentLength, 10) : 0;
-                let loaded = 0;
-                
-                const reader = response.body.getReader();
-                const chunks = [];
-                
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    chunks.push(value);
-                    loaded += value.length;
-                    if (onProgress && total > 0) {
-                        const percent = Math.round((loaded / total) * 100);
-                        onProgress(percent);
+                const cl = response.headers.get('Content-Length');
+                const total = cl ? parseInt(cl, 10) : (meta.size || 0);
+                let blob;
+
+                // Try streaming download with progress
+                if (response.body && typeof response.body.getReader === 'function') {
+                    try {
+                        const reader = response.body.getReader();
+                        const chunks = [];
+                        let loaded = 0;
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) break;
+                            chunks.push(value);
+                            loaded += value.length;
+                            if (onProgress) {
+                                if (total > 0) {
+                                    onProgress(Math.min(Math.round((loaded / total) * 100), 99), loaded, total);
+                                } else {
+                                    onProgress(-1, loaded, 0); // unknown total
+                                }
+                            }
+                        }
+                        blob = new Blob(chunks);
+                    } catch(streamErr) {
+                        // ReadableStream failed, fall back to blob
+                        console.warn('Stream read failed, using blob fallback:', streamErr);
+                        blob = await response.blob();
                     }
+                } else {
+                    // No ReadableStream support — direct blob download
+                    blob = await response.blob();
                 }
-                
-                // Combine all chunks into a single blob
-                const blob = new Blob(chunks);
+
+                if (onProgress) onProgress(100, blob.size, blob.size);
                 
                 // Store in cache
                 const cache = await caches.open(OFFLINE_CACHE_NAME);
+                const ct = response.headers.get('Content-Type') || 'application/octet-stream';
                 const newResponse = new Response(blob, {
-                    status: 200,
-                    statusText: 'OK',
-                    headers: { 'Content-Type': response.headers.get('Content-Type') || 'application/octet-stream' }
+                    status: 200, statusText: 'OK',
+                    headers: { 'Content-Type': ct, 'Content-Length': blob.size }
                 });
                 await cache.put(url, newResponse);
                 
@@ -607,21 +622,25 @@
             const data = JSON.parse(decodeURIComponent(encodedData));
             const card = btn.closest('.media-card');
             
-            // Show progress on the button
-            btn.innerHTML = '<span style="font-size:10px;">0%</span>';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:12px;"></i>';
+            btn.style.background = 'rgba(33,150,243,0.85)';
             btn.disabled = true;
             
-            const ok = await saveFileOffline(data.url, data, (percent) => {
-                btn.innerHTML = '<span style="font-size:10px;">'+percent+'%</span>';
+            const ok = await saveFileOffline(data.url, data, (percent, loaded, total) => {
+                if (percent >= 0) {
+                    btn.innerHTML = '<span style="font-size:9px;font-weight:700;">'+percent+'%</span>';
+                } else {
+                    // Unknown total — show downloaded MB
+                    const mb = (loaded / 1048576).toFixed(1);
+                    btn.innerHTML = '<span style="font-size:8px;font-weight:700;">'+mb+'M</span>';
+                }
             });
             
             if (ok) {
-                // Re-render the card to show 3-dot menu instead of download button
-                const container = card.parentNode;
-                const wasOffline = false;
-                const mediaArray = [data]; // Create array with current media item
-                renderMediaCards(container, mediaArray, wasOffline);
-                renderOfflineMediaSection();
+                btn.innerHTML = '<i class="fas fa-check" style="font-size:12px;"></i>';
+                btn.style.background = 'rgba(76,175,80,0.9)';
+                // Reload entire view after short delay so card updates
+                setTimeout(() => { loadMediaFromStorage(currentMediaFilter); }, 800);
             } else {
                 btn.innerHTML = '<i class="fas fa-exclamation"></i>';
                 btn.style.background = 'rgba(244,67,54,0.85)';
