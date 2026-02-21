@@ -1945,49 +1945,72 @@
         }
 
         // Check storage usage for a single account
-        // Tries /storage first, falls back to /list to count files if /storage returns 0
+        // Tries /storage first, then /list (no prefix = all files), then specific prefixes
         async function checkAccountStorage(workerUrl) {
+            const maxBytes = 10737418240;
+            const buildResult = (totalSize, fileCount) => ({
+                success: true,
+                totalBytes: totalSize,
+                totalMB: Math.round(totalSize / 1048576 * 100) / 100,
+                totalGB: Math.round(totalSize / 1073741824 * 1000) / 1000,
+                fileCount: fileCount,
+                maxBytes: maxBytes,
+                maxGB: 10,
+                usagePercent: Math.round(totalSize / maxBytes * 10000) / 100
+            });
+
+            // Method 1: /storage endpoint (paginated, most accurate)
             try {
-                // Try /storage endpoint first
                 const res = await fetch(workerUrl + '/storage', { cache: 'no-store' });
                 if (res.ok) {
                     const data = await res.json();
-                    if (data.success && data.fileCount > 0) return data;
+                    if (data.success && data.fileCount > 0) {
+                        console.log('[Storage]', workerUrl, '/storage:', data.fileCount, 'files');
+                        return data;
+                    }
                 }
-            } catch(e) { console.warn('/storage failed for', workerUrl, e.message); }
+            } catch(e) {}
 
-            // Fallback: use /list to count files and sum sizes
+            // Method 2: /list with NO prefix (lists ALL files in the bucket)
             try {
-                const prefixes = ['media/', 'library/', ''];
-                let totalSize = 0, fileCount = 0;
-                for (const prefix of prefixes) {
-                    const url = workerUrl + '/list' + (prefix ? '?prefix=' + encodeURIComponent(prefix) : '');
-                    const res = await fetch(url, { cache: 'no-store' });
+                const res = await fetch(workerUrl + '/list', { cache: 'no-store' });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.files && data.files.length > 0) {
+                        let totalSize = 0;
+                        data.files.forEach(f => { totalSize += f.size || 0; });
+                        console.log('[Storage]', workerUrl, '/list (all):', data.files.length, 'files');
+                        return buildResult(totalSize, data.files.length);
+                    }
+                }
+            } catch(e) {}
+
+            // Method 3: /list with specific prefixes
+            const prefixes = ['media/video/', 'media/audio/', 'media/image/', 'media/', 'library/islamic/', 'library/educational/', 'library/quran/', 'library/other/', 'library/'];
+            let totalSize = 0, fileCount = 0;
+            const seen = new Set();
+            for (const prefix of prefixes) {
+                try {
+                    const res = await fetch(workerUrl + '/list?prefix=' + encodeURIComponent(prefix), { cache: 'no-store' });
                     if (!res.ok) continue;
                     const data = await res.json();
-                    if (!data.files) continue;
+                    if (!data.files || data.files.length === 0) continue;
                     data.files.forEach(f => {
-                        totalSize += f.size || 0;
-                        fileCount++;
+                        if (!seen.has(f.key)) {
+                            seen.add(f.key);
+                            totalSize += f.size || 0;
+                            fileCount++;
+                        }
                     });
-                    if (fileCount > 0) break; // Found files with this prefix, no need to try others
-                }
-                if (fileCount === 0) {
-                    // Return valid zero response
-                    return { success: true, totalBytes: 0, totalMB: 0, totalGB: 0, fileCount: 0, maxBytes: 10737418240, maxGB: 10, usagePercent: 0 };
-                }
-                const maxBytes = 10737418240;
-                return {
-                    success: true,
-                    totalBytes: totalSize,
-                    totalMB: Math.round(totalSize / 1048576 * 100) / 100,
-                    totalGB: Math.round(totalSize / 1073741824 * 1000) / 1000,
-                    fileCount: fileCount,
-                    maxBytes: maxBytes,
-                    maxGB: 10,
-                    usagePercent: Math.round(totalSize / maxBytes * 10000) / 100
-                };
-            } catch(e) { console.warn('/list fallback failed for', workerUrl, e.message); return null; }
+                } catch(e) {}
+            }
+            if (fileCount > 0) {
+                console.log('[Storage]', workerUrl, '/list (prefixes):', fileCount, 'files');
+                return buildResult(totalSize, fileCount);
+            }
+
+            console.warn('[Storage]', workerUrl, '— no files found via any method');
+            return buildResult(0, 0);
         }
 
         // Find the first video account under 10GB that can accept a file of given size
@@ -2169,6 +2192,10 @@
             if (mc.audio && mc.audio.workerUrl) {
                 const storage = await checkAccountStorage(mc.audio.workerUrl);
                 updateStorageBar('audioStorageBar', 'audioStorageText', storage);
+                if (storage && storage.fileCount === 0 && !mc.audio.adminToken) {
+                    const txt = document.getElementById('audioStorageText');
+                    if (txt) txt.textContent = 'Empty — set Admin Token to upload here';
+                }
                 if (storage) { totalUsed += storage.totalBytes; totalMax += storage.maxBytes; checkedCount++; }
             }
 
@@ -2176,6 +2203,10 @@
             if (mc.library && mc.library.workerUrl) {
                 const storage = await checkAccountStorage(mc.library.workerUrl);
                 updateStorageBar('libraryStorageBar', 'libraryStorageText', storage);
+                if (storage && storage.fileCount === 0 && !mc.library.adminToken) {
+                    const txt = document.getElementById('libraryStorageText');
+                    if (txt) txt.textContent = 'Empty — set Admin Token to upload here';
+                }
                 if (storage) { totalUsed += storage.totalBytes; totalMax += storage.maxBytes; checkedCount++; }
             }
 
