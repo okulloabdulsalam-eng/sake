@@ -1129,17 +1129,15 @@
         }
 
         async function loadAdminPrayerTimes() {
+            // Load from localStorage first (instant)
+            try { var local = JSON.parse(localStorage.getItem('kiuma_prayerTimes') || 'null'); if (local) applyPrayerTimesData(local); } catch(e) {}
+            // Try Firestore in background
             try {
                 if (window.firebaseDb) {
                     var doc = await window.firebaseDb.collection('appData').doc('prayerTimes').get();
-                    if (doc.exists) { applyPrayerTimesData(doc.data()); return; }
+                    if (doc.exists) { applyPrayerTimesData(doc.data()); localStorage.setItem('kiuma_prayerTimes', JSON.stringify(doc.data())); }
                 }
-            } catch(e) { console.log('Prayer times Firestore load failed:', e.message); }
-            // Fallback to localStorage
-            try {
-                var local = JSON.parse(localStorage.getItem('kiuma_prayerTimes') || 'null');
-                if (local) applyPrayerTimesData(local);
-            } catch(e) {}
+            } catch(e) { /* silent */ }
         }
 
         function applyAnnouncementData(data) {
@@ -1160,16 +1158,15 @@
         }
 
         async function loadAdminAnnouncement() {
+            // Load from localStorage first
+            try { var local = JSON.parse(localStorage.getItem('kiuma_announcement') || 'null'); if (local) applyAnnouncementData(local); } catch(e) {}
+            // Try Firestore in background
             try {
                 if (window.firebaseDb) {
                     var doc = await window.firebaseDb.collection('appData').doc('announcement').get();
-                    if (doc.exists) { applyAnnouncementData(doc.data()); return; }
+                    if (doc.exists) { applyAnnouncementData(doc.data()); localStorage.setItem('kiuma_announcement', JSON.stringify(doc.data())); }
                 }
-            } catch(e) { console.log('Announcement Firestore load failed:', e.message); }
-            try {
-                var local = JSON.parse(localStorage.getItem('kiuma_announcement') || 'null');
-                if (local) applyAnnouncementData(local);
-            } catch(e) {}
+            } catch(e) { /* silent */ }
         }
 
         function applyEventsData(events) {
@@ -1194,30 +1191,31 @@
         }
 
         async function loadAdminEvents() {
+            // Load from localStorage first
+            try { var local = JSON.parse(localStorage.getItem('kiuma_events') || '[]'); applyEventsData(local); } catch(e) {}
+            // Try Firestore in background
             try {
                 if (window.firebaseDb) {
                     var snap = await window.firebaseDb.collection('events').orderBy('date').get();
                     var events = snap.docs.map(function(d) { return d.data(); });
-                    applyEventsData(events); return;
+                    localStorage.setItem('kiuma_events', JSON.stringify(events));
+                    applyEventsData(events);
                 }
-            } catch(e) { console.log('Events Firestore load failed:', e.message); }
-            try {
-                var local = JSON.parse(localStorage.getItem('kiuma_events') || '[]');
-                applyEventsData(local);
-            } catch(e) {}
+            } catch(e) { /* silent */ }
         }
 
         async function loadAdminTrackers() {
+            // Load from localStorage first
             var trackers = [];
+            try { trackers = JSON.parse(localStorage.getItem('kiuma_liveTrackers') || '[]'); } catch(x) {}
+            // Try Firestore in background
             try {
                 if (window.firebaseDb) {
                     var snap = await window.firebaseDb.collection('liveTrackers').get();
                     trackers = snap.docs.map(function(d) { return d.data(); });
+                    localStorage.setItem('kiuma_liveTrackers', JSON.stringify(trackers));
                 }
-            } catch(e) {
-                console.log('Trackers Firestore load failed:', e.message);
-                try { trackers = JSON.parse(localStorage.getItem('kiuma_liveTrackers') || '[]'); } catch(x) {}
-            }
+            } catch(e) { /* silent */ }
             if (trackers.length === 0) return;
             var today = new Date().toISOString().split('T')[0];
             var active = trackers.filter(function(t) {

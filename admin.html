@@ -3171,8 +3171,48 @@
         // Firestore helper
         // ==============================
         function getDb() {
-            if (!window.firebaseDb) throw new Error('Firestore not available. Check firebase-config.js');
+            if (!window.firebaseDb) return null;
             return window.firebaseDb;
+        }
+
+        // Silent Firestore sync helper — never throws, never shows errors to user
+        async function firestoreSet(path, data) {
+            try {
+                const db = getDb();
+                if (!db) return false;
+                const parts = path.split('/');
+                if (parts.length === 2) await db.collection(parts[0]).doc(parts[1]).set(data);
+                else if (parts.length === 1) await db.collection(parts[0]).add(data);
+                return true;
+            } catch(e) { console.log('[Firestore sync] Write failed (offline mode):', e.message); return false; }
+        }
+        async function firestoreGet(path) {
+            try {
+                const db = getDb();
+                if (!db) return null;
+                const parts = path.split('/');
+                const doc = await db.collection(parts[0]).doc(parts[1]).get();
+                return doc.exists ? doc.data() : null;
+            } catch(e) { console.log('[Firestore sync] Read failed (offline mode):', e.message); return null; }
+        }
+        async function firestoreList(collectionName, orderField) {
+            try {
+                const db = getDb();
+                if (!db) return null;
+                let ref = db.collection(collectionName);
+                if (orderField) ref = ref.orderBy(orderField);
+                const snap = await ref.get();
+                return snap.docs.map(d => ({ ...d.data(), _docId: d.id }));
+            } catch(e) { console.log('[Firestore sync] List failed (offline mode):', e.message); return null; }
+        }
+        async function firestoreDelete(path) {
+            try {
+                const db = getDb();
+                if (!db) return false;
+                const parts = path.split('/');
+                await db.collection(parts[0]).doc(parts[1]).delete();
+                return true;
+            } catch(e) { console.log('[Firestore sync] Delete failed (offline mode):', e.message); return false; }
         }
 
         // ==============================
@@ -3193,32 +3233,20 @@
 
         async function loadPrayerTimesAdmin() {
             showStatus('prayerTimesStatus', 'Loading prayer times...', 'success');
-            try {
-                const doc = await getDb().collection('appData').doc('prayerTimes').get();
-                if (doc.exists) {
-                    const data = doc.data();
-                    applyPrayerTimesToUI(data);
-                    localStorage.setItem('kiuma_prayerTimes', JSON.stringify(data));
-                    showStatus('prayerTimesStatus', 'Prayer times loaded from server.', 'success');
-                } else {
-                    // Try localStorage fallback
-                    const local = JSON.parse(localStorage.getItem('kiuma_prayerTimes') || 'null');
-                    if (local) {
-                        applyPrayerTimesToUI(local);
-                        showStatus('prayerTimesStatus', 'Loaded from local backup. No server data found.', 'success');
-                    } else {
-                        showStatus('prayerTimesStatus', 'No saved prayer times found. Using defaults.', 'success');
-                    }
-                }
-            } catch(e) {
-                // Firestore failed — try localStorage
-                const local = JSON.parse(localStorage.getItem('kiuma_prayerTimes') || 'null');
-                if (local) {
-                    applyPrayerTimesToUI(local);
-                    showStatus('prayerTimesStatus', 'Loaded from local backup. Server error: ' + e.message, 'error');
-                } else {
-                    showStatus('prayerTimesStatus', 'Failed to load: ' + e.message, 'error');
-                }
+            // Load from localStorage first (instant)
+            const local = JSON.parse(localStorage.getItem('kiuma_prayerTimes') || 'null');
+            if (local) {
+                applyPrayerTimesToUI(local);
+                showStatus('prayerTimesStatus', 'Prayer times loaded.', 'success');
+            }
+            // Try Firestore in background to get latest
+            const serverData = await firestoreGet('appData/prayerTimes');
+            if (serverData) {
+                applyPrayerTimesToUI(serverData);
+                localStorage.setItem('kiuma_prayerTimes', JSON.stringify(serverData));
+                showStatus('prayerTimesStatus', 'Prayer times synced from server.', 'success');
+            } else if (!local) {
+                showStatus('prayerTimesStatus', 'No saved prayer times found. Set them below.', 'success');
             }
         }
 
@@ -3237,12 +3265,9 @@
             // Always save to localStorage first
             localStorage.setItem('kiuma_prayerTimes', JSON.stringify(data));
 
-            try {
-                await getDb().collection('appData').doc('prayerTimes').set(data);
-                showStatus('prayerTimesStatus', 'Prayer times saved successfully!', 'success');
-            } catch(e) {
-                showStatus('prayerTimesStatus', 'Saved locally! Server sync failed: ' + e.message + '. Deploy your Firestore rules to enable cloud sync.', 'error');
-            }
+            showStatus('prayerTimesStatus', 'Prayer times saved!', 'success');
+            // Sync to Firestore in background
+            firestoreSet('appData/prayerTimes', data);
         }
 
         // ==============================
@@ -3252,16 +3277,16 @@
         let editingEventId = null;
 
         async function loadEventsAdmin() {
-            try {
-                const snap = await getDb().collection('events').orderBy('date').get();
-                currentEvents = snap.docs.map(d => ({ ...d.data(), _docId: d.id }));
-                localStorage.setItem('kiuma_events', JSON.stringify(currentEvents));
-            } catch(e) {
-                // Fallback to localStorage
-                try { currentEvents = JSON.parse(localStorage.getItem('kiuma_events') || '[]'); } catch(x) { currentEvents = []; }
-                console.warn('Events load from server failed, using local backup:', e.message);
-            }
+            // Load from localStorage first
+            try { currentEvents = JSON.parse(localStorage.getItem('kiuma_events') || '[]'); } catch(x) { currentEvents = []; }
             renderAdminEventsList();
+            // Try Firestore in background
+            const serverEvents = await firestoreList('events', 'date');
+            if (serverEvents && serverEvents.length > 0) {
+                currentEvents = serverEvents;
+                localStorage.setItem('kiuma_events', JSON.stringify(currentEvents));
+                renderAdminEventsList();
+            }
         }
 
         function renderAdminEventsList() {
@@ -3314,12 +3339,8 @@
             currentEvents.push(event);
             localStorage.setItem('kiuma_events', JSON.stringify(currentEvents));
 
-            try {
-                await getDb().collection('events').doc(event.id).set(event);
-                showStatus('eventFormStatus', 'Event saved!', 'success');
-            } catch(e) {
-                showStatus('eventFormStatus', 'Saved locally! Server sync failed: ' + e.message, 'error');
-            }
+            showStatus('eventFormStatus', 'Event saved!', 'success');
+            firestoreSet('events/' + event.id, event);
             document.getElementById('eventTitle').value = '';
             document.getElementById('eventDate').value = '';
             document.getElementById('eventTime').value = '';
@@ -3334,11 +3355,7 @@
             currentEvents = currentEvents.filter(e => (e._docId || e.id) !== docId);
             localStorage.setItem('kiuma_events', JSON.stringify(currentEvents));
             renderAdminEventsList();
-            try {
-                await getDb().collection('events').doc(docId).delete();
-            } catch(e) {
-                console.warn('Server delete failed (removed locally):', e.message);
-            }
+            firestoreDelete('events/' + docId);
         }
 
         // ==============================
@@ -3355,22 +3372,20 @@
 
         async function loadAnnouncementAdmin() {
             showStatus('announcementStatus', 'Loading announcement...', 'success');
-            try {
-                const doc = await getDb().collection('appData').doc('announcement').get();
-                if (doc.exists) {
-                    const data = doc.data();
-                    applyAnnouncementToUI(data);
-                    localStorage.setItem('kiuma_announcement', JSON.stringify(data));
-                    showStatus('announcementStatus', 'Announcement loaded.', 'success');
-                } else {
-                    const local = JSON.parse(localStorage.getItem('kiuma_announcement') || 'null');
-                    if (local) { applyAnnouncementToUI(local); showStatus('announcementStatus', 'Loaded from local backup.', 'success'); }
-                    else showStatus('announcementStatus', 'No announcement found. Create one.', 'success');
-                }
-            } catch(e) {
-                const local = JSON.parse(localStorage.getItem('kiuma_announcement') || 'null');
-                if (local) { applyAnnouncementToUI(local); showStatus('announcementStatus', 'Loaded from local backup. Server: ' + e.message, 'error'); }
-                else showStatus('announcementStatus', 'Failed to load: ' + e.message, 'error');
+            // Load from localStorage first
+            const local = JSON.parse(localStorage.getItem('kiuma_announcement') || 'null');
+            if (local) {
+                applyAnnouncementToUI(local);
+                showStatus('announcementStatus', 'Announcement loaded.', 'success');
+            }
+            // Try Firestore in background
+            const serverData = await firestoreGet('appData/announcement');
+            if (serverData) {
+                applyAnnouncementToUI(serverData);
+                localStorage.setItem('kiuma_announcement', JSON.stringify(serverData));
+                showStatus('announcementStatus', 'Announcement synced from server.', 'success');
+            } else if (!local) {
+                showStatus('announcementStatus', 'No announcement found. Create one.', 'success');
             }
         }
 
@@ -3411,12 +3426,8 @@
             }
             showStatus('announcementStatus', 'Saving announcement...', 'success');
             localStorage.setItem('kiuma_announcement', JSON.stringify(data));
-            try {
-                await getDb().collection('appData').doc('announcement').set(data);
-                showStatus('announcementStatus', 'Announcement saved!', 'success');
-            } catch(e) {
-                showStatus('announcementStatus', 'Saved locally! Server sync failed: ' + e.message, 'error');
-            }
+            showStatus('announcementStatus', 'Announcement saved!', 'success');
+            firestoreSet('appData/announcement', data);
         }
 
         async function clearAnnouncement() {
@@ -3427,12 +3438,8 @@
             document.getElementById('announcementMessage').value = '';
             document.getElementById('announcementActive').checked = false;
             updateAnnouncementPreview();
-            try {
-                await getDb().collection('appData').doc('announcement').set(data);
-                showStatus('announcementStatus', 'Announcement cleared.', 'success');
-            } catch(e) {
-                showStatus('announcementStatus', 'Cleared locally! Server sync failed: ' + e.message, 'error');
-            }
+            showStatus('announcementStatus', 'Announcement cleared.', 'success');
+            firestoreSet('appData/announcement', data);
         }
 
         // ==============================
@@ -3464,15 +3471,16 @@
         }
 
         async function loadTrackersAdmin() {
-            try {
-                const snap = await getDb().collection('liveTrackers').get();
-                currentTrackers = snap.docs.map(d => ({ ...d.data(), _docId: d.id }));
-                localStorage.setItem('kiuma_liveTrackers', JSON.stringify(currentTrackers));
-            } catch(e) {
-                try { currentTrackers = JSON.parse(localStorage.getItem('kiuma_liveTrackers') || '[]'); } catch(x) { currentTrackers = []; }
-                console.warn('Trackers load from server failed, using local backup:', e.message);
-            }
+            // Load from localStorage first
+            try { currentTrackers = JSON.parse(localStorage.getItem('kiuma_liveTrackers') || '[]'); } catch(x) { currentTrackers = []; }
             renderAdminTrackersList();
+            // Try Firestore in background
+            const serverTrackers = await firestoreList('liveTrackers');
+            if (serverTrackers && serverTrackers.length > 0) {
+                currentTrackers = serverTrackers;
+                localStorage.setItem('kiuma_liveTrackers', JSON.stringify(currentTrackers));
+                renderAdminTrackersList();
+            }
         }
 
         function renderAdminTrackersList() {
@@ -3577,12 +3585,8 @@
             else currentTrackers.push({ ...tracker, _docId: docId });
             localStorage.setItem('kiuma_liveTrackers', JSON.stringify(currentTrackers));
 
-            try {
-                await getDb().collection('liveTrackers').doc(docId).set(tracker);
-                showStatus('trackerFormStatus', 'Tracker saved!', 'success');
-            } catch(e) {
-                showStatus('trackerFormStatus', 'Saved locally! Server sync failed: ' + e.message, 'error');
-            }
+            showStatus('trackerFormStatus', 'Tracker saved!', 'success');
+            firestoreSet('liveTrackers/' + docId, tracker);
             renderAdminTrackersList();
 
             // Send notification if checked
@@ -3597,11 +3601,7 @@
             currentTrackers = currentTrackers.filter(x => (x._docId || x.id) !== docId);
             localStorage.setItem('kiuma_liveTrackers', JSON.stringify(currentTrackers));
             renderAdminTrackersList();
-            try {
-                await getDb().collection('liveTrackers').doc(docId).delete();
-            } catch(e) {
-                console.warn('Server delete failed (removed locally):', e.message);
-            }
+            firestoreDelete('liveTrackers/' + docId);
         }
 
         function sendTrackerNotification(tracker) {
