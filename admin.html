@@ -1945,14 +1945,49 @@
         }
 
         // Check storage usage for a single account
+        // Tries /storage first, falls back to /list to count files if /storage returns 0
         async function checkAccountStorage(workerUrl) {
             try {
+                // Try /storage endpoint first
                 const res = await fetch(workerUrl + '/storage', { cache: 'no-store' });
-                if (!res.ok) { console.warn('Storage check failed for', workerUrl, res.status); return null; }
-                const data = await res.json();
-                if (!data.success) { console.warn('Storage check error for', workerUrl, data); return null; }
-                return data;
-            } catch(e) { console.warn('Storage check error for', workerUrl, e.message); return null; }
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success && data.fileCount > 0) return data;
+                }
+            } catch(e) { console.warn('/storage failed for', workerUrl, e.message); }
+
+            // Fallback: use /list to count files and sum sizes
+            try {
+                const prefixes = ['media/', 'library/', ''];
+                let totalSize = 0, fileCount = 0;
+                for (const prefix of prefixes) {
+                    const url = workerUrl + '/list' + (prefix ? '?prefix=' + encodeURIComponent(prefix) : '');
+                    const res = await fetch(url, { cache: 'no-store' });
+                    if (!res.ok) continue;
+                    const data = await res.json();
+                    if (!data.files) continue;
+                    data.files.forEach(f => {
+                        totalSize += f.size || 0;
+                        fileCount++;
+                    });
+                    if (fileCount > 0) break; // Found files with this prefix, no need to try others
+                }
+                if (fileCount === 0) {
+                    // Return valid zero response
+                    return { success: true, totalBytes: 0, totalMB: 0, totalGB: 0, fileCount: 0, maxBytes: 10737418240, maxGB: 10, usagePercent: 0 };
+                }
+                const maxBytes = 10737418240;
+                return {
+                    success: true,
+                    totalBytes: totalSize,
+                    totalMB: Math.round(totalSize / 1048576 * 100) / 100,
+                    totalGB: Math.round(totalSize / 1073741824 * 1000) / 1000,
+                    fileCount: fileCount,
+                    maxBytes: maxBytes,
+                    maxGB: 10,
+                    usagePercent: Math.round(totalSize / maxBytes * 10000) / 100
+                };
+            } catch(e) { console.warn('/list fallback failed for', workerUrl, e.message); return null; }
         }
 
         // Find the first video account under 10GB that can accept a file of given size
