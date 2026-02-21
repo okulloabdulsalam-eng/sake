@@ -315,6 +315,51 @@
         .mp-approve:hover { background: var(--primary-green); color: white; }
         .mp-reject { background: #ffebee; color: #f44336; }
         .mp-reject:hover { background: #f44336; color: white; }
+
+        /* File list toolbar */
+        .file-toolbar { display:flex; align-items:center; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+        .file-toolbar .ft-search { flex:1; min-width:140px; padding:9px 12px 9px 34px; border:1.5px solid #e0e0e0; border-radius:8px; font-size:13px; background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%23999' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.156a5 5 0 1 1 0-10 5 5 0 0 1 0 10z'/%3E%3C/svg%3E") no-repeat 10px center; }
+        .file-toolbar .ft-btn { padding:8px 14px; border:1.5px solid #e0e0e0; border-radius:8px; background:#fff; font-size:12px; font-weight:600; cursor:pointer; transition:all .2s; white-space:nowrap; }
+        .file-toolbar .ft-btn:hover { background:#f0f0f0; }
+        .file-toolbar .ft-btn.active { background:var(--primary-green); color:#fff; border-color:var(--primary-green); }
+        .file-toolbar .ft-btn i { margin-right:4px; }
+
+        /* Multi-select */
+        .file-item.selectable { cursor:pointer; user-select:none; transition:background .15s, box-shadow .15s; }
+        .file-item.selectable:hover { background:#f0f7f0; }
+        .file-item.selectable.selected { background:#e3f2e8; box-shadow:inset 3px 0 0 var(--primary-green); }
+        .file-item .fi-checkbox { width:22px; height:22px; border-radius:6px; border:2px solid #ccc; display:none; align-items:center; justify-content:center; flex-shrink:0; transition:all .15s; font-size:12px; color:#fff; }
+        .file-item.selectable .fi-checkbox { display:flex; }
+        .file-item.selected .fi-checkbox { background:var(--primary-green); border-color:var(--primary-green); }
+
+        /* Bulk actions bar */
+        .bulk-bar { display:none; position:sticky; bottom:0; left:0; right:0; background:linear-gradient(135deg,#1a1a2e,#16213e); color:#fff; border-radius:14px; padding:12px 16px; margin-top:12px; align-items:center; gap:10px; z-index:100; box-shadow:0 -4px 20px rgba(0,0,0,0.15); animation:slideUp .25s ease; }
+        .bulk-bar.visible { display:flex; }
+        .bulk-bar .bb-count { font-weight:700; font-size:14px; margin-right:auto; }
+        .bulk-bar .bb-btn { padding:8px 16px; border:none; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; transition:all .2s; }
+        .bulk-bar .bb-delete { background:#ef5350; color:#fff; }
+        .bulk-bar .bb-delete:hover { background:#c62828; }
+        .bulk-bar .bb-playlist { background:#66BB6A; color:#fff; }
+        .bulk-bar .bb-playlist:hover { background:#43A047; }
+        .bulk-bar .bb-cancel { background:rgba(255,255,255,0.15); color:#fff; }
+        .bulk-bar .bb-cancel:hover { background:rgba(255,255,255,0.25); }
+        @keyframes slideUp { from { transform:translateY(20px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+
+        /* Edit modal */
+        .edit-modal-overlay { position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; padding:20px; animation:fadeIn .2s; }
+        .edit-modal { background:#fff; border-radius:16px; width:100%; max-width:440px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.3); animation:scaleIn .25s ease; }
+        .edit-modal-header { padding:18px 20px; border-bottom:1px solid #eee; display:flex; align-items:center; justify-content:space-between; }
+        .edit-modal-header h3 { margin:0; font-size:16px; }
+        .edit-modal-body { padding:20px; }
+        .edit-modal-body .em-field { margin-bottom:14px; }
+        .edit-modal-body .em-field label { display:block; font-size:12px; font-weight:600; color:#666; margin-bottom:5px; }
+        .edit-modal-body .em-field input, .edit-modal-body .em-field select { width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:8px; font-size:13px; box-sizing:border-box; }
+        .edit-modal-footer { padding:14px 20px; border-top:1px solid #eee; display:flex; gap:8px; justify-content:flex-end; }
+        .edit-modal-footer button { padding:10px 20px; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; }
+        .edit-modal-footer .em-save { background:var(--primary-green); color:#fff; }
+        .edit-modal-footer .em-cancel { background:#f5f5f5; color:#555; }
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+        @keyframes scaleIn { from { transform:scale(0.95); opacity:0; } to { transform:scale(1); opacity:1; } }
     </style>
 </head>
 <body>
@@ -453,8 +498,19 @@
                     <div id="mediaUploadStatus" class="alert" style="margin-top: 15px;"></div>
                     
                     <h3 style="margin-top: 30px;"><i class="fas fa-list"></i> Uploaded Media</h3>
+                    <div class="file-toolbar" id="mediaToolbar">
+                        <input type="text" class="ft-search" placeholder="Search media..." oninput="filterFileList('media',this.value)">
+                        <button class="ft-btn" onclick="toggleSelectMode('media')"><i class="fas fa-check-double"></i> Select</button>
+                        <button class="ft-btn" id="mediaSelectAll" style="display:none" onclick="selectAllFiles('media')"><i class="fas fa-check-square"></i> All</button>
+                    </div>
                     <div class="file-list" id="mediaFileList">
                         <p style="text-align: center; color: #888; padding: 20px;">Loading media files...</p>
+                    </div>
+                    <div class="bulk-bar" id="mediaBulkBar">
+                        <span class="bb-count" id="mediaBulkCount">0 selected</span>
+                        <button class="bb-btn bb-playlist" onclick="bulkAddToPlaylist('media')"><i class="fas fa-list"></i> Playlist</button>
+                        <button class="bb-btn bb-delete" onclick="bulkDelete('media')"><i class="fas fa-trash"></i> Delete</button>
+                        <button class="bb-btn bb-cancel" onclick="toggleSelectMode('media')"><i class="fas fa-times"></i></button>
                     </div>
                 </div>
 
@@ -509,54 +565,101 @@
                     <div id="libraryUploadStatus" class="alert" style="margin-top: 15px;"></div>
                     
                     <h3 style="margin-top: 30px;"><i class="fas fa-list"></i> Uploaded Books</h3>
+                    <div class="file-toolbar" id="libraryToolbar">
+                        <input type="text" class="ft-search" placeholder="Search books..." oninput="filterFileList('library',this.value)">
+                        <button class="ft-btn" onclick="toggleSelectMode('library')"><i class="fas fa-check-double"></i> Select</button>
+                        <button class="ft-btn" id="librarySelectAll" style="display:none" onclick="selectAllFiles('library')"><i class="fas fa-check-square"></i> All</button>
+                    </div>
                     <div class="file-list" id="libraryFileList">
                         <p style="text-align: center; color: #888; padding: 20px;">Loading library books...</p>
+                    </div>
+                    <div class="bulk-bar" id="libraryBulkBar">
+                        <span class="bb-count" id="libraryBulkCount">0 selected</span>
+                        <button class="bb-btn bb-playlist" onclick="bulkAddToPlaylist('library')"><i class="fas fa-book-reader"></i> Reading List</button>
+                        <button class="bb-btn bb-delete" onclick="bulkDelete('library')"><i class="fas fa-trash"></i> Delete</button>
+                        <button class="bb-btn bb-cancel" onclick="toggleSelectMode('library')"><i class="fas fa-times"></i></button>
                     </div>
                 </div>
 
                 <!-- Playlists Panel -->
                 <div class="admin-panel" id="playlistsPanel">
-                    <h3><i class="fas fa-list-ol"></i> Manage Playlists</h3>
-                    <p style="color: #666; margin-bottom: 20px;">Create curated playlists for media and reading lists for library</p>
-
                     <style>
-                        .pl-type-toggle { display:flex; gap:8px; margin-bottom:18px; }
-                        .pl-type-btn { flex:1; padding:10px; border-radius:10px; border:1.5px solid #e0e0e0; background:#fff; font-size:13px; font-weight:600; cursor:pointer; text-align:center; transition:all .2s; }
-                        .pl-type-btn.active { background:var(--primary-green);color:#fff;border-color:var(--primary-green); }
-                        .pl-create-form { background:#f8f9fa; border-radius:12px; padding:16px; margin-bottom:18px; border:1px solid #e0e0e0; }
-                        .pl-create-form input, .pl-create-form textarea { width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px; font-size:13px; margin-bottom:8px; box-sizing:border-box; }
-                        .pl-create-form textarea { resize:vertical; min-height:50px; }
-                        .pl-card { background:#fff; border-radius:12px; padding:14px; margin-bottom:10px; border:1px solid #e0e0e0; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
-                        .pl-card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
-                        .pl-card-title { font-weight:700; font-size:15px; color:#333; }
-                        .pl-card-desc { font-size:12px; color:#888; margin-bottom:8px; }
-                        .pl-card-meta { font-size:11px; color:#aaa; display:flex; gap:12px; align-items:center; }
-                        .pl-card-actions { display:flex; gap:6px; }
-                        .pl-card-actions button { padding:6px 10px; border:none; border-radius:6px; font-size:12px; cursor:pointer; font-weight:600; }
-                        .pl-btn-edit { background:#e3f2fd; color:#1976D2; }
-                        .pl-btn-del { background:#ffebee; color:#e53935; }
-                        .pl-btn-add { background:#e8f5e9; color:#2E7D32; }
-                        .pl-items-list { margin-top:10px; border-top:1px solid #f0f0f0; padding-top:8px; }
-                        .pl-item { display:flex; align-items:center; justify-content:space-between; padding:6px 0; border-bottom:1px solid #f5f5f5; font-size:12px; }
+                        .pl-header { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+                        .pl-header h3 { margin:0; flex:1; }
+                        .pl-type-toggle { display:flex; gap:6px; margin-bottom:20px; background:#f5f5f5; border-radius:12px; padding:4px; }
+                        .pl-type-btn { flex:1; padding:10px; border-radius:10px; border:none; background:transparent; font-size:13px; font-weight:600; cursor:pointer; text-align:center; transition:all .25s; color:#666; }
+                        .pl-type-btn.active { background:#fff; color:var(--primary-green); box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+                        .pl-create-form { background:linear-gradient(135deg,#f8faf8,#f0f7f0); border-radius:14px; padding:18px; margin-bottom:20px; border:1.5px dashed #c8e6c9; }
+                        .pl-create-form input, .pl-create-form textarea { width:100%; padding:11px 14px; border:1.5px solid #ddd; border-radius:10px; font-size:13px; margin-bottom:10px; box-sizing:border-box; background:#fff; transition:border .2s; }
+                        .pl-create-form input:focus, .pl-create-form textarea:focus { border-color:var(--primary-green); outline:none; }
+                        .pl-create-form textarea { resize:vertical; min-height:44px; }
+                        .pl-create-btn { width:100%; padding:12px; border:none; border-radius:10px; background:var(--primary-green); color:#fff; font-size:14px; font-weight:700; cursor:pointer; transition:all .2s; display:flex; align-items:center; justify-content:center; gap:8px; }
+                        .pl-create-btn:hover { background:var(--dark-green); transform:translateY(-1px); box-shadow:0 4px 12px rgba(76,175,80,0.3); }
+                        .pl-search { width:100%; padding:10px 14px 10px 36px; border:1.5px solid #e0e0e0; border-radius:10px; font-size:13px; margin-bottom:16px; box-sizing:border-box; background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%23999' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.156a5 5 0 1 1 0-10 5 5 0 0 1 0 10z'/%3E%3C/svg%3E") no-repeat 12px center #fff; }
+                        .pl-card { background:#fff; border-radius:14px; margin-bottom:12px; border:1px solid #e8e8e8; box-shadow:0 2px 8px rgba(0,0,0,0.04); overflow:hidden; transition:box-shadow .2s, transform .2s; }
+                        .pl-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.08); }
+                        .pl-card-top { display:flex; align-items:stretch; }
+                        .pl-card-cover { width:56px; min-height:56px; display:flex; align-items:center; justify-content:center; font-size:22px; color:#fff; flex-shrink:0; }
+                        .pl-card-info { flex:1; padding:14px 14px 10px; }
+                        .pl-card-title-row { display:flex; align-items:center; gap:8px; margin-bottom:4px; }
+                        .pl-card-title { font-weight:700; font-size:15px; color:#222; flex:1; }
+                        .pl-card-title input { font-weight:700; font-size:15px; color:#222; border:none; border-bottom:2px solid var(--primary-green); background:transparent; padding:0 0 2px; width:100%; outline:none; }
+                        .pl-card-desc { font-size:12px; color:#888; margin-bottom:6px; line-height:1.4; }
+                        .pl-card-desc textarea { font-size:12px; color:#888; border:none; border-bottom:1px solid #ddd; background:transparent; padding:0; width:100%; outline:none; resize:none; min-height:20px; line-height:1.4; }
+                        .pl-card-meta { display:flex; gap:12px; font-size:11px; color:#aaa; align-items:center; }
+                        .pl-card-meta i { margin-right:3px; }
+                        .pl-card-actions { display:flex; flex-direction:column; gap:0; border-left:1px solid #f0f0f0; }
+                        .pl-card-actions button { padding:10px 12px; border:none; background:transparent; cursor:pointer; font-size:13px; transition:background .15s; }
+                        .pl-card-actions button:hover { background:#f5f5f5; }
+                        .pl-card-actions .pla-edit { color:#1976D2; }
+                        .pl-card-actions .pla-add { color:#2E7D32; }
+                        .pl-card-actions .pla-del { color:#e53935; }
+                        .pl-items-wrap { border-top:1px solid #f0f0f0; }
+                        .pl-items-toggle { width:100%; padding:8px 14px; border:none; background:#fafafa; cursor:pointer; font-size:12px; font-weight:600; color:#666; display:flex; align-items:center; gap:6px; transition:background .15s; }
+                        .pl-items-toggle:hover { background:#f0f0f0; }
+                        .pl-items-toggle i.chevron { transition:transform .2s; }
+                        .pl-items-toggle.open i.chevron { transform:rotate(180deg); }
+                        .pl-items-body { max-height:0; overflow:hidden; transition:max-height .3s ease; }
+                        .pl-items-body.open { max-height:2000px; }
+                        .pl-item { display:flex; align-items:center; padding:8px 14px; border-bottom:1px solid #f5f5f5; font-size:13px; gap:8px; transition:background .1s; }
+                        .pl-item:hover { background:#fafafa; }
                         .pl-item:last-child { border-bottom:none; }
-                        .pl-item-title { flex:1; color:#555; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-                        .pl-item-remove { background:none; border:none; color:#e53935; cursor:pointer; font-size:12px; padding:2px 6px; }
-                        .pl-empty { text-align:center; padding:30px 20px; color:#999; }
-                        .pl-empty i { font-size:40px; display:block; margin-bottom:10px; color:#ddd; }
+                        .pl-item-drag { cursor:grab; color:#ccc; font-size:11px; padding:2px; }
+                        .pl-item-drag:active { cursor:grabbing; }
+                        .pl-item-num { color:#bbb; font-size:11px; font-weight:600; min-width:18px; }
+                        .pl-item-title { flex:1; color:#444; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+                        .pl-item-size { font-size:11px; color:#bbb; }
+                        .pl-item-actions { display:flex; gap:2px; }
+                        .pl-item-actions button { background:none; border:none; cursor:pointer; padding:4px 6px; font-size:12px; border-radius:4px; transition:background .15s; }
+                        .pl-item-actions .pli-up { color:#1976D2; }
+                        .pl-item-actions .pli-down { color:#1976D2; }
+                        .pl-item-actions .pli-remove { color:#e53935; }
+                        .pl-item-actions button:hover { background:#f0f0f0; }
+                        .pl-empty { text-align:center; padding:40px 20px; color:#bbb; }
+                        .pl-empty i { font-size:48px; display:block; margin-bottom:12px; color:#e0e0e0; }
+                        .pl-empty p { font-size:14px; }
+                        .pl-dragging { opacity:0.5; background:#e8f5e9; }
                     </style>
 
+                    <div class="pl-header">
+                        <h3><i class="fas fa-list-ol" style="color:var(--primary-green);margin-right:6px;"></i> Playlists</h3>
+                        <span id="plTotalCount" style="font-size:12px;color:#999;"></span>
+                    </div>
+
                     <div class="pl-type-toggle">
-                        <button class="pl-type-btn active" onclick="switchPlaylistType('media')"><i class="fas fa-photo-video"></i> Media Playlists</button>
-                        <button class="pl-type-btn" onclick="switchPlaylistType('library')"><i class="fas fa-book"></i> Reading Lists</button>
+                        <button class="pl-type-btn active" onclick="switchPlaylistType('media')"><i class="fas fa-photo-video" style="margin-right:4px;"></i> Media</button>
+                        <button class="pl-type-btn" onclick="switchPlaylistType('library')"><i class="fas fa-book" style="margin-right:4px;"></i> Reading Lists</button>
                     </div>
 
                     <div class="pl-create-form">
-                        <input type="text" id="plName" placeholder="Playlist name (e.g. Friday Khutbah Series)">
-                        <textarea id="plDesc" rows="2" placeholder="Short description (optional)"></textarea>
-                        <button class="btn btn-primary" onclick="createPlaylist()" style="width:100%;padding:10px;font-size:13px;font-weight:600;">
-                            <i class="fas fa-plus"></i> Create Playlist
+                        <input type="text" id="plName" placeholder="New playlist name...">
+                        <textarea id="plDesc" rows="2" placeholder="Description (optional)"></textarea>
+                        <button class="pl-create-btn" onclick="createPlaylist()">
+                            <i class="fas fa-plus-circle"></i> Create <span id="plCreateLabel">Playlist</span>
                         </button>
                     </div>
+
+                    <input type="text" class="pl-search" id="plSearchInput" placeholder="Search playlists..." oninput="filterPlaylists(this.value)">
 
                     <div id="playlistsList"></div>
                 </div>
@@ -1707,22 +1810,21 @@
             currentPlType = type;
             document.querySelectorAll('.pl-type-btn').forEach(b => b.classList.remove('active'));
             event.target.closest('.pl-type-btn').classList.add('active');
+            const label = document.getElementById('plCreateLabel');
+            if (label) label.textContent = type === 'media' ? 'Playlist' : 'Reading List';
             renderPlaylistsAdmin();
         }
 
         function createPlaylist() {
             const name = document.getElementById('plName').value.trim();
-            if (!name) { showStatus('plName', 'Enter a playlist name', 'error'); return; }
+            if (!name) { document.getElementById('plName').focus(); return; }
             const desc = document.getElementById('plDesc').value.trim();
             const pls = getPlaylists();
             pls.push({
                 id: 'pl_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 4),
-                name: name,
-                description: desc,
-                type: currentPlType,
-                items: [],
-                createdAt: Date.now(),
-                updatedAt: Date.now()
+                name, description: desc, type: currentPlType, items: [],
+                color: ['#4CAF50','#2196F3','#FF9800','#9C27B0','#E91E63','#00BCD4','#FF5722','#607D8B'][Math.floor(Math.random()*8)],
+                createdAt: Date.now(), updatedAt: Date.now()
             });
             savePlaylists(pls);
             document.getElementById('plName').value = '';
@@ -1732,95 +1834,119 @@
 
         function deletePlaylist(plId) {
             if (!confirm('Delete this playlist? Items won\'t be deleted from storage.')) return;
-            const pls = getPlaylists().filter(p => p.id !== plId);
-            savePlaylists(pls);
+            savePlaylists(getPlaylists().filter(p => p.id !== plId));
             renderPlaylistsAdmin();
         }
 
-        function removeFromPlaylist(plId, itemUrl) {
+        function removeFromPlaylist(plId, encodedUrl) {
+            const url = decodeURIComponent(encodedUrl);
             const pls = getPlaylists();
             const pl = pls.find(p => p.id === plId);
             if (!pl) return;
-            pl.items = pl.items.filter(i => i.url !== itemUrl);
+            pl.items = pl.items.filter(i => i.url !== url);
             pl.updatedAt = Date.now();
             savePlaylists(pls);
             renderPlaylistsAdmin();
         }
 
-        function addItemToPlaylist(plId) {
+        function movePlaylistItem(plId, fromIdx, direction) {
             const pls = getPlaylists();
             const pl = pls.find(p => p.id === plId);
             if (!pl) return;
-            // Show file picker modal to select from uploaded files
-            showFilePickerForPlaylist(plId, pl.type);
+            const toIdx = fromIdx + direction;
+            if (toIdx < 0 || toIdx >= pl.items.length) return;
+            [pl.items[fromIdx], pl.items[toIdx]] = [pl.items[toIdx], pl.items[fromIdx]];
+            pl.updatedAt = Date.now();
+            savePlaylists(pls);
+            renderPlaylistsAdmin();
         }
 
-        function showFilePickerForPlaylist(plId, plType) {
+        function startEditPlaylist(plId) {
+            const card = document.querySelector('[data-plid="' + plId + '"]');
+            if (!card) return;
+            card.dataset.editing = 'true';
+            const titleEl = card.querySelector('.pl-card-title');
+            const descEl = card.querySelector('.pl-card-desc');
+            const pls = getPlaylists();
+            const pl = pls.find(p => p.id === plId);
+            if (!pl) return;
+            titleEl.innerHTML = '<input value="' + (pl.name || '').replace(/"/g, '&quot;') + '" onblur="saveEditPlaylist(\'' + plId + '\')" onkeydown="if(event.key===\'Enter\')this.blur()">';
+            descEl.innerHTML = '<textarea onblur="saveEditPlaylist(\'' + plId + '\')" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();this.blur()}">' + (pl.description || '') + '</textarea>';
+            titleEl.querySelector('input').focus();
+        }
+
+        function saveEditPlaylist(plId) {
+            const card = document.querySelector('[data-plid="' + plId + '"]');
+            if (!card || card.dataset.editing !== 'true') return;
+            card.dataset.editing = '';
+            const nameInput = card.querySelector('.pl-card-title input');
+            const descInput = card.querySelector('.pl-card-desc textarea');
+            const pls = getPlaylists();
+            const pl = pls.find(p => p.id === plId);
+            if (!pl) return;
+            pl.name = (nameInput ? nameInput.value.trim() : pl.name) || pl.name;
+            pl.description = descInput ? descInput.value.trim() : pl.description;
+            pl.updatedAt = Date.now();
+            savePlaylists(pls);
+            setTimeout(() => renderPlaylistsAdmin(), 50);
+        }
+
+        function addItemToPlaylist(plId) {
+            showFilePickerForPlaylist(plId);
+        }
+
+        function showFilePickerForPlaylist(plId) {
             const pls = getPlaylists();
             const pl = pls.find(p => p.id === plId);
             if (!pl) return;
             const existingUrls = new Set(pl.items.map(i => i.url));
 
-            // Build modal
             let modal = document.getElementById('plFilePickerModal');
             if (!modal) {
                 modal = document.createElement('div');
                 modal.id = 'plFilePickerModal';
-                modal.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;padding:20px;';
+                modal.className = 'edit-modal-overlay';
                 document.body.appendChild(modal);
             }
             modal.style.display = 'flex';
 
-            // Get files from the media/library file lists already loaded
+            // Get files from stored arrays
             let files = [];
-            if (plType === 'media') {
-                const items = document.querySelectorAll('#mediaFileList .file-item');
-                items.forEach(item => {
-                    const name = item.querySelector('.file-name')?.textContent || '';
+            const src = pl.type === 'media' ? (window._mediaFiles || []) : (window._libraryFiles || []);
+            src.forEach(f => {
+                const title = f.name.replace(/^\d+_[a-z0-9]+_/, '').replace(/_/g, ' ').replace(/\.[^/.]+$/, '');
+                files.push({ url: f.downloadUrl, name: f.name, title, size: f.size, type: f.type || f.category });
+            });
+
+            // Also get from DOM if stored arrays are empty
+            if (files.length === 0) {
+                const listId = pl.type === 'media' ? 'mediaFileList' : 'libraryFileList';
+                document.querySelectorAll('#' + listId + ' .file-item').forEach(item => {
                     const url = item.dataset.url || '';
-                    const size = parseInt(item.dataset.size || '0');
-                    if (url) files.push({ url, name, title: name.replace(/^\d+_/, '').replace(/\.[^.]+$/, '').replace(/_/g, ' '), size });
-                });
-            } else {
-                const items = document.querySelectorAll('#libraryFileList .file-item');
-                items.forEach(item => {
-                    const name = item.querySelector('.file-name')?.textContent || '';
-                    const url = item.dataset.url || '';
-                    const size = parseInt(item.dataset.size || '0');
-                    if (url) files.push({ url, name, title: name.replace(/^\d+_/, '').replace(/\.[^.]+$/, '').replace(/_/g, ' '), size });
+                    const title = (item.querySelector('.file-name')?.textContent || '').replace(/R2|GitHub/g,'').trim();
+                    if (url) files.push({ url, name: title, title, size: parseInt(item.dataset.size||'0') });
                 });
             }
 
-            // Also try to get files from R2 cache in localStorage
-            const cacheKey = plType === 'media' ? 'kiuma_mediaFiles' : 'kiuma_libraryFiles';
-            try {
-                const cached = JSON.parse(localStorage.getItem(cacheKey) || '[]');
-                cached.forEach(f => {
-                    if (f.url && !files.find(x => x.url === f.url)) {
-                        files.push(f);
-                    }
-                });
-            } catch(e) {}
-
-            let html = '<div style="background:#fff;border-radius:14px;max-width:500px;width:100%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;">';
-            html += '<div style="padding:16px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;">';
-            html += '<div style="font-weight:700;font-size:16px;">Add to: ' + pl.name + '</div>';
-            html += '<button onclick="document.getElementById(\'plFilePickerModal\').style.display=\'none\'" style="background:none;border:none;font-size:20px;cursor:pointer;color:#999;"><i class="fas fa-times"></i></button></div>';
-            html += '<div style="padding:12px;border-bottom:1px solid #eee;"><input type="text" id="plFileSearch" oninput="filterPlFiles()" placeholder="Search files..." style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
-            html += '<div id="plFileList" style="flex:1;overflow-y:auto;padding:8px 12px;">';
+            let html = '<div class="edit-modal" style="max-width:520px;">';
+            html += '<div class="edit-modal-header"><h3><i class="fas fa-plus-circle" style="color:var(--primary-green);margin-right:8px;"></i>Add to ' + pl.name + '</h3>';
+            html += '<button onclick="document.getElementById(\'plFilePickerModal\').style.display=\'none\'" style="background:none;border:none;font-size:18px;cursor:pointer;color:#999;"><i class="fas fa-times"></i></button></div>';
+            html += '<div style="padding:12px 16px;border-bottom:1px solid #eee;"><input type="text" id="plFileSearch" oninput="filterPlFiles()" placeholder="Search files..." style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;box-sizing:border-box;"></div>';
+            html += '<div id="plFileList" style="max-height:50vh;overflow-y:auto;padding:4px 0;">';
 
             if (files.length === 0) {
-                html += '<div style="text-align:center;padding:30px;color:#999;">No files found. Upload some files first.</div>';
+                html += '<div style="text-align:center;padding:40px 20px;color:#999;"><i class="fas fa-folder-open" style="font-size:32px;display:block;margin-bottom:10px;color:#ddd;"></i>No files found. Upload some first.</div>';
             } else {
                 files.forEach(f => {
                     const added = existingUrls.has(f.url);
                     const title = f.title || f.name || 'Untitled';
-                    html += '<div class="pl-file-pick" data-title="' + title.toLowerCase() + '" style="display:flex;align-items:center;justify-content:space-between;padding:10px 8px;border-bottom:1px solid #f5f5f5;">';
+                    const safeJson = encodeURIComponent(JSON.stringify({url:f.url,name:f.name,title,size:f.size,type:f.type}));
+                    html += '<div class="pl-file-pick" data-title="' + title.toLowerCase() + '" style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #f5f5f5;transition:background .1s;">';
                     html += '<div style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;color:#333;">' + title + '</div>';
                     if (added) {
-                        html += '<span style="font-size:11px;color:#4CAF50;font-weight:600;"><i class="fas fa-check"></i> Added</span>';
+                        html += '<span style="font-size:11px;color:#4CAF50;font-weight:600;padding:5px 12px;background:#e8f5e9;border-radius:6px;"><i class="fas fa-check"></i> Added</span>';
                     } else {
-                        html += '<button onclick="pickFileForPlaylist(\'' + plId + '\',' + JSON.stringify(JSON.stringify(f)) + ')" style="padding:5px 12px;border:none;border-radius:6px;background:#e8f5e9;color:#2E7D32;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">+ Add</button>';
+                        html += '<button onclick="pickFileForPlaylist(\'' + plId + '\',\'' + safeJson + '\')" style="padding:6px 14px;border:none;border-radius:8px;background:var(--primary-green);color:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .2s;">+ Add</button>';
                     }
                     html += '</div>';
                 });
@@ -1836,54 +1962,371 @@
             });
         }
 
-        function pickFileForPlaylist(plId, fileJson) {
-            const file = JSON.parse(fileJson);
+        function pickFileForPlaylist(plId, safeJson) {
+            const file = JSON.parse(decodeURIComponent(safeJson));
             const pls = getPlaylists();
             const pl = pls.find(p => p.id === plId);
-            if (!pl) return;
-            if (pl.items.find(i => i.url === file.url)) return;
+            if (!pl || pl.items.find(i => i.url === file.url)) return;
             pl.items.push(file);
             pl.updatedAt = Date.now();
             savePlaylists(pls);
-            // Refresh the picker to show "Added" state
-            showFilePickerForPlaylist(plId, pl.type);
+            showFilePickerForPlaylist(plId);
         }
+
+        function filterPlaylists(q) {
+            q = (q || '').toLowerCase();
+            document.querySelectorAll('#playlistsList .pl-card').forEach(card => {
+                const name = (card.querySelector('.pl-card-title')?.textContent || '').toLowerCase();
+                card.style.display = name.includes(q) ? '' : 'none';
+            });
+        }
+
+        function togglePlItems(plId) {
+            const toggle = document.querySelector('[data-plid="' + plId + '"] .pl-items-toggle');
+            const body = document.querySelector('[data-plid="' + plId + '"] .pl-items-body');
+            if (!toggle || !body) return;
+            toggle.classList.toggle('open');
+            body.classList.toggle('open');
+        }
+
+        const PL_COLORS = { media: ['#4CAF50','#2196F3','#FF9800','#9C27B0','#E91E63'], library: ['#00BCD4','#FF5722','#607D8B','#795548','#3F51B5'] };
 
         function renderPlaylistsAdmin() {
             const container = document.getElementById('playlistsList');
             if (!container) return;
-            const pls = getPlaylists().filter(p => p.type === currentPlType);
+            const allPls = getPlaylists();
+            const pls = allPls.filter(p => p.type === currentPlType);
+            const totalEl = document.getElementById('plTotalCount');
+            if (totalEl) totalEl.textContent = allPls.length + ' total';
 
             if (pls.length === 0) {
-                container.innerHTML = '<div class="pl-empty"><i class="fas ' + (currentPlType === 'media' ? 'fa-photo-video' : 'fa-book-open') + '"></i><p>No ' + (currentPlType === 'media' ? 'playlists' : 'reading lists') + ' yet. Create one above!</p></div>';
+                const icon = currentPlType === 'media' ? 'fa-headphones' : 'fa-book-open';
+                const label = currentPlType === 'media' ? 'playlists' : 'reading lists';
+                container.innerHTML = '<div class="pl-empty"><i class="fas ' + icon + '"></i><p>No ' + label + ' yet.<br>Create one above!</p></div>';
                 return;
             }
 
             let html = '';
-            pls.forEach(pl => {
-                html += '<div class="pl-card">';
-                html += '<div class="pl-card-header"><div class="pl-card-title"><i class="fas ' + (currentPlType === 'media' ? 'fa-play-circle' : 'fa-book-reader') + '" style="color:var(--primary-green);margin-right:6px;"></i>' + pl.name + '</div>';
-                html += '<div class="pl-card-actions">';
-                html += '<button class="pl-btn-add" onclick="addItemToPlaylist(\'' + pl.id + '\')"><i class="fas fa-plus"></i> Add</button>';
-                html += '<button class="pl-btn-del" onclick="deletePlaylist(\'' + pl.id + '\')"><i class="fas fa-trash"></i></button>';
-                html += '</div></div>';
-                if (pl.description) html += '<div class="pl-card-desc">' + pl.description + '</div>';
-                html += '<div class="pl-card-meta"><span><i class="fas fa-list"></i> ' + pl.items.length + ' item' + (pl.items.length !== 1 ? 's' : '') + '</span>';
-                html += '<span>Created ' + new Date(pl.createdAt).toLocaleDateString() + '</span></div>';
+            pls.forEach((pl, plIdx) => {
+                const color = pl.color || PL_COLORS[currentPlType][plIdx % PL_COLORS[currentPlType].length];
+                const icon = currentPlType === 'media' ? 'fa-play' : 'fa-book-reader';
+                const itemCount = pl.items.length;
+                const fmtDate = new Date(pl.updatedAt || pl.createdAt).toLocaleDateString();
 
-                if (pl.items.length > 0) {
-                    html += '<div class="pl-items-list">';
+                html += '<div class="pl-card" data-plid="' + pl.id + '">';
+                html += '<div class="pl-card-top">';
+                html += '<div class="pl-card-cover" style="background:' + color + ';"><i class="fas ' + icon + '"></i></div>';
+                html += '<div class="pl-card-info">';
+                html += '<div class="pl-card-title-row"><div class="pl-card-title">' + pl.name + '</div></div>';
+                html += '<div class="pl-card-desc">' + (pl.description || '<span style="color:#ccc;">No description</span>') + '</div>';
+                html += '<div class="pl-card-meta"><span><i class="fas fa-list"></i> ' + itemCount + ' item' + (itemCount !== 1 ? 's' : '') + '</span><span><i class="fas fa-clock"></i> ' + fmtDate + '</span></div>';
+                html += '</div>';
+                html += '<div class="pl-card-actions">';
+                html += '<button class="pla-add" onclick="addItemToPlaylist(\'' + pl.id + '\')" title="Add items"><i class="fas fa-plus"></i></button>';
+                html += '<button class="pla-edit" onclick="startEditPlaylist(\'' + pl.id + '\')" title="Edit"><i class="fas fa-pen"></i></button>';
+                html += '<button class="pla-del" onclick="deletePlaylist(\'' + pl.id + '\')" title="Delete"><i class="fas fa-trash"></i></button>';
+                html += '</div></div>';
+
+                if (itemCount > 0) {
+                    html += '<div class="pl-items-wrap">';
+                    html += '<button class="pl-items-toggle" onclick="togglePlItems(\'' + pl.id + '\')"><i class="fas fa-chevron-down chevron"></i> ' + itemCount + ' item' + (itemCount !== 1 ? 's' : '') + '</button>';
+                    html += '<div class="pl-items-body">';
                     pl.items.forEach((item, idx) => {
                         const title = item.title || item.name || 'Untitled';
-                        html += '<div class="pl-item"><span style="color:#aaa;margin-right:8px;font-size:11px;">' + (idx + 1) + '.</span>';
+                        const sz = item.size ? '(' + formatFileSize(item.size) + ')' : '';
+                        html += '<div class="pl-item" draggable="true" data-plidx="' + idx + '" data-plid="' + pl.id + '">';
+                        html += '<span class="pl-item-drag" title="Drag to reorder"><i class="fas fa-grip-vertical"></i></span>';
+                        html += '<span class="pl-item-num">' + (idx + 1) + '</span>';
                         html += '<span class="pl-item-title">' + title + '</span>';
-                        html += '<button class="pl-item-remove" onclick="removeFromPlaylist(\'' + pl.id + '\',\'' + encodeURIComponent(item.url) + '\')"><i class="fas fa-times"></i></button></div>';
+                        html += '<span class="pl-item-size">' + sz + '</span>';
+                        html += '<span class="pl-item-actions">';
+                        html += '<button class="pli-up" onclick="movePlaylistItem(\'' + pl.id + '\',' + idx + ',-1)" title="Move up"><i class="fas fa-chevron-up"></i></button>';
+                        html += '<button class="pli-down" onclick="movePlaylistItem(\'' + pl.id + '\',' + idx + ',1)" title="Move down"><i class="fas fa-chevron-down"></i></button>';
+                        html += '<button class="pli-remove" onclick="removeFromPlaylist(\'' + pl.id + '\',\'' + encodeURIComponent(item.url) + '\')" title="Remove"><i class="fas fa-times"></i></button>';
+                        html += '</span></div>';
                     });
-                    html += '</div>';
+                    html += '</div></div>';
                 }
                 html += '</div>';
             });
             container.innerHTML = html;
+        }
+
+        // ==============================
+        // Multi-select, Bulk Actions, Edit, Search
+        // ==============================
+        const selectModes = { media: false, library: false };
+
+        function toggleSelectMode(section) {
+            selectModes[section] = !selectModes[section];
+            const listId = section === 'media' ? 'mediaFileList' : 'libraryFileList';
+            const barId = section + 'BulkBar';
+            const selAllId = section + 'SelectAll';
+            const selectBtn = document.querySelector('#' + section + 'Toolbar .ft-btn');
+
+            if (selectModes[section]) {
+                selectBtn.classList.add('active');
+                document.getElementById(selAllId).style.display = '';
+                document.querySelectorAll('#' + listId + ' .file-item').forEach(el => el.classList.add('selectable'));
+            } else {
+                selectBtn.classList.remove('active');
+                document.getElementById(selAllId).style.display = 'none';
+                document.querySelectorAll('#' + listId + ' .file-item').forEach(el => {
+                    el.classList.remove('selectable', 'selected');
+                });
+                document.getElementById(barId).classList.remove('visible');
+            }
+            updateBulkCount(section);
+        }
+
+        function onFileItemClick(el, section) {
+            if (!selectModes[section]) return;
+            el.classList.toggle('selected');
+            updateBulkCount(section);
+        }
+
+        function selectAllFiles(section) {
+            const listId = section === 'media' ? 'mediaFileList' : 'libraryFileList';
+            const items = document.querySelectorAll('#' + listId + ' .file-item.selectable');
+            const allSelected = Array.from(items).every(el => el.classList.contains('selected'));
+            items.forEach(el => {
+                if (allSelected) el.classList.remove('selected');
+                else el.classList.add('selected');
+            });
+            updateBulkCount(section);
+        }
+
+        function updateBulkCount(section) {
+            const listId = section === 'media' ? 'mediaFileList' : 'libraryFileList';
+            const count = document.querySelectorAll('#' + listId + ' .file-item.selected').length;
+            document.getElementById(section + 'BulkCount').textContent = count + ' selected';
+            const bar = document.getElementById(section + 'BulkBar');
+            if (count > 0) bar.classList.add('visible');
+            else bar.classList.remove('visible');
+        }
+
+        function filterFileList(section, query) {
+            const listId = section === 'media' ? 'mediaFileList' : 'libraryFileList';
+            const q = query.toLowerCase();
+            document.querySelectorAll('#' + listId + ' .file-item').forEach(el => {
+                const name = el.dataset.name || '';
+                el.style.display = name.includes(q) ? '' : 'none';
+            });
+        }
+
+        async function bulkDelete(section) {
+            const listId = section === 'media' ? 'mediaFileList' : 'libraryFileList';
+            const selected = document.querySelectorAll('#' + listId + ' .file-item.selected');
+            if (selected.length === 0) return;
+            if (!confirm('Delete ' + selected.length + ' file' + (selected.length > 1 ? 's' : '') + '? This cannot be undone.')) return;
+
+            let deleted = 0, errors = 0;
+            for (const el of selected) {
+                const source = el.dataset.source;
+                const path = el.dataset.path;
+                const sha = el.dataset.sha;
+                const worker = el.dataset.worker;
+                try {
+                    if (source === 'r2' && worker) {
+                        const mc = getR2MultiConfig();
+                        let token = '';
+                        (mc.video || []).forEach(a => { if (a.workerUrl === worker) token = a.adminToken; });
+                        if (mc.audio && mc.audio.workerUrl === worker) token = mc.audio.adminToken;
+                        if (mc.library && mc.library.workerUrl === worker) token = mc.library.adminToken;
+                        if (!token) { errors++; continue; }
+                        const res = await fetch(worker + '/file/' + encodeURIComponent(path), { method: 'DELETE', headers: { 'X-Admin-Token': token } });
+                        if (res.ok) deleted++; else errors++;
+                    } else if (source === 'github' && sha) {
+                        const config = getGitHubConfig();
+                        if (!config.token) { errors++; continue; }
+                        const res = await fetch('https://api.github.com/repos/' + config.owner + '/' + config.repo + '/contents/' + path, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': 'token ' + config.token, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ message: 'Bulk delete: ' + path, sha, branch: config.branch || 'main' })
+                        });
+                        if (res.ok) deleted++; else errors++;
+                    }
+                } catch(e) { errors++; }
+            }
+
+            alert('Deleted ' + deleted + ' file' + (deleted !== 1 ? 's' : '') + (errors ? ', ' + errors + ' failed' : ''));
+            toggleSelectMode(section);
+            if (section === 'media') loadMediaList(); else loadLibraryList();
+            updateStats();
+            checkAllR2Storage();
+        }
+
+        function bulkAddToPlaylist(section) {
+            const listId = section === 'media' ? 'mediaFileList' : 'libraryFileList';
+            const selected = document.querySelectorAll('#' + listId + ' .file-item.selected');
+            if (selected.length === 0) return;
+
+            const plType = section === 'media' ? 'media' : 'library';
+            const pls = getPlaylists().filter(p => p.type === plType);
+
+            let modal = document.getElementById('bulkPlPickerModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'bulkPlPickerModal';
+                modal.className = 'edit-modal-overlay';
+                document.body.appendChild(modal);
+            }
+            modal.style.display = 'flex';
+
+            let html = '<div class="edit-modal" style="max-width:400px;">';
+            html += '<div class="edit-modal-header"><h3><i class="fas fa-list" style="color:var(--primary-green);margin-right:8px;"></i>Add ' + selected.length + ' items to...</h3>';
+            html += '<button onclick="document.getElementById(\'bulkPlPickerModal\').style.display=\'none\'" style="background:none;border:none;font-size:18px;cursor:pointer;color:#999;"><i class="fas fa-times"></i></button></div>';
+            html += '<div style="padding:8px 0;max-height:50vh;overflow-y:auto;">';
+
+            if (pls.length === 0) {
+                html += '<div style="text-align:center;padding:30px;color:#999;">No playlists. Create one first.</div>';
+            } else {
+                pls.forEach(pl => {
+                    html += '<button onclick="doBulkAddToPlaylist(\'' + pl.id + '\',\'' + section + '\')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 16px;border:none;background:transparent;cursor:pointer;text-align:left;border-bottom:1px solid #f5f5f5;transition:background .15s;">';
+                    html += '<div style="width:36px;height:36px;border-radius:8px;background:' + (pl.color || '#4CAF50') + ';display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;"><i class="fas fa-list"></i></div>';
+                    html += '<div style="flex:1;"><div style="font-weight:600;font-size:14px;color:#333;">' + pl.name + '</div><div style="font-size:11px;color:#999;">' + pl.items.length + ' items</div></div>';
+                    html += '</button>';
+                });
+            }
+            html += '</div></div>';
+            modal.innerHTML = html;
+        }
+
+        function doBulkAddToPlaylist(plId, section) {
+            const listId = section === 'media' ? 'mediaFileList' : 'libraryFileList';
+            const selected = document.querySelectorAll('#' + listId + ' .file-item.selected');
+            const pls = getPlaylists();
+            const pl = pls.find(p => p.id === plId);
+            if (!pl) return;
+
+            let added = 0;
+            const existingUrls = new Set(pl.items.map(i => i.url));
+            selected.forEach(el => {
+                const url = el.dataset.url;
+                if (!url || existingUrls.has(url)) return;
+                const name = (el.querySelector('.file-name')?.textContent || '').replace(/R2|GitHub/g,'').trim();
+                pl.items.push({ url, name, title: name, size: parseInt(el.dataset.size||'0'), type: el.dataset.type || el.dataset.category });
+                existingUrls.add(url);
+                added++;
+            });
+            pl.updatedAt = Date.now();
+            savePlaylists(pls);
+
+            document.getElementById('bulkPlPickerModal').style.display = 'none';
+            toggleSelectMode(section);
+            alert('Added ' + added + ' item' + (added !== 1 ? 's' : '') + ' to ' + pl.name);
+        }
+
+        // Edit Modal
+        function openEditModal(encodedData) {
+            const data = JSON.parse(decodeURIComponent(encodedData));
+            const displayName = data.name.replace(/^\d+_[a-z0-9]+_/, '').replace(/_/g, ' ').replace(/\.[^/.]+$/, '');
+
+            let modal = document.getElementById('editFileModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'editFileModal';
+                modal.className = 'edit-modal-overlay';
+                document.body.appendChild(modal);
+            }
+            modal.style.display = 'flex';
+
+            let typeField = '';
+            if (data.section === 'media') {
+                typeField = '<div class="em-field"><label>Type</label><select id="editFileType"><option value="video"' + (data.type==='video'?' selected':'') + '>Video</option><option value="audio"' + (data.type==='audio'?' selected':'') + '>Audio</option><option value="image"' + (data.type==='image'?' selected':'') + '>Image</option></select></div>';
+            } else {
+                typeField = '<div class="em-field"><label>Category</label><select id="editFileCat"><option value="islamic"' + (data.category==='islamic'?' selected':'') + '>Islamic</option><option value="educational"' + (data.category==='educational'?' selected':'') + '>Educational</option><option value="quran"' + (data.category==='quran'?' selected':'') + '>Quran</option><option value="other"' + (data.category==='other'?' selected':'') + '>Other</option></select></div>';
+            }
+
+            modal.innerHTML = `
+            <div class="edit-modal">
+                <div class="edit-modal-header">
+                    <h3><i class="fas fa-pen" style="color:var(--primary-green);margin-right:8px;"></i>Edit File</h3>
+                    <button onclick="document.getElementById('editFileModal').style.display='none'" style="background:none;border:none;font-size:18px;cursor:pointer;color:#999;"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="edit-modal-body">
+                    <div class="em-field">
+                        <label>Display Name</label>
+                        <input type="text" id="editFileName" value="${displayName}">
+                    </div>
+                    ${typeField}
+                    <div class="em-field">
+                        <label>Source</label>
+                        <input type="text" value="${data.source === 'r2' ? 'Cloudflare R2' : 'GitHub'}" disabled style="background:#f5f5f5;color:#888;">
+                    </div>
+                    <div class="em-field">
+                        <label>Size</label>
+                        <input type="text" value="${formatFileSize(data.size)}" disabled style="background:#f5f5f5;color:#888;">
+                    </div>
+                    <div class="em-field">
+                        <label>Path</label>
+                        <input type="text" value="${data.path}" disabled style="background:#f5f5f5;color:#888;font-size:11px;">
+                    </div>
+                </div>
+                <div class="edit-modal-footer">
+                    <button class="em-cancel" onclick="document.getElementById('editFileModal').style.display='none'">Cancel</button>
+                    <button class="em-save" onclick="saveFileEdit('${encodedData}')"><i class="fas fa-check" style="margin-right:4px;"></i>Save</button>
+                </div>
+            </div>`;
+        }
+
+        async function saveFileEdit(encodedData) {
+            const data = JSON.parse(decodeURIComponent(encodedData));
+            const newName = document.getElementById('editFileName').value.trim();
+            if (!newName) return;
+
+            // For R2: re-upload with new key (copy + delete old)
+            if (data.source === 'r2') {
+                const mc = getR2MultiConfig();
+                let token = '';
+                (mc.video || []).forEach(a => { if (a.workerUrl === data.workerUrl) token = a.adminToken; });
+                if (mc.audio && mc.audio.workerUrl === data.workerUrl) token = mc.audio.adminToken;
+                if (mc.library && mc.library.workerUrl === data.workerUrl) token = mc.library.adminToken;
+
+                if (!token) { alert('No admin token for this R2 account'); return; }
+
+                const ext = data.name.split('.').pop();
+                const safeName = newName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '');
+                let newType = data.type;
+                let newCat = data.category;
+                if (data.section === 'media') newType = document.getElementById('editFileType')?.value || data.type;
+                if (data.section === 'library') newCat = document.getElementById('editFileCat')?.value || data.category;
+
+                const oldPath = data.path;
+                const newKey = data.section === 'media'
+                    ? 'media/' + newType + '/' + Date.now() + '_' + safeName + '.' + ext
+                    : 'library/' + newCat + '/' + Date.now() + '_' + safeName + '.' + ext;
+
+                try {
+                    // Fetch old file
+                    const fileRes = await fetch(data.downloadUrl);
+                    if (!fileRes.ok) throw new Error('Cannot fetch file');
+                    const blob = await fileRes.blob();
+
+                    // Upload with new key
+                    await fetch(data.workerUrl + '/upload', {
+                        method: 'PUT',
+                        headers: { 'X-Admin-Token': token, 'X-File-Name': newKey, 'Content-Type': blob.type },
+                        body: blob
+                    });
+
+                    // Delete old
+                    await fetch(data.workerUrl + '/file/' + encodeURIComponent(oldPath), {
+                        method: 'DELETE',
+                        headers: { 'X-Admin-Token': token }
+                    });
+
+                    alert('File updated!');
+                } catch(e) {
+                    alert('Edit failed: ' + e.message);
+                    return;
+                }
+            } else {
+                alert('Rename for GitHub files is not yet supported. Use R2 for editable files.');
+            }
+
+            document.getElementById('editFileModal').style.display = 'none';
+            if (data.section === 'media') loadMediaList(); else loadLibraryList();
         }
 
         // Load playlists from Firestore on init
@@ -2675,22 +3118,28 @@
                 
                 console.log('Total media files found:', allFiles.length);
                 
+                // Store for bulk/playlist operations
+                window._mediaFiles = allFiles;
+                
                 if (allFiles.length > 0) {
-                    list.innerHTML = allFiles.map(item => {
+                    list.innerHTML = allFiles.map((item, idx) => {
                         const displayName = item.name.replace(/^\d+_[a-z0-9]+_/, '').replace(/_/g, ' ');
                         const srcBadge = item.source === 'r2' ? '<span style="font-size:9px;background:#e3f2fd;color:#1565C0;padding:1px 5px;border-radius:4px;margin-left:4px;">R2</span>' : '<span style="font-size:9px;background:#f3e5f5;color:#7B1FA2;padding:1px 5px;border-radius:4px;margin-left:4px;">GitHub</span>';
                         const deleteBtn = item.source === 'r2'
-                            ? `<button class="btn-icon btn-danger" onclick="deleteR2File('${encodeURIComponent(item.path)}','${encodeURIComponent(item.workerUrl||'')}')" title="Delete"><i class="fas fa-trash"></i></button>`
-                            : `<button class="btn-icon btn-danger" onclick="deleteMediaFile('${item.path}', '${item.sha}')" title="Delete"><i class="fas fa-trash"></i></button>`;
+                            ? `<button class="btn-icon btn-danger" onclick="event.stopPropagation();deleteR2File('${encodeURIComponent(item.path)}','${encodeURIComponent(item.workerUrl||'')}')" title="Delete"><i class="fas fa-trash"></i></button>`
+                            : `<button class="btn-icon btn-danger" onclick="event.stopPropagation();deleteMediaFile('${item.path}', '${item.sha}')" title="Delete"><i class="fas fa-trash"></i></button>`;
+                        const editData = encodeURIComponent(JSON.stringify({idx,name:item.name,path:item.path,type:item.type,source:item.source,workerUrl:item.workerUrl||'',downloadUrl:item.downloadUrl,size:item.size,sha:item.sha||'',section:'media'}));
                         return `
-                        <div class="file-item" data-path="${item.path}" data-sha="${item.sha||''}">
+                        <div class="file-item" data-idx="${idx}" data-name="${escapeHtml(displayName).toLowerCase()}" data-path="${item.path}" data-sha="${item.sha||''}" data-source="${item.source}" data-url="${item.downloadUrl}" data-worker="${item.workerUrl||''}" data-size="${item.size||0}" data-type="${item.type}" onclick="onFileItemClick(this,'media')">
+                            <div class="fi-checkbox"><i class="fas fa-check"></i></div>
                             <i class="file-icon fas ${getMediaIcon(item.type)}"></i>
                             <div class="file-info">
                                 <div class="file-name">${escapeHtml(displayName)} ${srcBadge}</div>
                                 <div class="file-meta">${item.type} • ${formatFileSize(item.size)}</div>
                             </div>
                             <div class="file-actions">
-                                <a href="${item.downloadUrl}" target="_blank" class="btn-icon btn-primary" title="Download"><i class="fas fa-download"></i></a>
+                                <button class="btn-icon btn-primary" onclick="event.stopPropagation();openEditModal('${editData}')" title="Edit"><i class="fas fa-pen"></i></button>
+                                <a href="${item.downloadUrl}" target="_blank" class="btn-icon btn-primary" onclick="event.stopPropagation()" title="Download"><i class="fas fa-download"></i></a>
                                 ${deleteBtn}
                             </div>
                         </div>
@@ -2766,22 +3215,28 @@
                 
                 console.log('Total library files found:', allFiles.length);
                 
+                // Store for bulk/playlist operations
+                window._libraryFiles = allFiles;
+
                 if (allFiles.length > 0) {
-                    list.innerHTML = allFiles.map(item => {
+                    list.innerHTML = allFiles.map((item, idx) => {
                         const displayName = item.name.replace(/^\d+_[a-z0-9]+_/, '').replace(/_/g, ' ').replace(/\.[^/.]+$/, '');
                         const srcBadge = item.source === 'r2' ? '<span style="font-size:9px;background:#e3f2fd;color:#1565C0;padding:1px 5px;border-radius:4px;margin-left:4px;">R2</span>' : '<span style="font-size:9px;background:#f3e5f5;color:#7B1FA2;padding:1px 5px;border-radius:4px;margin-left:4px;">GitHub</span>';
                         const deleteBtn = item.source === 'r2'
-                            ? `<button class="btn-icon btn-danger" onclick="deleteR2File('${encodeURIComponent(item.path)}','${encodeURIComponent(item.workerUrl||'')}')" title="Delete"><i class="fas fa-trash"></i></button>`
-                            : `<button class="btn-icon btn-danger" onclick="deleteLibraryFile('${item.path}', '${item.sha}')" title="Delete"><i class="fas fa-trash"></i></button>`;
+                            ? `<button class="btn-icon btn-danger" onclick="event.stopPropagation();deleteR2File('${encodeURIComponent(item.path)}','${encodeURIComponent(item.workerUrl||'')}')" title="Delete"><i class="fas fa-trash"></i></button>`
+                            : `<button class="btn-icon btn-danger" onclick="event.stopPropagation();deleteLibraryFile('${item.path}', '${item.sha}')" title="Delete"><i class="fas fa-trash"></i></button>`;
+                        const editData = encodeURIComponent(JSON.stringify({idx,name:item.name,path:item.path,category:item.category,source:item.source,workerUrl:item.workerUrl||'',downloadUrl:item.downloadUrl,size:item.size,sha:item.sha||'',section:'library'}));
                         return `
-                        <div class="file-item" data-path="${item.path}" data-sha="${item.sha||''}">
+                        <div class="file-item" data-idx="${idx}" data-name="${escapeHtml(displayName).toLowerCase()}" data-path="${item.path}" data-sha="${item.sha||''}" data-source="${item.source}" data-url="${item.downloadUrl}" data-worker="${item.workerUrl||''}" data-size="${item.size||0}" data-category="${item.category}" onclick="onFileItemClick(this,'library')">
+                            <div class="fi-checkbox"><i class="fas fa-check"></i></div>
                             <i class="file-icon fas fa-book"></i>
                             <div class="file-info">
                                 <div class="file-name">${escapeHtml(displayName)} ${srcBadge}</div>
                                 <div class="file-meta">${item.category} • ${formatFileSize(item.size)}</div>
                             </div>
                             <div class="file-actions">
-                                <a href="${item.downloadUrl}" target="_blank" class="btn-icon btn-primary" title="Download"><i class="fas fa-download"></i></a>
+                                <button class="btn-icon btn-primary" onclick="event.stopPropagation();openEditModal('${editData}')" title="Edit"><i class="fas fa-pen"></i></button>
+                                <a href="${item.downloadUrl}" target="_blank" class="btn-icon btn-primary" onclick="event.stopPropagation()" title="Download"><i class="fas fa-download"></i></a>
                                 ${deleteBtn}
                             </div>
                         </div>
