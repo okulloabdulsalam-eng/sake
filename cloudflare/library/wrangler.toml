@@ -1,0 +1,10 @@
+name = "kiuma-library"
+main = "../worker.js"
+compatibility_date = "2024-01-01"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "kiuma-library"
+
+# Set ADMIN_TOKEN as a secret via:
+#   cd cloudflare/library && npx wrangler secret put ADMIN_TOKEN

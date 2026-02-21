@@ -1,0 +1,10 @@
+name = "kiuma-video4"
+main = "../worker.js"
+compatibility_date = "2024-01-01"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "kiuma-video4"
+
+# Set ADMIN_TOKEN as a secret via:
+#   cd cloudflare/video4 && npx wrangler secret put ADMIN_TOKEN

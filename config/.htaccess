@@ -1,0 +1,4 @@
+# Protect configuration files from direct access
+Order Deny,Allow
+Deny from all
+
