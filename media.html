@@ -127,6 +127,7 @@
                     <button class="media-filter-btn" onclick="filterMedia('image')"><i class="fas fa-image"></i> Images</button>
                     <button class="media-filter-btn" onclick="filterMedia('downloads')"><i class="fas fa-download"></i> Downloads</button>
                 </div>
+                <div id="playlistFilterBar" class="media-filter-bar" style="display:none;margin-top:4px;flex-wrap:wrap;gap:6px;"></div>
 
                 <div class="media-card-grid" id="mediaGrid">
                     <!-- Media items will be loaded here -->
@@ -300,19 +301,57 @@
         // Filter
         // ==============================
         let currentMediaFilter = 'all';
+        let currentPlaylist = 'all';
+        let allLoadedFiles = []; // Cache of all loaded files for playlist filtering
+
         window.filterMedia = function(type) {
             currentMediaFilter = type;
-            document.querySelectorAll('.media-filter-btn').forEach(b => b.classList.remove('active'));
+            currentPlaylist = 'all';
+            document.querySelectorAll('.media-filter-bar:first-of-type .media-filter-btn').forEach(b => b.classList.remove('active'));
             if (event && event.currentTarget) event.currentTarget.classList.add('active');
             loadMediaFromStorage(type);
         };
 
+        window.filterByPlaylist = function(playlist) {
+            currentPlaylist = playlist;
+            document.querySelectorAll('#playlistFilterBar .media-filter-btn').forEach(b => b.classList.remove('active'));
+            if (event && event.currentTarget) event.currentTarget.classList.add('active');
+            const grid = document.getElementById('mediaGrid');
+            grid.innerHTML = '';
+            const filtered = playlist === 'all' ? allLoadedFiles : allLoadedFiles.filter(f => f.playlist === playlist);
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div style="text-align:center;padding:50px 20px;color:#999;grid-column:1/-1;"><p>No media in this playlist</p></div>';
+            } else {
+                renderMediaCards(grid, filtered, false);
+            }
+            renderOfflineMediaSection(currentMediaFilter);
+        };
+
+        function buildPlaylistBar(files) {
+            const bar = document.getElementById('playlistFilterBar');
+            if (!bar) return;
+            const playlists = [...new Set(files.map(f => f.playlist).filter(p => p && p !== 'general'))];
+            if (playlists.length === 0) { bar.style.display = 'none'; return; }
+            playlists.sort();
+            bar.style.display = 'flex';
+            bar.innerHTML = '<button class="media-filter-btn active" onclick="filterByPlaylist(\'all\')"><i class="fas fa-list"></i> All</button>' +
+                playlists.map(p => '<button class="media-filter-btn" onclick="filterByPlaylist(\'' + p + '\')"><i class="fas fa-folder"></i> ' + p.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()) + '</button>').join('');
+        }
+
         // ==============================
         // Load files — R2 first, if empty fall back to GitHub
         // ==============================
+        function extractPlaylist(key) {
+            // key format: media/{type}/{category}/{timestamp}_{name}.ext OR media/{type}/{timestamp}_{name}.ext
+            const parts = key.split('/');
+            // parts: ['media', 'video', 'lectures', '123_name.mp4'] -> category = 'lectures'
+            // parts: ['media', 'video', '123_name.mp4'] -> category = 'general'
+            if (parts.length >= 4 && !/^\d+_/.test(parts[2])) return parts[2];
+            return 'general';
+        }
+
         async function fetchFromR2(type) {
             const allFiles = [];
-            // Determine which types to fetch
             const types = type === 'all' ? ['video', 'audio', 'image'] : [type];
             for (const t of types) {
                 const accounts = getR2AccountsForType(t);
@@ -323,7 +362,7 @@
                         if (!res.ok) continue;
                         const data = await res.json();
                         (data.files || []).forEach(f => {
-                            allFiles.push({ name: f.name, type: fileType(f.name), url: acct.workerUrl + '/file/' + encodeURIComponent(f.key), size: f.size });
+                            allFiles.push({ name: f.name, type: fileType(f.name), url: acct.workerUrl + '/file/' + encodeURIComponent(f.key), size: f.size, playlist: extractPlaylist(f.key) });
                         });
                     } catch(e) {}
                 }
@@ -365,12 +404,19 @@
                 // Try R2 first, fall back to GitHub if R2 returns empty
                 let allFiles = await fetchFromR2(type);
                 if (allFiles.length === 0) allFiles = await fetchFromGitHub(type);
+                allLoadedFiles = allFiles;
+
+                // Build playlist filter bar
+                buildPlaylistBar(allFiles);
+
+                // Apply playlist filter if active
+                const displayFiles = (currentPlaylist !== 'all') ? allFiles.filter(f => f.playlist === currentPlaylist) : allFiles;
 
                 grid.innerHTML = '';
-                if (allFiles.length === 0) {
+                if (displayFiles.length === 0) {
                     grid.innerHTML = '<div style="text-align:center;padding:50px 20px;color:#999;grid-column:1/-1;"><i class="fas fa-photo-video" style="font-size:48px;margin-bottom:12px;display:block;color:#ddd;"></i><p>No media files found</p></div>';
                 } else {
-                    renderMediaCards(grid, allFiles, false);
+                    renderMediaCards(grid, displayFiles, false);
                 }
             } catch(err) {
                 console.error('Media load error:', err);

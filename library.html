@@ -137,6 +137,7 @@
                     <button class="lib-filter-btn" onclick="filterBooks('quran')"><i class="fas fa-book-open"></i> Quran</button>
                     <button class="lib-filter-btn" onclick="filterBooks('downloads')"><i class="fas fa-download"></i> Downloads</button>
                 </div>
+                <div id="collectionFilterBar" class="lib-filter-bar" style="display:none;margin-top:4px;flex-wrap:wrap;gap:6px;"></div>
 
                 <div class="lib-card-grid" id="libraryGrid">
                     <!-- Books will be loaded here -->
@@ -184,7 +185,8 @@
 
         // Filter books function - globally accessible
         window.filterBooks = function(category) {
-            document.querySelectorAll('.lib-filter-btn').forEach(btn => btn.classList.remove('active'));
+            currentCollection = 'all';
+            document.querySelectorAll('.lib-filter-bar:first-of-type .lib-filter-btn').forEach(btn => btn.classList.remove('active'));
             if (event && event.currentTarget) event.currentTarget.classList.add('active');
             loadBooksFromStorage(category);
         };
@@ -531,6 +533,42 @@
         // Load books — R2 first, if empty fall back to GitHub
         // ==============================
         let currentLibFilter = 'all';
+        let currentCollection = 'all';
+        let allLoadedBooks = [];
+
+        function extractCollection(key) {
+            // key: library/islamic/hadith/123_name.pdf -> collection = 'hadith'
+            // key: library/islamic/123_name.pdf -> collection = '' (none)
+            const parts = key.split('/');
+            if (parts.length >= 4 && !/^\d+_/.test(parts[2])) return parts[2];
+            return '';
+        }
+
+        window.filterByCollection = function(col) {
+            currentCollection = col;
+            document.querySelectorAll('#collectionFilterBar .lib-filter-btn').forEach(b => b.classList.remove('active'));
+            if (event && event.currentTarget) event.currentTarget.classList.add('active');
+            const grid = document.getElementById('libraryGrid');
+            grid.innerHTML = '';
+            const filtered = col === 'all' ? allLoadedBooks : allLoadedBooks.filter(f => f.collection === col);
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div style="text-align:center;padding:50px 20px;color:#999;grid-column:1/-1;"><p>No books in this collection</p></div>';
+            } else {
+                renderBookCards(grid, filtered, false);
+            }
+            renderOfflineLibSection(currentLibFilter);
+        };
+
+        function buildCollectionBar(files) {
+            const bar = document.getElementById('collectionFilterBar');
+            if (!bar) return;
+            const collections = [...new Set(files.map(f => f.collection).filter(c => c && c.length > 0))];
+            if (collections.length === 0) { bar.style.display = 'none'; return; }
+            collections.sort();
+            bar.style.display = 'flex';
+            bar.innerHTML = '<button class="lib-filter-btn active" onclick="filterByCollection(\'all\')"><i class="fas fa-list"></i> All</button>' +
+                collections.map(c => '<button class="lib-filter-btn" onclick="filterByCollection(\'' + c + '\')"><i class="fas fa-folder"></i> ' + c.replace(/-/g,' ').replace(/\b\w/g,l=>l.toUpperCase()) + '</button>').join('');
+        }
 
         async function fetchBooksR2(cat) {
             const accounts = getLibraryR2Accounts();
@@ -543,7 +581,7 @@
                         const res = await fetch(acct.workerUrl+'/list?prefix='+encodeURIComponent(prefix+'/'));
                         if (!res.ok) return [];
                         const data = await res.json();
-                        return (data.files||[]).map(f => ({ name:f.name, category:bookCat(f.key), url:acct.workerUrl+'/file/'+encodeURIComponent(f.key), size:f.size }));
+                        return (data.files||[]).map(f => ({ name:f.name, category:bookCat(f.key), collection:extractCollection(f.key), url:acct.workerUrl+'/file/'+encodeURIComponent(f.key), size:f.size }));
                     } catch(e) { return []; }
                 }));
                 allFiles.push(...results.flat());
@@ -585,12 +623,19 @@
             try {
                 let allFiles = await fetchBooksR2(category);
                 if (allFiles.length === 0) allFiles = await fetchBooksGitHub(category);
+                allLoadedBooks = allFiles;
+
+                // Build collection filter bar
+                buildCollectionBar(allFiles);
+
+                // Apply collection filter if active
+                const displayFiles = (currentCollection !== 'all') ? allFiles.filter(f => f.collection === currentCollection) : allFiles;
 
                 grid.innerHTML = '';
-                if (allFiles.length === 0) {
+                if (displayFiles.length === 0) {
                     grid.innerHTML = '<div style="text-align:center;padding:50px 20px;color:#999;grid-column:1/-1;"><i class="fas fa-book-open" style="font-size:48px;margin-bottom:12px;display:block;color:#ddd;"></i><p>No books found</p></div>';
                 } else {
-                    renderBookCards(grid, allFiles, false);
+                    renderBookCards(grid, displayFiles, false);
                 }
             } catch(err) {
                 console.error('Library load error:', err);

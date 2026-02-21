@@ -428,6 +428,13 @@
                         <label>Author (optional)</label>
                         <input type="text" id="mediaAuthor" placeholder="Enter author or creator name">
                     </div>
+
+                    <div class="form-group">
+                        <label>Category / Playlist</label>
+                        <input type="text" id="mediaCategory" list="mediaCategoryList" placeholder="e.g. Lectures, Nasheeds, Ramadan, Friday Khutbah">
+                        <datalist id="mediaCategoryList"></datalist>
+                        <p style="margin:4px 0 0;font-size:11px;color:#999;">Type a new category or pick from recent ones. Used for sorting & playlists.</p>
+                    </div>
                     
                     <div class="upload-area" id="mediaUploadArea">
                         <label for="mediaFileInput" style="display:block; cursor:pointer; padding: 20px;">
@@ -473,6 +480,13 @@
                         </select>
                     </div>
                     
+                    <div class="form-group">
+                        <label>Collection / Subcategory</label>
+                        <input type="text" id="bookCollection" list="bookCollectionList" placeholder="e.g. Hadith, Fiqh, Science, History">
+                        <datalist id="bookCollectionList"></datalist>
+                        <p style="margin:4px 0 0;font-size:11px;color:#999;">Optional. Groups books within a category for easier browsing.</p>
+                    </div>
+
                     <div class="form-group">
                         <label>Description (optional)</label>
                         <textarea id="bookDescription" rows="3" placeholder="Enter book description"></textarea>
@@ -1563,6 +1577,46 @@
         const MAX_VIDEO_ACCOUNTS = 5;
         const DEFAULT_R2_WORKER_URL = 'https://kiuma-storage.kiuma.workers.dev';
 
+        // Category/Collection autocomplete helpers
+        function saveMediaCategory(cat) {
+            if (!cat || cat === 'general') return;
+            try {
+                const cats = JSON.parse(localStorage.getItem('kiuma_mediaCategories') || '[]');
+                if (!cats.includes(cat)) { cats.unshift(cat); localStorage.setItem('kiuma_mediaCategories', JSON.stringify(cats.slice(0, 50))); }
+                populateMediaCategoryList();
+            } catch(e) {}
+        }
+        function saveBookCollection(col) {
+            if (!col) return;
+            try {
+                const cols = JSON.parse(localStorage.getItem('kiuma_bookCollections') || '[]');
+                if (!cols.includes(col)) { cols.unshift(col); localStorage.setItem('kiuma_bookCollections', JSON.stringify(cols.slice(0, 50))); }
+                populateBookCollectionList();
+            } catch(e) {}
+        }
+        function populateMediaCategoryList() {
+            const dl = document.getElementById('mediaCategoryList');
+            if (!dl) return;
+            const defaults = ['lectures', 'khutbah', 'nasheeds', 'ramadan', 'quran-recitation', 'events', 'interviews', 'tutorials', 'islamic-reminders', 'youth'];
+            try {
+                const saved = JSON.parse(localStorage.getItem('kiuma_mediaCategories') || '[]');
+                const all = [...new Set([...saved, ...defaults])];
+                dl.innerHTML = all.map(c => '<option value="' + c + '">').join('');
+            } catch(e) { dl.innerHTML = defaults.map(c => '<option value="' + c + '">').join(''); }
+        }
+        function populateBookCollectionList() {
+            const dl = document.getElementById('bookCollectionList');
+            if (!dl) return;
+            const defaults = ['hadith', 'fiqh', 'tafsir', 'seerah', 'aqeedah', 'history', 'science', 'arabic', 'duas', 'children'];
+            try {
+                const saved = JSON.parse(localStorage.getItem('kiuma_bookCollections') || '[]');
+                const all = [...new Set([...saved, ...defaults])];
+                dl.innerHTML = all.map(c => '<option value="' + c + '">').join('');
+            } catch(e) { dl.innerHTML = defaults.map(c => '<option value="' + c + '">').join(''); }
+        }
+        // Populate on load
+        setTimeout(() => { populateMediaCategoryList(); populateBookCollectionList(); }, 100);
+
         // Default worker URLs for all 7 accounts
         const DEFAULT_R2_ACCOUNTS = {
             video: [
@@ -1987,6 +2041,7 @@
             const title = document.getElementById('mediaTitle').value.trim() || file.name;
             const author = document.getElementById('mediaAuthor').value.trim() || '';
             const type = document.getElementById('mediaType').value;
+            const category = (document.getElementById('mediaCategory').value.trim() || 'general').toLowerCase().replace(/[^a-z0-9\-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'general';
 
             // Determine storage type: video/image → video accounts, audio → audio account
             const storageType = (type === 'audio') ? 'audio' : 'video';
@@ -2017,7 +2072,9 @@
                 // Build filename: timestamp_hash_title[_by_author].ext
                 const ext = file.name.split('.').pop();
                 const safeName = (title.replace(/\s+/g, '_') + (author ? '_by_' + author.replace(/\s+/g, '_') : '')).replace(/[^a-zA-Z0-9_\-]/g, '');
-                const key = 'media/' + type + '/' + Date.now() + '_' + safeName + '.' + ext;
+                const key = 'media/' + type + '/' + category + '/' + Date.now() + '_' + safeName + '.' + ext;
+                // Save category for autocomplete reuse
+                saveMediaCategory(category);
 
                 if (hasConfiguredAccount) {
                     if (storageType === 'video') {
@@ -2057,6 +2114,7 @@
                 
                 document.getElementById('mediaTitle').value = '';
                 document.getElementById('mediaAuthor').value = '';
+                document.getElementById('mediaCategory').value = '';
                 document.getElementById('mediaFileInput').value = '';
                 loadMediaList();
                 updateStats();
@@ -2100,6 +2158,7 @@
             const title = document.getElementById('bookTitle').value.trim();
             const author = document.getElementById('bookAuthor').value.trim();
             const category = document.getElementById('bookCategory').value;
+            const collection = (document.getElementById('bookCollection').value.trim() || '').toLowerCase().replace(/[^a-z0-9\-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
             const description = document.getElementById('bookDescription').value.trim();
             
             if (!title) {
@@ -2115,7 +2174,10 @@
             try {
                 const ext = file.name.split('.').pop();
                 const safeName = (title.replace(/\s+/g, '_') + (author ? '_by_' + author.replace(/\s+/g, '_') : '')).replace(/[^a-zA-Z0-9_\-]/g, '');
-                const key = 'library/' + category + '/' + Date.now() + '_' + safeName + '.' + ext;
+                const key = collection
+                    ? 'library/' + category + '/' + collection + '/' + Date.now() + '_' + safeName + '.' + ext
+                    : 'library/' + category + '/' + Date.now() + '_' + safeName + '.' + ext;
+                if (collection) saveBookCollection(collection);
 
                 if (hasLibrary) {
                     // Check library account storage first
@@ -2137,6 +2199,7 @@
                 
                 document.getElementById('bookTitle').value = '';
                 document.getElementById('bookAuthor').value = '';
+                document.getElementById('bookCollection').value = '';
                 document.getElementById('bookDescription').value = '';
                 document.getElementById('libraryFileInput').value = '';
                 loadLibraryList();
