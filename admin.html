@@ -1602,6 +1602,8 @@
             checkGitHubStatus();
             loadR2SettingsUI();
             initNotificationManager();
+            // Auto-check storage usage in background
+            setTimeout(() => { checkAllR2Storage(); }, 1500);
         }
 
         function switchTab(tabName) {
@@ -1619,6 +1621,7 @@
             if (tabName === 'announcement') loadAnnouncementAdmin();
             if (tabName === 'liveTracker') loadTrackersAdmin();
             if (tabName === 'playlists') renderPlaylistsAdmin();
+            if (tabName === 'settings') { loadR2SettingsUI(); checkAllR2Storage(); }
         }
 
         // ==============================
@@ -1944,10 +1947,12 @@
         // Check storage usage for a single account
         async function checkAccountStorage(workerUrl) {
             try {
-                const res = await fetch(workerUrl + '/storage');
-                if (!res.ok) return null;
-                return await res.json();
-            } catch(e) { return null; }
+                const res = await fetch(workerUrl + '/storage', { cache: 'no-store' });
+                if (!res.ok) { console.warn('Storage check failed for', workerUrl, res.status); return null; }
+                const data = await res.json();
+                if (!data.success) { console.warn('Storage check error for', workerUrl, data); return null; }
+                return data;
+            } catch(e) { console.warn('Storage check error for', workerUrl, e.message); return null; }
         }
 
         // Find the first video account under 10GB that can accept a file of given size
