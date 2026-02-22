@@ -2128,13 +2128,7 @@
                 const worker = el.dataset.worker;
                 try {
                     if (source === 'r2' && worker) {
-                        const mc = getR2MultiConfig();
-                        let token = '';
-                        (mc.video || []).forEach(a => { if (a.workerUrl === worker) token = a.adminToken; });
-                        if (mc.audio && mc.audio.workerUrl === worker) token = mc.audio.adminToken;
-                        if (mc.library && mc.library.workerUrl === worker) token = mc.library.adminToken;
-                        if (!token) { errors++; continue; }
-                        const res = await fetch(worker + '/file/' + encodeURIComponent(path), { method: 'DELETE', headers: { 'X-Admin-Token': token } });
+                        const res = await fetch(worker + '/file/' + encodeURIComponent(path), { method: 'DELETE', headers: { 'X-Admin-Token': _R2_DEFAULT_TOKEN } });
                         if (res.ok) deleted++; else errors++;
                     } else if (source === 'github' && sha) {
                         const config = getGitHubConfig();
@@ -2277,13 +2271,7 @@
 
             // For R2: re-upload with new key (copy + delete old)
             if (data.source === 'r2') {
-                const mc = getR2MultiConfig();
-                let token = '';
-                (mc.video || []).forEach(a => { if (a.workerUrl === data.workerUrl) token = a.adminToken; });
-                if (mc.audio && mc.audio.workerUrl === data.workerUrl) token = mc.audio.adminToken;
-                if (mc.library && mc.library.workerUrl === data.workerUrl) token = mc.library.adminToken;
-
-                if (!token) { alert('No admin token for this R2 account'); return; }
+                const token = _R2_DEFAULT_TOKEN;
 
                 const ext = data.name.split('.').pop();
                 const safeName = newName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '');
@@ -3264,19 +3252,9 @@
             if (!confirm('Are you sure you want to delete this file from R2?')) return;
             const key = decodeURIComponent(encodedKey);
             const workerUrl = decodeURIComponent(encodedWorkerUrl);
-            // Find admin token for this worker
-            const mc = getR2MultiConfig();
-            let token = '';
+            // All workers share the same admin token
+            const token = _R2_DEFAULT_TOKEN;
             console.log('[deleteR2File] workerUrl:', workerUrl, 'key:', key);
-            (mc.video || []).forEach(a => {
-                console.log('[deleteR2File] checking video:', a.workerUrl, 'match:', a.workerUrl === workerUrl, 'token:', a.adminToken ? '***set***' : 'EMPTY');
-                if (a.workerUrl === workerUrl) token = a.adminToken;
-            });
-            if (mc.audio && mc.audio.workerUrl === workerUrl) token = mc.audio.adminToken;
-            if (mc.library && mc.library.workerUrl === workerUrl) token = mc.library.adminToken;
-            // Fallback: if no match found but we have a default token, use it
-            if (!token) token = _R2_DEFAULT_TOKEN;
-            console.log('[deleteR2File] resolved token:', token ? '***set***' : 'EMPTY');
             try {
                 const res = await fetch(workerUrl + '/file/' + encodeURIComponent(key), {
                     method: 'DELETE',
