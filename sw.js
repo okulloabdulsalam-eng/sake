@@ -1,8 +1,10 @@
 // KIUMA Service Worker - Enables offline functionality
 // Cache version - UPDATE THIS when you deploy changes to force refresh
-const CACHE_VERSION = '2026-02-22-v11';
+const CACHE_VERSION = '2026-02-22-v12';
 const CACHE_NAME = 'kiuma-cache-' + CACHE_VERSION;
 const OFFLINE_URL = 'offline.html';
+
+const MUSHAF_1405_CACHE = 'kiuma-mushaf-1405-cache';
 
 // Base path for GitHub Pages (empty for root, '/sake' for subdirectory)
 const BASE_PATH = self.location.pathname.replace('/sw.js', '');
@@ -91,6 +93,7 @@ const STATIC_ASSETS = [
     './programs.html',
     './quran.html',
     './quran-reader.html',
+    './quran-mushaf-1405.html',
     './mosques.html',
     './dhikr.html',
     './names-of-allah.html',
@@ -109,6 +112,8 @@ const STATIC_ASSETS = [
     './fonts/webfonts/fa-solid-900.ttf',
     './css/search.css',
     './script.js',
+    './js/register-service-worker.js',
+    './js/quran-mushaf-1405.js',
     './js/search.js',
     './js/search-data.js',
     './firebase-config.js',
@@ -145,7 +150,7 @@ self.addEventListener('install', (event) => {
 // Activate event - clean up old caches (keep quran and github data caches)
 self.addEventListener('activate', (event) => {
     console.log('[ServiceWorker] Activating...');
-    const keepCaches = [CACHE_NAME, CACHE_NAME + '-quran', CACHE_NAME + '-github', 'kiuma-offline-media', 'kiuma-offline-library'];
+    const keepCaches = [CACHE_NAME, CACHE_NAME + '-quran', CACHE_NAME + '-github', MUSHAF_1405_CACHE, 'kiuma-offline-media', 'kiuma-offline-library'];
     event.waitUntil(
         caches.keys()
             .then((cacheNames) => {
@@ -221,6 +226,27 @@ self.addEventListener('fetch', (event) => {
 
     // Skip other googleapis (auth etc) and aladhan — network only
     if (url.hostname.includes('googleapis.com') || url.hostname.includes('aladhan.com')) {
+        return;
+    }
+
+    // Mushaf 1405 page images: use dedicated cache (avoid storing large assets in main cache)
+    if (url.pathname.includes('/mushaf/1405/pages/')) {
+        event.respondWith(
+            caches.open(MUSHAF_1405_CACHE).then((cache) => {
+                return cache.match(request).then((cached) => {
+                    if (cached) return cached;
+                    return fetch(request)
+                        .then((networkResponse) => {
+                            if (networkResponse && networkResponse.status === 200) {
+                                const clone = networkResponse.clone();
+                                cache.put(request, clone);
+                            }
+                            return networkResponse;
+                        })
+                        .catch(() => cached || new Response('Offline', { status: 503, statusText: 'Service Unavailable' }));
+                });
+            })
+        );
         return;
     }
 
