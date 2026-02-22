@@ -2333,40 +2333,50 @@
         setTimeout(() => { loadPlaylistsFromFirestore(); }, 2000);
 
         // Default worker URLs for all 7 accounts
+        const _R2_DEFAULT_TOKEN = 'kiuma-admin-2026-secret';
         const DEFAULT_R2_ACCOUNTS = {
             video: [
-                { workerUrl: 'https://kiuma-storage.kiuma.workers.dev', adminToken: '', label: 'Video 1' },
-                { workerUrl: 'https://kiuma-video2.kiuma2.workers.dev', adminToken: '', label: 'Video 2' },
-                { workerUrl: 'https://kiuma-video3.kiuma3.workers.dev', adminToken: '', label: 'Video 3' },
-                { workerUrl: 'https://kiuma-video4.kiuma4.workers.dev', adminToken: '', label: 'Video 4' },
-                { workerUrl: 'https://kiuma-video5.kiuma5.workers.dev', adminToken: '', label: 'Video 5' }
+                { workerUrl: 'https://kiuma-storage.kiuma.workers.dev', adminToken: _R2_DEFAULT_TOKEN, label: 'Video 1' },
+                { workerUrl: 'https://kiuma-video2.kiuma2.workers.dev', adminToken: _R2_DEFAULT_TOKEN, label: 'Video 2' },
+                { workerUrl: 'https://kiuma-video3.kiuma3.workers.dev', adminToken: _R2_DEFAULT_TOKEN, label: 'Video 3' },
+                { workerUrl: 'https://kiuma-video4.kiuma4.workers.dev', adminToken: _R2_DEFAULT_TOKEN, label: 'Video 4' },
+                { workerUrl: 'https://kiuma-video5.kiuma5.workers.dev', adminToken: _R2_DEFAULT_TOKEN, label: 'Video 5' }
             ],
-            audio: { workerUrl: 'https://kiuma-audio.kiuma6.workers.dev', adminToken: '' },
-            library: { workerUrl: 'https://kiuma-library.kiuma7.workers.dev', adminToken: '' }
+            audio: { workerUrl: 'https://kiuma-audio.kiuma6.workers.dev', adminToken: _R2_DEFAULT_TOKEN },
+            library: { workerUrl: 'https://kiuma-library.kiuma7.workers.dev', adminToken: _R2_DEFAULT_TOKEN }
         };
 
         // Get the full multi-account config from localStorage
         function getR2MultiConfig() {
+            let config = null;
             try {
                 const saved = localStorage.getItem('r2MultiConfig');
-                if (saved) return JSON.parse(saved);
+                if (saved) config = JSON.parse(saved);
             } catch(e) {}
             // Migrate old single config if it exists
-            try {
-                const old = JSON.parse(localStorage.getItem('r2StorageConfig') || '{}');
-                if (old.workerUrl) {
-                    const migrated = {
-                        video: [{ workerUrl: old.workerUrl, adminToken: old.adminToken || '', label: 'Video 1' },
-                            ...DEFAULT_R2_ACCOUNTS.video.slice(1)],
-                        audio: DEFAULT_R2_ACCOUNTS.audio,
-                        library: DEFAULT_R2_ACCOUNTS.library
-                    };
-                    localStorage.setItem('r2MultiConfig', JSON.stringify(migrated));
-                    return migrated;
-                }
-            } catch(e) {}
-            // Return defaults with pre-filled URLs
-            return JSON.parse(JSON.stringify(DEFAULT_R2_ACCOUNTS));
+            if (!config) {
+                try {
+                    const old = JSON.parse(localStorage.getItem('r2StorageConfig') || '{}');
+                    if (old.workerUrl) {
+                        config = {
+                            video: [{ workerUrl: old.workerUrl, adminToken: old.adminToken || '', label: 'Video 1' },
+                                ...DEFAULT_R2_ACCOUNTS.video.slice(1)],
+                            audio: DEFAULT_R2_ACCOUNTS.audio,
+                            library: DEFAULT_R2_ACCOUNTS.library
+                        };
+                    }
+                } catch(e) {}
+            }
+            if (!config) return JSON.parse(JSON.stringify(DEFAULT_R2_ACCOUNTS));
+            // Backfill missing admin tokens from defaults
+            if (config.video) {
+                config.video.forEach((a, i) => {
+                    if (!a.adminToken && DEFAULT_R2_ACCOUNTS.video[i]) a.adminToken = DEFAULT_R2_ACCOUNTS.video[i].adminToken;
+                });
+            }
+            if (config.audio && !config.audio.adminToken) config.audio.adminToken = DEFAULT_R2_ACCOUNTS.audio.adminToken;
+            if (config.library && !config.library.adminToken) config.library.adminToken = DEFAULT_R2_ACCOUNTS.library.adminToken;
+            return config;
         }
 
         // Backward-compatible getR2Config — returns the first configured video account (for legacy code paths)
@@ -3257,10 +3267,16 @@
             // Find admin token for this worker
             const mc = getR2MultiConfig();
             let token = '';
-            (mc.video || []).forEach(a => { if (a.workerUrl === workerUrl) token = a.adminToken; });
+            console.log('[deleteR2File] workerUrl:', workerUrl, 'key:', key);
+            (mc.video || []).forEach(a => {
+                console.log('[deleteR2File] checking video:', a.workerUrl, 'match:', a.workerUrl === workerUrl, 'token:', a.adminToken ? '***set***' : 'EMPTY');
+                if (a.workerUrl === workerUrl) token = a.adminToken;
+            });
             if (mc.audio && mc.audio.workerUrl === workerUrl) token = mc.audio.adminToken;
             if (mc.library && mc.library.workerUrl === workerUrl) token = mc.library.adminToken;
-            if (!token) { alert('No admin token found for this R2 account. Set it in Settings.'); return; }
+            // Fallback: if no match found but we have a default token, use it
+            if (!token) token = _R2_DEFAULT_TOKEN;
+            console.log('[deleteR2File] resolved token:', token ? '***set***' : 'EMPTY');
             try {
                 const res = await fetch(workerUrl + '/file/' + encodeURIComponent(key), {
                     method: 'DELETE',
@@ -3273,8 +3289,9 @@
                     updateStats();
                     checkAllR2Storage();
                 } else {
-                    const data = await res.json();
-                    alert('Delete failed: ' + (data.error || 'Unknown error'));
+                    const data = await res.json().catch(() => ({}));
+                    console.error('[deleteR2File] failed:', res.status, data);
+                    alert('Delete failed (HTTP ' + res.status + '): ' + (data.error || 'Unknown error'));
                 }
             } catch(e) { alert('Delete error: ' + e.message); }
         }
