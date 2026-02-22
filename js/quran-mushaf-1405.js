@@ -2,7 +2,13 @@
     const PAGE_COUNT=604;
     const CACHE_NAME='kiuma-mushaf-1405-cache';
     const LAST_PAGE_KEY='mushaf1405_last_page';
-    const DEFAULT_CONFIG={baseUrl:'./mushaf/1405/pages',ext:'webp',pad:3,prefix:'',suffix:''};
+    const DEFAULT_CONFIG={
+        baseUrl:'https://cdn.jsdelivr.net/gh/QuranHub/quran-pages-images@main/kfgqpc/hafs-wasat',
+        ext:'jpg',
+        pad:0,
+        prefix:'',
+        suffix:''
+    };
 
     function toAbsoluteUrl(url){
         try{
@@ -31,6 +37,7 @@
 
     function padNum(n,len){
         const s=String(n);
+        if(!len || len <= 0) return s;
         return s.length>=len?s:'0'.repeat(len-s.length)+s;
     }
 
@@ -63,6 +70,56 @@
             return !!match2;
         }catch(e){
             return false;
+        }
+    }
+
+    async function getCachedResponse(url){
+        if(!('caches' in window)) return null;
+        try{
+            const cache=await caches.open(CACHE_NAME);
+            const abs=toAbsoluteUrl(url);
+            return (await cache.match(abs)) || (await cache.match(new Request(abs,{mode:'no-cors'}))) || null;
+        }catch(e){
+            return null;
+        }
+    }
+
+    async function fetchCacheAndGet(url){
+        if(!('caches' in window)) {
+            const res=await fetch(url);
+            return res;
+        }
+        const cache=await caches.open(CACHE_NAME);
+        const ok=await fetchAndCache(cache,url);
+        if(!ok) return null;
+        return await getCachedResponse(url);
+    }
+
+    let currentObjectUrl=null;
+
+    async function setImageFromUrl(imgEl,url){
+        if(!imgEl) return;
+        try{
+            if(currentObjectUrl){
+                URL.revokeObjectURL(currentObjectUrl);
+                currentObjectUrl=null;
+            }
+
+            let res=await getCachedResponse(url);
+            if(!res){
+                res=await fetchCacheAndGet(url);
+            }
+
+            if(!res){
+                throw new Error('no_response');
+            }
+
+            const blob=await res.blob();
+            currentObjectUrl=URL.createObjectURL(blob);
+            imgEl.src=currentObjectUrl;
+            imgEl.removeAttribute('crossorigin');
+        }catch(e){
+            imgEl.src=url;
         }
     }
 
@@ -225,13 +282,13 @@
             if(sub) sub.textContent=`Page ${currentPage} / ${PAGE_COUNT}`;
 
             if(img){
-                img.src=url;
+                await setImageFromUrl(img,url);
                 img.onerror=function(){
                     img.removeAttribute('src');
-                    img.alt='Mushaf page could not be loaded. Configure the Mushaf image source.';
+                    img.alt='Mushaf page could not be loaded. Check your connection or the image source.';
                     const note=document.getElementById('cacheNote');
                     if(note){
-                        note.textContent='Mushaf image source not found. Upload pages to ./mushaf/1405/pages/ (e.g., 001.webp ... 604.webp) or set localStorage key mushaf1405_config.';
+                        note.textContent='If pages fail to load, update the image source in localStorage key mushaf1405_config (baseUrl/ext).';
                     }
                 };
             }
