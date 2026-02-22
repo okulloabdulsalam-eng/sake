@@ -323,6 +323,11 @@
         .file-toolbar .ft-btn:hover { background:#f0f0f0; }
         .file-toolbar .ft-btn.active { background:var(--primary-green); color:#fff; border-color:var(--primary-green); }
         .file-toolbar .ft-btn i { margin-right:4px; }
+        .file-toolbar .ft-sort { padding:8px 10px; border:1.5px solid #e0e0e0; border-radius:8px; font-size:12px; font-weight:600; background:#fff; cursor:pointer; appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='%23666'%3E%3Cpath d='M0 0l5 6 5-6z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 8px center; padding-right:24px; color:#333; }
+        .file-toolbar .ft-sort:focus { border-color:var(--primary-green); outline:none; }
+        .file-toolbar .ft-dir { padding:8px 10px; border:1.5px solid #e0e0e0; border-radius:8px; background:#fff; font-size:14px; cursor:pointer; transition:all .2s; width:34px; text-align:center; }
+        .file-toolbar .ft-dir:hover { background:#f0f0f0; }
+        .file-toolbar .ft-dir.desc { transform:scaleY(-1); }
 
         /* Multi-select */
         .file-item.selectable { cursor:pointer; user-select:none; transition:background .15s, box-shadow .15s; }
@@ -500,6 +505,13 @@
                     <h3 style="margin-top: 30px;"><i class="fas fa-list"></i> Uploaded Media</h3>
                     <div class="file-toolbar" id="mediaToolbar">
                         <input type="text" class="ft-search" placeholder="Search media..." oninput="filterFileList('media',this.value)">
+                        <select class="ft-sort" id="mediaSortBy" onchange="sortFileList('media')">
+                            <option value="name">Name</option>
+                            <option value="size">Size</option>
+                            <option value="date" selected>Date</option>
+                            <option value="type">Type</option>
+                        </select>
+                        <button class="ft-dir" id="mediaSortDir" onclick="toggleSortDir('media')" title="Sort direction"><i class="fas fa-arrow-up"></i></button>
                         <button class="ft-btn" onclick="toggleSelectMode('media')"><i class="fas fa-check-double"></i> Select</button>
                         <button class="ft-btn" id="mediaSelectAll" style="display:none" onclick="selectAllFiles('media')"><i class="fas fa-check-square"></i> All</button>
                     </div>
@@ -567,6 +579,13 @@
                     <h3 style="margin-top: 30px;"><i class="fas fa-list"></i> Uploaded Books</h3>
                     <div class="file-toolbar" id="libraryToolbar">
                         <input type="text" class="ft-search" placeholder="Search books..." oninput="filterFileList('library',this.value)">
+                        <select class="ft-sort" id="librarySortBy" onchange="sortFileList('library')">
+                            <option value="name">Name</option>
+                            <option value="size">Size</option>
+                            <option value="date" selected>Date</option>
+                            <option value="category">Category</option>
+                        </select>
+                        <button class="ft-dir" id="librarySortDir" onclick="toggleSortDir('library')" title="Sort direction"><i class="fas fa-arrow-up"></i></button>
                         <button class="ft-btn" onclick="toggleSelectMode('library')"><i class="fas fa-check-double"></i> Select</button>
                         <button class="ft-btn" id="librarySelectAll" style="display:none" onclick="selectAllFiles('library')"><i class="fas fa-check-square"></i> All</button>
                     </div>
@@ -2114,6 +2133,64 @@
             });
         }
 
+        // Sort state
+        const _sortState = { media: { dir: 'desc' }, library: { dir: 'desc' } };
+
+        function toggleSortDir(section) {
+            const st = _sortState[section];
+            st.dir = st.dir === 'asc' ? 'desc' : 'asc';
+            const btn = document.getElementById(section + 'SortDir');
+            if (st.dir === 'desc') {
+                btn.classList.add('desc');
+            } else {
+                btn.classList.remove('desc');
+            }
+            sortFileList(section);
+        }
+
+        function sortFileList(section) {
+            const files = section === 'media' ? window._mediaFiles : window._libraryFiles;
+            if (!files || files.length === 0) return;
+            const sortBy = document.getElementById(section + 'SortBy').value;
+            const dir = _sortState[section].dir;
+
+            files.sort((a, b) => {
+                let va, vb;
+                switch (sortBy) {
+                    case 'name':
+                        va = (a.name || '').toLowerCase();
+                        vb = (b.name || '').toLowerCase();
+                        return dir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+                    case 'size':
+                        va = a.size || 0;
+                        vb = b.size || 0;
+                        return dir === 'asc' ? va - vb : vb - va;
+                    case 'date':
+                        // Extract timestamp from filename (e.g. 1708600000_0_name.ext)
+                        va = parseInt((a.name || '').match(/^(\d{10,13})/)?.[1] || '0');
+                        vb = parseInt((b.name || '').match(/^(\d{10,13})/)?.[1] || '0');
+                        return dir === 'asc' ? va - vb : vb - va;
+                    case 'type':
+                        va = (a.type || '').toLowerCase();
+                        vb = (b.type || '').toLowerCase();
+                        return dir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+                    case 'category':
+                        va = (a.category || '').toLowerCase();
+                        vb = (b.category || '').toLowerCase();
+                        return dir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+                    default:
+                        return 0;
+                }
+            });
+
+            // Re-render the sorted list
+            if (section === 'media') {
+                renderMediaFileList(files);
+            } else {
+                renderLibraryFileList(files);
+            }
+        }
+
         async function bulkDelete(section) {
             const listId = section === 'media' ? 'mediaFileList' : 'libraryFileList';
             const selected = document.querySelectorAll('#' + listId + ' .file-item.selected');
@@ -3226,6 +3303,68 @@
             return response.json();
         }
 
+        // Render media file list from array
+        function renderMediaFileList(allFiles) {
+            const list = document.getElementById('mediaFileList');
+            if (allFiles.length > 0) {
+                list.innerHTML = allFiles.map((item, idx) => {
+                    const displayName = item.name.replace(/^\d+_[a-z0-9]+_/, '').replace(/_/g, ' ');
+                    const srcBadge = item.source === 'r2' ? '<span style="font-size:9px;background:#e3f2fd;color:#1565C0;padding:1px 5px;border-radius:4px;margin-left:4px;">R2</span>' : '<span style="font-size:9px;background:#f3e5f5;color:#7B1FA2;padding:1px 5px;border-radius:4px;margin-left:4px;">GitHub</span>';
+                    const deleteBtn = item.source === 'r2'
+                        ? `<button class="btn-icon btn-danger" onclick="event.stopPropagation();deleteR2File('${encodeURIComponent(item.path)}','${encodeURIComponent(item.workerUrl||'')}')" title="Delete"><i class="fas fa-trash"></i></button>`
+                        : `<button class="btn-icon btn-danger" onclick="event.stopPropagation();deleteMediaFile('${item.path}', '${item.sha}')" title="Delete"><i class="fas fa-trash"></i></button>`;
+                    const editData = encodeURIComponent(JSON.stringify({idx,name:item.name,path:item.path,type:item.type,source:item.source,workerUrl:item.workerUrl||'',downloadUrl:item.downloadUrl,size:item.size,sha:item.sha||'',section:'media'}));
+                    return `
+                    <div class="file-item" data-idx="${idx}" data-name="${escapeHtml(displayName).toLowerCase()}" data-path="${item.path}" data-sha="${item.sha||''}" data-source="${item.source}" data-url="${item.downloadUrl}" data-worker="${item.workerUrl||''}" data-size="${item.size||0}" data-type="${item.type}" onclick="onFileItemClick(this,'media')">
+                        <div class="fi-checkbox"><i class="fas fa-check"></i></div>
+                        <i class="file-icon fas ${getMediaIcon(item.type)}"></i>
+                        <div class="file-info">
+                            <div class="file-name">${escapeHtml(displayName)} ${srcBadge}</div>
+                            <div class="file-meta">${item.type} • ${formatFileSize(item.size)}</div>
+                        </div>
+                        <div class="file-actions">
+                            <button class="btn-icon btn-primary" onclick="event.stopPropagation();openEditModal('${editData}')" title="Edit"><i class="fas fa-pen"></i></button>
+                            <a href="${item.downloadUrl}" target="_blank" class="btn-icon btn-primary" onclick="event.stopPropagation()" title="Download"><i class="fas fa-download"></i></a>
+                            ${deleteBtn}
+                        </div>
+                    </div>`;
+                }).join('');
+            } else {
+                list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">No media files uploaded yet</p>';
+            }
+        }
+
+        // Render library file list from array
+        function renderLibraryFileList(allFiles) {
+            const list = document.getElementById('libraryFileList');
+            if (allFiles.length > 0) {
+                list.innerHTML = allFiles.map((item, idx) => {
+                    const displayName = item.name.replace(/^\d+_[a-z0-9]+_/, '').replace(/_/g, ' ').replace(/\.[^/.]+$/, '');
+                    const srcBadge = item.source === 'r2' ? '<span style="font-size:9px;background:#e3f2fd;color:#1565C0;padding:1px 5px;border-radius:4px;margin-left:4px;">R2</span>' : '<span style="font-size:9px;background:#f3e5f5;color:#7B1FA2;padding:1px 5px;border-radius:4px;margin-left:4px;">GitHub</span>';
+                    const deleteBtn = item.source === 'r2'
+                        ? `<button class="btn-icon btn-danger" onclick="event.stopPropagation();deleteR2File('${encodeURIComponent(item.path)}','${encodeURIComponent(item.workerUrl||'')}')" title="Delete"><i class="fas fa-trash"></i></button>`
+                        : `<button class="btn-icon btn-danger" onclick="event.stopPropagation();deleteLibraryFile('${item.path}', '${item.sha}')" title="Delete"><i class="fas fa-trash"></i></button>`;
+                    const editData = encodeURIComponent(JSON.stringify({idx,name:item.name,path:item.path,category:item.category,source:item.source,workerUrl:item.workerUrl||'',downloadUrl:item.downloadUrl,size:item.size,sha:item.sha||'',section:'library'}));
+                    return `
+                    <div class="file-item" data-idx="${idx}" data-name="${escapeHtml(displayName).toLowerCase()}" data-path="${item.path}" data-sha="${item.sha||''}" data-source="${item.source}" data-url="${item.downloadUrl}" data-worker="${item.workerUrl||''}" data-size="${item.size||0}" data-category="${item.category}" onclick="onFileItemClick(this,'library')">
+                        <div class="fi-checkbox"><i class="fas fa-check"></i></div>
+                        <i class="file-icon fas fa-book"></i>
+                        <div class="file-info">
+                            <div class="file-name">${escapeHtml(displayName)} ${srcBadge}</div>
+                            <div class="file-meta">${item.category} • ${formatFileSize(item.size)}</div>
+                        </div>
+                        <div class="file-actions">
+                            <button class="btn-icon btn-primary" onclick="event.stopPropagation();openEditModal('${editData}')" title="Edit"><i class="fas fa-pen"></i></button>
+                            <a href="${item.downloadUrl}" target="_blank" class="btn-icon btn-primary" onclick="event.stopPropagation()" title="Download"><i class="fas fa-download"></i></a>
+                            ${deleteBtn}
+                        </div>
+                    </div>`;
+                }).join('');
+            } else {
+                list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">No books uploaded yet</p>';
+            }
+        }
+
         // Load lists from GitHub
         async function loadMediaList() {
             const list = document.getElementById('mediaFileList');
@@ -3295,33 +3434,7 @@
                 
                 // Store for bulk/playlist operations
                 window._mediaFiles = allFiles;
-                
-                if (allFiles.length > 0) {
-                    list.innerHTML = allFiles.map((item, idx) => {
-                        const displayName = item.name.replace(/^\d+_[a-z0-9]+_/, '').replace(/_/g, ' ');
-                        const srcBadge = item.source === 'r2' ? '<span style="font-size:9px;background:#e3f2fd;color:#1565C0;padding:1px 5px;border-radius:4px;margin-left:4px;">R2</span>' : '<span style="font-size:9px;background:#f3e5f5;color:#7B1FA2;padding:1px 5px;border-radius:4px;margin-left:4px;">GitHub</span>';
-                        const deleteBtn = item.source === 'r2'
-                            ? `<button class="btn-icon btn-danger" onclick="event.stopPropagation();deleteR2File('${encodeURIComponent(item.path)}','${encodeURIComponent(item.workerUrl||'')}')" title="Delete"><i class="fas fa-trash"></i></button>`
-                            : `<button class="btn-icon btn-danger" onclick="event.stopPropagation();deleteMediaFile('${item.path}', '${item.sha}')" title="Delete"><i class="fas fa-trash"></i></button>`;
-                        const editData = encodeURIComponent(JSON.stringify({idx,name:item.name,path:item.path,type:item.type,source:item.source,workerUrl:item.workerUrl||'',downloadUrl:item.downloadUrl,size:item.size,sha:item.sha||'',section:'media'}));
-                        return `
-                        <div class="file-item" data-idx="${idx}" data-name="${escapeHtml(displayName).toLowerCase()}" data-path="${item.path}" data-sha="${item.sha||''}" data-source="${item.source}" data-url="${item.downloadUrl}" data-worker="${item.workerUrl||''}" data-size="${item.size||0}" data-type="${item.type}" onclick="onFileItemClick(this,'media')">
-                            <div class="fi-checkbox"><i class="fas fa-check"></i></div>
-                            <i class="file-icon fas ${getMediaIcon(item.type)}"></i>
-                            <div class="file-info">
-                                <div class="file-name">${escapeHtml(displayName)} ${srcBadge}</div>
-                                <div class="file-meta">${item.type} • ${formatFileSize(item.size)}</div>
-                            </div>
-                            <div class="file-actions">
-                                <button class="btn-icon btn-primary" onclick="event.stopPropagation();openEditModal('${editData}')" title="Edit"><i class="fas fa-pen"></i></button>
-                                <a href="${item.downloadUrl}" target="_blank" class="btn-icon btn-primary" onclick="event.stopPropagation()" title="Download"><i class="fas fa-download"></i></a>
-                                ${deleteBtn}
-                            </div>
-                        </div>
-                    `}).join('');
-                } else {
-                    list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">No media files uploaded yet</p>';
-                }
+                renderMediaFileList(allFiles);
             } catch (error) {
                 console.error('Error loading media:', error);
                 list.innerHTML = '<p style="text-align: center; color: #f44336; padding: 20px;">Error loading media</p>';
@@ -3392,33 +3505,7 @@
                 
                 // Store for bulk/playlist operations
                 window._libraryFiles = allFiles;
-
-                if (allFiles.length > 0) {
-                    list.innerHTML = allFiles.map((item, idx) => {
-                        const displayName = item.name.replace(/^\d+_[a-z0-9]+_/, '').replace(/_/g, ' ').replace(/\.[^/.]+$/, '');
-                        const srcBadge = item.source === 'r2' ? '<span style="font-size:9px;background:#e3f2fd;color:#1565C0;padding:1px 5px;border-radius:4px;margin-left:4px;">R2</span>' : '<span style="font-size:9px;background:#f3e5f5;color:#7B1FA2;padding:1px 5px;border-radius:4px;margin-left:4px;">GitHub</span>';
-                        const deleteBtn = item.source === 'r2'
-                            ? `<button class="btn-icon btn-danger" onclick="event.stopPropagation();deleteR2File('${encodeURIComponent(item.path)}','${encodeURIComponent(item.workerUrl||'')}')" title="Delete"><i class="fas fa-trash"></i></button>`
-                            : `<button class="btn-icon btn-danger" onclick="event.stopPropagation();deleteLibraryFile('${item.path}', '${item.sha}')" title="Delete"><i class="fas fa-trash"></i></button>`;
-                        const editData = encodeURIComponent(JSON.stringify({idx,name:item.name,path:item.path,category:item.category,source:item.source,workerUrl:item.workerUrl||'',downloadUrl:item.downloadUrl,size:item.size,sha:item.sha||'',section:'library'}));
-                        return `
-                        <div class="file-item" data-idx="${idx}" data-name="${escapeHtml(displayName).toLowerCase()}" data-path="${item.path}" data-sha="${item.sha||''}" data-source="${item.source}" data-url="${item.downloadUrl}" data-worker="${item.workerUrl||''}" data-size="${item.size||0}" data-category="${item.category}" onclick="onFileItemClick(this,'library')">
-                            <div class="fi-checkbox"><i class="fas fa-check"></i></div>
-                            <i class="file-icon fas fa-book"></i>
-                            <div class="file-info">
-                                <div class="file-name">${escapeHtml(displayName)} ${srcBadge}</div>
-                                <div class="file-meta">${item.category} • ${formatFileSize(item.size)}</div>
-                            </div>
-                            <div class="file-actions">
-                                <button class="btn-icon btn-primary" onclick="event.stopPropagation();openEditModal('${editData}')" title="Edit"><i class="fas fa-pen"></i></button>
-                                <a href="${item.downloadUrl}" target="_blank" class="btn-icon btn-primary" onclick="event.stopPropagation()" title="Download"><i class="fas fa-download"></i></a>
-                                ${deleteBtn}
-                            </div>
-                        </div>
-                    `}).join('');
-                } else {
-                    list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">No books uploaded yet</p>';
-                }
+                renderLibraryFileList(allFiles);
             } catch (error) {
                 console.error('Error loading library:', error);
                 list.innerHTML = '<p style="text-align: center; color: #f44336; padding: 20px;">Error loading library</p>';
