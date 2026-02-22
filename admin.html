@@ -2669,7 +2669,7 @@
         // Upload to a specific R2 account with real progress tracking
         function uploadToR2Account(account, file, key, onProgress) {
             if (!account || !account.workerUrl) return Promise.reject(new Error('R2 account not configured'));
-            const token = account.adminToken || _R2_DEFAULT_TOKEN;
+            const token = _R2_DEFAULT_TOKEN;
             return new Promise((resolve, reject) => {
                 const xhr = new XMLHttpRequest();
                 xhr.open('PUT', account.workerUrl + '/upload', true);
