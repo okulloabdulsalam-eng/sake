@@ -2666,27 +2666,37 @@
             showStatus('r2SettingsStatus', 'Storage check complete! ' + checkedCount + ' account(s) checked.', 'success');
         }
 
-        // Upload to a specific R2 account
-        async function uploadToR2Account(account, file, key, onProgress) {
-            if (!account || !account.workerUrl) throw new Error('R2 account not configured');
-            if (onProgress) onProgress(10);
-            const res = await fetch(account.workerUrl + '/upload', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': file.type || 'application/octet-stream',
-                    'X-Admin-Token': account.adminToken,
-                    'X-File-Name': key,
-                    'Content-Length': file.size.toString()
-                },
-                body: file
+        // Upload to a specific R2 account with real progress tracking
+        function uploadToR2Account(account, file, key, onProgress) {
+            if (!account || !account.workerUrl) return Promise.reject(new Error('R2 account not configured'));
+            const token = account.adminToken || _R2_DEFAULT_TOKEN;
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('PUT', account.workerUrl + '/upload', true);
+                xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+                xhr.setRequestHeader('X-Admin-Token', token);
+                xhr.setRequestHeader('X-File-Name', key);
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable && onProgress) {
+                        const pct = Math.round((e.loaded / e.total) * 100);
+                        onProgress(pct, e.loaded, e.total);
+                    }
+                };
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        if (onProgress) onProgress(100, file.size, file.size);
+                        try { resolve(JSON.parse(xhr.responseText)); } catch(e) { resolve({ success: true }); }
+                    } else {
+                        let msg = 'Upload failed (' + xhr.status + ')';
+                        try { msg = JSON.parse(xhr.responseText).error || msg; } catch(e) {}
+                        reject(new Error(msg));
+                    }
+                };
+                xhr.onerror = () => reject(new Error('Network error during upload'));
+                xhr.ontimeout = () => reject(new Error('Upload timed out'));
+                xhr.timeout = 600000; // 10 min timeout for large files
+                xhr.send(file);
             });
-            if (onProgress) onProgress(90);
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({}));
-                throw new Error(err.error || 'Upload failed (' + res.status + ')');
-            }
-            if (onProgress) onProgress(100);
-            return await res.json();
         }
 
         // Legacy wrapper — uploads to first available account based on file type
@@ -2814,6 +2824,55 @@
             }
         }
 
+        // Check if a file with a similar name already exists in the loaded file lists
+        function findDuplicateFile(fileName, section) {
+            const files = section === 'media' ? (window._mediaFiles || []) : (window._libraryFiles || []);
+            const baseName = fileName.replace(/\.[^/.]+$/, '').toLowerCase().replace(/[\s_\-]+/g, '');
+            return files.find(f => {
+                const existingBase = (f.name || '').replace(/\.[^/.]+$/, '').replace(/^\d+_\d*_?/, '').toLowerCase().replace(/[\s_\-]+/g, '');
+                return existingBase === baseName || (f.name || '').toLowerCase() === fileName.toLowerCase();
+            });
+        }
+
+        // Show duplicate file dialog: returns 'replace', 'skip', or 'cancel'
+        function showDuplicateDialog(fileName, existingFile) {
+            return new Promise((resolve) => {
+                const overlay = document.createElement('div');
+                overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:10000;display:flex;align-items:center;justify-content:center;';
+                const size = existingFile.size ? ' (' + (existingFile.size / 1024 / 1024).toFixed(2) + ' MB)' : '';
+                overlay.innerHTML = `
+                    <div style="background:#fff;border-radius:16px;padding:24px;max-width:400px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+                        <div style="font-size:18px;font-weight:700;margin-bottom:12px;color:#333;">
+                            <i class="fas fa-exclamation-triangle" style="color:#ff9800;margin-right:8px;"></i>File Already Exists
+                        </div>
+                        <p style="color:#555;margin:0 0 8px;font-size:14px;">
+                            <strong>"${fileName}"</strong> already exists in storage${size}.
+                        </p>
+                        <p style="color:#888;margin:0 0 20px;font-size:13px;">What would you like to do?</p>
+                        <div style="display:flex;gap:10px;">
+                            <button onclick="this.closest('div[style*=fixed]')._resolve('replace')" style="flex:1;padding:10px;border:none;border-radius:10px;background:#ff9800;color:#fff;font-weight:600;cursor:pointer;">
+                                <i class="fas fa-sync-alt"></i> Replace
+                            </button>
+                            <button onclick="this.closest('div[style*=fixed]')._resolve('skip')" style="flex:1;padding:10px;border:none;border-radius:10px;background:#2196F3;color:#fff;font-weight:600;cursor:pointer;">
+                                <i class="fas fa-forward"></i> Skip
+                            </button>
+                            <button onclick="this.closest('div[style*=fixed]')._resolve('cancel')" style="flex:1;padding:10px;border:none;border-radius:10px;background:#eee;color:#555;font-weight:600;cursor:pointer;">
+                                <i class="fas fa-times"></i> Cancel All
+                            </button>
+                        </div>
+                    </div>`;
+                overlay._resolve = (action) => { overlay.remove(); resolve(action); };
+                document.body.appendChild(overlay);
+            });
+        }
+
+        // Format bytes to human-readable
+        function fmtBytes(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1048576).toFixed(1) + ' MB';
+        }
+
         // Media Upload — multi-select with parallel uploads and per-file progress
         async function handleMediaUpload(files) {
             if (!files || files.length === 0) return;
@@ -2853,43 +2912,102 @@
 
             const results = [];
             const total = files.length;
-            showStatus('mediaUploadStatus', `Uploading ${total} file${total>1?'s':''}...`, 'success');
+            let skipped = 0, cancelled = false;
+            showStatus('mediaUploadStatus', `Preparing ${total} file${total>1?'s':''}...`, 'success');
+
+            // Process files sequentially for duplicate checks, upload in parallel batches
+            const filesToUpload = [];
+            for (let i = 0; i < files.length; i++) {
+                if (cancelled) break;
+                const file = files[i];
+                // Check for duplicates
+                const duplicate = findDuplicateFile(file.name, 'media');
+                if (duplicate) {
+                    const action = await showDuplicateDialog(file.name, duplicate);
+                    if (action === 'cancel') { cancelled = true; break; }
+                    if (action === 'skip') { skipped++; continue; }
+                    // action === 'replace': delete old file first
+                    if (duplicate.source === 'r2' && duplicate.workerUrl) {
+                        try {
+                            await fetch(duplicate.workerUrl + '/file/' + encodeURIComponent(duplicate.path || duplicate.key), {
+                                method: 'DELETE', headers: { 'X-Admin-Token': _R2_DEFAULT_TOKEN }
+                            });
+                        } catch(e) { console.warn('Could not delete old file:', e); }
+                    }
+                }
+                filesToUpload.push(file);
+            }
+
+            if (cancelled) {
+                showStatus('mediaUploadStatus', 'Upload cancelled.', 'error');
+                progressContainer.remove();
+                document.getElementById('mediaFileInput').value = '';
+                return;
+            }
+
+            showStatus('mediaUploadStatus', `Uploading ${filesToUpload.length} file${filesToUpload.length>1?'s':''}${skipped?' ('+skipped+' skipped)':''}...`, 'success');
 
             // Upload files in parallel (limit concurrency to 3)
             const concurrency = 3;
-            for (let i = 0; i < files.length; i += concurrency) {
-                const batch = Array.from(files).slice(i, i + concurrency);
+            for (let i = 0; i < filesToUpload.length; i += concurrency) {
+                const batch = filesToUpload.slice(i, i + concurrency);
                 await Promise.all(batch.map(async (file, idx) => {
                     const fileIdx = i + idx;
-                    const fileTitle = title || file.name;
+                    const fileTitle = title || file.name.replace(/\.[^/.]+$/, '');
                     const fileAuthor = author || '';
                     const ext = file.name.split('.').pop();
                     const safeName = (fileTitle.replace(/\s+/g, '_') + (fileAuthor ? '_by_' + fileAuthor.replace(/\s+/g, '_') : '')).replace(/[^a-zA-Z0-9_\-]/g, '');
                     const key = 'media/' + type + '/' + category + '/' + Date.now() + '_' + fileIdx + '_' + safeName + '.' + ext;
 
-                    // Create per-file progress bar
+                    // Create per-file progress bar with percentage text
                     const fileDiv = document.createElement('div');
-                    fileDiv.style.marginBottom = '8px';
-                    fileDiv.innerHTML = `<div style="font-size:12px;color:#555;margin-bottom:4px;">${file.name}</div><div class="progress-bar" style="height:6px;"><div class="progress" style="width:0%;background:var(--primary-green);"></div></div>`;
+                    fileDiv.style.cssText = 'margin-bottom:10px;background:#f5f5f5;border-radius:10px;padding:10px 12px;';
+                    fileDiv.innerHTML = `
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                            <span style="font-size:13px;color:#333;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%;">${file.name}</span>
+                            <span class="pct-text" style="font-size:12px;color:#888;font-weight:600;">0%</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <div class="progress-bar" style="flex:1;height:8px;border-radius:4px;background:#e0e0e0;overflow:hidden;">
+                                <div class="progress" style="width:0%;height:100%;background:var(--primary-green);border-radius:4px;transition:width 0.2s;"></div>
+                            </div>
+                            <span class="size-text" style="font-size:11px;color:#aaa;min-width:60px;text-align:right;">${fmtBytes(file.size)}</span>
+                        </div>`;
                     progressContainer.appendChild(fileDiv);
                     const fileProgress = fileDiv.querySelector('.progress');
+                    const pctText = fileDiv.querySelector('.pct-text');
 
                     try {
                         if (hasConfiguredAccount) {
                             if (storageType === 'video') {
                                 const available = await findAvailableVideoAccount(file.size);
                                 if (!available) throw new Error('All video accounts are full');
-                                await uploadToR2Account(available.account, file, key, (p) => { fileProgress.style.width = p + '%'; });
+                                await uploadToR2Account(available.account, file, key, (pct, loaded, total) => {
+                                    fileProgress.style.width = pct + '%';
+                                    pctText.textContent = pct + '%';
+                                    if (loaded) pctText.textContent = pct + '% · ' + fmtBytes(loaded);
+                                });
                             } else {
-                                await uploadToR2Account(mc.audio, file, key, (p) => { fileProgress.style.width = p + '%'; });
+                                await uploadToR2Account(mc.audio, file, key, (pct, loaded, total) => {
+                                    fileProgress.style.width = pct + '%';
+                                    pctText.textContent = pct + '%';
+                                    if (loaded) pctText.textContent = pct + '% · ' + fmtBytes(loaded);
+                                });
                             }
                         } else {
-                            await window.githubStorage.upload(file, 'media', type, (p) => { fileProgress.style.width = p + '%'; });
+                            await window.githubStorage.upload(file, 'media', type, (p) => {
+                                fileProgress.style.width = p + '%';
+                                pctText.textContent = p + '%';
+                            });
                         }
                         fileProgress.style.background = '#4CAF50';
+                        pctText.textContent = '✓ Done';
+                        pctText.style.color = '#4CAF50';
                         results.push({ success: true, file: file.name });
                     } catch (e) {
                         fileProgress.style.background = '#f44336';
+                        pctText.textContent = '✗ Failed';
+                        pctText.style.color = '#f44336';
                         results.push({ success: false, file: file.name, error: e.message });
                     }
                 }));
@@ -2898,12 +3016,15 @@
             // Summary
             const success = results.filter(r => r.success).length;
             const failed = results.filter(r => !r.success).length;
+            let summary = '';
             if (failed === 0) {
-                showStatus('mediaUploadStatus', `✅ All ${success} file${success>1?'s':''} uploaded successfully!`, 'success');
+                summary = `✅ ${success} file${success>1?'s':''} uploaded successfully!`;
             } else {
-                showStatus('mediaUploadStatus', `⚠️ ${success} uploaded, ${failed} failed. Check console for details.`, 'error');
-                results.filter(r => !r.success).forEach(r => console.error('Failed to upload:', r.file, r.error));
+                summary = `⚠️ ${success} uploaded, ${failed} failed.`;
+                results.filter(r => !r.success).forEach(r => console.error('Failed:', r.file, r.error));
             }
+            if (skipped > 0) summary += ` ${skipped} skipped.`;
+            showStatus('mediaUploadStatus', summary, failed > 0 ? 'error' : 'success');
 
             // Cleanup
             setTimeout(() => {
@@ -2915,7 +3036,7 @@
                 loadMediaList();
                 updateStats();
                 checkAllR2Storage();
-            }, 1500);
+            }, 2000);
         }
 
         async function saveMediaMetadata(data) {
@@ -2967,12 +3088,44 @@
 
             const results = [];
             const total = files.length;
-            showStatus('libraryUploadStatus', `Uploading ${total} file${total>1?'s':''}...`, 'success');
+            let skipped = 0, cancelled = false;
+            showStatus('libraryUploadStatus', `Preparing ${total} file${total>1?'s':''}...`, 'success');
+
+            // Process files sequentially for duplicate checks
+            const filesToUpload = [];
+            for (let i = 0; i < files.length; i++) {
+                if (cancelled) break;
+                const file = files[i];
+                const duplicate = findDuplicateFile(file.name, 'library');
+                if (duplicate) {
+                    const action = await showDuplicateDialog(file.name, duplicate);
+                    if (action === 'cancel') { cancelled = true; break; }
+                    if (action === 'skip') { skipped++; continue; }
+                    // action === 'replace': delete old file first
+                    if (duplicate.source === 'r2' && duplicate.workerUrl) {
+                        try {
+                            await fetch(duplicate.workerUrl + '/file/' + encodeURIComponent(duplicate.path || duplicate.key), {
+                                method: 'DELETE', headers: { 'X-Admin-Token': _R2_DEFAULT_TOKEN }
+                            });
+                        } catch(e) { console.warn('Could not delete old file:', e); }
+                    }
+                }
+                filesToUpload.push(file);
+            }
+
+            if (cancelled) {
+                showStatus('libraryUploadStatus', 'Upload cancelled.', 'error');
+                progressContainer.remove();
+                document.getElementById('libraryFileInput').value = '';
+                return;
+            }
+
+            showStatus('libraryUploadStatus', `Uploading ${filesToUpload.length} file${filesToUpload.length>1?'s':''}${skipped?' ('+skipped+' skipped)':''}...`, 'success');
 
             // Upload files in parallel (limit concurrency to 3)
             const concurrency = 3;
-            for (let i = 0; i < files.length; i += concurrency) {
-                const batch = Array.from(files).slice(i, i + concurrency);
+            for (let i = 0; i < filesToUpload.length; i += concurrency) {
+                const batch = filesToUpload.slice(i, i + concurrency);
                 await Promise.all(batch.map(async (file, idx) => {
                     const fileIdx = i + idx;
                     const fileTitle = title || file.name.replace(/\.[^/.]+$/, '');
@@ -2983,27 +3136,45 @@
                         ? 'library/' + category + '/' + collection + '/' + Date.now() + '_' + fileIdx + '_' + safeName + '.' + ext
                         : 'library/' + category + '/' + Date.now() + '_' + fileIdx + '_' + safeName + '.' + ext;
 
-                    // Create per-file progress bar
+                    // Create per-file progress bar with percentage text
                     const fileDiv = document.createElement('div');
-                    fileDiv.style.marginBottom = '8px';
-                    fileDiv.innerHTML = `<div style="font-size:12px;color:#555;margin-bottom:4px;">${file.name}</div><div class="progress-bar" style="height:6px;"><div class="progress" style="width:0%;background:var(--primary-green);"></div></div>`;
+                    fileDiv.style.cssText = 'margin-bottom:10px;background:#f5f5f5;border-radius:10px;padding:10px 12px;';
+                    fileDiv.innerHTML = `
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                            <span style="font-size:13px;color:#333;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%;">${file.name}</span>
+                            <span class="pct-text" style="font-size:12px;color:#888;font-weight:600;">0%</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <div class="progress-bar" style="flex:1;height:8px;border-radius:4px;background:#e0e0e0;overflow:hidden;">
+                                <div class="progress" style="width:0%;height:100%;background:var(--primary-green);border-radius:4px;transition:width 0.2s;"></div>
+                            </div>
+                            <span class="size-text" style="font-size:11px;color:#aaa;min-width:60px;text-align:right;">${fmtBytes(file.size)}</span>
+                        </div>`;
                     progressContainer.appendChild(fileDiv);
                     const fileProgress = fileDiv.querySelector('.progress');
+                    const pctText = fileDiv.querySelector('.pct-text');
 
                     try {
                         if (hasLibrary) {
-                            const storage = await checkAccountStorage(mc.library.workerUrl);
-                            if (storage && storage.totalBytes + file.size > MAX_BYTES_PER_ACCOUNT) {
-                                throw new Error('Library storage is full (10 GB)');
-                            }
-                            await uploadToR2Account(mc.library, file, key, (p) => { fileProgress.style.width = p + '%'; });
+                            await uploadToR2Account(mc.library, file, key, (pct, loaded, total) => {
+                                fileProgress.style.width = pct + '%';
+                                pctText.textContent = pct + '%';
+                                if (loaded) pctText.textContent = pct + '% · ' + fmtBytes(loaded);
+                            });
                         } else {
-                            await window.githubStorage.upload(file, 'library', category, (p) => { fileProgress.style.width = p + '%'; });
+                            await window.githubStorage.upload(file, 'library', category, (p) => {
+                                fileProgress.style.width = p + '%';
+                                pctText.textContent = p + '%';
+                            });
                         }
                         fileProgress.style.background = '#4CAF50';
+                        pctText.textContent = '✓ Done';
+                        pctText.style.color = '#4CAF50';
                         results.push({ success: true, file: file.name });
                     } catch (e) {
                         fileProgress.style.background = '#f44336';
+                        pctText.textContent = '✗ Failed';
+                        pctText.style.color = '#f44336';
                         results.push({ success: false, file: file.name, error: e.message });
                     }
                 }));
@@ -3012,12 +3183,15 @@
             // Summary
             const success = results.filter(r => r.success).length;
             const failed = results.filter(r => !r.success).length;
+            let summary = '';
             if (failed === 0) {
-                showStatus('libraryUploadStatus', `✅ All ${success} file${success>1?'s':''} uploaded successfully!`, 'success');
+                summary = `✅ ${success} file${success>1?'s':''} uploaded successfully!`;
             } else {
-                showStatus('libraryUploadStatus', `⚠️ ${success} uploaded, ${failed} failed. Check console for details.`, 'error');
-                results.filter(r => !r.success).forEach(r => console.error('Failed to upload:', r.file, r.error));
+                summary = `⚠️ ${success} uploaded, ${failed} failed.`;
+                results.filter(r => !r.success).forEach(r => console.error('Failed:', r.file, r.error));
             }
+            if (skipped > 0) summary += ` ${skipped} skipped.`;
+            showStatus('libraryUploadStatus', summary, failed > 0 ? 'error' : 'success');
 
             // Cleanup
             setTimeout(() => {
@@ -3030,7 +3204,7 @@
                 loadLibraryList();
                 updateStats();
                 checkAllR2Storage();
-            }, 1500);
+            }, 2000);
         }
 
         async function saveBookMetadata(data) {
