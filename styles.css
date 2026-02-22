@@ -2098,7 +2098,7 @@ textarea.form-input {
 }
 
 /* Floating Action Button */
-.fab {
+.floating-action-btn {
     position: fixed;
     bottom: 90px;
     right: 20px;
@@ -2118,12 +2118,12 @@ textarea.form-input {
     z-index: 99;
 }
 
-.fab:hover {
+.floating-action-btn:hover {
     transform: scale(1.1);
     box-shadow: 0 6px 20px rgba(76, 175, 80, 0.5);
 }
 
-.fab:active {
+.floating-action-btn:active {
     transform: scale(0.95);
 }
 

@@ -1,6 +1,6 @@
 // KIUMA Service Worker - Enables offline functionality
 // Cache version - UPDATE THIS when you deploy changes to force refresh
-const CACHE_VERSION = '2026-02-21-v9';
+const CACHE_VERSION = '2026-02-22-v11';
 const CACHE_NAME = 'kiuma-cache-' + CACHE_VERSION;
 const OFFLINE_URL = 'offline.html';
 
@@ -100,6 +100,13 @@ const STATIC_ASSETS = [
     './zakat-form.html',
     './offline.html',
     './styles.css',
+    './fonts/fontawesome.min.css',
+    './fonts/webfonts/fa-brands-400.woff2',
+    './fonts/webfonts/fa-regular-400.woff2',
+    './fonts/webfonts/fa-solid-900.woff2',
+    './fonts/webfonts/fa-brands-400.ttf',
+    './fonts/webfonts/fa-regular-400.ttf',
+    './fonts/webfonts/fa-solid-900.ttf',
     './css/search.css',
     './script.js',
     './js/search.js',
@@ -177,11 +184,6 @@ self.addEventListener('fetch', (event) => {
     if (url.hostname.includes('firebaseio.com') || 
         url.hostname.includes('firestore.googleapis.com') ||
         url.pathname.includes('/api/')) {
-        return;
-    }
-
-    // Skip R2 worker requests - always go to network (media/library content)
-    if (url.hostname.includes('.workers.dev')) {
         return;
     }
 

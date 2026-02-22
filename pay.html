@@ -239,12 +239,10 @@
                         <input type="number" class="form-input" id="amount" placeholder="Enter amount" min="1">
                     </div>
 
-                    <!-- WhatsApp Submit Button for Donations -->
-                    <div id="donationWhatsappBtn" style="display: none; margin: 20px 0;">
-                        <button type="button" class="btn" onclick="submitDonationViaWhatsApp()" style="width: 100%; padding: 15px 30px; background: linear-gradient(135deg, #25D366, #128C7E); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;">
-                            <i class="fab fa-whatsapp"></i> Submit Donation via WhatsApp
-                        </button>
-                    </div>
+                    <!-- Submit Details Button -->
+                    <button class="btn" onclick="submitPaymentViaWhatsApp()" style="width: 100%; padding: 15px 30px; background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                        <i class="fas fa-paper-plane"></i> Submit Payment Details
+                    </button>
 
                     <!-- Payment Methods Dropdowns -->
                     <div class="form-group">
@@ -509,14 +507,9 @@
                             <li>Choose your preferred payment method (MTN, Airtel, or Bank)</li>
                             <li>Copy the account details and make your payment</li>
                             <li>Use your name or student ID as the payment reference</li>
-                            <li>Submit your payment details via WhatsApp below</li>
+                            <li>Submit your payment details for finance confirmation</li>
                         </ol>
                     </div>
-
-                    <!-- Make Payment Button -->
-                    <button class="btn" onclick="submitPaymentViaWhatsApp()" style="width: 100%; padding: 15px 30px; background: linear-gradient(135deg, #25D366, #128C7E); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;">
-                        <i class="fab fa-whatsapp"></i> Submit Payment Details via WhatsApp
-                    </button>
 
                     <!-- Security Notice -->
                     <div class="info-card" style="margin-top: 20px; background: #E8F5E9;">
@@ -625,12 +618,10 @@
                     document.getElementById('donorNameGroup').style.display = 'block';
                     donationTypeGroup.style.display = 'block';
                     reasonGroup.style.display = 'block';
-                    document.getElementById('donationWhatsappBtn').style.display = 'block';
                 } else {
                     document.getElementById('donorNameGroup').style.display = 'none';
                     donationTypeGroup.style.display = 'none';
                     reasonGroup.style.display = 'none';
-                    document.getElementById('donationWhatsappBtn').style.display = 'none';
                 }
                 
                 // Set payment type info
@@ -672,7 +663,7 @@
                 'donate': 'Donation'
             };
 
-            alert(`Payment Instructions:\n\nAmount: ${amount.toLocaleString()} UGX\nType: ${paymentTypeNames[selectedPaymentType]}\n\nPlease make payment using one of the recommended methods above.\n\nAfter payment, contact the Finance Minister via WhatsApp to confirm your deposit.`);
+            alert(`Payment Instructions:\n\nAmount: ${amount.toLocaleString()} UGX\nType: ${paymentTypeNames[selectedPaymentType]}\n\nPlease make payment using one of the recommended methods above.\n\nAfter payment, contact the Finance Minister to confirm your deposit.`);
         }
 
         function submitPaymentViaWhatsApp() {
@@ -765,43 +756,6 @@
 
         // Amir Finance WhatsApp number
         const AMIR_FINANCE_WHATSAPP = '256757591824';
-
-        function submitDonationViaWhatsApp() {
-            const donorName = document.getElementById('donorName').value.trim() || 'Anonymous';
-            const donationType = document.getElementById('donationType').value;
-            const donationReason = document.getElementById('donationReason').value.trim();
-            const amount = document.getElementById('amount').value;
-
-            // Validation
-            if (!amount || amount <= 0) {
-                alert('Please enter a valid amount');
-                return;
-            }
-
-            // Get donation type label
-            const donationTypeSelect = document.getElementById('donationType');
-            const donationTypeLabel = donationTypeSelect.options[donationTypeSelect.selectedIndex].text || 'Not specified';
-
-            // Build WhatsApp message
-            let message = `*KIUMA Donation Submission*\n\n`;
-            message += `👤 *Name:* ${donorName}\n`;
-            message += `💰 *Amount:* ${parseInt(amount).toLocaleString()} UGX\n`;
-            message += `📋 *Type:* ${selectedPaymentType === 'charity' ? 'Charity' : 'Donation'}\n`;
-            message += `🏷️ *Category:* ${donationTypeLabel}\n`;
-            
-            if (donationReason) {
-                message += `📝 *Reason:* ${donationReason}\n`;
-            }
-            
-            message += `\n_Submitted via KIUMA App_`;
-
-            // Encode message for WhatsApp URL
-            const encodedMessage = encodeURIComponent(message);
-            const whatsappUrl = `https://wa.me/${AMIR_FINANCE_WHATSAPP}?text=${encodedMessage}`;
-
-            // Open WhatsApp
-            window.open(whatsappUrl, '_blank');
-        }
 
         function handleDonationTypeChange(value) {
             const kizumuPaymentOption = document.getElementById('kizumuPaymentOption');

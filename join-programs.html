@@ -101,65 +101,6 @@
             </section>
 
             <section class="page-content">
-                <!-- Quran Study Classes Section -->
-                <div class="info-card" style="background: linear-gradient(135deg, #1a472a, #2d5a3f); color: white; border: none;">
-                    <h3 style="color: white;"><i class="fas fa-quran"></i> Quran Study Classes</h3>
-                    <p style="opacity: 0.9;">Join our dedicated Quran memorization and study programs. Click on any class to enroll.</p>
-                </div>
-
-                <!-- Quran Classes Cards -->
-                <div style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px;">
-                    <!-- Yasaruna & Juz Amma Class -->
-                    <div onclick="showQuranEnrollModal('yasaruna')" style="background: linear-gradient(135deg, #4CAF50, #2E7D32); border-radius: 12px; padding: 20px; color: white; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                        <div style="display: flex; align-items: center; gap: 15px;">
-                            <div style="background: rgba(255,255,255,0.2); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                <i class="fas fa-book-reader" style="font-size: 24px;"></i>
-                            </div>
-                            <div style="flex: 1;">
-                                <h3 style="margin: 0 0 5px 0; font-size: 18px;">Yasaruna & Juz Amma 30</h3>
-                                <p style="margin: 0; opacity: 0.9; font-size: 14px;">Beginner level - Learn to read Quran and memorize Juz 30</p>
-                                <p style="margin: 5px 0 0 0; font-size: 12px; opacity: 0.8;"><i class="fas fa-clock"></i> Mon-Thu after Maghrib | <i class="fas fa-user"></i> Imam Fahad</p>
-                            </div>
-                            <i class="fas fa-chevron-right" style="font-size: 20px; opacity: 0.7;"></i>
-                        </div>
-                    </div>
-
-                    <!-- Juz Qadsamia Class -->
-                    <div onclick="showQuranEnrollModal('qadsamia')" style="background: linear-gradient(135deg, #9C27B0, #673AB7); border-radius: 12px; padding: 20px; color: white; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                        <div style="display: flex; align-items: center; gap: 15px;">
-                            <div style="background: rgba(255,255,255,0.2); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                <i class="fas fa-quran" style="font-size: 24px;"></i>
-                            </div>
-                            <div style="flex: 1;">
-                                <h3 style="margin: 0 0 5px 0; font-size: 18px;">Juz Qadsamia (Juz 28)</h3>
-                                <p style="margin: 0; opacity: 0.9; font-size: 14px;">Memorize Juz 28 - From Surah Al-Mujadila to At-Tahrim</p>
-                                <p style="margin: 5px 0 0 0; font-size: 12px; opacity: 0.8;"><i class="fas fa-clock"></i> Mon-Thu after Maghrib | <i class="fas fa-user"></i> Imam Fahad</p>
-                            </div>
-                            <i class="fas fa-chevron-right" style="font-size: 20px; opacity: 0.7;"></i>
-                        </div>
-                    </div>
-
-                    <!-- Juz Tabaraka Class -->
-                    <div onclick="showQuranEnrollModal('tabaraka')" style="background: linear-gradient(135deg, #FF9800, #F57C00); border-radius: 12px; padding: 20px; color: white; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                        <div style="display: flex; align-items: center; gap: 15px;">
-                            <div style="background: rgba(255,255,255,0.2); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                <i class="fas fa-star" style="font-size: 24px;"></i>
-                            </div>
-                            <div style="flex: 1;">
-                                <h3 style="margin: 0 0 5px 0; font-size: 18px;">Juz Tabaraka (Juz 29)</h3>
-                                <p style="margin: 0; opacity: 0.9; font-size: 14px;">Memorize Juz 29 - From Surah Al-Mulk to Al-Mursalat</p>
-                                <p style="margin: 5px 0 0 0; font-size: 12px; opacity: 0.8;"><i class="fas fa-clock"></i> Mon-Thu after Maghrib | <i class="fas fa-user"></i> Imam Fahad</p>
-                            </div>
-                            <i class="fas fa-chevron-right" style="font-size: 20px; opacity: 0.7;"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Separator -->
-                <div style="border-top: 2px solid #e0e0e0; margin: 30px 0; position: relative;">
-                    <span style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #f5f5f5; padding: 0 15px; color: #666; font-weight: 600;">OR</span>
-                </div>
-
                 <div class="info-card">
                     <h3><i class="fas fa-user-plus"></i> Course Enrollment</h3>
                     <p>Enroll in any of the courses from our weekly teachings schedule. Fill out the form below to register.</p>
@@ -230,11 +171,27 @@
                         <div style="margin-top: 10px;">
                             <label class="course-checkbox">
                                 <input type="checkbox" name="courses" value="quran-yasaruna">
-                                <span><strong>Quran and Yasaruna</strong> - Mon-Thur (After Maghrib to Isha) - Iman Fahad</span>
+                                <span><strong>Yasaruna and Juzu Amma (30)</strong> - Mon–Thu (After Maghrib) - Campus Mosque - Kimuli Najib</span>
+                            </label>
+                            <label class="course-checkbox">
+                                <input type="checkbox" name="courses" value="quran-juzu-tabaraka-29">
+                                <span><strong>Juzu Tabaaraka (29)</strong> - Mon–Wed (After Maghrib) - Campus Mosque - Kiwuuwa Fahad, Lubega Abdurrahman, Abdallah Ahmed</span>
+                            </label>
+                            <label class="course-checkbox">
+                                <input type="checkbox" name="courses" value="quran-juzu-qadsamia-28">
+                                <span><strong>Juzu Qadsamia’ (28)</strong> - Mon–Wed (After Maghrib) - Campus Mosque - Adam Ubaidah, Ngoobi Hudhaifah</span>
+                            </label>
+                            <label class="course-checkbox">
+                                <input type="checkbox" name="courses" value="quran-four-juzz-plus">
+                                <span><strong>Four Juzz and Above</strong> - Mon–Wed (After Maghrib) - Campus Mosque - Abdulwahid Said</span>
+                            </label>
+                            <label class="course-checkbox">
+                                <input type="checkbox" name="courses" value="sisters-quran-weekend">
+                                <span><strong>Sisters Quran Classes (Weekend)</strong> - 2:00 PM (Every Weekend) - Sisters Only</span>
                             </label>
                             <label class="course-checkbox">
                                 <input type="checkbox" name="courses" value="hadith-memorisation">
-                                <span><strong>Hadith memorisation</strong> - Tuesday (After Maghrib to Isha) - Imam Abdurrahman</span>
+                                <span><strong>Hadith memorisation</strong> - Saturday (After Asr) - Imam Kiwuuwa Fahad</span>
                             </label>
                             <label class="course-checkbox">
                                 <input type="checkbox" name="courses" value="hadith-explanation">
@@ -263,8 +220,8 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #25D366, #128C7E); border: none;">
-                        <i class="fab fa-whatsapp"></i> Submit via WhatsApp
+                    <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); border: none;">
+                        <i class="fas fa-paper-plane"></i> Submit Enrollment
                     </button>
                 </form>
 
@@ -294,98 +251,128 @@
     <script>
         // Auto-fill form if user data exists in localStorage
         document.addEventListener('DOMContentLoaded', function() {
-            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-            
-            // Check if fields are already present and auto-fill
-            if (userData.firstName && userData.lastName) {
-                const nameField = document.getElementById('programName');
-                if (nameField && !nameField.value) {
-                    nameField.value = userData.firstName + ' ' + userData.lastName;
-                    nameField.style.background = '#E8F5E9';
-                    setTimeout(() => nameField.style.background = '', 2000);
-                }
+            let userData = {};
+            try {
+                const raw = localStorage.getItem('userData') || localStorage.getItem('kiuma_user') || localStorage.getItem('user') || '{}';
+                userData = JSON.parse(raw) || {};
+            } catch (e) {
+                userData = {};
             }
-            
-            if (userData.gender) {
-                const genderField = document.getElementById('gender');
-                if (genderField && !genderField.value) {
-                    genderField.value = userData.gender;
-                }
+
+            const fullName = (userData.firstName && userData.lastName)
+                ? (userData.firstName + ' ' + userData.lastName)
+                : (userData.name || userData.displayName || userData.fullName || '');
+
+            const nameField = document.getElementById('programName');
+            if (nameField && !nameField.value && fullName) {
+                nameField.value = fullName;
+                nameField.style.background = '#E8F5E9';
+                setTimeout(() => nameField.style.background = '', 2000);
             }
-            
-            if (userData.course) {
-                const courseField = document.getElementById('course');
-                if (courseField && !courseField.value) {
-                    courseField.value = userData.course;
-                    courseField.style.background = '#E8F5E9';
-                    setTimeout(() => courseField.style.background = '', 2000);
-                }
+
+            const regNoField = document.getElementById('regNo');
+            if (regNoField && !regNoField.value && (userData.regNo || userData.registrationNumber)) {
+                regNoField.value = userData.regNo || userData.registrationNumber;
+                regNoField.style.background = '#E8F5E9';
+                setTimeout(() => regNoField.style.background = '', 2000);
             }
-            
-            if (userData.year) {
-                const yearField = document.getElementById('year');
-                if (yearField && !yearField.value) {
-                    yearField.value = userData.year;
+
+            const genderField = document.getElementById('gender');
+            if (genderField && !genderField.value && userData.gender) {
+                genderField.value = userData.gender;
+            }
+
+            const courseField = document.getElementById('course');
+            if (courseField && !courseField.value && (userData.course || userData.program)) {
+                courseField.value = userData.course || userData.program;
+                courseField.style.background = '#E8F5E9';
+                setTimeout(() => courseField.style.background = '', 2000);
+            }
+
+            const yearField = document.getElementById('year');
+            if (yearField && !yearField.value && userData.year) {
+                yearField.value = userData.year;
+            }
+
+            const semesterField = document.getElementById('semester');
+            if (semesterField && !semesterField.value && userData.semester) {
+                semesterField.value = userData.semester;
+            }
+
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const genderParam = params.get('gender');
+                if (genderParam && genderField) {
+                    genderField.value = genderParam;
                 }
+
+                const coursesParam = params.get('courses');
+                if (coursesParam) {
+                    const codes = coursesParam.split(',').map(s => s.trim()).filter(Boolean);
+                    codes.forEach(code => {
+                        const cb = document.querySelector('input[name="courses"][value="' + code + '"]');
+                        if (cb) cb.checked = true;
+                    });
+
+                    const firstChecked = document.querySelector('input[name="courses"]:checked');
+                    if (firstChecked) {
+                        firstChecked.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            } catch (e) {
             }
         });
 
         function handleProgramRegistration(e) {
             e.preventDefault();
-            
-            const name = document.getElementById('programName').value;
-            const regNo = document.getElementById('regNo').value;
+
+            const name = document.getElementById('programName').value.trim();
+            const regNo = document.getElementById('regNo').value.trim();
             const gender = document.getElementById('gender').value;
-            const course = document.getElementById('course').value;
+            const course = document.getElementById('course').value.trim();
             const year = document.getElementById('year').value;
             const semester = document.getElementById('semester').value;
-            const selectedCourses = Array.from(document.querySelectorAll('input[name="courses"]:checked')).map(cb => {
-                const label = cb.parentElement.querySelector('span').textContent;
-                return label;
-            });
+
+            const selectedCourseInputs = Array.from(document.querySelectorAll('input[name="courses"]:checked'));
+            const selectedCourseCodes = selectedCourseInputs.map(cb => cb.value);
+            const selectedCourses = selectedCourseInputs.map(cb => cb.parentElement.querySelector('span').textContent);
+
+            if (!name || !regNo || !gender || !course || !year || !semester) {
+                alert('Please fill in all required fields');
+                return;
+            }
 
             if (selectedCourses.length === 0) {
                 alert('Please select at least one course to enroll in');
                 return;
             }
 
-            // Course name mappings
-            const courseNames = {
-                'quran-yasaruna': 'Quran and Yasaruna',
-                'hadith-memorisation': 'Hadith memorisation',
-                'hadith-explanation': 'Hadith Explanation',
-                'kitaabu-tawheed': 'Kitaabu Tawheed',
-                'fiqh-swalah': 'Fiqh Swalah',
-                'arbauna-nawawi': 'Arbauna Nawawi',
-                'tafsir': 'Tafsir',
-                'arabic-classes': 'Arabic classes'
-            };
+            const maleOnly = ['quran-yasaruna', 'quran-juzu-tabaraka-29', 'quran-juzu-qadsamia-28', 'quran-four-juzz-plus'];
+            if (gender === 'female' && selectedCourseCodes.some(c => maleOnly.includes(c))) {
+                alert('Weekly Qur’an Program is for male only. Please unselect the male-only Quran classes.');
+                return;
+            }
+            if (gender === 'male' && selectedCourseCodes.includes('sisters-quran-weekend')) {
+                alert('Sisters Quran Classes (Weekend) is for sisters only. Please unselect it.');
+                return;
+            }
 
-            // Prepare WhatsApp message for Amir Daawa
-            const message = `*KIUMA COURSE ENROLLMENT*
+            const message =
+                `*KIUMA COURSE ENROLLMENT*\n\n` +
+                `Student Information:\n` +
+                `Full Name: ${name}\n` +
+                `Registration Number: ${regNo}\n` +
+                `Gender: ${gender}\n` +
+                `Course/Program: ${course}\n` +
+                `Year: ${year}\n` +
+                `Semester: ${semester}\n\n` +
+                `Selected Courses:\n` +
+                `${selectedCourses.map((c, index) => ` ${index + 1}. ${c}`).join('\n')}\n\n` +
+                `Assalamu Alaikum, I would like to enroll in the above courses. Please confirm my enrollment.\n\n` +
+                `Jazakallahu Khairan`;
 
-*Student Information:*
- Full Name: ${name}
- Registration Number: ${regNo}
- Gender: ${gender}
- Course/Program: ${course}
- Year: ${year}
- Semester: ${semester}
-
-*Selected Courses:*
-${selectedCourses.map((course, index) => ` ${index + 1}. ${course}`).join('\n')}
-
-Assalamu Alaikum, I would like to enroll in the above courses. Please confirm my enrollment.
-
-Jazakallahu Khairan`;
-
-            // Amir Daawa WhatsApp number
             const amirDaawaNumber = '256777351331';
-            
-            // Create WhatsApp link
             const whatsappLink = `https://wa.me/${amirDaawaNumber}?text=${encodeURIComponent(message)}`;
-            
-            // Open WhatsApp
             window.open(whatsappLink, '_blank');
 
             // Save user data for future auto-fill
@@ -400,90 +387,10 @@ Jazakallahu Khairan`;
             };
             localStorage.setItem('userData', JSON.stringify(userData));
 
-            // Show confirmation
             setTimeout(() => {
-                alert('Thank you, ' + name + '!\n\nYour enrollment details for ' + selectedCourses.length + ' course(s) have been sent to Amir Daawa via WhatsApp.\n\nRegistration Number: ' + regNo + '\n\nPlease send the WhatsApp message to complete your enrollment.');
+                alert('Thank you, ' + name + '!\n\nYour enrollment details for ' + selectedCourses.length + ' course(s) have been prepared.\n\nRegistration Number: ' + regNo + '\n\nPlease send the message that opens to complete your enrollment.');
                 document.getElementById('programForm').reset();
             }, 500);
-        }
-
-        // Quran Class Enrollment
-        const quranClasses = {
-            yasaruna: { name: 'Yasaruna & Juz Amma 30', level: 'Beginner', color: '#4CAF50' },
-            qadsamia: { name: 'Juz Qadsamia (Juz 28)', level: 'Intermediate', color: '#9C27B0' },
-            tabaraka: { name: 'Juz Tabaraka (Juz 29)', level: 'Intermediate', color: '#FF9800' }
-        };
-
-        function showQuranEnrollModal(classType) {
-            const classInfo = quranClasses[classType];
-            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-            const userName = userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : '';
-            
-            const modal = document.createElement('div');
-            modal.id = 'quranEnrollModal';
-            modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:99999;padding:20px;';
-            modal.innerHTML = `
-                <div style="background:white;border-radius:16px;max-width:400px;width:100%;max-height:90vh;overflow-y:auto;">
-                    <div style="background:${classInfo.color};color:white;padding:20px;border-radius:16px 16px 0 0;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;">
-                            <h3 style="margin:0;"><i class="fas fa-quran"></i> Quran Class Enrollment</h3>
-                            <button onclick="closeQuranModal()" style="background:none;border:none;color:white;font-size:24px;cursor:pointer;">&times;</button>
-                        </div>
-                        <p style="margin:10px 0 0 0;opacity:0.9;">${classInfo.name}</p>
-                    </div>
-                    <form onsubmit="submitQuranEnroll(event, '${classType}')" style="padding:20px;">
-                        <div style="margin-bottom:15px;">
-                            <label style="display:block;margin-bottom:5px;font-weight:600;">Full Name *</label>
-                            <input type="text" id="qeName" value="${userName}" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;">
-                        </div>
-                        <div style="margin-bottom:15px;">
-                            <label style="display:block;margin-bottom:5px;font-weight:600;">University Course *</label>
-                            <input type="text" id="qeCourse" placeholder="e.g., Medicine Year 2" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;">
-                        </div>
-                        <div style="margin-bottom:15px;">
-                            <label style="display:block;margin-bottom:5px;font-weight:600;">WhatsApp Number *</label>
-                            <input type="tel" id="qePhone" placeholder="e.g., 0771234567" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;">
-                        </div>
-                        <button type="submit" style="width:100%;padding:15px;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border:none;border-radius:8px;font-size:16px;cursor:pointer;">
-                            <i class="fab fa-whatsapp"></i> Enroll via WhatsApp
-                        </button>
-                    </form>
-                </div>
-            `;
-            document.body.appendChild(modal);
-            modal.onclick = (e) => { if(e.target === modal) closeQuranModal(); };
-        }
-
-        function closeQuranModal() {
-            const modal = document.getElementById('quranEnrollModal');
-            if(modal) modal.remove();
-        }
-
-        function submitQuranEnroll(e, classType) {
-            e.preventDefault();
-            const classInfo = quranClasses[classType];
-            const name = document.getElementById('qeName').value;
-            const course = document.getElementById('qeCourse').value;
-            const phone = document.getElementById('qePhone').value;
-
-            const message = `*QURAN CLASS ENROLLMENT*
-
-*Class:* ${classInfo.name}
-*Level:* ${classInfo.level}
-
-*Student Details:*
-Name: ${name}
-Course: ${course}
-WhatsApp: ${phone}
-
-Assalamu Alaikum, I would like to enroll in the ${classInfo.name} class. Please confirm my enrollment.
-
-Jazakallahu Khairan`;
-
-            const whatsappLink = `https://wa.me/256777351331?text=${encodeURIComponent(message)}`;
-            window.open(whatsappLink, '_blank');
-            closeQuranModal();
-            alert('Enrollment sent! Please complete sending the WhatsApp message.');
         }
     </script>
 
