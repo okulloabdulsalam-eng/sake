@@ -2883,19 +2883,19 @@
             const category = (document.getElementById('mediaCategory').value.trim() || 'general').toLowerCase().replace(/[^a-z0-9\-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'general';
             const storageType = (type === 'audio') ? 'audio' : 'video';
 
-            // Check if any account of the right type has an admin token
+            // Check if any R2 account of the right type is configured (token always available via _R2_DEFAULT_TOKEN)
             const mc = getR2MultiConfig();
             let hasConfiguredAccount = false;
             if (storageType === 'video') {
-                hasConfiguredAccount = (mc.video || []).some(a => a.workerUrl && a.adminToken);
+                hasConfiguredAccount = (mc.video || []).some(a => a.workerUrl);
             } else if (storageType === 'audio') {
-                hasConfiguredAccount = !!(mc.audio && mc.audio.workerUrl && mc.audio.adminToken);
+                hasConfiguredAccount = !!(mc.audio && mc.audio.workerUrl);
             }
 
             if (!hasConfiguredAccount) {
                 // Fallback to GitHub
                 if (!window.githubStorage || !window.githubStorage.isConfigured()) {
-                    showStatus('mediaUploadStatus', 'Please configure R2 Admin Tokens for ' + storageType + ' accounts in Settings first', 'error');
+                    showStatus('mediaUploadStatus', 'No R2 account configured for ' + storageType + '. Check Settings.', 'error');
                     return;
                 }
             }
@@ -3071,9 +3071,9 @@
             }
             
             const mc = getR2MultiConfig();
-            const hasLibrary = !!(mc.library && mc.library.workerUrl && mc.library.adminToken);
+            const hasLibrary = !!(mc.library && mc.library.workerUrl);
             if (!hasLibrary && (!window.githubStorage || !window.githubStorage.isConfigured())) {
-                showStatus('libraryUploadStatus', 'Please configure Library R2 Admin Token in Settings first', 'error');
+                showStatus('libraryUploadStatus', 'No Library R2 account configured. Check Settings.', 'error');
                 return;
             }
             
