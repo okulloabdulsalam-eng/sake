@@ -4485,9 +4485,13 @@
             // Always save to localStorage first
             localStorage.setItem('kiuma_prayerTimes', JSON.stringify(data));
 
-            showStatus('prayerTimesStatus', 'Prayer times saved!', 'success');
-            // Sync to Firestore in background
-            firestoreSet('appData/prayerTimes', data);
+            // Sync to Firestore (global) and confirm success
+            const synced = await firestoreSet('appData/prayerTimes', data);
+            if (synced) {
+                showStatus('prayerTimesStatus', 'Prayer times saved and synced!', 'success');
+            } else {
+                showStatus('prayerTimesStatus', 'Saved on this device, but failed to sync to server. Check internet/Firebase.', 'error');
+            }
         }
 
         // ==============================
