@@ -2988,6 +2988,7 @@
                                     if (loaded) pctText.textContent = pct + '% · ' + fmtBytes(loaded);
                                 });
                             } else {
+                                console.log('[MediaUpload] Audio upload to:', mc.audio?.workerUrl, 'key:', key, 'token:', (mc.audio?.adminToken || _R2_DEFAULT_TOKEN) ? '***set***' : 'EMPTY');
                                 await uploadToR2Account(mc.audio, file, key, (pct, loaded, total) => {
                                     fileProgress.style.width = pct + '%';
                                     pctText.textContent = pct + '%';
@@ -3005,8 +3006,9 @@
                         pctText.style.color = '#4CAF50';
                         results.push({ success: true, file: file.name });
                     } catch (e) {
+                        console.error('[MediaUpload] Failed:', file.name, 'storageType:', storageType, 'hasConfigured:', hasConfiguredAccount, 'error:', e.message, e);
                         fileProgress.style.background = '#f44336';
-                        pctText.textContent = '✗ Failed';
+                        pctText.textContent = '✗ ' + e.message;
                         pctText.style.color = '#f44336';
                         results.push({ success: false, file: file.name, error: e.message });
                     }
@@ -3020,7 +3022,8 @@
             if (failed === 0) {
                 summary = `✅ ${success} file${success>1?'s':''} uploaded successfully!`;
             } else {
-                summary = `⚠️ ${success} uploaded, ${failed} failed.`;
+                const errMsgs = results.filter(r => !r.success).map(r => r.error).join('; ');
+                summary = `⚠️ ${success} uploaded, ${failed} failed: ${errMsgs}`;
                 results.filter(r => !r.success).forEach(r => console.error('Failed:', r.file, r.error));
             }
             if (skipped > 0) summary += ` ${skipped} skipped.`;
