@@ -507,6 +507,7 @@
                     </div>
                     <div class="bulk-bar" id="mediaBulkBar">
                         <span class="bb-count" id="mediaBulkCount">0 selected</span>
+                        <button class="bb-btn" style="background:#1565C0;color:#fff;" onclick="bulkChangeType('media')"><i class="fas fa-exchange-alt"></i> Type</button>
                         <button class="bb-btn bb-playlist" onclick="bulkAddToPlaylist('media')"><i class="fas fa-list"></i> Playlist</button>
                         <button class="bb-btn bb-delete" onclick="bulkDelete('media')"><i class="fas fa-trash"></i> Delete</button>
                         <button class="bb-btn bb-cancel" onclick="toggleSelectMode('media')"><i class="fas fa-times"></i></button>
@@ -581,6 +582,7 @@
                     </div>
                     <div class="bulk-bar" id="libraryBulkBar">
                         <span class="bb-count" id="libraryBulkCount">0 selected</span>
+                        <button class="bb-btn" style="background:#1565C0;color:#fff;" onclick="bulkChangeType('library')"><i class="fas fa-exchange-alt"></i> Category</button>
                         <button class="bb-btn bb-playlist" onclick="bulkAddToPlaylist('library')"><i class="fas fa-book-reader"></i> Reading List</button>
                         <button class="bb-btn bb-delete" onclick="bulkDelete('library')"><i class="fas fa-trash"></i> Delete</button>
                         <button class="bb-btn bb-cancel" onclick="toggleSelectMode('library')"><i class="fas fa-times"></i></button>
@@ -2273,6 +2275,110 @@
             document.getElementById('bulkPlPickerModal').style.display = 'none';
             toggleSelectMode(section);
             alert('Added ' + added + ' item' + (added !== 1 ? 's' : '') + ' to ' + pl.name);
+        }
+
+        // Bulk Change Type / Category
+        function bulkChangeType(section) {
+            const listId = section === 'media' ? 'mediaFileList' : 'libraryFileList';
+            const selected = document.querySelectorAll('#' + listId + ' .file-item.selected');
+            if (selected.length === 0) return;
+
+            let modal = document.getElementById('bulkTypeModal');
+            if (!modal) { modal = document.createElement('div'); modal.id = 'bulkTypeModal'; document.body.appendChild(modal); }
+            modal.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s;';
+
+            let options = '';
+            if (section === 'media') {
+                options = '<button onclick="doBulkChangeType(\'media\',\'video\')" style="display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;border:none;background:transparent;cursor:pointer;text-align:left;border-bottom:1px solid #f0f0f0;font-size:14px;font-weight:500;transition:background .15s;" onmouseover="this.style.background=\'#f5f5f5\'" onmouseout="this.style.background=\'transparent\'"><i class="fas fa-video" style="color:#e53935;width:20px;text-align:center;"></i> Video</button>' +
+                    '<button onclick="doBulkChangeType(\'media\',\'audio\')" style="display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;border:none;background:transparent;cursor:pointer;text-align:left;border-bottom:1px solid #f0f0f0;font-size:14px;font-weight:500;transition:background .15s;" onmouseover="this.style.background=\'#f5f5f5\'" onmouseout="this.style.background=\'transparent\'"><i class="fas fa-music" style="color:#7B1FA2;width:20px;text-align:center;"></i> Audio</button>' +
+                    '<button onclick="doBulkChangeType(\'media\',\'image\')" style="display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;border:none;background:transparent;cursor:pointer;text-align:left;font-size:14px;font-weight:500;transition:background .15s;" onmouseover="this.style.background=\'#f5f5f5\'" onmouseout="this.style.background=\'transparent\'"><i class="fas fa-image" style="color:#1565C0;width:20px;text-align:center;"></i> Image</button>';
+            } else {
+                options = '<button onclick="doBulkChangeType(\'library\',\'islamic\')" style="display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;border:none;background:transparent;cursor:pointer;text-align:left;border-bottom:1px solid #f0f0f0;font-size:14px;font-weight:500;transition:background .15s;" onmouseover="this.style.background=\'#f5f5f5\'" onmouseout="this.style.background=\'transparent\'"><i class="fas fa-quran" style="color:#4CAF50;width:20px;text-align:center;"></i> Islamic</button>' +
+                    '<button onclick="doBulkChangeType(\'library\',\'educational\')" style="display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;border:none;background:transparent;cursor:pointer;text-align:left;border-bottom:1px solid #f0f0f0;font-size:14px;font-weight:500;transition:background .15s;" onmouseover="this.style.background=\'#f5f5f5\'" onmouseout="this.style.background=\'transparent\'"><i class="fas fa-graduation-cap" style="color:#2196F3;width:20px;text-align:center;"></i> Educational</button>' +
+                    '<button onclick="doBulkChangeType(\'library\',\'quran\')" style="display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;border:none;background:transparent;cursor:pointer;text-align:left;border-bottom:1px solid #f0f0f0;font-size:14px;font-weight:500;transition:background .15s;" onmouseover="this.style.background=\'#f5f5f5\'" onmouseout="this.style.background=\'transparent\'"><i class="fas fa-book-open" style="color:#9C27B0;width:20px;text-align:center;"></i> Quran</button>' +
+                    '<button onclick="doBulkChangeType(\'library\',\'other\')" style="display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;border:none;background:transparent;cursor:pointer;text-align:left;font-size:14px;font-weight:500;transition:background .15s;" onmouseover="this.style.background=\'#f5f5f5\'" onmouseout="this.style.background=\'transparent\'"><i class="fas fa-book" style="color:#607D8B;width:20px;text-align:center;"></i> Other</button>';
+            }
+
+            modal.innerHTML = '<div style="background:#fff;border-radius:16px;width:100%;max-width:340px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);animation:scaleIn .25s ease;">' +
+                '<div style="padding:16px 20px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;">' +
+                '<h3 style="margin:0;font-size:16px;"><i class="fas fa-exchange-alt" style="color:#1565C0;margin-right:8px;"></i>Change ' + (section === 'media' ? 'Type' : 'Category') + '</h3>' +
+                '<button onclick="document.getElementById(\'bulkTypeModal\').style.display=\'none\'" style="background:none;border:none;font-size:18px;cursor:pointer;color:#999;"><i class="fas fa-times"></i></button></div>' +
+                '<div style="padding:8px 0;font-size:13px;color:#888;text-align:center;border-bottom:1px solid #f5f5f5;">Moving <strong>' + selected.length + ' file' + (selected.length !== 1 ? 's' : '') + '</strong> to:</div>' +
+                '<div>' + options + '</div>' +
+                '<div id="bulkTypeProgress" style="display:none;padding:16px 20px;text-align:center;"><i class="fas fa-spinner fa-spin" style="font-size:20px;color:var(--primary-green);margin-bottom:8px;display:block;"></i><span id="bulkTypeProgressText" style="font-size:13px;color:#666;">Processing...</span></div></div>';
+        }
+
+        async function doBulkChangeType(section, newType) {
+            const listId = section === 'media' ? 'mediaFileList' : 'libraryFileList';
+            const selected = document.querySelectorAll('#' + listId + ' .file-item.selected');
+            if (selected.length === 0) return;
+
+            // Show progress
+            const prog = document.getElementById('bulkTypeProgress');
+            const progText = document.getElementById('bulkTypeProgressText');
+            if (prog) prog.style.display = 'block';
+            // Hide type options
+            prog.previousElementSibling.style.display = 'none';
+
+            const token = _R2_DEFAULT_TOKEN;
+            let moved = 0, errors = 0;
+
+            for (let i = 0; i < selected.length; i++) {
+                const el = selected[i];
+                const source = el.dataset.source;
+                const oldPath = el.dataset.path;
+                const url = el.dataset.url;
+                const workerUrl = el.dataset.worker;
+                const name = oldPath.split('/').pop();
+
+                if (progText) progText.textContent = 'Moving ' + (i + 1) + ' of ' + selected.length + '...';
+
+                if (source === 'r2' && workerUrl) {
+                    try {
+                        // Build new key
+                        const newKey = section === 'media'
+                            ? 'media/' + newType + '/' + name
+                            : 'library/' + newType + '/' + name;
+
+                        // Skip if already in the right folder
+                        if (oldPath === newKey) { moved++; continue; }
+
+                        // Fetch old file
+                        const fileRes = await fetch(url);
+                        if (!fileRes.ok) throw new Error('Fetch failed');
+                        const blob = await fileRes.blob();
+
+                        // Upload with new key
+                        const upRes = await fetch(workerUrl + '/upload', {
+                            method: 'PUT',
+                            headers: { 'X-Admin-Token': token, 'X-File-Name': newKey, 'Content-Type': blob.type },
+                            body: blob
+                        });
+                        if (!upRes.ok) throw new Error('Upload failed');
+
+                        // Delete old
+                        await fetch(workerUrl + '/file/' + encodeURIComponent(oldPath), {
+                            method: 'DELETE',
+                            headers: { 'X-Admin-Token': token }
+                        });
+
+                        moved++;
+                    } catch (e) {
+                        console.error('Bulk type change error for', oldPath, e);
+                        errors++;
+                    }
+                } else {
+                    errors++;
+                }
+            }
+
+            document.getElementById('bulkTypeModal').style.display = 'none';
+            const typeLabel = section === 'media' ? newType : newType;
+            alert('Moved ' + moved + ' file' + (moved !== 1 ? 's' : '') + ' to "' + typeLabel + '"' + (errors ? ', ' + errors + ' failed (GitHub files not supported)' : ''));
+            toggleSelectMode(section);
+            if (section === 'media') loadMediaList(); else loadLibraryList();
+            updateStats();
+            checkAllR2Storage();
         }
 
         // Edit Modal
