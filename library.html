@@ -242,6 +242,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
     <script src="script.js"></script>
+    <script src="app-storage.js"></script>
     <script>
         // Initialize on page load
         window.addEventListener('DOMContentLoaded', async function() {
@@ -513,85 +514,23 @@
         }
 
         // ==============================
-        // Offline cache (Cache API)
+        // Offline storage (IndexedDB via AppStorage — persistent like app files)
         // ==============================
-        const OFFLINE_CACHE_NAME = 'kiuma-offline-library';
-        const OFFLINE_INDEX_KEY  = 'kiuma-offline-library-index';
-
         function getOfflineIndex() {
-            try { return JSON.parse(localStorage.getItem(OFFLINE_INDEX_KEY) || '[]'); } catch(e) { return []; }
+            return window.AppStorage ? window.AppStorage.getLocalIndex().filter(f => f.category) : [];
         }
-        function saveOfflineIndex(idx) { localStorage.setItem(OFFLINE_INDEX_KEY, JSON.stringify(idx)); }
 
         async function saveFileOffline(url, meta, onProgress) {
-            try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error('Fetch failed');
-                const cl = response.headers.get('Content-Length');
-                const total = cl ? parseInt(cl, 10) : (meta.size || 0);
-                let blob;
-
-                // Try streaming download with progress
-                if (response.body && typeof response.body.getReader === 'function') {
-                    try {
-                        const reader = response.body.getReader();
-                        const chunks = [];
-                        let loaded = 0;
-                        while (true) {
-                            const { done, value } = await reader.read();
-                            if (done) break;
-                            chunks.push(value);
-                            loaded += value.length;
-                            if (onProgress) {
-                                if (total > 0) {
-                                    onProgress(Math.min(Math.round((loaded / total) * 100), 99), loaded, total);
-                                } else {
-                                    onProgress(-1, loaded, 0); // unknown total
-                                }
-                            }
-                        }
-                        blob = new Blob(chunks);
-                    } catch(streamErr) {
-                        console.warn('Stream read failed, using blob fallback:', streamErr);
-                        blob = await response.blob();
-                    }
-                } else {
-                    // No ReadableStream support — direct blob download
-                    blob = await response.blob();
-                }
-
-                if (onProgress) onProgress(100, blob.size, blob.size);
-                
-                // Store in cache
-                const cache = await caches.open(OFFLINE_CACHE_NAME);
-                const ct = response.headers.get('Content-Type') || 'application/octet-stream';
-                const newResponse = new Response(blob, {
-                    status: 200, statusText: 'OK',
-                    headers: { 'Content-Type': ct, 'Content-Length': blob.size }
-                });
-                await cache.put(url, newResponse);
-                
-                // Update index
-                const idx = getOfflineIndex();
-                if (!idx.find(f => f.url === url)) {
-                    idx.push({ url, name: meta.name, category: meta.category, title: meta.title, author: meta.author, size: meta.size || blob.size, savedAt: Date.now() });
-                    saveOfflineIndex(idx);
-                }
-                return true;
-            } catch(e) { console.error('Offline save error:', e); return false; }
+            if (!window.AppStorage) return false;
+            return await window.AppStorage.downloadAndSave(url, meta, onProgress);
         }
 
         async function removeFileOffline(url) {
-            try {
-                const cache = await caches.open(OFFLINE_CACHE_NAME);
-                await cache.delete(url);
-                const idx = getOfflineIndex().filter(f => f.url !== url);
-                saveOfflineIndex(idx);
-                return true;
-            } catch(e) { return false; }
+            if (!window.AppStorage) return false;
+            return await window.AppStorage.removeFile(url);
         }
 
-        function isFileSavedOffline(url) { return getOfflineIndex().some(f => f.url === url); }
+        function isFileSavedOffline(url) { return window.AppStorage ? window.AppStorage.isFileSaved(url) : false; }
 
         // ==============================
         // Helpers
@@ -706,10 +645,19 @@
         function getAdminPlaylists() {
             try { return JSON.parse(localStorage.getItem('kiuma_playlists') || '[]'); } catch(e) { return []; }
         }
+        async function waitForFirebase(maxWait) {
+            maxWait = maxWait || 3000;
+            const start = Date.now();
+            while (!window.firebaseDb && (Date.now() - start) < maxWait) {
+                await new Promise(r => setTimeout(r, 200));
+            }
+            return !!window.firebaseDb;
+        }
         async function syncPlaylistsFromFirestore() {
             try {
+                await waitForFirebase(3000);
                 const db = window.firebaseDb;
-                if (!db) return;
+                if (!db) { console.warn('Firebase not ready for playlist sync'); return; }
                 const doc = await db.collection('config').doc('playlists').get();
                 if (doc.exists && doc.data().data) {
                     localStorage.setItem('kiuma_playlists', JSON.stringify(doc.data().data));
