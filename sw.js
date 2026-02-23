@@ -1,10 +1,8 @@
 // KIUMA Service Worker - Enables offline functionality
 // Cache version - UPDATE THIS when you deploy changes to force refresh
-const CACHE_VERSION = '2026-02-24-v14';
+const CACHE_VERSION = '2026-02-24-v15';
 const CACHE_NAME = 'kiuma-cache-' + CACHE_VERSION;
 const OFFLINE_URL = 'offline.html';
-
-const MUSHAF_1405_CACHE = 'kiuma-mushaf-1405-cache';
 
 // Base path for GitHub Pages (empty for root, '/sake' for subdirectory)
 const BASE_PATH = self.location.pathname.replace('/sw.js', '');
@@ -103,6 +101,7 @@ const STATIC_ASSETS = [
     './offline.html',
     './styles.css',
     './fonts/fontawesome.min.css',
+    './fonts/quran/KFGQPC-Uthmanic-Script-HAFS.woff2',
     './fonts/webfonts/fa-brands-400.woff2',
     './fonts/webfonts/fa-regular-400.woff2',
     './fonts/webfonts/fa-solid-900.woff2',
@@ -112,7 +111,6 @@ const STATIC_ASSETS = [
     './css/search.css',
     './script.js',
     './js/register-service-worker.js',
-    './js/quran-mushaf-1405.js',
     './js/search.js',
     './js/search-data.js',
     './firebase-config.js',
@@ -149,7 +147,7 @@ self.addEventListener('install', (event) => {
 // Activate event - clean up old caches (keep quran and github data caches)
 self.addEventListener('activate', (event) => {
     console.log('[ServiceWorker] Activating...');
-    const keepCaches = [CACHE_NAME, CACHE_NAME + '-quran', CACHE_NAME + '-github', MUSHAF_1405_CACHE, 'kiuma-offline-media', 'kiuma-offline-library'];
+    const keepCaches = [CACHE_NAME, CACHE_NAME + '-quran', CACHE_NAME + '-github', 'kiuma-offline-media', 'kiuma-offline-library'];
     event.waitUntil(
         caches.keys()
             .then((cacheNames) => {
@@ -225,66 +223,6 @@ self.addEventListener('fetch', (event) => {
 
     // Skip other googleapis (auth etc) and aladhan — network only
     if (url.hostname.includes('googleapis.com') || url.hostname.includes('aladhan.com')) {
-        return;
-    }
-
-    // External Mushaf 1405 page images (Option 2: CDN-hosted pages)
-    // Route into dedicated mushaf cache so the main app cache doesn't bloat.
-    // Default source (in js/quran-mushaf-1405.js): jsDelivr QuranHub/quran-pages-images.
-    const isExternalMushaf1405 =
-        (url.hostname === 'cdn.jsdelivr.net' &&
-            url.pathname.includes('/QuranHub/quran-pages-images@main/kfgqpc/hafs-wasat/') &&
-            url.pathname.match(/\/(\d+)\.jpg$/)) ||
-        (url.hostname === 'raw.githubusercontent.com' &&
-            url.pathname.includes('/QuranHub/quran-pages-images/main/kfgqpc/hafs-wasat/') &&
-            url.pathname.match(/\/(\d+)\.jpg$/));
-
-    if (isExternalMushaf1405) {
-        event.respondWith(
-            caches.open(MUSHAF_1405_CACHE).then((cache) =>
-                cache.match(request).then((cached) => {
-                    const fetchPromise = fetch(request)
-                        .then((networkResponse) => {
-                            if (networkResponse && networkResponse.status === 200) {
-                                cache.put(request, networkResponse.clone());
-                            }
-                            return networkResponse;
-                        })
-                        .catch(() => null);
-
-                    if (cached) {
-                        event.waitUntil(fetchPromise);
-                        return cached;
-                    }
-
-                    return fetchPromise || new Response('Offline', {
-                        status: 503,
-                        statusText: 'Service Unavailable'
-                    });
-                })
-            )
-        );
-        return;
-    }
-
-    // Mushaf 1405 page images: use dedicated cache (avoid storing large assets in main cache)
-    if (url.pathname.includes('/mushaf/1405/pages/')) {
-        event.respondWith(
-            caches.open(MUSHAF_1405_CACHE).then((cache) => {
-                return cache.match(request).then((cached) => {
-                    if (cached) return cached;
-                    return fetch(request)
-                        .then((networkResponse) => {
-                            if (networkResponse && networkResponse.status === 200) {
-                                const clone = networkResponse.clone();
-                                cache.put(request, clone);
-                            }
-                            return networkResponse;
-                        })
-                        .catch(() => cached || new Response('Offline', { status: 503, statusText: 'Service Unavailable' }));
-                });
-            })
-        );
         return;
     }
 
