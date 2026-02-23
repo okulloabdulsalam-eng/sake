@@ -995,6 +995,18 @@ body {
     transform: translateY(-100%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+    overflow: visible;
+}
+.sticky-mini-bar::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 100%;
+    height: 14px;
+    background: linear-gradient(135deg, #43A047 0%, #2E7D32 60%, #1B5E20 100%);
+    border-radius: 0 0 50% 50% / 0 0 100% 100%;
+    z-index: -1;
 }
 .sticky-mini-bar.visible {
     transform: translateY(0);
@@ -1053,6 +1065,112 @@ body {
     display: flex;
     align-items: center;
     gap: 4px;
+}
+
+/* Compact page-hero for sub-pages with back button */
+.page-hero-compact {
+    background: linear-gradient(135deg, #43A047 0%, #2E7D32 50%, #1B5E20 100%);
+    position: relative;
+    padding-bottom: 24px;
+    overflow: hidden;
+}
+.page-hero-compact::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -30px;
+    width: 140px;
+    height: 140px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 50%;
+}
+.page-hero-compact::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 22px;
+    background: var(--body-bg, #F5F5F5);
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    z-index: 2;
+}
+.page-hero-compact .hero-deco {
+    position: absolute;
+    bottom: 16px;
+    left: -24px;
+    width: 80px;
+    height: 80px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 50%;
+    z-index: 1;
+}
+.page-hero-compact .hero-compact-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px 0;
+    position: relative;
+    z-index: 3;
+}
+.page-hero-compact .hero-back-btn {
+    background: rgba(255,255,255,0.15);
+    border: none;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+}
+.page-hero-compact .hero-compact-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.page-hero-compact .hero-compact-actions button {
+    background: rgba(255,255,255,0.15);
+    border: none;
+    color: #fff;
+    font-size: 15px;
+    cursor: pointer;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+}
+.page-hero-compact .hero-compact-title {
+    text-align: center;
+    padding: 8px 20px 0;
+    position: relative;
+    z-index: 3;
+}
+.page-hero-compact .hero-compact-title h1 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0;
+    line-height: 1.2;
+}
+.page-hero-compact .hero-compact-title p {
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    margin-top: 4px;
+    font-weight: 400;
+}
+.page-hero-compact .hero-accent-line {
+    width: 32px;
+    height: 3px;
+    background: rgba(255,255,255,0.4);
+    border-radius: 2px;
+    margin: 8px auto 0;
 }
 
 .page-content {
