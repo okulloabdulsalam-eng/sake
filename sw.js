@@ -1,6 +1,6 @@
 // KIUMA Service Worker - Enables offline functionality
 // Cache version - UPDATE THIS when you deploy changes to force refresh
-const CACHE_VERSION = '2026-02-23-v13';
+const CACHE_VERSION = '2026-02-24-v14';
 const CACHE_NAME = 'kiuma-cache-' + CACHE_VERSION;
 const OFFLINE_URL = 'offline.html';
 
@@ -93,7 +93,6 @@ const STATIC_ASSETS = [
     './programs.html',
     './quran.html',
     './quran-reader.html',
-    './quran-mushaf-1405.html',
     './mosques.html',
     './dhikr.html',
     './names-of-allah.html',
