@@ -3764,35 +3764,63 @@
         async function updateStats() {
             const config = getGitHubConfig();
             const headers = config.token ? { 'Authorization': `token ${config.token}` } : {};
-            
-            let mediaCount = 0;
-            let libraryCount = 0;
+            const mediaSeen = new Set();
+            const libSeen = new Set();
             
             try {
-                // Count media files from GitHub
-                for (const folder of ['video', 'audio', 'image']) {
-                    try {
-                        const res = await fetch(`https://api.github.com/repos/${config.owner}/${config.repo}/contents/media/${folder}`, { headers });
-                        if (res.ok) {
-                            const files = await res.json();
-                            if (Array.isArray(files)) mediaCount += files.filter(f => f.type === 'file').length;
-                        }
-                    } catch(e) {}
+                // Count media files from R2 (primary storage)
+                const mc = getR2MultiConfig();
+                const r2MediaAccounts = [...(mc.video || []), ...(mc.audio && mc.audio.workerUrl ? [mc.audio] : [])].filter(a => a.workerUrl);
+                const mediaPrefixes = ['media/video/', 'media/audio/', 'media/image/'];
+                for (const acct of r2MediaAccounts) {
+                    for (const prefix of mediaPrefixes) {
+                        try {
+                            const res = await fetch(acct.workerUrl + '/list?prefix=' + encodeURIComponent(prefix), { cache: 'no-store' });
+                            if (!res.ok) continue;
+                            const data = await res.json();
+                            (data.files || []).forEach(f => { if (!mediaSeen.has(f.key)) mediaSeen.add(f.key); });
+                        } catch(e) {}
+                    }
+                }
+
+                // Count library files from R2
+                const r2LibAccounts = [...(mc.library && mc.library.workerUrl ? [mc.library] : []), ...(mc.video || [])].filter(a => a.workerUrl);
+                const libPrefixes = ['library/islamic/', 'library/educational/', 'library/quran/', 'library/other/', 'library/'];
+                for (const acct of r2LibAccounts) {
+                    for (const prefix of libPrefixes) {
+                        try {
+                            const res = await fetch(acct.workerUrl + '/list?prefix=' + encodeURIComponent(prefix), { cache: 'no-store' });
+                            if (!res.ok) continue;
+                            const data = await res.json();
+                            (data.files || []).forEach(f => { if (!libSeen.has(f.key)) libSeen.add(f.key); });
+                        } catch(e) {}
+                    }
+                }
+
+                // Also count from GitHub (merge, skip duplicates by name)
+                if (config.owner && config.repo) {
+                    for (const folder of ['video', 'audio', 'image']) {
+                        try {
+                            const res = await fetch(`https://api.github.com/repos/${config.owner}/${config.repo}/contents/media/${folder}`, { headers });
+                            if (res.ok) {
+                                const files = await res.json();
+                                if (Array.isArray(files)) files.filter(f => f.type === 'file').forEach(f => { if (!mediaSeen.has(f.name)) mediaSeen.add(f.name); });
+                            }
+                        } catch(e) {}
+                    }
+                    for (const folder of ['islamic', 'educational', 'quran', 'other']) {
+                        try {
+                            const res = await fetch(`https://api.github.com/repos/${config.owner}/${config.repo}/contents/library/${folder}`, { headers });
+                            if (res.ok) {
+                                const files = await res.json();
+                                if (Array.isArray(files)) files.filter(f => f.type === 'file').forEach(f => { if (!libSeen.has(f.name)) libSeen.add(f.name); });
+                            }
+                        } catch(e) {}
+                    }
                 }
                 
-                // Count library files from GitHub
-                for (const folder of ['islamic', 'educational', 'quran', 'other']) {
-                    try {
-                        const res = await fetch(`https://api.github.com/repos/${config.owner}/${config.repo}/contents/library/${folder}`, { headers });
-                        if (res.ok) {
-                            const files = await res.json();
-                            if (Array.isArray(files)) libraryCount += files.filter(f => f.type === 'file').length;
-                        }
-                    } catch(e) {}
-                }
-                
-                document.getElementById('mediaCount').textContent = mediaCount;
-                document.getElementById('libraryCount').textContent = libraryCount;
+                document.getElementById('mediaCount').textContent = mediaSeen.size;
+                document.getElementById('libraryCount').textContent = libSeen.size;
                 document.getElementById('storageStatus').textContent = 'Connected';
             } catch (error) {
                 console.error('Error updating stats:', error);
