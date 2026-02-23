@@ -86,47 +86,47 @@
             </div>
         </header>
 
-        <main class="main-content" style="background:#1a1a2e;">
+        <main class="main-content">
             <!-- Welcome Section -->
-            <section class="welcome-section" style="background:#1a1a2e; margin:-20px -16px 0; padding:16px 16px 0; border-radius:0;">
+            <section class="welcome-section">
                 <div>
-                    <h2 class="greeting" style="color:#e8e8f0;">
-                        <a href="about.html" style="color:#e8e8f0;">KIUMA</a>
+                    <h2 class="greeting">
+                        <a href="about.html">KIUMA</a>
                     </h2>
                 </div>
-                <button class="account-icon-btn" id="accountIconBtn" onclick="toggleAccountModal()" style="color:#9a9abc;">
+                <button class="account-icon-btn" id="accountIconBtn" onclick="toggleAccountModal()">
                     <i class="fas fa-user-circle" id="accountIcon"></i>
                 </button>
             </section>
 
-            <section class="page-header" style="display: flex; justify-content: space-between; align-items: center; background:#1a1a2e; margin:-20px -16px 0; padding:16px 16px 0; border-radius:0;">
-                <h2 class="page-title" style="color:#e8e8f0;">Library</h2>
-                <a href="admin.html" class="btn btn-outline" style="padding: 8px 16px; font-size: 12px; border-color:#3a3a5a; color:#9a9abc;">
+            <section class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h2 class="page-title">Library</h2>
+                <a href="admin.html" class="btn btn-outline" style="padding: 8px 16px; font-size: 12px;">
                     <i class="fas fa-cog"></i> Admin
                 </a>
             </section>
 
             <style>
-                /* Dark library theme */
-                .lib-page { background:#1a1a2e; min-height:100vh; padding-bottom:80px; margin:-20px -16px; padding:20px 16px 80px; border-radius:0; }
+                /* Library page — uses app default CSS variables */
+                .lib-page { padding-bottom:80px; }
 
                 /* Search */
                 .lib-search-bar { position:relative; margin-bottom:18px; }
-                .lib-search-bar input { width:100%; padding:14px 16px 14px 44px; border:none; border-radius:12px; font-size:14px; background:#2a2a4a; color:#e0e0e0; outline:none; }
-                .lib-search-bar input::placeholder { color:#7a7a9a; }
-                .lib-search-bar input:focus { box-shadow:0 0 0 2px var(--primary-green); }
-                .lib-search-bar i { position:absolute; left:16px; top:50%; transform:translateY(-50%); color:#7a7a9a; font-size:14px; }
+                .lib-search-bar input { width:100%; padding:14px 16px 14px 44px; border:1.5px solid var(--border-color); border-radius:var(--radius-md); font-size:14px; background:var(--card-bg); color:var(--dark-gray); outline:none; transition:border .2s; }
+                .lib-search-bar input::placeholder { color:var(--text-gray); }
+                .lib-search-bar input:focus { border-color:var(--primary-green); }
+                .lib-search-bar i { position:absolute; left:16px; top:50%; transform:translateY(-50%); color:var(--text-gray); font-size:14px; }
 
                 /* Filter chips */
                 .lib-filter-bar { display:flex; gap:8px; margin-bottom:18px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
                 .lib-filter-bar::-webkit-scrollbar { display:none; }
-                .lib-filter-btn { padding:8px 16px; border-radius:20px; border:1.5px solid #3a3a5a; background:transparent; color:#9a9abc; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; transition:all .2s; }
+                .lib-filter-btn { padding:8px 16px; border-radius:20px; border:1.5px solid var(--border-color); background:var(--card-bg); color:var(--text-gray); font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; transition:all .2s; }
                 .lib-filter-btn.active { background:var(--primary-green); color:#fff; border-color:var(--primary-green); }
 
                 /* Section headers */
                 .lib-section { margin-bottom:24px; }
                 .lib-section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
-                .lib-section-title { font-size:18px; font-weight:700; color:#e8e8f0; }
+                .lib-section-title { font-size:18px; font-weight:700; color:var(--dark-gray); }
                 .lib-section-viewall { font-size:12px; color:var(--primary-green); cursor:pointer; font-weight:600; }
 
                 /* Top books horizontal scroll */
@@ -134,14 +134,14 @@
                 .lib-top-scroll::-webkit-scrollbar { display:none; }
                 .lib-top-card { width:140px; min-width:140px; scroll-snap-align:start; cursor:pointer; transition:transform .15s; }
                 .lib-top-card:active { transform:scale(0.96); }
-                .lib-top-cover { width:140px; height:190px; border-radius:12px; overflow:hidden; position:relative; box-shadow:0 4px 16px rgba(0,0,0,0.4); }
+                .lib-top-cover { width:140px; height:190px; border-radius:var(--radius-md); overflow:hidden; position:relative; box-shadow:var(--shadow); }
                 .lib-top-cover img, .lib-top-cover canvas { width:100%; height:100%; object-fit:cover; }
                 .lib-top-cover .cover-placeholder { width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:rgba(255,255,255,0.85); }
                 .lib-top-cover .cover-placeholder i { font-size:36px; }
                 .lib-top-cover .cover-placeholder span { font-size:9px; text-transform:uppercase; letter-spacing:1px; font-weight:600; opacity:.7; }
                 .lib-top-info { margin-top:8px; }
-                .lib-top-info .top-title { font-size:12px; font-weight:600; color:#d0d0e0; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-                .lib-top-info .top-author { font-size:10px; color:#7a7a9a; margin-top:3px; }
+                .lib-top-info .top-title { font-size:12px; font-weight:600; color:var(--dark-gray); line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+                .lib-top-info .top-author { font-size:10px; color:var(--text-gray); margin-top:3px; }
 
                 /* Genre circles */
                 .lib-genre-scroll { display:flex; gap:16px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none; }
@@ -149,28 +149,28 @@
                 .lib-genre-item { display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer; min-width:72px; }
                 .lib-genre-circle { width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; color:#fff; transition:transform .15s, box-shadow .15s; }
                 .lib-genre-circle:active { transform:scale(0.92); }
-                .lib-genre-label { font-size:11px; color:#9a9abc; font-weight:600; text-align:center; white-space:nowrap; }
+                .lib-genre-label { font-size:11px; color:var(--text-gray); font-weight:600; text-align:center; white-space:nowrap; }
 
                 /* Book list items (Your Books) */
                 .lib-book-list { display:flex; flex-direction:column; gap:14px; }
-                .lib-book-item { display:flex; gap:14px; align-items:flex-start; padding:12px; background:#2a2a4a; border-radius:14px; cursor:pointer; transition:background .15s; position:relative; }
-                .lib-book-item:active { background:#33335a; }
-                .lib-book-thumb { width:70px; height:95px; border-radius:8px; overflow:hidden; flex-shrink:0; box-shadow:0 2px 10px rgba(0,0,0,0.3); position:relative; }
+                .lib-book-item { display:flex; gap:14px; align-items:flex-start; padding:12px; background:var(--card-bg); border-radius:var(--radius-lg); cursor:pointer; transition:box-shadow .15s; position:relative; box-shadow:var(--shadow); }
+                .lib-book-item:active { box-shadow:var(--shadow-hover); }
+                .lib-book-thumb { width:70px; height:95px; border-radius:var(--radius-sm); overflow:hidden; flex-shrink:0; box-shadow:var(--shadow); position:relative; }
                 .lib-book-thumb img, .lib-book-thumb canvas { width:100%; height:100%; object-fit:cover; }
                 .lib-book-thumb .cover-placeholder { width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; color:rgba(255,255,255,0.85); }
                 .lib-book-thumb .cover-placeholder i { font-size:24px; }
                 .lib-book-thumb .cover-placeholder span { font-size:8px; text-transform:uppercase; letter-spacing:.5px; font-weight:600; opacity:.7; }
                 .lib-book-info { flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; padding-top:4px; }
-                .lib-book-title { font-size:15px; font-weight:700; color:#e8e8f0; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-                .lib-book-author { font-size:12px; color:#7a7a9a; }
+                .lib-book-title { font-size:15px; font-weight:700; color:var(--dark-gray); line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+                .lib-book-author { font-size:12px; color:var(--text-gray); }
                 .lib-book-cat { font-size:10px; padding:3px 8px; border-radius:4px; font-weight:600; display:inline-block; width:fit-content; margin-top:4px; }
-                .lib-book-size { font-size:11px; color:#5a5a7a; margin-top:auto; }
-                .lib-book-dl { position:absolute; top:12px; right:12px; width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.1); color:#9a9abc; display:flex; align-items:center; justify-content:center; border:none; font-size:13px; cursor:pointer; transition:background .2s; }
-                .lib-book-dl:active { background:rgba(255,255,255,0.2); }
+                .lib-book-size { font-size:11px; color:var(--muted-icon); margin-top:auto; }
+                .lib-book-dl { position:absolute; top:12px; right:12px; width:32px; height:32px; border-radius:50%; background:var(--lighter-green); color:var(--primary-green); display:flex; align-items:center; justify-content:center; border:none; font-size:13px; cursor:pointer; transition:background .2s; }
+                .lib-book-dl:active { background:var(--light-green); color:#fff; }
 
                 /* Card grid fallback (downloads, reading lists) */
                 .lib-card-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
-                .lib-card { border-radius:14px; overflow:hidden; background:#2a2a4a; box-shadow:0 2px 12px rgba(0,0,0,0.2); display:flex; flex-direction:column; transition:transform .2s; cursor:pointer; }
+                .lib-card { border-radius:var(--radius-lg); overflow:hidden; background:var(--card-bg); box-shadow:var(--shadow); display:flex; flex-direction:column; transition:transform .2s; cursor:pointer; }
                 .lib-card:active { transform:scale(0.98); }
                 .lib-card-cover { position:relative; width:100%; height:140px; overflow:hidden; }
                 .lib-card-cover .cover-placeholder { width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:rgba(255,255,255,0.9); }
@@ -179,24 +179,24 @@
                 .lib-card-cover canvas { width:100%; height:100%; object-fit:cover; }
                 .lib-card-body { padding:10px 12px 14px; flex:1; display:flex; flex-direction:column; gap:4px; }
                 .lib-card-cat { font-size:10px; text-transform:uppercase; letter-spacing:.5px; font-weight:700; padding:2px 8px; border-radius:4px; display:inline-block; width:fit-content; }
-                .lib-card-title { font-size:13px; font-weight:700; color:#e0e0f0; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-                .lib-card-meta { font-size:11px; color:#7a7a9a; margin-top:auto; }
-                .lib-card-dl { position:absolute; bottom:8px; right:8px; width:32px; height:32px; border-radius:50%; background:rgba(0,0,0,0.5); color:#fff; display:flex; align-items:center; justify-content:center; border:none; font-size:13px; backdrop-filter:blur(4px); cursor:pointer; }
+                .lib-card-title { font-size:13px; font-weight:700; color:var(--dark-gray); line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+                .lib-card-meta { font-size:11px; color:var(--text-gray); margin-top:auto; }
+                .lib-card-dl { position:absolute; bottom:8px; right:8px; width:32px; height:32px; border-radius:50%; background:rgba(0,0,0,0.55); color:#fff; display:flex; align-items:center; justify-content:center; border:none; font-size:13px; backdrop-filter:blur(4px); cursor:pointer; }
 
                 /* More menu */
                 .card-more-btn { position:absolute; top:6px; right:6px; width:28px; height:28px; border-radius:50%; background:rgba(0,0,0,0.5); color:#fff; border:none; display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer; backdrop-filter:blur(4px); z-index:10; }
-                .card-more-menu { position:absolute; top:38px; right:6px; background:#2a2a4a; border-radius:10px; box-shadow:0 4px 20px rgba(0,0,0,0.4); z-index:100; min-width:160px; overflow:hidden; display:none; }
+                .card-more-menu { position:absolute; top:38px; right:6px; background:var(--card-bg); border-radius:10px; box-shadow:0 4px 20px rgba(0,0,0,0.18); z-index:100; min-width:160px; overflow:hidden; display:none; }
                 .card-more-menu.open { display:block; }
-                .card-more-menu button { display:flex; align-items:center; gap:10px; width:100%; padding:12px 16px; border:none; background:none; font-size:14px; font-weight:500; color:#d0d0e0; cursor:pointer; text-align:left; }
-                .card-more-menu button:active { background:#33335a; }
-                .card-more-menu button.danger { color:#e53935; }
+                .card-more-menu button { display:flex; align-items:center; gap:10px; width:100%; padding:12px 16px; border:none; background:none; font-size:14px; font-weight:500; color:var(--dark-gray); cursor:pointer; text-align:left; }
+                .card-more-menu button:active { background:var(--light-gray); }
+                .card-more-menu button.danger { color:var(--danger-red); }
                 .card-more-menu button i { width:16px; text-align:center; }
 
-                /* Downloads section in dark theme */
-                .dl-category-header { display:flex; align-items:center; gap:8px; margin-top:18px; margin-bottom:10px; padding:10px 14px; border-radius:10px; background:#2a2a4a; }
-                .dl-category-header i { font-size:16px; }
-                .dl-category-header span { font-weight:700; font-size:14px; color:#d0d0e0; }
-                .dl-category-header .dl-count { font-size:12px; color:#7a7a9a; margin-left:auto; }
+                /* Downloads section */
+                .dl-category-header { display:flex; align-items:center; gap:8px; margin-top:18px; margin-bottom:10px; padding:10px 14px; border-radius:10px; background:var(--lighter-green); }
+                .dl-category-header i { font-size:16px; color:var(--primary-green); }
+                .dl-category-header span { font-weight:700; font-size:14px; color:var(--dark-gray); }
+                .dl-category-header .dl-count { font-size:12px; color:var(--text-gray); margin-left:auto; }
             </style>
 
             <section class="page-content">
@@ -725,7 +725,7 @@
             const pls = getAdminPlaylists().filter(p => p.type === 'library' && p.items.length > 0);
 
             if (pls.length === 0) {
-                grid.innerHTML = '<div style="text-align:center;padding:50px 20px;color:#7a7a9a;"><i class="fas fa-book-reader" style="font-size:48px;display:block;margin-bottom:12px;color:#3a3a5a;"></i><p style="font-weight:600;">No reading lists yet</p><p style="font-size:13px;margin-top:8px;">Reading lists are curated by the admin. Check back later!</p></div>';
+                grid.innerHTML = '<div style="text-align:center;padding:50px 20px;color:var(--text-gray);"><i class="fas fa-book-reader" style="font-size:48px;display:block;margin-bottom:12px;color:var(--border-color);"></i><p style="font-weight:600;">No reading lists yet</p><p style="font-size:13px;margin-top:8px;">Reading lists are curated by the admin. Check back later!</p></div>';
                 return;
             }
 
@@ -733,7 +733,7 @@
             pls.forEach(pl => {
                 const itemCount = pl.items.length;
                 const grad = 'linear-gradient(135deg,#4CAF50,#2E7D32)';
-                html += '<div style="background:#2a2a4a;border-radius:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.2);cursor:pointer;margin-bottom:12px;" onclick="openReadingListView(\'' + pl.id + '\')">';
+                html += '<div style="background:var(--card-bg);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);cursor:pointer;margin-bottom:12px;" onclick="openReadingListView(\'' + pl.id + '\')">';
                 html += '<div style="height:100px;background:' + grad + ';display:flex;align-items:center;padding:0 20px;gap:16px;">';
                 html += '<i class="fas fa-book-reader" style="font-size:40px;color:rgba(255,255,255,0.9);"></i>';
                 html += '<div><div style="color:#fff;font-size:18px;font-weight:700;">' + san(pl.name) + '</div>';
@@ -752,9 +752,9 @@
             const grid = document.getElementById('libraryGrid');
             let html = '<div>';
             html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">';
-            html += '<button onclick="filterBooks(\'readinglists\')" style="background:none;border:none;font-size:18px;cursor:pointer;color:#d0d0e0;padding:4px;"><i class="fas fa-arrow-left"></i></button>';
-            html += '<div><div style="font-size:18px;font-weight:700;color:#e8e8f0;">' + san(pl.name) + '</div>';
-            if (pl.description) html += '<div style="font-size:12px;color:#7a7a9a;margin-top:2px;">' + san(pl.description) + '</div>';
+            html += '<button onclick="filterBooks(\'readinglists\')" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--dark-gray);padding:4px;"><i class="fas fa-arrow-left"></i></button>';
+            html += '<div><div style="font-size:18px;font-weight:700;color:var(--dark-gray);">' + san(pl.name) + '</div>';
+            if (pl.description) html += '<div style="font-size:12px;color:var(--text-gray);margin-top:2px;">' + san(pl.description) + '</div>';
             html += '</div></div>';
             html += '</div>';
 
@@ -828,7 +828,7 @@
             }
 
             if (filtered.length === 0) {
-                grid.innerHTML = '<div style="text-align:center;padding:50px 20px;color:#7a7a9a;"><i class="fas fa-book-open" style="font-size:48px;margin-bottom:12px;display:block;color:#3a3a5a;"></i><p>' + (_libSearchQuery ? 'No results for "'+san(_libSearchQuery)+'"' : 'No books found') + '</p></div>';
+                grid.innerHTML = '<div style="text-align:center;padding:50px 20px;color:var(--text-gray);"><i class="fas fa-book-open" style="font-size:48px;margin-bottom:12px;display:block;color:var(--border-color);"></i><p>' + (_libSearchQuery ? 'No results for "'+san(_libSearchQuery)+'"' : 'No books found') + '</p></div>';
                 return;
             }
 
@@ -866,7 +866,7 @@
             }
 
             // 3. Your Books (list view)
-            html += '<div class="lib-section"><div class="lib-section-header"><span class="lib-section-title">Your Books</span><span class="lib-section-count" style="color:#5a5a7a;">'+filtered.length+' books</span></div>';
+            html += '<div class="lib-section"><div class="lib-section-header"><span class="lib-section-title">Your Books</span><span class="lib-section-count" style="color:var(--text-gray);">'+filtered.length+' books</span></div>';
             html += '<div class="lib-book-list">';
             filtered.forEach(book => {
                 const meta = parseMeta(book.name);
@@ -931,7 +931,7 @@
                 renderLibraryLayout(displayFiles);
             } catch(err) {
                 console.error('Library load error:', err);
-                grid.innerHTML = '<div style="text-align:center;padding:40px;color:#7a7a9a;"><p>Error loading books</p></div>';
+                grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-gray);"><p>Error loading books</p></div>';
             }
 
             renderOfflineLibSection(category);
@@ -1042,10 +1042,10 @@
             if (cat === 'downloads') {
                 document.getElementById('libraryGrid').innerHTML = '';
                 if (idx.length === 0) {
-                    section.innerHTML = '<div style="text-align:center;padding:50px 20px;color:#7a7a9a;"><i class="fas fa-download" style="font-size:48px;margin-bottom:12px;display:block;color:#3a3a5a;"></i><p>No downloaded books yet</p><p style="font-size:12px;margin-top:8px;">Tap the <i class="fas fa-arrow-down"></i> button on any book to save it for offline reading.</p></div>';
+                    section.innerHTML = '<div style="text-align:center;padding:50px 20px;color:var(--text-gray);"><i class="fas fa-download" style="font-size:48px;margin-bottom:12px;display:block;color:var(--border-color);"></i><p>No downloaded books yet</p><p style="font-size:12px;margin-top:8px;">Tap the <i class="fas fa-arrow-down"></i> button on any book to save it for offline reading.</p></div>';
                     return;
                 }
-                let html = '<div style="margin-top:8px;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><i class="fas fa-download" style="color:var(--primary-green);"></i><span style="font-weight:700;font-size:16px;color:#e8e8f0;">My Library Downloads</span><span style="font-size:12px;color:#7a7a9a;">('+idx.length+' books)</span></div>';
+                let html = '<div style="margin-top:8px;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><i class="fas fa-download" style="color:var(--primary-green);"></i><span style="font-weight:700;font-size:16px;color:var(--dark-gray);">My Library Downloads</span><span style="font-size:12px;color:var(--text-gray);">('+idx.length+' books)</span></div>';
                 section.innerHTML = html;
 
                 const categories = [
@@ -1073,7 +1073,7 @@
 
             if (filtered.length === 0) { section.innerHTML = ''; return; }
 
-            section.innerHTML = '<div style="margin-top:24px;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><i class="fas fa-wifi-slash" style="color:var(--primary-green);"></i><span style="font-weight:700;font-size:15px;color:#e8e8f0;">Saved Offline</span><span style="font-size:12px;color:#7a7a9a;">('+filtered.length+' files)</span></div>';
+            section.innerHTML = '<div style="margin-top:24px;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><i class="fas fa-wifi-slash" style="color:var(--primary-green);"></i><span style="font-weight:700;font-size:15px;color:var(--dark-gray);">Saved Offline</span><span style="font-size:12px;color:var(--text-gray);">('+filtered.length+' files)</span></div>';
             const offGrid = document.createElement('div');
             offGrid.className = 'lib-card-grid';
             section.appendChild(offGrid);
