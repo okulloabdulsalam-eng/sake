@@ -244,7 +244,8 @@
     <script src="script.js"></script>
     <script>
         // Initialize on page load
-        window.addEventListener('DOMContentLoaded', function() {
+        window.addEventListener('DOMContentLoaded', async function() {
+            await syncPlaylistsFromFirestore();
             loadBooksFromStorage();
         });
 
@@ -700,10 +701,20 @@
         }
 
         // ==============================
-        // Admin-Managed Reading Lists
+        // Admin-Managed Reading Lists (synced from Firestore)
         // ==============================
         function getAdminPlaylists() {
             try { return JSON.parse(localStorage.getItem('kiuma_playlists') || '[]'); } catch(e) { return []; }
+        }
+        async function syncPlaylistsFromFirestore() {
+            try {
+                const db = window.firebaseDb;
+                if (!db) return;
+                const doc = await db.collection('config').doc('playlists').get();
+                if (doc.exists && doc.data().data) {
+                    localStorage.setItem('kiuma_playlists', JSON.stringify(doc.data().data));
+                }
+            } catch(e) { console.warn('Playlist sync error:', e); }
         }
 
         // Merge admin reading list items into loaded books

@@ -428,10 +428,20 @@
         };
 
         // ==============================
-        // Admin-Managed Playlists
+        // Admin-Managed Playlists (synced from Firestore)
         // ==============================
         function getAdminPlaylists() {
             try { return JSON.parse(localStorage.getItem('kiuma_playlists') || '[]'); } catch(e) { return []; }
+        }
+        async function syncPlaylistsFromFirestore() {
+            try {
+                const db = window.firebaseDb;
+                if (!db) return;
+                const doc = await db.collection('config').doc('playlists').get();
+                if (doc.exists && doc.data().data) {
+                    localStorage.setItem('kiuma_playlists', JSON.stringify(doc.data().data));
+                }
+            } catch(e) { console.warn('Playlist sync error:', e); }
         }
 
         // Merge admin playlist items into loaded files
@@ -986,7 +996,10 @@
         }
 
         window.addEventListener('popstate', closeMediaViewer);
-        window.addEventListener('DOMContentLoaded', function() { loadMediaFromStorage('all'); });
+        window.addEventListener('DOMContentLoaded', async function() {
+            await syncPlaylistsFromFirestore();
+            loadMediaFromStorage('all');
+        });
     </script>
 
 </body>
