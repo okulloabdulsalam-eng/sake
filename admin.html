@@ -27,16 +27,7 @@
             padding: 20px;
         }
 
-        .admin-header {
-            background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        
         .admin-tabs {
             display: flex;
             gap: 10px;
@@ -384,29 +375,25 @@
     </div>
 
     <div class="container">
-        <header class="header">
-            <div class="header-content">
-                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
-                <div class="logo-container">
-                    <img src="logo.png" alt="KIUMA Logo" class="header-logo">
-                </div>
-                <button class="notifications-btn" onclick="window.location.href='notifications.html'">
-                    <i class="fas fa-bell"></i>
+        <div class="page-hero-compact">
+            <div class="hero-deco"></div>
+            <div class="hero-compact-nav">
+                <button class="hero-back-btn" onclick="history.back()">
+                    <i class="fas fa-arrow-left"></i>
                 </button>
+                <div class="hero-compact-actions">
+                    <button onclick="logout()" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
+                </div>
             </div>
-        </header>
+            <div class="hero-compact-title">
+                <h1><i class="fas fa-cog" style="font-size:18px;margin-right:6px;"></i> Admin Panel</h1>
+                <p>Manage media, library &amp; settings</p>
+                <div class="hero-accent-line"></div>
+            </div>
+        </div>
 
         <main class="main-content">
             <div class="admin-container">
-                <div class="admin-header">
-                    <div>
-                        <h2 style="margin: 0;"><i class="fas fa-cog"></i> Admin Panel</h2>
-                        <p style="margin: 5px 0 0 0; opacity: 0.9;">Manage media, library, and settings</p>
-                    </div>
-                    <button class="btn btn-outline" style="background: rgba(255,255,255,0.2); color: white; border-color: white;" onclick="logout()">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </button>
-                </div>
 
                 <!-- Stats -->
                 <div class="stats-grid" id="statsGrid">
