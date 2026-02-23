@@ -85,7 +85,7 @@ body {
 }
 
 .container {
-    max-width: 428px;
+    max-width: 100%;
     margin: 0 auto;
     background: var(--card-bg);
     min-height: 100vh;
@@ -212,7 +212,7 @@ body {
 
 /* Main Content */
 .main-content {
-    padding: 20px;
+    padding: 16px;
 }
 
 /* Welcome Section */
@@ -753,7 +753,7 @@ body {
     left: 50%;
     transform: translateX(-50%);
     width: 100%;
-    max-width: 428px;
+    max-width: 100%;
     background: var(--card-bg);
     display: flex;
     justify-content: space-around;
@@ -983,7 +983,7 @@ body {
     top: 0;
     left: 0;
     right: 0;
-    max-width: 428px;
+    max-width: 100%;
     margin: 0 auto;
     height: 52px;
     background: linear-gradient(135deg, #43A047 0%, #2E7D32 50%, #1B5E20 100%);
@@ -1162,7 +1162,7 @@ body {
 }
 
 .page-content {
-    padding: 20px;
+    padding: 16px;
 }
 
 /* Form Styles */
@@ -1987,14 +1987,6 @@ textarea.form-input {
 
 /* Responsive */
 @media (max-width: 428px) {
-    .container {
-        max-width: 100%;
-    }
-    
-    .bottom-nav {
-        max-width: 100%;
-    }
-
     .membership-plans-grid {
         grid-template-columns: 1fr;
     }
