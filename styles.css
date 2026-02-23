@@ -994,7 +994,18 @@ body {
     z-index: 1000;
     transform: translateY(-100%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+    box-shadow: none;
+    overflow: visible;
+}
+.sticky-mini-bar::after {
+    content: '';
+    position: absolute;
+    bottom: -20px;
+    left: 0;
+    width: 100%;
+    height: 20px;
+    background: linear-gradient(to bottom, rgba(46,125,50,0.25) 0%, rgba(46,125,50,0.08) 40%, transparent 100%);
+    pointer-events: none;
 }
 .sticky-mini-bar.visible {
     transform: translateY(0);
