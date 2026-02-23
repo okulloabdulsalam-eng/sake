@@ -102,30 +102,31 @@
     </nav>
 
     <div class="container">
-        <header class="header">
-            <div class="header-content">
+        <div class="page-hero">
+            <div class="hero-deco"></div>
+            <nav class="hero-nav">
                 <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
-                <div class="logo-container">
-                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" loading="lazy" decoding="async" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
-                    <svg class="header-logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="display:none;">
-                        <circle cx="100" cy="100" r="95" fill="none" stroke="#4CAF50" stroke-width="4"/>
-                        <text x="100" y="145" font-size="22" font-weight="bold" fill="#4CAF50" text-anchor="middle" font-family="Arial,sans-serif" letter-spacing="2">KIUMA</text>
-                    </svg>
-                </div>
                 <button class="notifications-btn" id="notificationsBtn">
                     <i class="fas fa-bell"></i>
                     <span class="badge">3</span>
                 </button>
+            </nav>
+            <div class="hero-logo-row">
+                <div class="hero-logo-ring">
+                    <img src="logo.png" alt="KIUMA" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="logo-fallback" style="display:none;">KU</div>
+                </div>
             </div>
-        </header>
+            <div class="hero-title-area">
+                <div class="hero-org-name">KIUMA</div>
+                <h1 class="hero-page-title">Media Settings</h1>
+                <p class="hero-subtitle">Record, listen &amp; manage permissions</p>
+                <div class="hero-accent-line"></div>
+            </div>
+        </div>
 
         <main class="main-content">
-            <section class="welcome-section">
-                <div><h2 class="greeting"><a href="about.html">KIUMA</a></h2></div>
-                <button class="account-icon-btn" id="accountIconBtn" onclick="toggleAccountModal()">
-                    <i class="fas fa-user-circle" id="accountIcon"></i>
-                </button>
-            </section>
+            <div style="height:8px;"></div>
 
             <div class="ms-container">
                 <div class="ms-title">

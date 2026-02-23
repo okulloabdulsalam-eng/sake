@@ -49,56 +49,31 @@
     </nav>
 
     <div class="container">
-        <header class="header">
-            <div class="header-content">
+        <div class="page-hero">
+            <div class="hero-deco"></div>
+            <nav class="hero-nav">
                 <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
-                <div class="logo-container">
-                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
-                    <svg class="header-logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="display: none;">
-                        <circle cx="100" cy="100" r="95" fill="none" stroke="#4CAF50" stroke-width="4"/>
-                        <path id="topArc" d="M 20,100 A 80,80 0 0,1 180,100" fill="none"/>
-                        <text fill="#4CAF50" font-size="9" font-weight="bold" font-family="Arial, sans-serif" letter-spacing="0.5">
-                            <textPath href="#topArc" startOffset="50%" text-anchor="middle">KAMPALA INTERNATIONAL UNIVERSITY</textPath>
-                        </text>
-                        <path id="bottomArc" d="M 180,100 A 80,80 0 0,1 20,100" fill="none"/>
-                        <text fill="#4CAF50" font-size="9" font-weight="bold" font-family="Arial, sans-serif" letter-spacing="0.5">
-                            <textPath href="#bottomArc" startOffset="50%" text-anchor="middle">MUSLIM ASSOCIATION</textPath>
-                        </text>
-                        <path d="M 50,75 L 50,115 L 58,115 L 58,105 L 63,100 L 58,95 L 58,85 Z" fill="none" stroke="#4CAF50" stroke-width="2"/>
-                        <circle cx="56.5" cy="100" r="2" fill="#4CAF50"/>
-                        <rect x="88" y="65" width="10" height="45" fill="none" stroke="#4CAF50" stroke-width="2"/>
-                        <rect x="90" y="75" width="6" height="2" fill="#4CAF50"/>
-                        <rect x="90" y="85" width="6" height="2" fill="#4CAF50"/>
-                        <rect x="90" y="95" width="6" height="2" fill="#4CAF50"/>
-                        <polygon points="93,60 90,65 96,65" fill="#4CAF50"/>
-                        <path d="M 140,92 A 12,12 0 0,1 128,92 A 10,10 0 0,0 140,92 Z" fill="#4CAF50"/>
-                        <path d="M 130,88 L 131.5,92 L 136,92 L 132.5,94.5 L 134,99 L 130,96.5 L 126,99 L 127.5,94.5 L 124,92 L 128.5,92 Z" fill="#4CAF50"/>
-                        <text x="100" y="145" font-size="22" font-weight="bold" fill="#4CAF50" text-anchor="middle" font-family="Arial, sans-serif" letter-spacing="2">KIUMA</text>
-                    </svg>
-                </div>
                 <button class="notifications-btn" id="notificationsBtn">
                     <i class="fas fa-bell"></i>
                     <span class="badge">3</span>
                 </button>
+            </nav>
+            <div class="hero-logo-row">
+                <div class="hero-logo-ring">
+                    <img src="logo.png" alt="KIUMA" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="logo-fallback" style="display:none;">KU</div>
+                </div>
             </div>
-        </header>
+            <div class="hero-title-area">
+                <div class="hero-org-name">KIUMA</div>
+                <h1 class="hero-page-title">Notifications</h1>
+                <p class="hero-subtitle">Stay informed with updates</p>
+                <div class="hero-accent-line"></div>
+            </div>
+        </div>
 
         <main class="main-content">
-            <!-- Welcome Section -->
-            <section class="welcome-section">
-                <div>
-                    <h2 class="greeting">
-                        <a href="about.html">KIUMA</a>
-                    </h2>
-                </div>
-                <button class="account-icon-btn" id="accountIconBtn" onclick="toggleAccountModal()">
-                    <i class="fas fa-user-circle" id="accountIcon"></i>
-                </button>
-            </section>
-
-            <section class="page-header">
-                <h2 class="page-title">Notifications</h2>
-            </section>
+            <div style="height:8px;"></div>
 
             <section class="page-content">
                 <div style="display: flex; gap: 10px; margin-bottom: 20px;">

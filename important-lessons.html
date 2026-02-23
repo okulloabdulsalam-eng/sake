@@ -50,36 +50,31 @@
     </nav>
 
     <div class="container">
-        <header class="header">
-            <div class="header-content">
+        <div class="page-hero">
+            <div class="hero-deco"></div>
+            <nav class="hero-nav">
                 <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
-                <div class="logo-container">
-                    <img src="logo.png" alt="KIUMA Logo" class="header-logo" onerror="this.style.display='none';">
-                    <span class="header-text">KIUMA</span>
-                </div>
                 <button class="notifications-btn" id="notificationsBtn">
                     <i class="fas fa-bell"></i>
-                    <span class="badge" style="display: none;">0</span>
+                    <span class="badge">3</span>
                 </button>
+            </nav>
+            <div class="hero-logo-row">
+                <div class="hero-logo-ring">
+                    <img src="logo.png" alt="KIUMA" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="logo-fallback" style="display:none;">KU</div>
+                </div>
             </div>
-        </header>
+            <div class="hero-title-area">
+                <div class="hero-org-name">KIUMA</div>
+                <h1 class="hero-page-title">Important Lessons</h1>
+                <p class="hero-subtitle">Essential Islamic knowledge</p>
+                <div class="hero-accent-line"></div>
+            </div>
+        </div>
 
         <main class="main-content">
-            <!-- Welcome Section -->
-            <section class="welcome-section">
-                <div>
-                    <h2 class="greeting">
-                        <a href="about.html">KIUMA</a>
-                    </h2>
-                </div>
-                <button class="account-icon-btn" id="accountIconBtn" onclick="toggleAccountModal()">
-                    <i class="fas fa-user-circle" id="accountIcon"></i>
-                </button>
-            </section>
-
-            <section class="page-header">
-                <h2 class="page-title">Important Lessons</h2>
-            </section>
+            <div style="height:8px;"></div>
 
             <section class="page-content">
                 <!-- Learn the Prayer -->
