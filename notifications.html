@@ -115,13 +115,6 @@
         let notificationsFilter = 'all';
         const NOTIFICATION_STATUS_KEY = 'notificationStatusOverrides';
         let notificationStatusOverrides = {};
-        const githubNotificationsConfig = window.githubNotificationsConfig || {
-            owner: 'okulloabdulsalam-eng',
-            repo: 'kiuma-storage',
-            branch: 'main',
-            path: 'notifications/notifications.json'
-        };
-        const githubNotificationsUrl = buildGitHubRawUrl(githubNotificationsConfig);
 
         try {
             notificationStatusOverrides = JSON.parse(localStorage.getItem(NOTIFICATION_STATUS_KEY) || '{}');
@@ -137,14 +130,6 @@
                 }
             }, 1000);
         });
-
-        function buildGitHubRawUrl(config) {
-            const owner = config.owner || 'okulloabdulsalam-eng';
-            const repo = config.repo || 'kiuma-storage';
-            const branch = config.branch || 'main';
-            const path = (config.path || 'notifications/notifications.json').replace(/^\/+/, '');
-            return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`;
-        }
 
         let firestoreUnsubscribe = null;
 

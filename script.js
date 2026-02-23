@@ -2037,25 +2037,14 @@ if (notificationsBtn) {
 
 let cacheRefreshInProgress = false;
 const FRESH_LOAD_FLAG = 'appFreshReloaded';
-const GITHUB_NOTIFICATIONS_DEFAULT = {
-    owner: 'okulloabdulsalam-eng',
-    repo: 'kiuma-storage',
-    branch: 'main',
-    path: 'notifications/notifications.json'
-};
-const NOTIFICATION_POLL_INTERVAL = 60 * 1000;
+const NOTIFICATION_POLL_INTERVAL = 90 * 1000;
 let notificationPollTimer = null;
 
 function getAllStoredNotifications() {
     let notifications = [];
     try {
-        const adminList = JSON.parse(localStorage.getItem('adminNotificationsList') || '[]');
-        if (Array.isArray(adminList) && adminList.length) {
-            notifications = adminList;
-        } else {
-            const legacyList = JSON.parse(localStorage.getItem('notificationsData') || '[]');
-            notifications = Array.isArray(legacyList) ? legacyList : [];
-        }
+        const stored = JSON.parse(localStorage.getItem('notificationsData') || '[]');
+        notifications = Array.isArray(stored) ? stored : [];
     } catch (error) {
         console.warn('Unable to parse notifications from storage', error);
     }
@@ -2117,35 +2106,28 @@ function updateNotificationBadge() {
 }
 window.updateNotificationBadge = updateNotificationBadge;
 
-function getGitHubNotificationsConfig() {
-    const globalConfig = window.githubNotificationsConfig || {};
-    return {
-        owner: globalConfig.owner || GITHUB_NOTIFICATIONS_DEFAULT.owner,
-        repo: globalConfig.repo || GITHUB_NOTIFICATIONS_DEFAULT.repo,
-        branch: globalConfig.branch || GITHUB_NOTIFICATIONS_DEFAULT.branch,
-        path: (globalConfig.path || GITHUB_NOTIFICATIONS_DEFAULT.path).replace(/^\/+/, '')
-    };
-}
-
-function buildGitHubNotificationsUrl() {
-    const config = getGitHubNotificationsConfig();
-    return `https://raw.githubusercontent.com/${config.owner}/${config.repo}/${config.branch}/${config.path}`;
-}
-
 async function fetchNotificationsForBadge() {
     try {
-        const url = `${buildGitHubNotificationsUrl()}?t=${Date.now()}`;
-        const response = await fetch(url, { cache: 'no-cache' });
-        if (!response.ok) {
-            throw new Error('Failed to fetch notifications');
-        }
-        const text = await response.text();
-        const parsed = JSON.parse(text || '[]');
-        if (Array.isArray(parsed)) {
-            localStorage.setItem('notificationsData', JSON.stringify(parsed));
-        }
+        const db = window.firebaseDb;
+        if (!db) { updateNotificationBadge(); return; }
+        const snapshot = await db.collection('notifications').orderBy('createdAt', 'desc').limit(50).get();
+        const notifs = [];
+        snapshot.forEach(function(doc) {
+            const d = doc.data();
+            notifs.push({
+                id: doc.id,
+                title: d.title || 'Notification',
+                message: d.message || '',
+                category: d.category || 'general',
+                icon: d.icon || 'fas fa-bell',
+                status: d.status || 'unread',
+                is_read: d.is_read || 0,
+                createdAt: d.createdAt ? (typeof d.createdAt.toDate === 'function' ? d.createdAt.toDate().toISOString() : d.createdAt) : new Date().toISOString()
+            });
+        });
+        localStorage.setItem('notificationsData', JSON.stringify(notifs));
     } catch (error) {
-        console.warn('Unable to fetch GitHub notifications for badge:', error);
+        console.warn('Unable to fetch notifications from Firestore:', error);
     } finally {
         updateNotificationBadge();
     }
