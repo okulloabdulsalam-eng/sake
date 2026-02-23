@@ -53,12 +53,14 @@
             <div class="hero-deco"></div>
             <nav class="hero-nav">
                 <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
-                <button class="notifications-btn" id="notificationsBtn">
-                    <i class="fas fa-bell"></i>
-                    <span class="badge">3</span>
-                </button>
-            
-                <div class="hero-profile-avatar" onclick="if(typeof toggleAccountModal==='function')toggleAccountModal()"><i class="fas fa-user"></i></div></nav>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="notifications-btn" id="notificationsBtn">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge">3</span>
+                    </button>
+                    <div class="hero-profile-avatar" onclick="if(typeof toggleAccountModal==='function')toggleAccountModal()"><i class="fas fa-user"></i></div>
+                </div>
+            </nav>
             <div class="hero-logo-row">
                 <div class="hero-logo-ring">
                     <img src="logo.png" alt="KIUMA" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
