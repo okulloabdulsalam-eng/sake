@@ -461,6 +461,62 @@ overlay.addEventListener('click', () => {
     overlay.classList.remove('active');
 });
 
+// Sticky mini-bar — auto-creates and shows/hides on scroll past .page-hero
+(function initStickyMiniBar() {
+    const hero = document.querySelector('.page-hero');
+    if (!hero) return; // no hero on this page, skip
+
+    // Extract page title from hero
+    const titleEl = hero.querySelector('.hero-page-title');
+    const pageTitle = titleEl ? titleEl.textContent.trim() : 'KIUMA';
+
+    // Check for admin link in the hero
+    const adminLink = hero.querySelector('.hero-admin-link');
+    const adminHref = adminLink ? adminLink.getAttribute('href') : null;
+
+    // Build the mini-bar
+    const bar = document.createElement('div');
+    bar.className = 'sticky-mini-bar';
+    bar.innerHTML =
+        '<div class="smb-left">' +
+            '<button class="smb-btn" id="smbMenuToggle"><i class="fas fa-bars"></i></button>' +
+            '<span class="smb-title">' + pageTitle + '</span>' +
+        '</div>' +
+        '<div class="smb-right">' +
+            (adminHref ? '<a href="' + adminHref + '" class="smb-admin-link"><i class="fas fa-cog"></i> Admin</a>' : '') +
+            '<button class="smb-btn" id="smbNotifications" onclick="window.location.href=\'notifications.html\'">' +
+                '<i class="fas fa-bell"></i>' +
+                '<span class="badge">3</span>' +
+            '</button>' +
+        '</div>';
+
+    document.body.appendChild(bar);
+
+    // Wire menu toggle to same nav sidebar
+    const smbMenu = document.getElementById('smbMenuToggle');
+    if (smbMenu) {
+        smbMenu.addEventListener('click', function() {
+            var nm = document.getElementById('navMenu');
+            var ov = document.querySelector('.overlay');
+            if (nm) nm.classList.add('active');
+            if (ov) ov.classList.add('active');
+        });
+    }
+
+    // Show/hide on scroll with IntersectionObserver (performant)
+    var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+                bar.classList.remove('visible');
+            } else {
+                bar.classList.add('visible');
+            }
+        });
+    }, { threshold: 0, rootMargin: '0px' });
+
+    observer.observe(hero);
+})();
+
 // Hijri month names (global for reuse)
 const hijriMonths = ['Muharram', 'Safar', 'Rabi\' al-awwal', 'Rabi\' al-thani', 
                    'Jumada al-awwal', 'Jumada al-thani', 'Rajab', 'Sha\'ban', 
