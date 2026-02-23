@@ -150,6 +150,25 @@
                 .dl-category-header span { font-weight:700; font-size:14px; color:#333; }
                 .dl-category-header .dl-count { font-size:12px; color:#999; margin-left:auto; }
 
+                /* Playlist folder cards */
+                .playlist-folder-row { display:flex; gap:12px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none; }
+                .playlist-folder-row::-webkit-scrollbar { display:none; }
+                .playlist-folder { width:160px; min-width:160px; border-radius:14px; overflow:hidden; cursor:pointer; transition:transform .15s; position:relative; }
+                .playlist-folder:active { transform:scale(0.96); }
+                .playlist-folder-cover { height:100px; display:flex; align-items:center; justify-content:center; position:relative; }
+                .playlist-folder-cover i.folder-icon { font-size:36px; color:rgba(255,255,255,0.85); }
+                .playlist-folder-count { position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.45); color:#fff; font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; backdrop-filter:blur(4px); }
+                .playlist-folder-body { padding:8px 10px 10px; background:#fff; }
+                .playlist-folder-name { font-size:13px; font-weight:700; color:#333; line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+                .playlist-folder-meta { font-size:10px; color:#999; margin-top:2px; }
+
+                /* Expanded playlist view */
+                .playlist-expanded { margin-bottom:24px; background:#f9fafb; border-radius:14px; padding:14px; }
+                .playlist-expanded-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+                .playlist-expanded-title { font-size:15px; font-weight:700; color:#333; display:flex; align-items:center; gap:8px; }
+                .playlist-expanded-title i { color:var(--primary-green); }
+                .playlist-expanded-close { background:none; border:none; font-size:18px; color:#999; cursor:pointer; padding:4px 8px; }
+
                 @media (min-width:600px) {
                     .media-hero { height:300px; }
                     .media-card { width:220px; min-width:220px; }
@@ -163,12 +182,12 @@
                     <input type="text" id="mediaSearchInput" placeholder="Search media..." oninput="searchMedia(this.value)">
                 </div>
 
-                <div class="media-filter-bar">
-                    <button class="media-filter-btn active" onclick="filterMedia('all')"><i class="fas fa-th"></i> All</button>
-                    <button class="media-filter-btn" onclick="filterMedia('video')"><i class="fas fa-video"></i> Videos</button>
-                    <button class="media-filter-btn" onclick="filterMedia('audio')"><i class="fas fa-music"></i> Audio</button>
-                    <button class="media-filter-btn" onclick="filterMedia('image')"><i class="fas fa-image"></i> Images</button>
-                    <button class="media-filter-btn" onclick="filterMedia('downloads')"><i class="fas fa-download"></i> Downloads</button>
+                <div class="media-filter-bar" id="mediaFilterBar">
+                    <button class="media-filter-btn active" data-filter="all" onclick="filterMedia('all')"><i class="fas fa-th"></i> All</button>
+                    <button class="media-filter-btn" data-filter="video" onclick="filterMedia('video')"><i class="fas fa-video"></i> Videos</button>
+                    <button class="media-filter-btn" data-filter="audio" onclick="filterMedia('audio')"><i class="fas fa-music"></i> Audio</button>
+                    <button class="media-filter-btn" data-filter="image" onclick="filterMedia('image')"><i class="fas fa-image"></i> Images</button>
+                    <button class="media-filter-btn" data-filter="downloads" onclick="filterMedia('downloads')"><i class="fas fa-download"></i> Downloads</button>
                 </div>
                 <div id="mediaHero"></div>
                 <div id="mediaGrid">
@@ -402,8 +421,9 @@
 
         window.filterMedia = function(type) {
             currentMediaFilter = type;
-            document.querySelectorAll('.media-filter-bar:first-of-type .media-filter-btn').forEach(b => b.classList.remove('active'));
-            if (event && event.currentTarget) event.currentTarget.classList.add('active');
+            document.querySelectorAll('#mediaFilterBar .media-filter-btn').forEach(b => {
+                b.classList.toggle('active', b.getAttribute('data-filter') === type);
+            });
             loadMediaFromStorage(type);
         };
 
@@ -572,6 +592,94 @@
             return html;
         }
 
+        // Playlist folder gradients
+        const folderGradients = [
+            'linear-gradient(135deg,#43A047,#2E7D32)',
+            'linear-gradient(135deg,#1565C0,#0D47A1)',
+            'linear-gradient(135deg,#7B1FA2,#4A148C)',
+            'linear-gradient(135deg,#E65100,#BF360C)',
+            'linear-gradient(135deg,#00838F,#006064)',
+            'linear-gradient(135deg,#AD1457,#880E4F)'
+        ];
+
+        // Render playlist folder cards row
+        function renderPlaylistFolders(playlists) {
+            if (!playlists || playlists.length === 0) return '';
+            let html = '<div class="media-section">';
+            html += '<div class="media-section-header"><span class="media-section-title"><i class="fas fa-folder-open"></i> Playlists</span><span class="media-section-count">' + playlists.length + '</span></div>';
+            html += '<div class="playlist-folder-row">';
+            playlists.forEach((pl, i) => {
+                const grad = folderGradients[i % folderGradients.length];
+                const typeIcon = pl.items.length > 0 ? (icons[pl.items[0].type] || 'fa-file') : 'fa-music';
+                const plId = 'pl-' + pl.name.replace(/[^a-zA-Z0-9]/g, '_');
+                html += '<div class="playlist-folder" onclick="togglePlaylistExpand(\'' + san(pl.name).replace(/'/g, "\\&#39;") + '\')">';
+                html += '<div class="playlist-folder-cover" style="background:' + grad + '"><i class="fas fa-folder folder-icon"></i>';
+                html += '<span class="playlist-folder-count">' + pl.items.length + ' items</span></div>';
+                html += '<div class="playlist-folder-body"><div class="playlist-folder-name">' + san(pl.name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())) + '</div>';
+                html += '<div class="playlist-folder-meta"><i class="fas ' + typeIcon + '" style="margin-right:3px;"></i>' + pl.items.length + ' file' + (pl.items.length !== 1 ? 's' : '') + '</div></div></div>';
+            });
+            html += '</div></div>';
+            return html;
+        }
+
+        // Expand a playlist folder inline
+        window.togglePlaylistExpand = function(plName) {
+            const existing = document.getElementById('playlistExpanded');
+            if (existing) {
+                if (existing.dataset.name === plName) { existing.remove(); return; }
+                existing.remove();
+            }
+            // Find playlist items
+            const pls = getAdminPlaylists().filter(p => p.type === 'media' && p.name === plName);
+            if (!pls.length) return;
+            const items = pls[0].items.map(item => ({
+                name: item.name || item.title || 'Untitled',
+                title: item.title || '',
+                author: item.author || '',
+                type: item.type || fileType(item.name || ''),
+                url: item.url,
+                size: item.size || 0
+            }));
+            // Also find R2 files in this playlist/category
+            const r2Items = allLoadedFiles.filter(f => f.playlist === plName);
+            const seenUrls = new Set(items.map(it => it.url));
+            r2Items.forEach(f => { if (!seenUrls.has(f.url)) { seenUrls.add(f.url); items.push(f); } });
+
+            const div = document.createElement('div');
+            div.className = 'playlist-expanded';
+            div.id = 'playlistExpanded';
+            div.dataset.name = plName;
+            const label = plName.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            let inner = '<div class="playlist-expanded-header"><span class="playlist-expanded-title"><i class="fas fa-folder-open"></i> ' + san(label) + '</span><button class="playlist-expanded-close" onclick="document.getElementById(\'playlistExpanded\').remove()"><i class="fas fa-times"></i></button></div>';
+            inner += '<div class="media-scroll-row">';
+            items.forEach(media => {
+                const meta = parseMeta(media.name);
+                const t = media.title || meta.title;
+                const a = media.author || meta.author;
+                const isVid = media.type === 'video';
+                const isImg = media.type === 'image';
+                const grad = gradients[media.type] || gradients.image;
+                const ico = icons[media.type] || 'fa-file';
+                let thumb;
+                if (isVid) {
+                    thumb = '<video src="'+media.url+'" preload="metadata" muted playsinline style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"></video><div class="thumb-placeholder" style="display:none;background:'+grad+'"><i class="fas '+ico+'"></i></div><div class="video-play-overlay"><i class="fas fa-play-circle"></i></div>';
+                } else if (isImg) {
+                    thumb = '<img src="'+media.url+'" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="thumb-placeholder" style="display:none;background:'+grad+'"><i class="fas '+ico+'"></i></div>';
+                } else {
+                    thumb = '<div class="thumb-placeholder" style="background:'+grad+'"><i class="fas '+ico+'"></i></div>';
+                }
+                inner += '<div class="media-card" onclick="openMediaViewer(\''+media.url+'\',\''+media.type+'\',\''+san(t).replace(/'/g,"\\&#39;")+'\')">';
+                inner += '<div class="media-card-thumb">'+thumb+'<span class="media-card-badge '+media.type+'">'+media.type+'</span></div>';
+                inner += '<div class="media-card-body"><div class="media-card-title">'+san(t)+'</div>';
+                inner += '<div class="media-card-meta"><span><i class="fas fa-user" style="margin-right:2px;"></i>'+san(a)+'</span><span>&middot; '+fmtSize(media.size)+'</span></div></div></div>';
+            });
+            inner += '</div>';
+            div.innerHTML = inner;
+            const grid = document.getElementById('mediaGrid');
+            if (grid) grid.insertBefore(div, grid.firstChild);
+            div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        };
+
         // Main Qalbox-style layout renderer
         function renderQalboxLayout(files) {
             const grid = document.getElementById('mediaGrid');
@@ -600,36 +708,44 @@
             let html = '';
             const rest = filtered.slice(1); // skip hero item
 
-            // Group by type
-            const videos = rest.filter(f => f.type === 'video');
-            const audios = rest.filter(f => f.type === 'audio');
-            const images = rest.filter(f => f.type === 'image');
+            // Separate individual files vs playlist-grouped files
+            const individualFiles = rest.filter(f => !f.playlist || f.playlist === 'general');
+            const playlistNames = [...new Set(rest.filter(f => f.playlist && f.playlist !== 'general').map(f => f.playlist))];
 
-            // Group by category/playlist
-            const categories = {};
-            rest.forEach(f => {
-                const cat = (f.playlist && f.playlist !== 'general') ? f.playlist : null;
-                if (cat) {
-                    if (!categories[cat]) categories[cat] = [];
-                    categories[cat].push(f);
-                }
-            });
+            // Build playlist objects (combine R2 categories with admin playlists)
+            const adminPls = getAdminPlaylists().filter(p => p.type === 'media' && p.items.length > 0);
+            const allPlaylistNames = [...new Set([...playlistNames, ...adminPls.map(p => p.name)])];
+            const playlistObjs = allPlaylistNames.map(name => {
+                const r2Items = rest.filter(f => f.playlist === name);
+                const adminPl = adminPls.find(p => p.name === name);
+                const adminItems = adminPl ? adminPl.items.map(item => ({
+                    name: item.name || item.title || 'Untitled',
+                    type: item.type || fileType(item.name || ''),
+                    url: item.url, size: item.size || 0
+                })) : [];
+                // Merge dedup
+                const seenUrls = new Set(r2Items.map(f => f.url));
+                adminItems.forEach(ai => { if (!seenUrls.has(ai.url)) { seenUrls.add(ai.url); r2Items.push(ai); } });
+                return { name, items: r2Items };
+            }).filter(p => p.items.length > 0);
 
-            // Render "Recently Added" (first 10 of remaining)
-            if (rest.length > 0) {
-                html += renderCategoryRow('Recently Added', 'fa-clock', rest.slice(0, 10), false);
+            // Render playlists as folder cards
+            if (playlistObjs.length > 0) {
+                html += renderPlaylistFolders(playlistObjs);
             }
 
-            // Render type rows
+            // Render "Recently Added" (individual files, first 10)
+            if (individualFiles.length > 0) {
+                html += renderCategoryRow('Recently Added', 'fa-clock', individualFiles.slice(0, 10), false);
+            }
+
+            // Render type rows (individual files only)
+            const videos = individualFiles.filter(f => f.type === 'video');
+            const audios = individualFiles.filter(f => f.type === 'audio');
+            const images = individualFiles.filter(f => f.type === 'image');
             if (videos.length > 0) html += renderCategoryRow('Videos', 'fa-video', videos, false);
             if (audios.length > 0) html += renderCategoryRow('Audio', 'fa-music', audios, false);
             if (images.length > 0) html += renderCategoryRow('Images', 'fa-image', images, false);
-
-            // Render category rows
-            Object.keys(categories).sort().forEach(cat => {
-                const label = cat.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-                html += renderCategoryRow(label, 'fa-folder', categories[cat], false);
-            });
 
             grid.innerHTML = html;
         }

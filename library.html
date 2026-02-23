@@ -173,6 +173,23 @@
                 .dl-category-header i { font-size:16px; color:var(--primary-green); }
                 .dl-category-header span { font-weight:700; font-size:14px; color:var(--dark-gray); }
                 .dl-category-header .dl-count { font-size:12px; color:var(--text-gray); margin-left:auto; }
+
+                /* Reading list folder cards */
+                .rl-folder-row { display:flex; gap:12px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none; }
+                .rl-folder-row::-webkit-scrollbar { display:none; }
+                .rl-folder { width:150px; min-width:150px; border-radius:14px; overflow:hidden; cursor:pointer; transition:transform .15s; box-shadow:var(--shadow); }
+                .rl-folder:active { transform:scale(0.96); }
+                .rl-folder-cover { height:90px; display:flex; align-items:center; justify-content:center; position:relative; }
+                .rl-folder-cover i.folder-icon { font-size:32px; color:rgba(255,255,255,0.85); }
+                .rl-folder-count { position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.45); color:#fff; font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; backdrop-filter:blur(4px); }
+                .rl-folder-body { padding:8px 10px 10px; background:var(--card-bg); }
+                .rl-folder-name { font-size:12px; font-weight:700; color:var(--dark-gray); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+                .rl-folder-meta { font-size:10px; color:var(--text-gray); margin-top:2px; }
+                .rl-expanded { margin-bottom:24px; background:var(--lighter-green,#f1f8e9); border-radius:14px; padding:14px; }
+                .rl-expanded-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+                .rl-expanded-title { font-size:15px; font-weight:700; color:var(--dark-gray); display:flex; align-items:center; gap:8px; }
+                .rl-expanded-title i { color:var(--primary-green); }
+                .rl-expanded-close { background:none; border:none; font-size:18px; color:var(--text-gray); cursor:pointer; padding:4px 8px; }
             </style>
 
             <section class="page-content">
@@ -182,12 +199,12 @@
                         <input type="text" id="libSearchInput" placeholder="Search by Book title, Author, etc" oninput="searchBooks(this.value)">
                     </div>
 
-                    <div class="lib-filter-bar">
-                        <button class="lib-filter-btn active" onclick="filterBooks('all')"><i class="fas fa-th"></i> All</button>
-                        <button class="lib-filter-btn" onclick="filterBooks('islamic')"><i class="fas fa-quran"></i> Islamic</button>
-                        <button class="lib-filter-btn" onclick="filterBooks('educational')"><i class="fas fa-graduation-cap"></i> Educational</button>
-                        <button class="lib-filter-btn" onclick="filterBooks('quran')"><i class="fas fa-book-open"></i> Quran</button>
-                        <button class="lib-filter-btn" onclick="filterBooks('downloads')"><i class="fas fa-download"></i> Downloads</button>
+                    <div class="lib-filter-bar" id="libFilterBar">
+                        <button class="lib-filter-btn active" data-filter="all" onclick="filterBooks('all')"><i class="fas fa-th"></i> All</button>
+                        <button class="lib-filter-btn" data-filter="islamic" onclick="filterBooks('islamic')"><i class="fas fa-quran"></i> Islamic</button>
+                        <button class="lib-filter-btn" data-filter="educational" onclick="filterBooks('educational')"><i class="fas fa-graduation-cap"></i> Educational</button>
+                        <button class="lib-filter-btn" data-filter="quran" onclick="filterBooks('quran')"><i class="fas fa-book-open"></i> Quran</button>
+                        <button class="lib-filter-btn" data-filter="downloads" onclick="filterBooks('downloads')"><i class="fas fa-download"></i> Downloads</button>
                     </div>
                     <div id="collectionFilterBar" class="lib-filter-bar" style="display:none;margin-top:4px;flex-wrap:wrap;gap:6px;"></div>
 
@@ -234,8 +251,9 @@
         // Filter books function - globally accessible
         window.filterBooks = function(category) {
             currentCollection = 'all';
-            document.querySelectorAll('.lib-filter-bar:first-of-type .lib-filter-btn').forEach(btn => btn.classList.remove('active'));
-            if (event && event.currentTarget) event.currentTarget.classList.add('active');
+            document.querySelectorAll('#libFilterBar .lib-filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-filter') === category);
+            });
             loadBooksFromStorage(category);
         };
 
@@ -751,6 +769,78 @@
             other: { icon:'fa-book', gradient:'linear-gradient(135deg,#607D8B,#37474F)', label:'Other' }
         };
 
+        // Reading list folder gradients
+        const rlFolderGradients = [
+            'linear-gradient(135deg,#4CAF50,#2E7D32)',
+            'linear-gradient(135deg,#9C27B0,#6A1B9A)',
+            'linear-gradient(135deg,#2196F3,#1565C0)',
+            'linear-gradient(135deg,#FF6F00,#E65100)',
+            'linear-gradient(135deg,#00838F,#006064)',
+            'linear-gradient(135deg,#C62828,#B71C1C)'
+        ];
+
+        function renderReadingListFolders(readingLists) {
+            if (!readingLists || readingLists.length === 0) return '';
+            let html = '<div class="lib-section"><div class="lib-section-header"><span class="lib-section-title"><i class="fas fa-folder-open" style="color:var(--primary-green);"></i> Reading Lists</span></div>';
+            html += '<div class="rl-folder-row">';
+            readingLists.forEach((rl, i) => {
+                const grad = rlFolderGradients[i % rlFolderGradients.length];
+                const label = rl.name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                html += '<div class="rl-folder" onclick="toggleReadingListExpand(\'' + san(rl.name).replace(/'/g, "\\&#39;") + '\')">';
+                html += '<div class="rl-folder-cover" style="background:' + grad + '"><i class="fas fa-folder folder-icon"></i>';
+                html += '<span class="rl-folder-count">' + rl.items.length + '</span></div>';
+                html += '<div class="rl-folder-body"><div class="rl-folder-name">' + san(label) + '</div>';
+                html += '<div class="rl-folder-meta">' + rl.items.length + ' book' + (rl.items.length !== 1 ? 's' : '') + '</div></div></div>';
+            });
+            html += '</div></div>';
+            return html;
+        }
+
+        window.toggleReadingListExpand = function(rlName) {
+            const existing = document.getElementById('rlExpanded');
+            if (existing) {
+                if (existing.dataset.name === rlName) { existing.remove(); return; }
+                existing.remove();
+            }
+            // Find items from admin playlists + collection matches
+            const pls = getAdminPlaylists().filter(p => p.type === 'library' && p.name === rlName);
+            const items = [];
+            if (pls.length) {
+                pls[0].items.forEach(item => {
+                    items.push({ name: item.name || item.title || 'Untitled', title: item.title || '', author: item.author || '', category: item.category || 'other', url: item.url, size: item.size || 0 });
+                });
+            }
+            const collItems = allLoadedBooks.filter(f => f.collection === rlName);
+            const seenUrls = new Set(items.map(it => it.url));
+            collItems.forEach(f => { if (!seenUrls.has(f.url)) { seenUrls.add(f.url); items.push(f); } });
+
+            const div = document.createElement('div');
+            div.className = 'rl-expanded';
+            div.id = 'rlExpanded';
+            div.dataset.name = rlName;
+            const label = rlName.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            let inner = '<div class="rl-expanded-header"><span class="rl-expanded-title"><i class="fas fa-folder-open"></i> ' + san(label) + '</span><button class="rl-expanded-close" onclick="document.getElementById(\'rlExpanded\').remove()"><i class="fas fa-times"></i></button></div>';
+            inner += '<div class="lib-book-list">';
+            items.forEach(book => {
+                const meta = parseMeta(book.name);
+                const t = book.title || meta.title;
+                const a = book.author || meta.author;
+                const s = catStyles[book.category] || catStyles.other;
+                const isPdf = book.name.toLowerCase().endsWith('.pdf');
+                inner += '<div class="lib-book-item" onclick="openBookViewer(\'' + book.url + '\',\'' + san(book.name).replace(/'/g, "\\&#39;") + '\',\'' + san(t).replace(/'/g, "\\&#39;") + '\')">';
+                inner += '<div class="lib-book-thumb"><div class="cover-placeholder" style="background:' + s.gradient + '"><i class="fas ' + (isPdf ? 'fa-file-pdf' : s.icon) + '"></i></div></div>';
+                inner += '<div class="lib-book-info"><div class="lib-book-title">' + san(t) + '</div>';
+                inner += '<div class="lib-book-author">By ' + san(a) + '</div>';
+                inner += '<span class="lib-book-cat" style="background:' + s.catBg + ';color:' + s.catColor + ';">' + san(book.category) + '</span>';
+                inner += '<div class="lib-book-size">' + fmtSize(book.size) + '</div></div></div>';
+            });
+            inner += '</div>';
+            div.innerHTML = inner;
+            const grid = document.getElementById('libraryGrid');
+            if (grid) grid.insertBefore(div, grid.firstChild);
+            div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        };
+
         // Main Qalbox-style library layout
         function renderLibraryLayout(books) {
             const grid = document.getElementById('libraryGrid');
@@ -773,8 +863,39 @@
 
             let html = '';
 
+            // Reading lists as folder cards
+            const adminRLs = getAdminPlaylists().filter(p => p.type === 'library' && p.items.length > 0);
+            const collNames = [...new Set(filtered.filter(f => f.collection && f.collection.length > 0).map(f => f.collection))];
+            const allRLNames = [...new Set([...adminRLs.map(p => p.name), ...collNames])];
+            const readingLists = allRLNames.map(name => {
+                const adminPl = adminRLs.find(p => p.name === name);
+                const collItems = filtered.filter(f => f.collection === name);
+                const adminItems = adminPl ? adminPl.items.map(item => ({ url: item.url })) : [];
+                const seenUrls = new Set(collItems.map(f => f.url));
+                adminItems.forEach(ai => { if (!seenUrls.has(ai.url)) seenUrls.add(ai.url); });
+                return { name, items: [...Array(seenUrls.size)] };
+            }).filter(rl => rl.items.length > 0);
+
+            // Rebuild item counts properly
+            readingLists.forEach(rl => {
+                const adminPl = adminRLs.find(p => p.name === rl.name);
+                const collItems = filtered.filter(f => f.collection === rl.name);
+                const urls = new Set();
+                if (adminPl) adminPl.items.forEach(it => urls.add(it.url));
+                collItems.forEach(f => urls.add(f.url));
+                rl.items = Array.from(urls).map(u => ({ url: u }));
+            });
+
+            if (readingLists.length > 0) {
+                html += renderReadingListFolders(readingLists);
+            }
+
+            // Filter out reading-list-only items for individual display
+            const individualBooks = filtered.filter(f => !f.collection || f.collection.length === 0);
+            const displayBooks = individualBooks.length > 0 ? individualBooks : filtered;
+
             // 1. Top Available for you! (horizontal scroll of top books)
-            const topBooks = filtered.slice(0, 10);
+            const topBooks = displayBooks.slice(0, 10);
             html += '<div class="lib-section"><div class="lib-section-header"><span class="lib-section-title">Top Available for you!</span></div>';
             html += '<div class="lib-top-scroll">';
             topBooks.forEach(book => {
@@ -791,7 +912,7 @@
             html += '</div></div>';
 
             // 2. Pick from Popular Genres (circles)
-            const availableCats = [...new Set(filtered.map(f => f.category))];
+            const availableCats = [...new Set(displayBooks.map(f => f.category))];
             if (availableCats.length > 1) {
                 html += '<div class="lib-section"><div class="lib-section-header"><span class="lib-section-title">Browse by Genre</span></div>';
                 html += '<div class="lib-genre-scroll">';
@@ -805,9 +926,9 @@
             }
 
             // 3. Your Books (list view)
-            html += '<div class="lib-section"><div class="lib-section-header"><span class="lib-section-title">Your Books</span><span class="lib-section-count" style="color:var(--text-gray);">'+filtered.length+' books</span></div>';
+            html += '<div class="lib-section"><div class="lib-section-header"><span class="lib-section-title">Your Books</span><span class="lib-section-count" style="color:var(--text-gray);">'+displayBooks.length+' books</span></div>';
             html += '<div class="lib-book-list">';
-            filtered.forEach(book => {
+            displayBooks.forEach(book => {
                 const meta = parseMeta(book.name);
                 const t = book.title || meta.title;
                 const a = book.author || meta.author;
