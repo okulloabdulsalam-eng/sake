@@ -2107,9 +2107,16 @@ function updateNotificationBadge() {
 window.updateNotificationBadge = updateNotificationBadge;
 
 async function fetchNotificationsForBadge() {
+    // Show badge immediately from cached data (no flash)
+    updateNotificationBadge();
     try {
+        // Wait for Firebase to be ready (up to 3s)
+        const start = Date.now();
+        while (!window.firebaseDb && (Date.now() - start) < 3000) {
+            await new Promise(r => setTimeout(r, 200));
+        }
         const db = window.firebaseDb;
-        if (!db) { updateNotificationBadge(); return; }
+        if (!db) return;
         const snapshot = await db.collection('notifications').orderBy('createdAt', 'desc').limit(50).get();
         const notifs = [];
         snapshot.forEach(function(doc) {
@@ -2125,7 +2132,10 @@ async function fetchNotificationsForBadge() {
                 createdAt: d.createdAt ? (typeof d.createdAt.toDate === 'function' ? d.createdAt.toDate().toISOString() : d.createdAt) : new Date().toISOString()
             });
         });
-        localStorage.setItem('notificationsData', JSON.stringify(notifs));
+        // Only update cache if Firestore returned data (don't clear on empty/error)
+        if (notifs.length > 0) {
+            localStorage.setItem('notificationsData', JSON.stringify(notifs));
+        }
     } catch (error) {
         console.warn('Unable to fetch notifications from Firestore:', error);
     } finally {
@@ -2134,6 +2144,9 @@ async function fetchNotificationsForBadge() {
 }
 
 function initNotificationBadgeListener() {
+    // Immediate badge update from cache (synchronous, no flash)
+    updateNotificationBadge();
+    // Then fetch fresh data from Firestore
     fetchNotificationsForBadge();
     if (notificationPollTimer) {
         clearInterval(notificationPollTimer);
