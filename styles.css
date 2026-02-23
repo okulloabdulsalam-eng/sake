@@ -860,7 +860,7 @@ body {
     left: 0;
     width: 100%;
     height: 28px;
-    background: var(--body-bg, #F5F5F5);
+    background: #fff;
     border-radius: 50% 50% 0 0 / 100% 100% 0 0;
     z-index: 2;
 }
@@ -1079,7 +1079,7 @@ body {
     left: 0;
     width: 100%;
     height: 22px;
-    background: var(--body-bg, #F5F5F5);
+    background: #fff;
     border-radius: 50% 50% 0 0 / 100% 100% 0 0;
     z-index: 2;
 }
