@@ -57,6 +57,13 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Config collection - playlists, app settings
+    match /config/{docId} {
+      allow read: if true;
+      allow create, update: if true;
+      allow delete: if false;
+    }
+
     // Events collection - admin-managed upcoming events
     match /events/{eventId} {
       allow read: if true;

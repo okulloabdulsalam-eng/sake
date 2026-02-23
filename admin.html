@@ -4516,25 +4516,50 @@
             return window.firebaseDb;
         }
 
-        // Silent Firestore sync helper — never throws, never shows errors to user
+        // Firestore sync helper with diagnostics
         async function firestoreSet(path, data) {
             try {
+                // Wait for Firebase to be ready (up to 3s)
+                if (!window.firebaseDb) {
+                    const start = Date.now();
+                    while (!window.firebaseDb && (Date.now() - start) < 3000) {
+                        await new Promise(r => setTimeout(r, 200));
+                    }
+                }
                 const db = getDb();
-                if (!db) return false;
+                if (!db) {
+                    console.error('[Firestore] DB not available. Firebase SDK loaded:', typeof firebase !== 'undefined', '| Apps:', typeof firebase !== 'undefined' ? firebase.apps.length : 0);
+                    return { ok: false, reason: 'Firebase not connected. Reload page and try again.' };
+                }
                 const parts = path.split('/');
                 if (parts.length === 2) await db.collection(parts[0]).doc(parts[1]).set(data);
                 else if (parts.length === 1) await db.collection(parts[0]).add(data);
-                return true;
-            } catch(e) { console.log('[Firestore sync] Write failed (offline mode):', e.message); return false; }
+                return { ok: true };
+            } catch(e) {
+                console.error('[Firestore] Write failed:', e.code, e.message);
+                if (e.code === 'permission-denied') {
+                    return { ok: false, reason: 'Permission denied. Deploy Firestore rules (see firestore.rules file).' };
+                } else if (e.message && e.message.includes('Could not reach')) {
+                    return { ok: false, reason: 'Cannot reach Firestore. Check internet connection.' };
+                }
+                return { ok: false, reason: e.message || 'Unknown error' };
+            }
         }
         async function firestoreGet(path) {
             try {
+                // Wait for Firebase to be ready (up to 3s)
+                if (!window.firebaseDb) {
+                    const start = Date.now();
+                    while (!window.firebaseDb && (Date.now() - start) < 3000) {
+                        await new Promise(r => setTimeout(r, 200));
+                    }
+                }
                 const db = getDb();
                 if (!db) return null;
                 const parts = path.split('/');
                 const doc = await db.collection(parts[0]).doc(parts[1]).get();
                 return doc.exists ? doc.data() : null;
-            } catch(e) { console.log('[Firestore sync] Read failed (offline mode):', e.message); return null; }
+            } catch(e) { console.error('[Firestore] Read failed:', e.code, e.message); return null; }
         }
         async function firestoreList(collectionName, orderField) {
             try {
@@ -4607,11 +4632,12 @@
             localStorage.setItem('kiuma_prayerTimes', JSON.stringify(data));
 
             // Sync to Firestore (global) and confirm success
-            const synced = await firestoreSet('appData/prayerTimes', data);
-            if (synced) {
+            const result = await firestoreSet('appData/prayerTimes', data);
+            if (result && result.ok) {
                 showStatus('prayerTimesStatus', 'Prayer times saved and synced!', 'success');
             } else {
-                showStatus('prayerTimesStatus', 'Saved on this device, but failed to sync to server. Check internet/Firebase.', 'error');
+                const reason = (result && result.reason) ? result.reason : 'Check internet/Firebase.';
+                showStatus('prayerTimesStatus', 'Saved on this device, but sync failed: ' + reason, 'error');
             }
         }
 
