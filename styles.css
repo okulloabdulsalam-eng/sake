@@ -92,67 +92,7 @@ body {
     position: relative;
 }
 
-/* Header Styles */
-.header {
-    background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
-    padding: 15px 20px;
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    overflow: hidden;
-}
-
-.header::after {
-    content: '';
-    position: absolute;
-    bottom: -10px;
-    left: 0;
-    width: 100%;
-    height: 30px;
-    background: var(--card-bg);
-    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
-}
-
-.header-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: relative;
-    z-index: 1;
-}
-
-.logo-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: 1;
-    height: 50px;
-    min-width: 50px;
-}
-
-.header-logo {
-    height: 45px;
-    width: 45px;
-    object-fit: contain;
-    border-radius: 50%;
-    background: var(--white);
-    padding: 3px;
-    display: block;
-}
-
-.header-logo[style*="display: none"] {
-    display: none !important;
-}
-
-.header-logo-svg {
-    height: 45px;
-    width: 45px;
-    display: none;
-    border-radius: 50%;
-    background: var(--white);
-    padding: 3px;
-}
-
+/* Header button base styles */
 .menu-toggle, .notifications-btn {
     background: none;
     border: none;
@@ -276,104 +216,48 @@ body {
 }
 
 /* Welcome Section */
-.welcome-section {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 20px;
-    padding: 15px 20px;
-    position: relative;
-    min-height: 70px;
-}
-
-.welcome-section > div {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    text-align: center;
-    width: calc(100% - 100px);
-}
-
-.greeting {
-    margin: 0;
-    padding: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    text-align: center;
-    width: 100%;
-}
-
-.greeting a {
-    color: var(--dark-green);
-    text-decoration: none;
-    font-weight: 700;
-    font-size: 24px;
-    display: block;
-    margin-bottom: 6px;
-    letter-spacing: 0.5px;
-    line-height: 1.3;
-    text-align: center;
-}
-
-.greeting span {
-    display: block;
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--dark-gray);
-    line-height: 1.4;
-    text-align: center;
-}
-
-.account-icon-btn {
-    position: absolute;
-    right: 20px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 48px;
-    height: 48px;
+/* Hero profile avatar */
+.hero-profile-avatar {
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
-    border: none;
-    background: var(--primary-green);
-    color: var(--white);
-    font-size: 26px;
+    background: rgba(255,255,255,0.2);
+    border: 2px solid rgba(255,255,255,0.4);
     display: flex;
     align-items: center;
     justify-content: center;
+    color: #fff;
+    font-size: 16px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
     flex-shrink: 0;
 }
-
-.account-icon-btn:hover {
-    transform: translateY(-50%) scale(1.05);
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+.hero-profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
 }
-
-.account-icon-btn.logged-in {
-    background: var(--primary-green);
-    color: var(--white);
+.smb-profile-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    border: 2px solid rgba(255,255,255,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    overflow: hidden;
+    flex-shrink: 0;
 }
-
-.account-icon-btn.logged-in:hover {
-    background: var(--dark-green);
-    transform: translateY(-50%) scale(1.05);
-}
-
-/* Account icon in header-actions (non-absolute positioning) */
-.header-actions .account-icon-btn {
-    position: static;
-    transform: none;
-    width: 36px;
-    height: 36px;
-    font-size: 20px;
-}
-
-.header-actions .account-icon-btn:hover {
-    transform: scale(1.05);
-}
-
-.header-actions .account-icon-btn.logged-in:hover {
-    transform: scale(1.05);
+.smb-profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
 }
 
 .account-modal {
@@ -988,9 +872,12 @@ body {
     position: relative;
     z-index: 3;
 }
-.hero-nav .menu-toggle,
-.hero-nav .notifications-btn {
+.hero-nav .menu-toggle {
     position: static;
+    z-index: 3;
+}
+.hero-nav .notifications-btn {
+    position: relative;
     z-index: 3;
 }
 .hero-logo-row {

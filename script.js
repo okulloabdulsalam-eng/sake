@@ -488,6 +488,7 @@ overlay.addEventListener('click', () => {
                 '<i class="fas fa-bell"></i>' +
                 '<span class="badge">3</span>' +
             '</button>' +
+            '<div class="smb-profile-avatar" onclick="if(typeof toggleAccountModal===\'function\')toggleAccountModal()"><i class="fas fa-user"></i></div>' +
         '</div>';
 
     document.body.appendChild(bar);
