@@ -120,6 +120,105 @@ Replace these files with your logo at the correct sizes:
 | Splash screen | ✅ |
 | Status bar theming | ✅ |
 | Back button handling | ✅ |
+| Unified IndexedDB (kiuma-idb.js) | ✅ |
+| Native file storage (kiuma-filesystem.js) | ✅ |
+| Delta sync engine (kiuma-delta-sync.js) | ✅ |
+| Silent SW cache refresh on version change | ✅ |
+
+---
+
+## Offline-First Infrastructure
+
+Three new files power the offline-first behaviour:
+
+| File | Purpose |
+|------|---------|
+| `kiuma-idb.js` | Unified IndexedDB — all content (notifications, books, media, events) + download index + sync state + offline queue |
+| `kiuma-filesystem.js` | File storage bridge — Capacitor `Directory.Data` on native, IndexedDB blob fallback on web. Avoids re-downloading existing files. |
+| `kiuma-delta-sync.js` | Delta sync engine — loads IDB on open, fetches only changed Supabase records, drains offline queue, checks `version.json` for silent SW cache refresh |
+
+### How sync works
+1. Page loads → `KiuIDB` serves cached data instantly (no network wait)
+2. If online → `KiuSync` fetches only records with `updated_at > lastSync` (delta)
+3. Changed records are upserted into IDB silently
+4. `version.json` is polled — if version changed, SW refreshes all static caches
+5. When offline → any queued mutations are stored in IDB and drained on reconnect
+
+### Using KiuFS for downloads (replaces direct AppStorage calls)
+```js
+// Download + save (skips if already stored)
+await KiuFS.downloadAndSave(url, { name, title, category }, onProgress);
+
+// Check if saved
+const saved = await KiuFS.hasFile(url);
+
+// Get a playable URL (native blob or object URL)
+const playUrl = await KiuFS.getOfflineUrl(url);
+
+// Remove
+await KiuFS.removeFile(url);
+```
+
+### Using KiuSync for local-first data
+```js
+// Load cached records immediately
+const books = await KiuSync.getLocal('books');
+
+// Force a sync
+await KiuSync.sync(true);
+```
+
+---
+
+## Android Permissions Setup
+
+After running `npm run build:android`, open `android/app/src/main/AndroidManifest.xml`
+and add permissions from `android-permissions.xml` as needed.
+
+Required permissions are already uncommented in that file.
+
+## iOS Permissions Setup
+
+After running `npm run build:ios`, open `ios/App/App/Info.plist`
+and add the relevant keys from `ios-permissions.xml`.
+
+Only add keys for features that are actually used — Apple rejects apps with unused permission strings.
+
+---
+
+## Firebase Push Notifications Setup (Required for FCM)
+
+The `google-services.json` file is **not** included in this repo. Without it the app builds and runs normally — push notifications simply won't fire.
+
+### Steps to add it
+1. Go to [Firebase Console](https://console.firebase.google.com/) → project **kiuma-mob-app**
+2. Click **Project Settings** (gear icon) → **Your apps** tab
+3. Find the Android app (`com.kiuma.app`) — or add it if missing
+4. Click **Download google-services.json**
+5. Place the file at:
+   ```
+   android/app/google-services.json
+   ```
+6. Run `npm run cap:sync:android` — the build will automatically apply the Firebase plugin
+
+> The `app/build.gradle` already contains the conditional Firebase plugin block; no manual Gradle edits are needed.
+
+---
+
+## App Icon & Splash Screen
+
+Icons have been generated from `logo.png` (1024×1024) into all Android mipmap densities using `@capacitor/assets`.
+
+To regenerate after changing the logo:
+```bash
+# Place updated logo at resources/icon.png (min 1024×1024)
+npx capacitor-assets generate --android
+npx cap sync android
+```
+
+Source files:
+- `resources/icon.png` — launcher icon
+- `resources/icon-foreground.png` — adaptive icon foreground layer
 
 ---
 

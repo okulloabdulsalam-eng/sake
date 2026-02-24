@@ -1,6 +1,6 @@
 {
-  "version": "2.1.0",
-  "build": "2026-02-21",
+  "version": "2.2.1",
+  "build": "2026-02-25",
   "minAppVersion": "1.0.0",
-  "changelog": "Smart upload routing with 10GB auto-rotation, in-app downloads, no external download links"
+  "changelog": "Fix offline mode: Firebase SDK and Supabase now pre-cached so app works without internet"
 }

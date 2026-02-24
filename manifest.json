@@ -3,10 +3,13 @@
     "short_name": "KIUMA",
     "description": "Official app for Kampala International University Muslim Association",
     "start_url": "./index.html",
+    "scope": "./",
     "display": "standalone",
+    "display_override": ["standalone", "minimal-ui"],
     "background_color": "#1a1a2e",
     "theme_color": "#4CAF50",
     "orientation": "portrait-primary",
+    "prefer_related_applications": false,
     "icons": [
         {
             "src": "./logo.png",
@@ -17,5 +20,23 @@
     ],
     "categories": ["education", "lifestyle", "social"],
     "lang": "en",
-    "dir": "ltr"
+    "dir": "ltr",
+    "offline_enabled": true,
+    "shortcuts": [
+        {
+            "name": "Prayer Times",
+            "url": "./index.html#prayer",
+            "description": "View today's prayer times"
+        },
+        {
+            "name": "Quran",
+            "url": "./quran.html",
+            "description": "Read the Holy Quran"
+        },
+        {
+            "name": "Library",
+            "url": "./library.html",
+            "description": "Islamic books and media"
+        }
+    ]
 }

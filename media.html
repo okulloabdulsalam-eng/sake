@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -211,6 +211,9 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
     <script src="script.js"></script>
+    <script src="kiuma-idb.js"></script>
+    <script src="kiuma-filesystem.js"></script>
+    <script src="kiuma-delta-sync.js"></script>
     <script src="app-storage.js"></script>
     <!-- In-app file viewer modal -->
     <div id="mediaViewerModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.92);flex-direction:column;">
@@ -274,13 +277,15 @@
         }
 
         async function saveFileOffline(url, meta, onProgress) {
-            if (!window.AppStorage) return false;
-            return await window.AppStorage.downloadAndSave(url, meta, onProgress);
+            if (window.KiuFS) return await window.KiuFS.downloadAndSave(url, meta, onProgress);
+            if (window.AppStorage) return await window.AppStorage.downloadAndSave(url, meta, onProgress);
+            return false;
         }
 
         async function removeFileOffline(url) {
-            if (!window.AppStorage) return false;
-            return await window.AppStorage.removeFile(url);
+            if (window.KiuFS) return await window.KiuFS.removeFile(url);
+            if (window.AppStorage) return await window.AppStorage.removeFile(url);
+            return false;
         }
 
         function isFileSavedOffline(url) { return window.AppStorage ? window.AppStorage.isFileSaved(url) : false; }
