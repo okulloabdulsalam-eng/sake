@@ -324,11 +324,32 @@ const CURRENT_VAPID_KEY = 'BHMDvl2IeqHupDGCross8v0eqlwcTDHDeOGXYbWmUiHqFysd1h_zu
 
 async function getFCMToken(messaging) {
     try {
-        // If VAPID key changed or never tracked, delete old token and force fresh one
+        // If VAPID key changed or never tracked, force complete cleanup and fresh token
         const savedVapid = localStorage.getItem('fcmVapidKey');
         if (!savedVapid || savedVapid !== CURRENT_VAPID_KEY) {
-            console.log('VAPID key changed or first run, deleting old FCM token...');
-            try { await messaging.deleteToken(); } catch(e) {}
+            console.log('VAPID key changed or first run — full push cleanup...');
+            // 1. Delete FCM token from Firebase servers
+            try { await messaging.deleteToken(); } catch(e) { console.log('deleteToken skipped:', e.message); }
+            // 2. Unsubscribe existing push subscription (tied to old VAPID/sender)
+            if (fcmSwRegistration) {
+                try {
+                    const sub = await fcmSwRegistration.pushManager.getSubscription();
+                    if (sub) {
+                        await sub.unsubscribe();
+                        console.log('Old push subscription unsubscribed');
+                    }
+                } catch(e) { console.log('unsubscribe skipped:', e.message); }
+            }
+            // 3. Clear cached IndexedDB data for Firebase messaging
+            try {
+                const dbs = await indexedDB.databases();
+                for (const db of dbs) {
+                    if (db.name && (db.name.includes('firebase-messaging') || db.name.includes('fcm'))) {
+                        indexedDB.deleteDatabase(db.name);
+                        console.log('Cleared IDB:', db.name);
+                    }
+                }
+            } catch(e) {}
             localStorage.removeItem('fcmToken');
         }
 
