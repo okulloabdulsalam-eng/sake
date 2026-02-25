@@ -167,6 +167,7 @@ async function sendNotification(body, env) {
 
   let sent = 0;
   let failed = 0;
+  let lastError = null;
   const failedTokenIds = [];
 
   // Send to each device
@@ -193,17 +194,16 @@ async function sendNotification(body, env) {
             }
           },
           data: {
-            title: title,
-            body: message || '',
-            notification_id: data?.notification_id || '',
-            category: data?.category || 'general',
-            url: data?.url || '/notifications.html',
-            ...(data || {})
+            title: String(title),
+            body: String(message || ''),
+            notification_id: String(data?.notification_id || ''),
+            category: String(data?.category || 'general'),
+            url: String(data?.url || '/notifications.html')
           }
         }
       };
 
-      const projectId = env.FCM_PROJECT_ID || 'kiuma-2026';
+      const projectId = env.FCM_PROJECT_ID || 'kiuma-mob-app';
       const resp = await fetch(
         `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
         {
@@ -223,10 +223,15 @@ async function sendNotification(body, env) {
         await env.FCM_TOKENS.put(`token:${entry.device_id}`, JSON.stringify(entry));
       } else {
         const errData = await resp.json().catch(() => ({}));
+        const errMsg = errData?.error?.message || resp.status;
         console.error('FCM send error:', JSON.stringify(errData));
+        if (!lastError) lastError = errMsg;
 
-        // Remove invalid tokens
+        // Remove invalid tokens (NOT_FOUND, UNREGISTERED, or INVALID_ARGUMENT)
+        const errCode = errData?.error?.code;
+        const errStatus = errData?.error?.status;
         if (resp.status === 404 || resp.status === 410 ||
+            errStatus === 'NOT_FOUND' || errStatus === 'INVALID_ARGUMENT' ||
             errData?.error?.details?.some(d => d['@type']?.includes('BadRequest'))) {
           failedTokenIds.push(entry.device_id);
         }
@@ -249,12 +254,13 @@ async function sendNotification(body, env) {
   }
 
   return json({
-    success: true,
-    message: `Notification sent to ${sent} device(s)`,
+    success: sent > 0 || tokens.length === 0,
+    message: sent > 0 ? `Notification sent to ${sent} device(s)` : (lastError ? `Failed: ${lastError}` : 'No devices received the push'),
     sent,
     failed,
     cleaned: failedTokenIds.length,
-    total_registered: tokens.length
+    total_registered: tokens.length,
+    ...(lastError ? { error_detail: lastError } : {})
   });
 }
 

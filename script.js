@@ -324,10 +324,10 @@ const CURRENT_VAPID_KEY = 'BHMDvl2IeqHupDGCross8v0eqlwcTDHDeOGXYbWmUiHqFysd1h_zu
 
 async function getFCMToken(messaging) {
     try {
-        // If VAPID key changed, delete old token and re-register
+        // If VAPID key changed or never tracked, delete old token and force fresh one
         const savedVapid = localStorage.getItem('fcmVapidKey');
-        if (savedVapid && savedVapid !== CURRENT_VAPID_KEY) {
-            console.log('VAPID key changed, deleting old FCM token...');
+        if (!savedVapid || savedVapid !== CURRENT_VAPID_KEY) {
+            console.log('VAPID key changed or first run, deleting old FCM token...');
             try { await messaging.deleteToken(); } catch(e) {}
             localStorage.removeItem('fcmToken');
         }
