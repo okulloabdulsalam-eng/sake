@@ -296,17 +296,12 @@ async function initializeFCM() {
             await getFCMToken(messaging);
             fcmInitialized = true;
         } else if (Notification.permission === 'default') {
-            // Show a friendly prompt first
-            const shouldAsk = !localStorage.getItem('fcmDeclined');
-            if (shouldAsk) {
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    await getFCMToken(messaging);
-                    fcmInitialized = true;
-                } else if (permission === 'denied') {
-                    localStorage.setItem('fcmDeclined', 'true');
-                    console.log('Notification permission denied');
-                }
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                await getFCMToken(messaging);
+                fcmInitialized = true;
+            } else if (permission === 'denied') {
+                console.log('Notification permission denied');
             }
         } else {
             console.log('Notifications blocked by user');
@@ -325,10 +320,20 @@ async function initializeFCM() {
     }
 }
 
+const CURRENT_VAPID_KEY = 'BHMDvl2IeqHupDGCross8v0eqlwcTDHDeOGXYbWmUiHqFysd1h_zual-w7_RJGw3qTd1BuDr3zI4Dx2Fo5fnDq0';
+
 async function getFCMToken(messaging) {
     try {
+        // If VAPID key changed, delete old token and re-register
+        const savedVapid = localStorage.getItem('fcmVapidKey');
+        if (savedVapid && savedVapid !== CURRENT_VAPID_KEY) {
+            console.log('VAPID key changed, deleting old FCM token...');
+            try { await messaging.deleteToken(); } catch(e) {}
+            localStorage.removeItem('fcmToken');
+        }
+
         const tokenOptions = {
-            vapidKey: 'BHMDvl2IeqHupDGCross8v0eqlwcTDHDeOGXYbWmUiHqFysd1h_zual-w7_RJGw3qTd1BuDr3zI4Dx2Fo5fnDq0'
+            vapidKey: CURRENT_VAPID_KEY
         };
         if (fcmSwRegistration) {
             tokenOptions.serviceWorkerRegistration = fcmSwRegistration;
@@ -338,11 +343,27 @@ async function getFCMToken(messaging) {
         if (fcmToken) {
             console.log('FCM Token obtained:', fcmToken.substring(0, 20) + '...');
             localStorage.setItem('fcmToken', fcmToken);
+            localStorage.setItem('fcmVapidKey', CURRENT_VAPID_KEY);
+            // Always register with push worker on every load
             saveFCMTokenToFirestore(fcmToken);
-            showPushNotificationConfirmation();
+            if (!savedVapid) showPushNotificationConfirmation();
         }
     } catch (error) {
         console.error('Failed to get FCM token:', error);
+        // If token fetch fails, try deleting and retrying once
+        try {
+            await messaging.deleteToken();
+            localStorage.removeItem('fcmToken');
+            const retryToken = await messaging.getToken({ vapidKey: CURRENT_VAPID_KEY });
+            if (retryToken) {
+                fcmToken = retryToken;
+                localStorage.setItem('fcmToken', retryToken);
+                localStorage.setItem('fcmVapidKey', CURRENT_VAPID_KEY);
+                saveFCMTokenToFirestore(retryToken);
+            }
+        } catch(e2) {
+            console.error('FCM token retry also failed:', e2);
+        }
     }
 }
 
