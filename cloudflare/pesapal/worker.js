@@ -105,9 +105,7 @@ async function initializePayment(body, env) {
   if (!description) {
     return json({ success: false, message: 'Payment description is required' }, 400);
   }
-  if (!email) {
-    return json({ success: false, message: 'Email is required' }, 400);
-  }
+  const safeEmail = email || '';
 
   const cur = currency || 'UGX';
   if (cur !== 'UGX') {
@@ -132,7 +130,7 @@ async function initializePayment(body, env) {
     cancellation_url: `${appBaseUrl}/pay.html?payment=cancelled`,
     notification_id: notificationId,
     billing_address: {
-      email_address: email,
+      email_address: safeEmail,
       phone_number: phone || '',
       country_code: 'UG',
       first_name: first_name || 'User',
