@@ -519,7 +519,8 @@
         // ==============================
         // Offline storage (IndexedDB via AppStorage — persistent like app files)
         // ==============================
-        function getOfflineIndex() {
+        async function getOfflineIndex() {
+            if (window.KiuFS) return await window.KiuFS.getAllDownloads();
             return window.AppStorage ? window.AppStorage.getLocalIndex().filter(f => f.category) : [];
         }
 
@@ -535,7 +536,10 @@
             return false;
         }
 
-        function isFileSavedOffline(url) { return window.AppStorage ? window.AppStorage.isFileSaved(url) : false; }
+        async function isFileSavedOffline(url) {
+            if (window.KiuFS) return await window.KiuFS.hasFile(url);
+            return window.AppStorage ? window.AppStorage.isFileSaved(url) : false;
+        }
 
         // ==============================
         // Helpers
@@ -806,7 +810,7 @@
         };
 
         // Main Qalbox-style library layout
-        function renderLibraryLayout(books) {
+        async function renderLibraryLayout(books) {
             const grid = document.getElementById('libraryGrid');
             if (!grid) return;
 
@@ -826,6 +830,10 @@
             }
 
             let html = '';
+
+            // Pre-build saved URLs set for sync download-state rendering
+            const _savedDownloads = await getOfflineIndex();
+            const savedSet = new Set(_savedDownloads.map(f => f.url));
 
             // Reading lists as folder cards
             const adminRLs = getAdminPlaylists().filter(p => p.type === 'library' && p.items.length > 0);
@@ -899,7 +907,7 @@
                 const s = catStyles[book.category] || catStyles.other;
                 const isPdf = book.name.toLowerCase().endsWith('.pdf');
                 const coverId = 'bl-' + Math.random().toString(36).substr(2, 8);
-                const saved = isFileSavedOffline(book.url);
+                const saved = savedSet.has(book.url);
 
                 let dlBtn = '';
                 if (saved) {
@@ -979,7 +987,7 @@
             other: { icon:'fa-book', gradient:'linear-gradient(135deg,#607D8B,#455A64)', catBg:'#eceff1', catColor:'#455A64' }
         };
 
-        function renderBookCards(container, files, isOffline) {
+        function renderBookCards(container, files, isOffline, savedSet) {
             files.forEach(book => {
                 const meta = parseMeta(book.name);
                 const t = book.title || meta.title;
@@ -987,7 +995,7 @@
                 const safeTitle = san(t);
                 const safeAuthor = san(a);
                 const s = catStyles[book.category] || catStyles.other;
-                const saved = isFileSavedOffline(book.url);
+                const saved = savedSet ? savedSet.has(book.url) : false;
                 const isPdf = book.name.toLowerCase().endsWith('.pdf');
                 const coverId = 'cover-' + Math.random().toString(36).substr(2, 9);
                 const card = document.createElement('div');
@@ -1061,7 +1069,7 @@
         // ==============================
         // Offline section
         // ==============================
-        function renderOfflineLibSection(cat) {
+        async function renderOfflineLibSection(cat) {
             cat = cat || currentLibFilter || 'all';
             let section = document.getElementById('offlineLibSection');
             if (!section) {
@@ -1071,7 +1079,8 @@
                 if (grid) grid.parentNode.insertBefore(section, grid.nextSibling);
             }
 
-            const idx = getOfflineIndex();
+            const idx = await getOfflineIndex();
+            const savedSet = new Set(idx.map(f => f.url));
 
             // Downloads tab: show all offline books grouped by category
             if (cat === 'downloads') {
@@ -1099,7 +1108,7 @@
                     const catGrid = document.createElement('div');
                     catGrid.className = 'lib-card-grid';
                     section.appendChild(catGrid);
-                    renderBookCards(catGrid, catFiles, true);
+                    renderBookCards(catGrid, catFiles, true, savedSet);
                 });
                 return;
             }
@@ -1112,7 +1121,7 @@
             const offGrid = document.createElement('div');
             offGrid.className = 'lib-card-grid';
             section.appendChild(offGrid);
-            renderBookCards(offGrid, filtered, true);
+            renderBookCards(offGrid, filtered, true, savedSet);
         }
 
         // ==============================
@@ -1138,7 +1147,6 @@
             if (ok) {
                 btn.innerHTML = '<i class="fas fa-check" style="font-size:12px;"></i>';
                 btn.style.background = 'rgba(76,175,80,0.9)';
-                // Reload entire view after short delay so card updates
                 setTimeout(() => { loadBooksFromStorage(currentLibFilter); }, 800);
             } else {
                 btn.innerHTML = '<i class="fas fa-exclamation"></i>';
