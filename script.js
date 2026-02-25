@@ -347,12 +347,30 @@ async function getFCMToken(messaging) {
 }
 
 async function saveFCMTokenToFirestore(token) {
-    if (typeof firebase === 'undefined' || !firebase.firestore) return;
-    
+    const deviceId = localStorage.getItem('deviceId') || generateDeviceId();
+    localStorage.setItem('deviceId', deviceId);
+
+    // Register with Cloudflare notifications worker (primary)
+    const NOTIFY_WORKER_URL = localStorage.getItem('kiuma_notifications_worker_url') || 'https://kiuma-notifications.kiuma.workers.dev';
     try {
-        const deviceId = localStorage.getItem('deviceId') || generateDeviceId();
-        localStorage.setItem('deviceId', deviceId);
-        
+        const resp = await fetch(NOTIFY_WORKER_URL + '/api/register-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: token, device_id: deviceId })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            console.log('FCM token registered with push worker');
+        } else {
+            console.warn('Push worker registration:', data.message);
+        }
+    } catch (err) {
+        console.warn('Failed to register token with push worker:', err.message);
+    }
+
+    // Also save to Firestore (backup)
+    if (typeof firebase === 'undefined' || !firebase.firestore) return;
+    try {
         await firebase.firestore().collection('fcm_tokens').doc(deviceId).set({
             token: token,
             deviceId: deviceId,
@@ -360,7 +378,6 @@ async function saveFCMTokenToFirestore(token) {
             userAgent: navigator.userAgent,
             platform: navigator.platform
         }, { merge: true });
-        
         console.log('FCM token saved to Firestore');
     } catch (error) {
         console.warn('Failed to save FCM token to Firestore:', error);

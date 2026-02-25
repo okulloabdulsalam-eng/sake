@@ -14,12 +14,12 @@ try {
     importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js');
 
     const firebaseConfig = {
-        apiKey: "AIzaSyCKcJ9aJn0EntmXOBc4KdtP00oyN-BaGR4",
-        authDomain: "kiuma-2026.firebaseapp.com",
-        projectId: "kiuma-2026",
-        storageBucket: "kiuma-2026.appspot.com",
-        messagingSenderId: "692502410050",
-        appId: "1:692502410050:web:ab72c486752bab0384cedb"
+        apiKey: "AIzaSyDOZ1UzDPXuxmGMZTxKcB7CzeWi7esB08c",
+        authDomain: "kiuma-mob-app.firebaseapp.com",
+        projectId: "kiuma-mob-app",
+        storageBucket: "kiuma-mob-app.firebasestorage.app",
+        messagingSenderId: "69327390212",
+        appId: "1:69327390212:web:bc519469946b80a7549751"
     };
 
     if (self.firebase && typeof self.firebase.initializeApp === 'function') {

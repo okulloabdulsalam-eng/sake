@@ -3913,19 +3913,36 @@
                 return;
             }
             
-            showStatus('notificationStatus', 'Sending notifications...', 'success');
+            showStatus('notificationStatus', 'Sending push notifications...', 'success');
             
             try {
-                if (typeof sendNotificationsToAllUsers === 'function') {
-                    const result = await sendNotificationsToAllUsers(title, message);
-                    showStatus('notificationStatus', `Sent to ${result.successCount} users`, 'success');
-                    document.getElementById('notificationTitle').value = '';
-                    document.getElementById('notificationMessage').value = '';
+                // Send via Cloudflare Worker (real push notifications)
+                const NOTIFY_WORKER_URL = localStorage.getItem('kiuma_notifications_worker_url') || 'https://kiuma-notifications.kiuma.workers.dev';
+                const ADMIN_KEY = localStorage.getItem('kiuma_notifications_admin_key') || 'kiuma-admin-2026-notify';
+                
+                const resp = await fetch(NOTIFY_WORKER_URL + '/api/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: title,
+                        message: message,
+                        admin_key: ADMIN_KEY,
+                        data: {
+                            notification_id: 'notif-' + Date.now(),
+                            category: document.getElementById('notificationCategory')?.value || 'general',
+                            url: '/notifications.html'
+                        }
+                    })
+                });
+                const data = await resp.json();
+                
+                if (data.success) {
+                    showStatus('notificationStatus', `Push sent to ${data.sent} device(s)` + (data.failed ? `, ${data.failed} failed` : ''), 'success');
                 } else {
-                    showStatus('notificationStatus', 'Notification service not available', 'error');
+                    showStatus('notificationStatus', 'Push failed: ' + (data.message || 'Unknown error'), 'error');
                 }
             } catch (error) {
-                showStatus('notificationStatus', 'Failed to send: ' + error.message, 'error');
+                showStatus('notificationStatus', 'Push send failed: ' + error.message, 'error');
             }
         }
 
@@ -4322,28 +4339,28 @@
         }
 
         async function sendFCMPushNotification(notification) {
-            if (typeof firebase === 'undefined' || !firebase.firestore) {
-                throw new Error('Firebase not available');
+            const NOTIFY_WORKER_URL = localStorage.getItem('kiuma_notifications_worker_url') || 'https://kiuma-notifications.kiuma.workers.dev';
+            const ADMIN_KEY = localStorage.getItem('kiuma_notifications_admin_key') || 'kiuma-admin-2026-notify';
+            
+            const resp = await fetch(NOTIFY_WORKER_URL + '/api/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: notification.title,
+                    message: notification.message,
+                    admin_key: ADMIN_KEY,
+                    data: {
+                        notification_id: notification.id,
+                        category: notification.category || 'general',
+                        url: '/notifications.html'
+                    }
+                })
+            });
+            const data = await resp.json();
+            if (!data.success) {
+                throw new Error(data.message || 'Failed to send push notification');
             }
-            
-            // Create a push notification request in Firestore
-            // This can be picked up by a Cloud Function to actually send
-            const pushData = {
-                title: notification.title,
-                body: notification.message,
-                icon: notification.icon || 'fas fa-bell',
-                category: notification.category || 'general',
-                notificationId: notification.id,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                status: 'pending'
-            };
-            
-            // Save to Firestore push_queue collection
-            await firebase.firestore().collection('push_queue').add(pushData);
-            
-            // Get count of registered devices
-            const tokensSnapshot = await firebase.firestore().collection('fcm_tokens').get();
-            return tokensSnapshot.size;
+            return data.sent || 0;
         }
 
         function deleteNotification(id) {
