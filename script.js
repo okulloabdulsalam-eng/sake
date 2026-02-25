@@ -545,7 +545,7 @@ overlay.addEventListener('click', () => {
             (adminHref ? '<a href="' + adminHref + '" class="smb-admin-link"><i class="fas fa-cog"></i> Admin</a>' : '') +
             '<button class="smb-btn notifications-btn" id="smbNotifications" onclick="window.location.href=\'notifications.html\'">' +
                 '<i class="fas fa-bell"></i>' +
-                '<span class="badge" data-notification-badge>3</span>' +
+                '<span class="badge" data-notification-badge style="display:none"></span>' +
             '</button>' +
             '<div class="smb-profile-avatar" onclick="if(typeof toggleAccountModal===\'function\')toggleAccountModal()"><i class="fas fa-user"></i></div>' +
         '</div>';
