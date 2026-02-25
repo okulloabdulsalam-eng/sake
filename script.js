@@ -328,7 +328,7 @@ async function initializeFCM() {
 async function getFCMToken(messaging) {
     try {
         const tokenOptions = {
-            vapidKey: 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U'
+            vapidKey: 'BHMDvl2IeqHupDGCross8v0eqlwcTDHDeOGXYbWmUiHqFysd1h_zual-w7_RJGw3qTd1BuDr3zI4Dx2Fo5fnDq0'
         };
         if (fcmSwRegistration) {
             tokenOptions.serviceWorkerRegistration = fcmSwRegistration;
