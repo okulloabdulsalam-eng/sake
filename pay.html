@@ -113,6 +113,11 @@
                         <div class="pay-card-label">Charity</div>
                         <div class="pay-card-desc">Support a cause</div>
                     </div>
+                    <div class="pay-card" data-type="support" onclick="selectPaymentType('support')">
+                        <div class="pay-card-icon" style="background:linear-gradient(135deg,#00897B,#004D40);"><i class="fas fa-mosque"></i></div>
+                        <div class="pay-card-label">Support Your Religion</div>
+                        <div class="pay-card-desc">Enter any amount</div>
+                    </div>
                     <div class="pay-card full-width" data-type="donate" onclick="selectPaymentType('donate')">
                         <div class="pay-card-icon" style="background:linear-gradient(135deg,#9C27B0,#6A1B9A);"><i class="fas fa-gift"></i></div>
                         <div class="pay-card-text">
@@ -624,6 +629,10 @@
                     document.getElementById('donorNameGroup').style.display = 'block';
                     donationTypeGroup.style.display = 'block';
                     reasonGroup.style.display = 'block';
+                } else if (type === 'support') {
+                    document.getElementById('donorNameGroup').style.display = 'none';
+                    donationTypeGroup.style.display = 'none';
+                    reasonGroup.style.display = 'none';
                 } else {
                     document.getElementById('donorNameGroup').style.display = 'none';
                     donationTypeGroup.style.display = 'none';
@@ -633,7 +642,8 @@
                 // Set payment type info
                 const typeNames = {
                     'charity': 'Charity',
-                    'donate': 'Donation'
+                    'donate': 'Donation',
+                    'support': 'Support Your Religion'
                 };
                 document.getElementById('selectedType').textContent = typeNames[type] || type;
             }
@@ -697,7 +707,8 @@
                 'monthly': 'Monthly Subscription',
                 'zakat': 'Zakat',
                 'charity': 'Charity',
-                'donate': 'Donation'
+                'donate': 'Donation',
+                'support': 'Support Your Religion'
             };
 
             alert(`Payment Instructions:\n\nAmount: ${amount.toLocaleString()} UGX\nType: ${paymentTypeNames[selectedPaymentType]}\n\nPlease make payment using one of the recommended methods above.\n\nAfter payment, contact the Finance Minister to confirm your deposit.`);
@@ -739,7 +750,8 @@
                 'monthly': 'Monthly Subscription',
                 'zakat': 'Zakat',
                 'charity': 'Charity',
-                'donate': 'Donation'
+                'donate': 'Donation',
+                'support': 'Support Your Religion'
             };
 
             // Get donation details if applicable
@@ -896,7 +908,8 @@
                 'monthly': 'Monthly Subscription',
                 'zakat': 'Zakat',
                 'charity': 'Charity',
-                'donate': 'Donation'
+                'donate': 'Donation',
+                'support': 'Support Your Religion'
             };
             let description = 'KIUMA ' + (typeNames[selectedPaymentType] || selectedPaymentType);
             if (selectedPlan) {
