@@ -503,8 +503,8 @@
                             <input type="email" class="form-input" id="pesapalEmail" placeholder="your@email.com">
                         </div>
                         <div class="form-group" id="pesapalPhoneGroup">
-                            <label class="form-label">Phone Number <span style="color:#888;font-weight:normal;">(optional)</span></label>
-                            <input type="tel" class="form-input" id="pesapalPhone" placeholder="e.g. 0771234567">
+                            <label class="form-label">Phone Number <span style="color:red;">*</span></label>
+                            <input type="tel" class="form-input" id="pesapalPhone" placeholder="e.g. 0771234567" required>
                         </div>
                         <button id="pesapalPayBtn" onclick="payWithPesapal()" style="width:100%;padding:15px 30px;background:linear-gradient(135deg,#0066B2,#004080);color:white;border:none;border-radius:12px;font-size:18px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;">
                             <i class="fas fa-lock"></i> Pay Online with Pesapal
@@ -640,9 +640,40 @@
         }
 
         function selectPlan(planName, amount) {
-            // Redirect to subscription form with plan details
+            selectedPlan = planName;
+            selectedAmount = amount;
+
+            // Show payment form inline
+            const paymentForm = document.getElementById('paymentForm');
+            paymentForm.style.display = 'block';
+
+            // Show plan info
+            const planInfo = document.getElementById('selectedPlanInfo');
+            planInfo.style.display = 'block';
+            const planNames = {
+                'undergraduate': 'Undergraduate',
+                'postgraduate': 'Postgraduate',
+                'university-staff': 'University Staff',
+                'elders': 'Elders'
+            };
+            document.getElementById('selectedPlanName').textContent = planNames[planName] || planName;
+            document.getElementById('selectedAmount').textContent = amount.toLocaleString();
             const subscriptionType = selectedPaymentType || 'semester';
-            window.location.href = `subscription-form.html?plan=${planName}&amount=${amount}&type=${subscriptionType}`;
+            document.getElementById('selectedType').textContent = subscriptionType === 'monthly' ? 'Monthly Subscription' : 'Semester Subscription';
+
+            // Hide custom amount (plan has fixed amount)
+            document.getElementById('customAmountGroup').style.display = 'none';
+            // Hide donation-only fields
+            document.getElementById('donorNameGroup').style.display = 'none';
+            document.getElementById('donationTypeGroup').style.display = 'none';
+            document.getElementById('reasonGroup').style.display = 'none';
+
+            // Highlight selected plan card
+            document.querySelectorAll('.membership-plan-card').forEach(c => c.style.borderColor = '#e8e8e8');
+            event.target.closest('.membership-plan-card').style.borderColor = 'var(--primary-green)';
+
+            // Scroll to payment form
+            paymentForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         function processPayment() {
@@ -834,6 +865,11 @@
             }
 
             const phone = document.getElementById('pesapalPhone').value.trim();
+            if (!phone) {
+                alert('Please enter your phone number');
+                document.getElementById('pesapalPhone').focus();
+                return;
+            }
 
             // Get user name
             let firstName = 'User';
@@ -863,6 +899,10 @@
                 'donate': 'Donation'
             };
             let description = 'KIUMA ' + (typeNames[selectedPaymentType] || selectedPaymentType);
+            if (selectedPlan) {
+                const planLabels = { 'undergraduate': 'Undergraduate', 'postgraduate': 'Postgraduate', 'university-staff': 'University Staff', 'elders': 'Elders' };
+                description += ' - ' + (planLabels[selectedPlan] || selectedPlan);
+            }
             const donationTypeEl = document.getElementById('donationType');
             if (donationTypeEl && donationTypeEl.value) {
                 description += ' - ' + donationTypeEl.options[donationTypeEl.selectedIndex].text;
