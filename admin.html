@@ -757,6 +757,29 @@
                         <div id="r2SettingsStatus" class="alert" style="margin-top: 15px;"></div>
                     </div>
 
+                    <!-- Pesapal Payment Settings -->
+                    <div class="config-card">
+                        <h4><i class="fas fa-credit-card" style="color:#0066B2;"></i> Pesapal Payment Gateway
+                            <span class="status-badge disconnected" id="pesapalStatusBadge">Not Configured</span>
+                        </h4>
+                        <p style="font-size:12px;color:#888;margin-bottom:12px;">Configure your Pesapal Cloudflare Worker URL to enable online payments (Visa, Mastercard, Mobile Money).</p>
+                        
+                        <div class="form-group" style="margin-bottom:8px;">
+                            <label style="font-size:12px;">Pesapal Worker URL</label>
+                            <input type="text" id="pesapalWorkerUrl" class="form-input" placeholder="https://kiuma-pesapal.your-account.workers.dev" style="font-size:13px;padding:8px;">
+                        </div>
+
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
+                            <button class="btn btn-primary" onclick="savePesapalSettings()" style="font-size:13px;">
+                                <i class="fas fa-save"></i> Save Pesapal Settings
+                            </button>
+                            <button class="btn btn-outline" onclick="testPesapalConnection()" style="font-size:13px;">
+                                <i class="fas fa-plug"></i> Test Connection
+                            </button>
+                        </div>
+                        <div id="pesapalSettingsStatus" class="alert" style="margin-top: 10px;"></div>
+                    </div>
+
                     <!-- GitHub Settings (fallback) -->
                     <div class="config-card">
                         <h4><i class="fab fa-github"></i> GitHub Storage <span style="font-size:11px;color:#888;font-weight:normal;">(Fallback)</span>
@@ -1715,6 +1738,7 @@
             updateStats();
             checkGitHubStatus();
             loadR2SettingsUI();
+            loadPesapalSettingsUI();
             initNotificationManager();
             // Auto-check storage usage in background
             setTimeout(() => { checkAllR2Storage(); }, 1500);
@@ -1735,7 +1759,7 @@
             if (tabName === 'announcement') loadAnnouncementAdmin();
             if (tabName === 'liveTracker') loadTrackersAdmin();
             if (tabName === 'playlists') renderPlaylistsAdmin();
-            if (tabName === 'settings') { loadR2SettingsUI(); checkAllR2Storage(); }
+            if (tabName === 'settings') { loadR2SettingsUI(); loadPesapalSettingsUI(); checkAllR2Storage(); }
         }
 
         // ==============================
@@ -2717,6 +2741,54 @@
             if (totalConfigured > 0) {
                 document.getElementById('r2StatusBadge').textContent = totalConfigured + ' Account' + (totalConfigured > 1 ? 's' : '') + ' Configured';
                 document.getElementById('r2StatusBadge').className = 'status-badge connected';
+            }
+        }
+
+        // ==============================
+        // PESAPAL SETTINGS
+        // ==============================
+        function loadPesapalSettingsUI() {
+            const url = localStorage.getItem('kiuma_pesapal_worker_url') || '';
+            document.getElementById('pesapalWorkerUrl').value = url;
+            if (url) {
+                document.getElementById('pesapalStatusBadge').textContent = 'Configured';
+                document.getElementById('pesapalStatusBadge').className = 'status-badge connected';
+            }
+        }
+
+        function savePesapalSettings() {
+            const url = document.getElementById('pesapalWorkerUrl').value.trim().replace(/\/+$/, '');
+            localStorage.setItem('kiuma_pesapal_worker_url', url);
+            if (url) {
+                document.getElementById('pesapalStatusBadge').textContent = 'Configured';
+                document.getElementById('pesapalStatusBadge').className = 'status-badge connected';
+                showStatus('pesapalSettingsStatus', 'Pesapal Worker URL saved!', 'success');
+            } else {
+                document.getElementById('pesapalStatusBadge').textContent = 'Not Configured';
+                document.getElementById('pesapalStatusBadge').className = 'status-badge disconnected';
+                showStatus('pesapalSettingsStatus', 'Pesapal Worker URL cleared.', 'success');
+            }
+        }
+
+        async function testPesapalConnection() {
+            const url = document.getElementById('pesapalWorkerUrl').value.trim().replace(/\/+$/, '');
+            if (!url) {
+                showStatus('pesapalSettingsStatus', 'Please enter a Pesapal Worker URL first.', 'error');
+                return;
+            }
+            showStatus('pesapalSettingsStatus', 'Testing connection...', 'success');
+            try {
+                const resp = await fetch(url + '/health', { cache: 'no-store' });
+                const data = await resp.json();
+                if (data.status === 'ok') {
+                    showStatus('pesapalSettingsStatus', 'Connected! Service: ' + (data.service || 'Pesapal Worker'), 'success');
+                    document.getElementById('pesapalStatusBadge').textContent = 'Connected';
+                    document.getElementById('pesapalStatusBadge').className = 'status-badge connected';
+                } else {
+                    showStatus('pesapalSettingsStatus', 'Worker responded but status not OK: ' + JSON.stringify(data), 'error');
+                }
+            } catch(e) {
+                showStatus('pesapalSettingsStatus', 'Connection failed: ' + e.message, 'error');
             }
         }
 

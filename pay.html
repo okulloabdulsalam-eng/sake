@@ -489,6 +489,31 @@
                         <i class="fas fa-paper-plane"></i> Submit Payment Details
                     </button>
 
+                    <!-- OR Divider -->
+                    <div style="display:flex;align-items:center;gap:12px;margin:20px 0;">
+                        <div style="flex:1;height:1px;background:#e0e0e0;"></div>
+                        <span style="color:#999;font-size:13px;font-weight:600;">OR PAY ONLINE</span>
+                        <div style="flex:1;height:1px;background:#e0e0e0;"></div>
+                    </div>
+
+                    <!-- Pesapal Pay Online -->
+                    <div id="pesapalSection">
+                        <div class="form-group" id="pesapalEmailGroup">
+                            <label class="form-label">Email for receipt <span style="color:red;">*</span></label>
+                            <input type="email" class="form-input" id="pesapalEmail" placeholder="your@email.com">
+                        </div>
+                        <div class="form-group" id="pesapalPhoneGroup">
+                            <label class="form-label">Phone Number <span style="color:#888;font-weight:normal;">(optional)</span></label>
+                            <input type="tel" class="form-input" id="pesapalPhone" placeholder="e.g. 0771234567">
+                        </div>
+                        <button id="pesapalPayBtn" onclick="payWithPesapal()" style="width:100%;padding:15px 30px;background:linear-gradient(135deg,#0066B2,#004080);color:white;border:none;border-radius:12px;font-size:18px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;">
+                            <i class="fas fa-lock"></i> Pay Online with Pesapal
+                        </button>
+                        <p style="text-align:center;margin-top:8px;font-size:12px;color:#888;">
+                            <i class="fas fa-credit-card"></i> Visa, Mastercard, Mobile Money & more
+                        </p>
+                    </div>
+
                     <!-- Security Notice -->
                     <div class="info-card" style="margin-top: 20px; background: #E8F5E9;">
                         <p style="font-size: 14px; color: var(--dark-green); margin: 0;">
@@ -759,6 +784,137 @@
             });
             // Toggle current dropdown
             element.classList.toggle('open');
+        }
+
+        // ==============================
+        // PESAPAL ONLINE PAYMENT
+        // ==============================
+        // Pesapal Worker URL - set in admin or localStorage
+        const PESAPAL_WORKER_URL = localStorage.getItem('kiuma_pesapal_worker_url') || '';
+
+        // Autofill Pesapal email from user data
+        function autofillPesapalEmail() {
+            try {
+                const userData = localStorage.getItem('userData') || localStorage.getItem('kiuma_user');
+                if (userData) {
+                    const user = JSON.parse(userData);
+                    if (user.email) document.getElementById('pesapalEmail').value = user.email;
+                    if (user.phone || user.phoneNumber) document.getElementById('pesapalPhone').value = user.phone || user.phoneNumber;
+                }
+            } catch(e) {}
+        }
+        window.addEventListener('DOMContentLoaded', function() { autofillPesapalEmail(); });
+
+        async function payWithPesapal() {
+            if (!selectedPaymentType) {
+                alert('Please select a payment type first');
+                return;
+            }
+
+            let amount = selectedAmount;
+            if (!amount) {
+                const amountEl = document.getElementById('amount');
+                if (amountEl) amount = parseFloat(amountEl.value);
+                if (!amount || amount <= 0) {
+                    alert('Please enter a valid amount');
+                    return;
+                }
+            }
+
+            const email = document.getElementById('pesapalEmail').value.trim();
+            if (!email) {
+                alert('Please enter your email address for the receipt');
+                document.getElementById('pesapalEmail').focus();
+                return;
+            }
+
+            if (!PESAPAL_WORKER_URL) {
+                alert('Pesapal is not configured yet. Please contact the administrator to set the Pesapal Worker URL.');
+                return;
+            }
+
+            const phone = document.getElementById('pesapalPhone').value.trim();
+
+            // Get user name
+            let firstName = 'User';
+            let lastName = '';
+            try {
+                const donorNameEl = document.getElementById('donorName');
+                if (donorNameEl && donorNameEl.value.trim()) {
+                    const parts = donorNameEl.value.trim().split(' ');
+                    firstName = parts[0];
+                    lastName = parts.slice(1).join(' ');
+                } else {
+                    const userData = localStorage.getItem('userData') || localStorage.getItem('kiuma_user');
+                    if (userData) {
+                        const user = JSON.parse(userData);
+                        firstName = user.firstName || user.name || 'User';
+                        lastName = user.lastName || '';
+                    }
+                }
+            } catch(e) {}
+
+            // Build description
+            const typeNames = {
+                'semester': 'Semester Subscription',
+                'monthly': 'Monthly Subscription',
+                'zakat': 'Zakat',
+                'charity': 'Charity',
+                'donate': 'Donation'
+            };
+            let description = 'KIUMA ' + (typeNames[selectedPaymentType] || selectedPaymentType);
+            const donationTypeEl = document.getElementById('donationType');
+            if (donationTypeEl && donationTypeEl.value) {
+                description += ' - ' + donationTypeEl.options[donationTypeEl.selectedIndex].text;
+            }
+
+            // Disable button and show loading
+            const btn = document.getElementById('pesapalPayBtn');
+            const originalBtnHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting to Pesapal...';
+
+            try {
+                const resp = await fetch(PESAPAL_WORKER_URL + '/api/initialize-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount: parseFloat(amount),
+                        currency: 'UGX',
+                        description: description,
+                        email: email,
+                        phone: phone,
+                        first_name: firstName,
+                        last_name: lastName
+                    })
+                });
+
+                const data = await resp.json();
+
+                if (data.success && data.checkout_url) {
+                    // Store pending payment info for callback page
+                    localStorage.setItem('kiuma_pending_payment', JSON.stringify({
+                        reference: data.reference,
+                        order_tracking_id: data.order_tracking_id,
+                        amount: amount,
+                        description: description,
+                        email: email,
+                        date: new Date().toISOString()
+                    }));
+
+                    // Redirect to Pesapal checkout
+                    window.location.href = data.checkout_url;
+                } else {
+                    alert('Failed to initialize payment: ' + (data.message || 'Unknown error'));
+                    btn.disabled = false;
+                    btn.innerHTML = originalBtnHTML;
+                }
+            } catch(err) {
+                console.error('Pesapal error:', err);
+                alert('Could not connect to payment server. Please check your internet connection and try again.');
+                btn.disabled = false;
+                btn.innerHTML = originalBtnHTML;
+            }
         }
 
         function copyToClipboard(text) {
