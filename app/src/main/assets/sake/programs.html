@@ -18,8 +18,9 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4CAF50">
-    <!-- Font Awesome: CDN primary, local fallback -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+    <!-- Font Awesome: local first (instant), CDN non-blocking enhancement -->
+    <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous"></noscript>
     <link rel="stylesheet" href="fonts/fontawesome.min.css">
 </head>
 <body>
@@ -165,12 +166,20 @@
                     </div>
                 </div>
 
-                <div class="info-card" style="margin-bottom: 25px;">
+                <div class="info-card" style="margin-bottom: 25px; background: linear-gradient(135deg, #ffffff, #f7fbff); border: 1px solid rgba(33, 150, 243, 0.12);">
                     <h3 class="section-title" style="margin-bottom: 15px;">
                         <i class="fas fa-calendar-week"></i> Weekend Program
                     </h3>
 
                     <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <div style="background: linear-gradient(135deg, rgba(233, 30, 99, 0.12), rgba(233, 30, 99, 0.03)); border-radius: 12px; padding: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid rgba(233, 30, 99, 0.20); border-left: 5px solid #E91E63;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 700; color: var(--dark-gray);">Every Weekend — 2:00 PM</div>
+                                <div style="font-size: 13px; color: var(--text-gray);">Ladies Qur’an Halaqa • Sisters Only</div>
+                            </div>
+                            <button class="event-btn" style="padding: 10px 12px;" onclick="event.stopPropagation(); window.location.href='join-programs.html?gender=female&courses=sisters-quran-weekend'">Join</button>
+                        </div>
+
                         <div style="background: linear-gradient(135deg, rgba(33, 150, 243, 0.12), rgba(33, 150, 243, 0.03)); border-radius: 12px; padding: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid rgba(33, 150, 243, 0.22); border-left: 5px solid #2196F3;">
                             <div style="flex: 1; min-width: 0;">
                                 <div style="font-weight: 700; color: var(--dark-gray);">Friday — After Maghrib</div>
@@ -337,8 +346,8 @@
                     <div class="event-content">
                         <div class="event-date"><i class="fas fa-calendar"></i> Weekly</div>
                         <h3 class="event-title">Sisters Circle</h3>
-                        <p class="event-description">A safe space for sisters to learn, share, and grow together. Topics include Islamic jurisprudence, family matters, and personal development. Sisters’ Quran classes happen over the weekend.</p>
-                        <button class="event-btn" onclick="window.location.href='join-programs.html?gender=female'">Join Now</button>
+                        <p class="event-description">A safe space for sisters to learn, share, and grow together. Topics include Islamic jurisprudence, family matters, and personal development. Ladies Qur’an Halaqa is at 2:00 PM every weekend.</p>
+                        <button class="event-btn" onclick="window.location.href='join-programs.html?gender=female&courses=sisters-quran-weekend'">Join Now</button>
                     </div>
                 </div>
 
@@ -423,12 +432,12 @@
         </div>
     </div>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
-    <script src="firebase-config.js"></script>
-    <script src="script.js"></script>
+    <!-- Firebase SDK (deferred so slow networks don't block UI render) -->
+    <script defer src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script defer src="firebase-config.js"></script>
+    <script defer src="script.js"></script>
     <script>
         // Quran Class Enrollment
         const quranClasses = {
