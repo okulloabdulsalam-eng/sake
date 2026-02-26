@@ -4,12 +4,11 @@
 
 const AUTO_UPDATE_CONFIG = {
     VERSION_URL: './version.json',
-    VERSION_CHECK_INTERVAL: 99999999999, // DISABLED - effectively never checks
+    VERSION_CHECK_INTERVAL: 30000, // Check every 30 seconds when online
     CACHE_VERSION_KEY: 'kiuma_cache_version',
     LAST_UPDATE_CHECK_KEY: 'kiuma_last_update_check',
     UPDATE_AVAILABLE_KEY: 'kiuma_update_available',
-    FORCE_REFRESH_AFTER_MS: 99999999999, // DISABLED
-    SILENT_UPDATE: true // Silent mode - no auto-refresh
+    FORCE_REFRESH_AFTER_MS: 3000 // Force refresh after 3 seconds if no response
 };
 
 // Store current cached version
