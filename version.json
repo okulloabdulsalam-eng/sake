@@ -1,6 +1,6 @@
 {
-  "version": "2.1.1",
-  "build": "2026-02-24",
+  "version": "2.2.1",
+  "build": "2026-02-25",
   "minAppVersion": "1.0.0",
-  "changelog": "Auto-update system - app now automatically detects and applies website updates without requiring cache clearing"
+  "changelog": "Auto-update system + offline mode fixes - app now automatically detects updates and works without internet"
 }

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -113,6 +113,11 @@
                         <div class="pay-card-label">Charity</div>
                         <div class="pay-card-desc">Support a cause</div>
                     </div>
+                    <div class="pay-card" data-type="support" onclick="selectPaymentType('support')">
+                        <div class="pay-card-icon" style="background:linear-gradient(135deg,#00897B,#004D40);"><i class="fas fa-mosque"></i></div>
+                        <div class="pay-card-label">Support Your Religion</div>
+                        <div class="pay-card-desc">Enter any amount</div>
+                    </div>
                     <div class="pay-card full-width" data-type="donate" onclick="selectPaymentType('donate')">
                         <div class="pay-card-icon" style="background:linear-gradient(135deg,#9C27B0,#6A1B9A);"><i class="fas fa-gift"></i></div>
                         <div class="pay-card-text">
@@ -217,8 +222,8 @@
                         <input type="number" class="form-input" id="amount" placeholder="Enter amount" min="1">
                     </div>
 
-                    <!-- Payment Methods Dropdowns -->
-                    <div class="form-group">
+                    <!-- Manual Payment Methods (hidden for 'Support Your Religion') -->
+                    <div id="manualPaymentSection"><div class="form-group">
                         <label class="form-label" style="margin-bottom: 15px; font-size: 18px; font-weight: 600;">Recommended Payment Methods</label>
                         
                         <style>
@@ -489,6 +494,33 @@
                         <i class="fas fa-paper-plane"></i> Submit Payment Details
                     </button>
 
+                    </div><!-- /manualPaymentSection -->
+
+                    <!-- OR Divider -->
+                    <div id="orDivider" style="display:flex;align-items:center;gap:12px;margin:20px 0;">
+                        <div style="flex:1;height:1px;background:#e0e0e0;"></div>
+                        <span style="color:#999;font-size:13px;font-weight:600;">OR PAY ONLINE</span>
+                        <div style="flex:1;height:1px;background:#e0e0e0;"></div>
+                    </div>
+
+                    <!-- Pesapal Pay Online -->
+                    <div id="pesapalSection">
+                        <div class="form-group" id="pesapalEmailGroup">
+                            <label class="form-label">Email for receipt <span style="color:#888;font-weight:normal;">(optional)</span></label>
+                            <input type="email" class="form-input" id="pesapalEmail" placeholder="your@email.com">
+                        </div>
+                        <div class="form-group" id="pesapalPhoneGroup">
+                            <label class="form-label">Phone Number <span style="color:red;">*</span></label>
+                            <input type="tel" class="form-input" id="pesapalPhone" placeholder="e.g. 0771234567" required>
+                        </div>
+                        <button id="pesapalPayBtn" onclick="payWithPesapal()" style="width:100%;padding:15px 30px;background:linear-gradient(135deg,#0066B2,#004080);color:white;border:none;border-radius:12px;font-size:18px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;">
+                            <i class="fas fa-lock"></i> Pay
+                        </button>
+                        <p style="text-align:center;margin-top:8px;font-size:12px;color:#888;">
+                            <i class="fas fa-credit-card"></i> Visa, Mastercard, Mobile Money & more
+                        </p>
+                    </div>
+
                     <!-- Security Notice -->
                     <div class="info-card" style="margin-top: 20px; background: #E8F5E9;">
                         <p style="font-size: 14px; color: var(--dark-green); margin: 0;">
@@ -514,6 +546,9 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
     <script src="script.js"></script>
+    <script src="kiuma-idb.js"></script>
+    <script src="kiuma-filesystem.js"></script>
+    <script src="kiuma-delta-sync.js"></script>
     <script>
         let selectedPaymentType = '';
         let selectedPlan = null;
@@ -596,7 +631,15 @@
                     document.getElementById('donorNameGroup').style.display = 'block';
                     donationTypeGroup.style.display = 'block';
                     reasonGroup.style.display = 'block';
+                } else if (type === 'support') {
+                    document.getElementById('donorNameGroup').style.display = 'none';
+                    donationTypeGroup.style.display = 'none';
+                    reasonGroup.style.display = 'none';
+                    document.getElementById('manualPaymentSection').style.display = 'none';
+                    document.getElementById('orDivider').style.display = 'none';
                 } else {
+                    document.getElementById('manualPaymentSection').style.display = 'block';
+                    document.getElementById('orDivider').style.display = 'flex';
                     document.getElementById('donorNameGroup').style.display = 'none';
                     donationTypeGroup.style.display = 'none';
                     reasonGroup.style.display = 'none';
@@ -605,16 +648,48 @@
                 // Set payment type info
                 const typeNames = {
                     'charity': 'Charity',
-                    'donate': 'Donation'
+                    'donate': 'Donation',
+                    'support': 'Support Your Religion'
                 };
                 document.getElementById('selectedType').textContent = typeNames[type] || type;
             }
         }
 
         function selectPlan(planName, amount) {
-            // Redirect to subscription form with plan details
+            selectedPlan = planName;
+            selectedAmount = amount;
+
+            // Show payment form inline
+            const paymentForm = document.getElementById('paymentForm');
+            paymentForm.style.display = 'block';
+
+            // Show plan info
+            const planInfo = document.getElementById('selectedPlanInfo');
+            planInfo.style.display = 'block';
+            const planNames = {
+                'undergraduate': 'Undergraduate',
+                'postgraduate': 'Postgraduate',
+                'university-staff': 'University Staff',
+                'elders': 'Elders'
+            };
+            document.getElementById('selectedPlanName').textContent = planNames[planName] || planName;
+            document.getElementById('selectedAmount').textContent = amount.toLocaleString();
             const subscriptionType = selectedPaymentType || 'semester';
-            window.location.href = `subscription-form.html?plan=${planName}&amount=${amount}&type=${subscriptionType}`;
+            document.getElementById('selectedType').textContent = subscriptionType === 'monthly' ? 'Monthly Subscription' : 'Semester Subscription';
+
+            // Hide custom amount (plan has fixed amount)
+            document.getElementById('customAmountGroup').style.display = 'none';
+            // Hide donation-only fields
+            document.getElementById('donorNameGroup').style.display = 'none';
+            document.getElementById('donationTypeGroup').style.display = 'none';
+            document.getElementById('reasonGroup').style.display = 'none';
+
+            // Highlight selected plan card
+            document.querySelectorAll('.membership-plan-card').forEach(c => c.style.borderColor = '#e8e8e8');
+            event.target.closest('.membership-plan-card').style.borderColor = 'var(--primary-green)';
+
+            // Scroll to payment form
+            paymentForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         function processPayment() {
@@ -638,7 +713,8 @@
                 'monthly': 'Monthly Subscription',
                 'zakat': 'Zakat',
                 'charity': 'Charity',
-                'donate': 'Donation'
+                'donate': 'Donation',
+                'support': 'Support Your Religion'
             };
 
             alert(`Payment Instructions:\n\nAmount: ${amount.toLocaleString()} UGX\nType: ${paymentTypeNames[selectedPaymentType]}\n\nPlease make payment using one of the recommended methods above.\n\nAfter payment, contact the Finance Minister to confirm your deposit.`);
@@ -680,7 +756,8 @@
                 'monthly': 'Monthly Subscription',
                 'zakat': 'Zakat',
                 'charity': 'Charity',
-                'donate': 'Donation'
+                'donate': 'Donation',
+                'support': 'Support Your Religion'
             };
 
             // Get donation details if applicable
@@ -756,6 +833,142 @@
             });
             // Toggle current dropdown
             element.classList.toggle('open');
+        }
+
+        // ==============================
+        // PESAPAL ONLINE PAYMENT
+        // ==============================
+        // Pesapal Worker URL - set in admin or localStorage
+        const PESAPAL_WORKER_URL = localStorage.getItem('kiuma_pesapal_worker_url') || 'https://kiuma-pesapal.kiuma.workers.dev';
+
+        // Autofill Pesapal email from user data
+        function autofillPesapalEmail() {
+            try {
+                const userData = localStorage.getItem('userData') || localStorage.getItem('kiuma_user');
+                if (userData) {
+                    const user = JSON.parse(userData);
+                    if (user.email) document.getElementById('pesapalEmail').value = user.email;
+                    if (user.phone || user.phoneNumber) document.getElementById('pesapalPhone').value = user.phone || user.phoneNumber;
+                }
+            } catch(e) {}
+        }
+        window.addEventListener('DOMContentLoaded', function() { autofillPesapalEmail(); });
+
+        async function payWithPesapal() {
+            if (!selectedPaymentType) {
+                alert('Please select a payment type first');
+                return;
+            }
+
+            let amount = selectedAmount;
+            if (!amount) {
+                const amountEl = document.getElementById('amount');
+                if (amountEl) amount = parseFloat(amountEl.value);
+                if (!amount || amount <= 0) {
+                    alert('Please enter a valid amount');
+                    return;
+                }
+            }
+
+            const email = document.getElementById('pesapalEmail').value.trim();
+
+            if (!PESAPAL_WORKER_URL) {
+                alert('Pesapal is not configured yet. Please contact the administrator to set the Pesapal Worker URL.');
+                return;
+            }
+
+            const phone = document.getElementById('pesapalPhone').value.trim();
+            if (!phone) {
+                alert('Please enter your phone number');
+                document.getElementById('pesapalPhone').focus();
+                return;
+            }
+
+            // Get user name
+            let firstName = 'User';
+            let lastName = '';
+            try {
+                const donorNameEl = document.getElementById('donorName');
+                if (donorNameEl && donorNameEl.value.trim()) {
+                    const parts = donorNameEl.value.trim().split(' ');
+                    firstName = parts[0];
+                    lastName = parts.slice(1).join(' ');
+                } else {
+                    const userData = localStorage.getItem('userData') || localStorage.getItem('kiuma_user');
+                    if (userData) {
+                        const user = JSON.parse(userData);
+                        firstName = user.firstName || user.name || 'User';
+                        lastName = user.lastName || '';
+                    }
+                }
+            } catch(e) {}
+
+            // Build description
+            const typeNames = {
+                'semester': 'Semester Subscription',
+                'monthly': 'Monthly Subscription',
+                'zakat': 'Zakat',
+                'charity': 'Charity',
+                'donate': 'Donation',
+                'support': 'Support Your Religion'
+            };
+            let description = 'KIUMA ' + (typeNames[selectedPaymentType] || selectedPaymentType);
+            if (selectedPlan) {
+                const planLabels = { 'undergraduate': 'Undergraduate', 'postgraduate': 'Postgraduate', 'university-staff': 'University Staff', 'elders': 'Elders' };
+                description += ' - ' + (planLabels[selectedPlan] || selectedPlan);
+            }
+            const donationTypeEl = document.getElementById('donationType');
+            if (donationTypeEl && donationTypeEl.value) {
+                description += ' - ' + donationTypeEl.options[donationTypeEl.selectedIndex].text;
+            }
+
+            // Disable button and show loading
+            const btn = document.getElementById('pesapalPayBtn');
+            const originalBtnHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting to Pesapal...';
+
+            try {
+                const resp = await fetch(PESAPAL_WORKER_URL + '/api/initialize-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount: parseFloat(amount),
+                        currency: 'UGX',
+                        description: description,
+                        email: email,
+                        phone: phone,
+                        first_name: firstName,
+                        last_name: lastName
+                    })
+                });
+
+                const data = await resp.json();
+
+                if (data.success && data.checkout_url) {
+                    // Store pending payment info for callback page
+                    localStorage.setItem('kiuma_pending_payment', JSON.stringify({
+                        reference: data.reference,
+                        order_tracking_id: data.order_tracking_id,
+                        amount: amount,
+                        description: description,
+                        email: email,
+                        date: new Date().toISOString()
+                    }));
+
+                    // Redirect to Pesapal checkout
+                    window.location.href = data.checkout_url;
+                } else {
+                    alert('Failed to initialize payment: ' + (data.message || 'Unknown error'));
+                    btn.disabled = false;
+                    btn.innerHTML = originalBtnHTML;
+                }
+            } catch(err) {
+                console.error('Pesapal error:', err);
+                alert('Could not connect to payment server. Please check your internet connection and try again.');
+                btn.disabled = false;
+                btn.innerHTML = originalBtnHTML;
+            }
         }
 
         function copyToClipboard(text) {

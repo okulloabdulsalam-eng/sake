@@ -1,6 +1,6 @@
 // KIUMA Service Worker - Enables offline functionality
 // Cache version - UPDATE THIS when you deploy changes to force refresh
-const CACHE_VERSION = '2026-02-24-v15';
+const CACHE_VERSION = '2026-02-25-v4';
 const CACHE_NAME = 'kiuma-cache-' + CACHE_VERSION;
 const OFFLINE_URL = 'offline.html';
 
@@ -14,12 +14,12 @@ try {
     importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js');
 
     const firebaseConfig = {
-        apiKey: "AIzaSyCKcJ9aJn0EntmXOBc4KdtP00oyN-BaGR4",
-        authDomain: "kiuma-2026.firebaseapp.com",
-        projectId: "kiuma-2026",
-        storageBucket: "kiuma-2026.appspot.com",
-        messagingSenderId: "692502410050",
-        appId: "1:692502410050:web:ab72c486752bab0384cedb"
+        apiKey: "AIzaSyDOZ1UzDPXuxmGMZTxKcB7CzeWi7esB08c",
+        authDomain: "kiuma-mob-app.firebaseapp.com",
+        projectId: "kiuma-mob-app",
+        storageBucket: "kiuma-mob-app.firebasestorage.app",
+        messagingSenderId: "69327390212",
+        appId: "1:69327390212:web:bc519469946b80a7549751"
     };
 
     if (self.firebase && typeof self.firebase.initializeApp === 'function') {
@@ -116,7 +116,17 @@ const STATIC_ASSETS = [
     './firebase-config.js',
     './update-navigation.js',
     './offline-db.js',
-    // External resources (CDN) - will be cached on first load
+    './kiuma-idb.js',
+    './kiuma-filesystem.js',
+    './kiuma-delta-sync.js',
+    // Firebase SDK — pre-cached so every page works offline
+    'https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js',
+    'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js',
+    'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js',
+    'https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js',
+    // Supabase SDK — used by search.html
+    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
+    // Font CDN
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
     'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap'
 ];
@@ -221,10 +231,10 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Skip other googleapis (auth etc) and aladhan — network only
-    if (url.hostname.includes('googleapis.com') || url.hostname.includes('aladhan.com')) {
-        return;
-    }
+    // Skip googleapis API endpoints (auth, Firestore data) — network only
+    // But allow fonts.googleapis.com to be served from cache
+    if (url.hostname.includes('aladhan.com')) return;
+    if (url.hostname.includes('googleapis.com') && !url.hostname.startsWith('fonts.')) return;
 
     // Check if this is an HTML page request (navigation or .html file)
     const isHTMLRequest = request.mode === 'navigate' || 
@@ -325,6 +335,11 @@ self.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'GET_VERSION') {
         event.ports[0].postMessage({ version: CACHE_VERSION });
     }
+
+    // KiuSync detected a new app version — refresh caches silently
+    if (event.data && event.data.type === 'CHECK_UPDATE') {
+        event.waitUntil(syncData());
+    }
 });
 
 // Background sync for when connection is restored
@@ -336,9 +351,51 @@ self.addEventListener('sync', (event) => {
 });
 
 async function syncData() {
-    // Sync any pending data when connection is restored
-    console.log('[ServiceWorker] Syncing data...');
-    // This can be extended to sync form submissions, etc.
+    // Check version.json — if updated, silently refresh all static caches
+    try {
+        const res = await fetch('./version.json', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data          = await res.json();
+        const remoteVersion = String(data.version || data.build || '');
+        const localVersion  = await _getCachedVersion();
+
+        if (remoteVersion && remoteVersion !== localVersion) {
+            await _refreshStaticCache();
+            await _setCachedVersion(remoteVersion);
+        }
+    } catch (_) { /* offline */ }
+}
+
+async function _getCachedVersion() {
+    try {
+        const cache = await caches.open(CACHE_NAME);
+        const res   = await cache.match('__sw_version__');
+        return res ? await res.text() : null;
+    } catch (_) { return null; }
+}
+
+async function _setCachedVersion(version) {
+    try {
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put('__sw_version__', new Response(version, {
+            headers: { 'Content-Type': 'text/plain' }
+        }));
+    } catch (_) {}
+}
+
+async function _refreshStaticCache() {
+    try {
+        const cache = await caches.open(CACHE_NAME);
+        await Promise.allSettled(
+            STATIC_ASSETS.map(function (url) {
+                return fetch(url, { cache: 'no-store' })
+                    .then(function (r) {
+                        if (r && r.status === 200) return cache.put(url, r);
+                    })
+                    .catch(function () {});
+            })
+        );
+    } catch (_) {}
 }
 
 // Push notification handling

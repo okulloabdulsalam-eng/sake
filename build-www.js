@@ -35,6 +35,7 @@ const SKIP_FILES = [
     'firebase.json', 'firestore.rules', 'firestore.indexes.json',
     '.firebaserc', 'test-account-storage.html', 'test-storage-console.js',
     'offline-db-example.js'
+    // kiuma-idb.js, kiuma-filesystem.js, kiuma-delta-sync.js are intentionally included
 ];
 
 function ensureDir(dir) {

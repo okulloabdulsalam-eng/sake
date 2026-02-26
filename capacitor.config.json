@@ -3,7 +3,6 @@
   "appName": "KIUMA",
   "webDir": "www",
   "server": {
-    "url": "https://okulloabdulsalam-eng.github.io/sake",
     "androidScheme": "https",
     "iosScheme": "capacitor",
     "cleartext": false,
@@ -49,7 +48,11 @@
     "Keyboard": {
       "resize": "body",
       "resizeOnFullScreen": true
-    }
+    },
+    "Filesystem": {
+      "androidScheme": "https"
+    },
+    "Network": {}
   },
   "android": {
     "allowMixedContent": true,

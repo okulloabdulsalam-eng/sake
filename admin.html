@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -757,6 +757,29 @@
                         <div id="r2SettingsStatus" class="alert" style="margin-top: 15px;"></div>
                     </div>
 
+                    <!-- Pesapal Payment Settings -->
+                    <div class="config-card">
+                        <h4><i class="fas fa-credit-card" style="color:#0066B2;"></i> Pesapal Payment Gateway
+                            <span class="status-badge disconnected" id="pesapalStatusBadge">Not Configured</span>
+                        </h4>
+                        <p style="font-size:12px;color:#888;margin-bottom:12px;">Configure your Pesapal Cloudflare Worker URL to enable online payments (Visa, Mastercard, Mobile Money).</p>
+                        
+                        <div class="form-group" style="margin-bottom:8px;">
+                            <label style="font-size:12px;">Pesapal Worker URL</label>
+                            <input type="text" id="pesapalWorkerUrl" value="https://kiuma-pesapal.kiuma.workers.dev" style="font-size:13px;padding:8px;">
+                        </div>
+
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
+                            <button class="btn btn-primary" onclick="savePesapalSettings()" style="font-size:13px;">
+                                <i class="fas fa-save"></i> Save Pesapal Settings
+                            </button>
+                            <button class="btn btn-outline" onclick="testPesapalConnection()" style="font-size:13px;">
+                                <i class="fas fa-plug"></i> Test Connection
+                            </button>
+                        </div>
+                        <div id="pesapalSettingsStatus" class="alert" style="margin-top: 10px;"></div>
+                    </div>
+
                     <!-- GitHub Settings (fallback) -->
                     <div class="config-card">
                         <h4><i class="fab fa-github"></i> GitHub Storage <span style="font-size:11px;color:#888;font-weight:normal;">(Fallback)</span>
@@ -1191,6 +1214,9 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
     <script src="script.js"></script>
+    <script src="kiuma-idb.js"></script>
+    <script src="kiuma-filesystem.js"></script>
+    <script src="kiuma-delta-sync.js"></script>
     <script src="services/githubStorageService.js" type="module"></script>
     <script>
         const ADMIN_PASSWORD = 'kiuma2025'; // Should match server config
@@ -1712,6 +1738,7 @@
             updateStats();
             checkGitHubStatus();
             loadR2SettingsUI();
+            loadPesapalSettingsUI();
             initNotificationManager();
             // Auto-check storage usage in background
             setTimeout(() => { checkAllR2Storage(); }, 1500);
@@ -1732,7 +1759,7 @@
             if (tabName === 'announcement') loadAnnouncementAdmin();
             if (tabName === 'liveTracker') loadTrackersAdmin();
             if (tabName === 'playlists') renderPlaylistsAdmin();
-            if (tabName === 'settings') { loadR2SettingsUI(); checkAllR2Storage(); }
+            if (tabName === 'settings') { loadR2SettingsUI(); loadPesapalSettingsUI(); checkAllR2Storage(); }
         }
 
         // ==============================
@@ -2714,6 +2741,54 @@
             if (totalConfigured > 0) {
                 document.getElementById('r2StatusBadge').textContent = totalConfigured + ' Account' + (totalConfigured > 1 ? 's' : '') + ' Configured';
                 document.getElementById('r2StatusBadge').className = 'status-badge connected';
+            }
+        }
+
+        // ==============================
+        // PESAPAL SETTINGS
+        // ==============================
+        function loadPesapalSettingsUI() {
+            const url = localStorage.getItem('kiuma_pesapal_worker_url') || '';
+            document.getElementById('pesapalWorkerUrl').value = url;
+            if (url) {
+                document.getElementById('pesapalStatusBadge').textContent = 'Configured';
+                document.getElementById('pesapalStatusBadge').className = 'status-badge connected';
+            }
+        }
+
+        function savePesapalSettings() {
+            const url = document.getElementById('pesapalWorkerUrl').value.trim().replace(/\/+$/, '');
+            localStorage.setItem('kiuma_pesapal_worker_url', url);
+            if (url) {
+                document.getElementById('pesapalStatusBadge').textContent = 'Configured';
+                document.getElementById('pesapalStatusBadge').className = 'status-badge connected';
+                showStatus('pesapalSettingsStatus', 'Pesapal Worker URL saved!', 'success');
+            } else {
+                document.getElementById('pesapalStatusBadge').textContent = 'Not Configured';
+                document.getElementById('pesapalStatusBadge').className = 'status-badge disconnected';
+                showStatus('pesapalSettingsStatus', 'Pesapal Worker URL cleared.', 'success');
+            }
+        }
+
+        async function testPesapalConnection() {
+            const url = document.getElementById('pesapalWorkerUrl').value.trim().replace(/\/+$/, '');
+            if (!url) {
+                showStatus('pesapalSettingsStatus', 'Please enter a Pesapal Worker URL first.', 'error');
+                return;
+            }
+            showStatus('pesapalSettingsStatus', 'Testing connection...', 'success');
+            try {
+                const resp = await fetch(url + '/health', { cache: 'no-store' });
+                const data = await resp.json();
+                if (data.status === 'ok') {
+                    showStatus('pesapalSettingsStatus', 'Connected! Service: ' + (data.service || 'Pesapal Worker'), 'success');
+                    document.getElementById('pesapalStatusBadge').textContent = 'Connected';
+                    document.getElementById('pesapalStatusBadge').className = 'status-badge connected';
+                } else {
+                    showStatus('pesapalSettingsStatus', 'Worker responded but status not OK: ' + JSON.stringify(data), 'error');
+                }
+            } catch(e) {
+                showStatus('pesapalSettingsStatus', 'Connection failed: ' + e.message, 'error');
             }
         }
 
@@ -3838,19 +3913,36 @@
                 return;
             }
             
-            showStatus('notificationStatus', 'Sending notifications...', 'success');
+            showStatus('notificationStatus', 'Sending push notifications...', 'success');
             
             try {
-                if (typeof sendNotificationsToAllUsers === 'function') {
-                    const result = await sendNotificationsToAllUsers(title, message);
-                    showStatus('notificationStatus', `Sent to ${result.successCount} users`, 'success');
-                    document.getElementById('notificationTitle').value = '';
-                    document.getElementById('notificationMessage').value = '';
+                // Send via Cloudflare Worker (real push notifications)
+                const NOTIFY_WORKER_URL = localStorage.getItem('kiuma_notifications_worker_url') || 'https://kiuma-notifications.kiuma.workers.dev';
+                const ADMIN_KEY = localStorage.getItem('kiuma_notifications_admin_key') || 'kiuma-admin-2026-notify';
+                
+                const resp = await fetch(NOTIFY_WORKER_URL + '/api/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: title,
+                        message: message,
+                        admin_key: ADMIN_KEY,
+                        data: {
+                            notification_id: 'notif-' + Date.now(),
+                            category: document.getElementById('notificationCategory')?.value || 'general',
+                            url: '/notifications.html'
+                        }
+                    })
+                });
+                const data = await resp.json();
+                
+                if (data.success) {
+                    showStatus('notificationStatus', `Push sent to ${data.sent} device(s)` + (data.failed ? `, ${data.failed} failed` : ''), 'success');
                 } else {
-                    showStatus('notificationStatus', 'Notification service not available', 'error');
+                    showStatus('notificationStatus', 'Push failed: ' + (data.message || 'Unknown error'), 'error');
                 }
             } catch (error) {
-                showStatus('notificationStatus', 'Failed to send: ' + error.message, 'error');
+                showStatus('notificationStatus', 'Push send failed: ' + error.message, 'error');
             }
         }
 
@@ -4247,28 +4339,28 @@
         }
 
         async function sendFCMPushNotification(notification) {
-            if (typeof firebase === 'undefined' || !firebase.firestore) {
-                throw new Error('Firebase not available');
+            const NOTIFY_WORKER_URL = localStorage.getItem('kiuma_notifications_worker_url') || 'https://kiuma-notifications.kiuma.workers.dev';
+            const ADMIN_KEY = localStorage.getItem('kiuma_notifications_admin_key') || 'kiuma-admin-2026-notify';
+            
+            const resp = await fetch(NOTIFY_WORKER_URL + '/api/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: notification.title,
+                    message: notification.message,
+                    admin_key: ADMIN_KEY,
+                    data: {
+                        notification_id: notification.id,
+                        category: notification.category || 'general',
+                        url: '/notifications.html'
+                    }
+                })
+            });
+            const data = await resp.json();
+            if (!data.success) {
+                throw new Error(data.message || 'Failed to send push notification');
             }
-            
-            // Create a push notification request in Firestore
-            // This can be picked up by a Cloud Function to actually send
-            const pushData = {
-                title: notification.title,
-                body: notification.message,
-                icon: notification.icon || 'fas fa-bell',
-                category: notification.category || 'general',
-                notificationId: notification.id,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                status: 'pending'
-            };
-            
-            // Save to Firestore push_queue collection
-            await firebase.firestore().collection('push_queue').add(pushData);
-            
-            // Get count of registered devices
-            const tokensSnapshot = await firebase.firestore().collection('fcm_tokens').get();
-            return tokensSnapshot.size;
+            return data.sent || 0;
         }
 
         function deleteNotification(id) {

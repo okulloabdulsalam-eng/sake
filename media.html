@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -211,6 +211,9 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
     <script src="script.js"></script>
+    <script src="kiuma-idb.js"></script>
+    <script src="kiuma-filesystem.js"></script>
+    <script src="kiuma-delta-sync.js"></script>
     <script src="app-storage.js"></script>
     <!-- In-app file viewer modal -->
     <div id="mediaViewerModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.92);flex-direction:column;">
@@ -269,21 +272,30 @@
         // ==============================
         // Offline storage (IndexedDB via AppStorage — persistent like app files)
         // ==============================
-        function getOfflineIndex() {
+        async function getOfflineIndex() {
+            if (window.KiuFS) {
+                const all = await window.KiuFS.getAllDownloads();
+                return all.filter(f => f.type === 'video' || f.type === 'audio' || f.type === 'image');
+            }
             return window.AppStorage ? window.AppStorage.getLocalIndex().filter(f => f.type === 'video' || f.type === 'audio' || f.type === 'image') : [];
         }
 
         async function saveFileOffline(url, meta, onProgress) {
-            if (!window.AppStorage) return false;
-            return await window.AppStorage.downloadAndSave(url, meta, onProgress);
+            if (window.KiuFS) return await window.KiuFS.downloadAndSave(url, meta, onProgress);
+            if (window.AppStorage) return await window.AppStorage.downloadAndSave(url, meta, onProgress);
+            return false;
         }
 
         async function removeFileOffline(url) {
-            if (!window.AppStorage) return false;
-            return await window.AppStorage.removeFile(url);
+            if (window.KiuFS) return await window.KiuFS.removeFile(url);
+            if (window.AppStorage) return await window.AppStorage.removeFile(url);
+            return false;
         }
 
-        function isFileSavedOffline(url) { return window.AppStorage ? window.AppStorage.isFileSaved(url) : false; }
+        async function isFileSavedOffline(url) {
+            if (window.KiuFS) return await window.KiuFS.hasFile(url);
+            return window.AppStorage ? window.AppStorage.isFileSaved(url) : false;
+        }
 
         // ==============================
         // Helpers
@@ -511,7 +523,7 @@
         }
 
         // Render a single horizontal scroll category row
-        function renderCategoryRow(title, icon, files, isOffline) {
+        function renderCategoryRow(title, icon, files, isOffline, savedSet) {
             if (!files || files.length === 0) return '';
             let html = '<div class="media-section">';
             html += '<div class="media-section-header"><span class="media-section-title"><i class="fas '+icon+'"></i> '+title+'</span><span class="media-section-count">'+files.length+'</span></div>';
@@ -532,7 +544,7 @@
                 } else {
                     thumb = '<div class="thumb-placeholder" style="background:'+grad+'"><i class="fas '+ico+'"></i></div>';
                 }
-                const saved = isFileSavedOffline(media.url);
+                const saved = savedSet ? savedSet.has(media.url) : false;
                 let actionBtn = '';
                 if (saved) {
                     const menuId = 'mm-' + Math.random().toString(36).substr(2,8);
@@ -638,7 +650,7 @@
         };
 
         // Main Qalbox-style layout renderer
-        function renderQalboxLayout(files) {
+        async function renderQalboxLayout(files) {
             const grid = document.getElementById('mediaGrid');
             const hero = document.getElementById('mediaHero');
             if (!grid) return;
@@ -661,6 +673,10 @@
 
             // Hero: show newest item
             renderHeroBanner(filtered);
+
+            // Pre-build saved URLs set for sync download-state rendering
+            const _savedDownloads = await getOfflineIndex();
+            const savedSet = new Set(_savedDownloads.map(f => f.url));
 
             let html = '';
             const rest = filtered.slice(1); // skip hero item
@@ -693,16 +709,16 @@
 
             // Render "Recently Added" (individual files, first 10)
             if (individualFiles.length > 0) {
-                html += renderCategoryRow('Recently Added', 'fa-clock', individualFiles.slice(0, 10), false);
+                html += renderCategoryRow('Recently Added', 'fa-clock', individualFiles.slice(0, 10), false, savedSet);
             }
 
             // Render type rows (individual files only)
             const videos = individualFiles.filter(f => f.type === 'video');
             const audios = individualFiles.filter(f => f.type === 'audio');
             const images = individualFiles.filter(f => f.type === 'image');
-            if (videos.length > 0) html += renderCategoryRow('Videos', 'fa-video', videos, false);
-            if (audios.length > 0) html += renderCategoryRow('Audio', 'fa-music', audios, false);
-            if (images.length > 0) html += renderCategoryRow('Images', 'fa-image', images, false);
+            if (videos.length > 0) html += renderCategoryRow('Videos', 'fa-video', videos, false, savedSet);
+            if (audios.length > 0) html += renderCategoryRow('Audio', 'fa-music', audios, false, savedSet);
+            if (images.length > 0) html += renderCategoryRow('Images', 'fa-image', images, false, savedSet);
 
             grid.innerHTML = html;
         }
@@ -751,7 +767,7 @@
         const gradients = { video:'linear-gradient(135deg,#e53935,#b71c1c)', audio:'linear-gradient(135deg,#7B1FA2,#4A148C)', image:'linear-gradient(135deg,#1565C0,#0D47A1)' };
         const icons = { video:'fa-video', audio:'fa-music', image:'fa-image' };
 
-        function renderMediaCards(container, files, isOffline) {
+        function renderMediaCards(container, files, isOffline, savedSet) {
             files.forEach(media => {
                 const meta = parseMeta(media.name);
                 const t = media.title || meta.title;
@@ -774,7 +790,7 @@
                     thumb = '<div class="thumb-placeholder" style="background:'+grad+'"><i class="fas '+ico+'"></i></div>';
                 }
 
-                const saved = isFileSavedOffline(media.url);
+                const saved = savedSet ? savedSet.has(media.url) : false;
                 const card = document.createElement('div');
                 card.className = 'media-card';
                 card.style.cursor = 'pointer';
@@ -812,7 +828,7 @@
         // ==============================
         // Offline section
         // ==============================
-        function renderOfflineMediaSection(type) {
+        async function renderOfflineMediaSection(type) {
             type = type || currentMediaFilter || 'all';
             let section = document.getElementById('offlineMediaSection');
             if (!section) {
@@ -822,7 +838,8 @@
                 if (grid) grid.parentNode.insertBefore(section, grid.nextSibling);
             }
 
-            const idx = getOfflineIndex();
+            const idx = await getOfflineIndex();
+            const savedSet = new Set(idx.map(f => f.url));
 
             // If 'downloads' filter is active, show only offline files grouped by category
             if (type === 'downloads') {
@@ -849,7 +866,7 @@
                     const catGrid = document.createElement('div');
                     catGrid.className = 'media-card-grid';
                     section.appendChild(catGrid);
-                    renderMediaCards(catGrid, catFiles, true);
+                    renderMediaCards(catGrid, catFiles, true, savedSet);
                 });
                 return;
             }
@@ -861,11 +878,11 @@
                 return;
             }
 
-            section.innerHTML = '<div style="margin-top:24px;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><i class="fas fa-wifi-slash" style="color:var(--primary-green);"></i><span style="font-weight:700;font-size:15px;color:#333;">Saved Offline</span><span style="font-size:12px;color:#999;">('+filtered.length+' files)</span></div>';
+            section.innerHTML = '<div style="margin-top:24px;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><i class="fas fa-wifi-slash" style="color:var(--primary-green);"></i><span style="font-weight:700;font-size:15px;color:#333;">Saved Offline</span><span style="font-size:12px;color:#999;">('+(filtered.length)+' files)</span></div>';
             const offGrid = document.createElement('div');
             offGrid.className = 'media-card-grid';
             section.appendChild(offGrid);
-            renderMediaCards(offGrid, filtered, true);
+            renderMediaCards(offGrid, filtered, true, savedSet);
         }
 
         // ==============================

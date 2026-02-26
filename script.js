@@ -481,17 +481,12 @@ async function initializeFCM() {
             await getFCMToken(messaging);
             fcmInitialized = true;
         } else if (Notification.permission === 'default') {
-            // Show a friendly prompt first
-            const shouldAsk = !localStorage.getItem('fcmDeclined');
-            if (shouldAsk) {
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    await getFCMToken(messaging);
-                    fcmInitialized = true;
-                } else if (permission === 'denied') {
-                    localStorage.setItem('fcmDeclined', 'true');
-                    console.log('Notification permission denied');
-                }
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                await getFCMToken(messaging);
+                fcmInitialized = true;
+            } else if (permission === 'denied') {
+                console.log('Notification permission denied');
             }
         } else {
             console.log('Notifications blocked by user');
@@ -510,10 +505,41 @@ async function initializeFCM() {
     }
 }
 
+const CURRENT_VAPID_KEY = 'BHMDvl2IeqHupDGCross8v0eqlwcTDHDeOGXYbWmUiHqFysd1h_zual-w7_RJGw3qTd1BuDr3zI4Dx2Fo5fnDq0';
+
 async function getFCMToken(messaging) {
     try {
+        // If VAPID key changed or never tracked, force complete cleanup and fresh token
+        const savedVapid = localStorage.getItem('fcmVapidKey');
+        if (!savedVapid || savedVapid !== CURRENT_VAPID_KEY) {
+            console.log('VAPID key changed or first run — full push cleanup...');
+            // 1. Delete FCM token from Firebase servers
+            try { await messaging.deleteToken(); } catch(e) { console.log('deleteToken skipped:', e.message); }
+            // 2. Unsubscribe existing push subscription (tied to old VAPID/sender)
+            if (fcmSwRegistration) {
+                try {
+                    const sub = await fcmSwRegistration.pushManager.getSubscription();
+                    if (sub) {
+                        await sub.unsubscribe();
+                        console.log('Old push subscription unsubscribed');
+                    }
+                } catch(e) { console.log('unsubscribe skipped:', e.message); }
+            }
+            // 3. Clear cached IndexedDB data for Firebase messaging
+            try {
+                const dbs = await indexedDB.databases();
+                for (const db of dbs) {
+                    if (db.name && (db.name.includes('firebase-messaging') || db.name.includes('fcm'))) {
+                        indexedDB.deleteDatabase(db.name);
+                        console.log('Cleared IDB:', db.name);
+                    }
+                }
+            } catch(e) {}
+            localStorage.removeItem('fcmToken');
+        }
+
         const tokenOptions = {
-            vapidKey: 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U'
+            vapidKey: CURRENT_VAPID_KEY
         };
         if (fcmSwRegistration) {
             tokenOptions.serviceWorkerRegistration = fcmSwRegistration;
@@ -523,21 +549,55 @@ async function getFCMToken(messaging) {
         if (fcmToken) {
             console.log('FCM Token obtained:', fcmToken.substring(0, 20) + '...');
             localStorage.setItem('fcmToken', fcmToken);
+            localStorage.setItem('fcmVapidKey', CURRENT_VAPID_KEY);
+            // Always register with push worker on every load
             saveFCMTokenToFirestore(fcmToken);
-            showPushNotificationConfirmation();
+            if (!savedVapid) showPushNotificationConfirmation();
         }
     } catch (error) {
         console.error('Failed to get FCM token:', error);
+        // If token fetch fails, try deleting and retrying once
+        try {
+            await messaging.deleteToken();
+            localStorage.removeItem('fcmToken');
+            const retryToken = await messaging.getToken({ vapidKey: CURRENT_VAPID_KEY });
+            if (retryToken) {
+                fcmToken = retryToken;
+                localStorage.setItem('fcmToken', retryToken);
+                localStorage.setItem('fcmVapidKey', CURRENT_VAPID_KEY);
+                saveFCMTokenToFirestore(retryToken);
+            }
+        } catch(e2) {
+            console.error('FCM token retry also failed:', e2);
+        }
     }
 }
 
 async function saveFCMTokenToFirestore(token) {
-    if (typeof firebase === 'undefined' || !firebase.firestore) return;
-    
+    const deviceId = localStorage.getItem('deviceId') || generateDeviceId();
+    localStorage.setItem('deviceId', deviceId);
+
+    // Register with Cloudflare notifications worker (primary)
+    const NOTIFY_WORKER_URL = localStorage.getItem('kiuma_notifications_worker_url') || 'https://kiuma-notifications.kiuma.workers.dev';
     try {
-        const deviceId = localStorage.getItem('deviceId') || generateDeviceId();
-        localStorage.setItem('deviceId', deviceId);
-        
+        const resp = await fetch(NOTIFY_WORKER_URL + '/api/register-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: token, device_id: deviceId })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            console.log('FCM token registered with push worker');
+        } else {
+            console.warn('Push worker registration:', data.message);
+        }
+    } catch (err) {
+        console.warn('Failed to register token with push worker:', err.message);
+    }
+
+    // Also save to Firestore (backup)
+    if (typeof firebase === 'undefined' || !firebase.firestore) return;
+    try {
         await firebase.firestore().collection('fcm_tokens').doc(deviceId).set({
             token: token,
             deviceId: deviceId,
@@ -545,7 +605,6 @@ async function saveFCMTokenToFirestore(token) {
             userAgent: navigator.userAgent,
             platform: navigator.platform
         }, { merge: true });
-        
         console.log('FCM token saved to Firestore');
     } catch (error) {
         console.warn('Failed to save FCM token to Firestore:', error);
@@ -669,9 +728,9 @@ overlay.addEventListener('click', () => {
         '</div>' +
         '<div class="smb-right">' +
             (adminHref ? '<a href="' + adminHref + '" class="smb-admin-link"><i class="fas fa-cog"></i> Admin</a>' : '') +
-            '<button class="smb-btn" id="smbNotifications" onclick="window.location.href=\'notifications.html\'">' +
+            '<button class="smb-btn notifications-btn" id="smbNotifications" onclick="window.location.href=\'notifications.html\'">' +
                 '<i class="fas fa-bell"></i>' +
-                '<span class="badge">3</span>' +
+                '<span class="badge" data-notification-badge style="display:none"></span>' +
             '</button>' +
             '<div class="smb-profile-avatar" onclick="if(typeof toggleAccountModal===\'function\')toggleAccountModal()"><i class="fas fa-user"></i></div>' +
         '</div>';
@@ -701,6 +760,11 @@ overlay.addEventListener('click', () => {
     }, { threshold: 0, rootMargin: '0px' });
 
     observer.observe(hero);
+
+    // Ensure badge reflects actual unread count as soon as bar is injected
+    if (typeof updateNotificationBadge === 'function') {
+        updateNotificationBadge();
+    }
 })();
 
 // Hijri month names (global for reuse)

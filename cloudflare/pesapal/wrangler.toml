@@ -1,0 +1,15 @@
+name = "kiuma-pesapal"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# Secrets (set via wrangler secret put):
+#   npx wrangler secret put PESAPAL_CONSUMER_KEY
+#   npx wrangler secret put PESAPAL_CONSUMER_SECRET
+#   npx wrangler secret put PESAPAL_NOTIFICATION_ID
+#
+# Environment variables (non-secret):
+[vars]
+PESAPAL_TEST_MODE = "false"
+APP_BASE_URL = "https://okulloabdulsalam-eng.github.io/sake"
+WORKER_URL = "https://kiuma-pesapal.kiuma.workers.dev"
+# ↑ Set WORKER_URL after first deploy (e.g. https://kiuma-pesapal.YOUR_SUBDOMAIN.workers.dev)

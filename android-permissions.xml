@@ -1,0 +1,52 @@
+<!--
+  KIUMA Android Permissions Template
+  Copy the relevant <uses-permission> lines into:
+    android/app/src/main/AndroidManifest.xml
+  inside the <manifest> block, BEFORE the <application> tag.
+
+  Only the permissions marked REQUIRED are enabled by default.
+  Enable optional ones only when the matching feature is in use.
+-->
+
+<!-- ══ REQUIRED ══════════════════════════════════════════════════ -->
+
+<!-- Internet access — needed for all network calls -->
+<uses-permission android:name="android.permission.INTERNET" />
+
+<!-- Check network state before fetching — used by KiuSync -->
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+<!-- ══ MEDIA (Android 13+) ════════════════════════════════════════ -->
+<!-- Required when reading device audio/image/video files for upload -->
+<uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+<uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+
+<!-- Legacy storage read (Android 12 and below) -->
+<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+    android:maxSdkVersion="32" />
+
+<!-- ══ OPTIONAL — enable only if feature exists ══════════════════ -->
+
+<!-- Camera — only if media upload / QR scan is implemented -->
+<!-- <uses-permission android:name="android.permission.CAMERA" /> -->
+
+<!-- Microphone — only if audio recording exists -->
+<!-- <uses-permission android:name="android.permission.RECORD_AUDIO" /> -->
+
+<!-- Fine location — only if mosque map / qibla direction is used -->
+<!-- <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /> -->
+<!-- <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /> -->
+
+<!-- Write external storage — only if user-exportable file saves needed -->
+<!-- <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+    android:maxSdkVersion="28" /> -->
+
+<!--
+  Vibration — used by Firebase push notifications (already granted by default
+  on most devices; explicitly declaring avoids lint warnings)
+-->
+<uses-permission android:name="android.permission.VIBRATE" />
+
+<!-- POST_NOTIFICATIONS — required on Android 13+ for push notifications -->
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />

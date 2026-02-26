@@ -1,0 +1,62 @@
+<!--
+  KIUMA iOS Permissions Template
+  Add the relevant keys to:
+    ios/App/App/Info.plist
+  inside the root <dict> block.
+
+  Only include keys for features that are actually used.
+  Apple rejects apps with undeclared or unused permission strings.
+-->
+
+<!--
+  ══ REQUIRED (if features are used) ═════════════════════════════
+
+  Location — required for mosque map and qibla direction
+-->
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>KIUMA needs your location to show nearby mosques and calculate the Qibla direction.</string>
+
+<!--
+  Camera — required if media upload or QR scan is implemented
+-->
+<!-- <key>NSCameraUsageDescription</key> -->
+<!-- <string>KIUMA needs camera access to let you upload photos and videos.</string> -->
+
+<!--
+  Microphone — required if audio recording is implemented
+-->
+<!-- <key>NSMicrophoneUsageDescription</key> -->
+<!-- <string>KIUMA needs microphone access for audio recording features.</string> -->
+
+<!--
+  Photo library read — required if user can pick photos/videos from gallery
+-->
+<!-- <key>NSPhotoLibraryUsageDescription</key> -->
+<!-- <string>KIUMA needs access to your photo library to let you share media.</string> -->
+
+<!--
+  Photo library write — required if saving downloaded media to camera roll
+-->
+<!-- <key>NSPhotoLibraryAddUsageDescription</key> -->
+<!-- <string>KIUMA saves downloaded media to your photo library.</string> -->
+
+<!--
+  ══ BACKGROUND / NETWORK ═════════════════════════════════════════
+
+  Allow the app to fetch data while in the background (delta sync)
+-->
+<key>UIBackgroundModes</key>
+<array>
+    <string>fetch</string>
+    <string>remote-notification</string>
+</array>
+
+<!--
+  Allow arbitrary loads only if absolutely required for HTTP endpoints.
+  Prefer keeping this false and using HTTPS everywhere.
+-->
+<key>NSAppTransportSecurity</key>
+<dict>
+    <key>NSAllowsArbitraryLoads</key>
+    <false/>
+</dict>
