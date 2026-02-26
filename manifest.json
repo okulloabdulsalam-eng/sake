@@ -22,6 +22,8 @@
     "lang": "en",
     "dir": "ltr",
     "offline_enabled": true,
+    "gcm_sender_id": "69327390212",
+    "gcm_user_visible_only": true,
     "shortcuts": [
         {
             "name": "Prayer Times",

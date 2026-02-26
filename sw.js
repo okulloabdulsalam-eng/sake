@@ -31,30 +31,42 @@ try {
     }
 
     if (self.firebase && typeof self.firebase.messaging === 'function') {
-        const messaging = self.firebase.messaging();
+        const messaging = self.firebase.messaging({
+            // Explicit VAPID key configuration for push notifications
+            vapidKey: 'BHMDvl2IeqHupDGCross8v0eqlwcTDHDeOGXYbWmUiHqFysd1h_zual-w7_RJGw3qTd1BuDr3zI4Dx2Fo5fnDq0'
+        });
 
         messaging.onBackgroundMessage((payload) => {
+            console.log('[SW] FCM background message received:', payload);
+            
             const title = payload.notification?.title || payload.data?.title || 'KIUMA Update';
             const body = payload.notification?.body || payload.data?.body || '';
+            const notificationId = payload.data?.notification_id || payload.data?.id || 'kiuma-' + Date.now();
 
             const notificationOptions = {
                 body,
                 icon: `${BASE_PATH}/logo.png`,
                 badge: `${BASE_PATH}/logo.png`,
-                tag: payload.data?.notification_id || payload.data?.tag || 'kiuma',
-                data: payload.data || {}
+                tag: notificationId,
+                data: payload.data || {},
+                vibrate: [200, 100, 200],
+                requireInteraction: true
             };
 
             return self.registration.showNotification(title, notificationOptions);
         });
 
         self.addEventListener('notificationclick', (event) => {
+            console.log('[SW] Notification clicked:', event);
             event.notification.close();
-            const targetUrl = `${BASE_PATH}/notifications.html`;
+            
+            const targetUrl = event.notification.data?.url || `${BASE_PATH}/notifications.html`;
+            
             event.waitUntil(
                 clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
                     for (const client of clientList) {
                         if (client.url && client.url.includes(BASE_PATH)) {
+                            client.navigate(targetUrl);
                             return client.focus();
                         }
                     }
@@ -66,6 +78,7 @@ try {
         });
     }
 } catch (e) {
+    console.warn('[SW] FCM initialization failed:', e);
     // FCM scripts may fail to load (offline / blocked). Offline caching must still work.
 }
 
