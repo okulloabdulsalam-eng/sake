@@ -1,18 +1,20 @@
 // ============================================================
-// AUTO-UPDATE SYSTEM - Version Checking & Cache Refresh
+// AUTO-UPDATE SYSTEM - Silent Background + Manual Update Button
 // ============================================================
 
 const AUTO_UPDATE_CONFIG = {
     VERSION_URL: './version.json',
-    VERSION_CHECK_INTERVAL: 30000, // Check every 30 seconds when online
+    VERSION_CHECK_INTERVAL: 99999999999, // DISABLED - effectively never checks
     CACHE_VERSION_KEY: 'kiuma_cache_version',
     LAST_UPDATE_CHECK_KEY: 'kiuma_last_update_check',
     UPDATE_AVAILABLE_KEY: 'kiuma_update_available',
-    FORCE_REFRESH_AFTER_MS: 3000 // Force refresh after 3 seconds if no response
+    FORCE_REFRESH_AFTER_MS: 99999999999, // DISABLED
+    SILENT_UPDATE: true // Silent mode - no auto-refresh
 };
 
 // Store current cached version
 let currentCachedVersion = null;
+let pendingUpdate = false;
 
 // Check if this is a fresh reload (to prevent infinite loops)
 function isFreshReload() {
@@ -50,7 +52,7 @@ async function checkForUpdates() {
         
         const response = await fetch(AUTO_UPDATE_CONFIG.VERSION_URL + '?t=' + Date.now(), {
             signal: controller.signal,
-            cache: 'no-store' // Force fresh fetch
+            cache: 'no-store'
         });
         
         clearTimeout(timeoutId);
@@ -66,57 +68,11 @@ async function checkForUpdates() {
     return null;
 }
 
-// Clear all caches and force refresh
-async function clearAllCachesAndReload() {
-    console.log('[AutoUpdate] Clearing caches and forcing refresh...');
-    
-    try {
-        // Delete all caches
-        const cacheNames = await caches.keys();
-        await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
-        console.log('[AutoUpdate] All caches cleared');
-    } catch (e) {
-        console.warn('[AutoUpdate] Cache clearing failed:', e);
-    }
-    
-    // Clear version cache to force fresh fetch
-    try {
-        localStorage.removeItem(AUTO_UPDATE_CONFIG.CACHE_VERSION_KEY);
-    } catch (e) {}
-    
-    // Force reload without cache
-    window.location.reload(true);
-}
-
-// Show update notification and auto-refresh
-function showAutoUpdateBanner() {
-    // Don't show if already showing
-    if (document.getElementById('autoUpdateBanner')) return;
-    
-    const banner = document.createElement('div');
-    banner.id = 'autoUpdateBanner';
-    banner.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;padding:12px 20px;border-radius:12px;z-index:99999;display:flex;align-items:center;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,0.3);font-size:14px;font-weight:500;max-width:90%;animation:slideUpBanner 0.4s ease;';
-    banner.innerHTML = '<i class="fas fa-sync-alt" style="font-size:18px;"></i><span>Updating to latest version...</span><i class="fas fa-spinner fa-spin" style="font-size:16px;"></i>';
-    
-    // Add animation keyframes if not present
-    if (!document.getElementById('swUpdateStyle')) {
-        const style = document.createElement('style');
-        style.id = 'swUpdateStyle';
-        style.textContent = '@keyframes slideUpBanner{from{opacity:0;transform:translateX(-50%) translateY(30px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}';
-        document.head.appendChild(style);
-    }
-    
-    document.body.appendChild(banner);
-    
-    // Auto-refresh after showing banner
-    setTimeout(() => clearAllCachesAndReload(), 1500);
-}
-
-// Main update check function
-async function performVersionCheck() {
+// Silent update - just cache the new version, don't refresh
+async function silentUpdate() {
     const serverVersion = await checkForUpdates();
     
-    if (!serverVersion) return; // Can't check version (offline or error)
+    if (!serverVersion) return null;
     
     const cachedVersion = getCachedVersion();
     
@@ -125,45 +81,71 @@ async function performVersionCheck() {
     // First time - cache the version
     if (!cachedVersion) {
         saveCachedVersion(serverVersion);
-        return;
+        return null;
     }
     
-    // Version changed - trigger update
+    // Version changed - mark as pending update (silent)
     if (serverVersion !== cachedVersion) {
-        console.log('[AutoUpdate] Version mismatch detected! Server:', serverVersion, 'Cached:', cachedVersion);
+        console.log('[AutoUpdate] New version available silently:', serverVersion);
         saveCachedVersion(serverVersion);
+        pendingUpdate = true;
         
-        // Check if this is a native app (KIUMA-App)
-        const isKiumaApp = /KIUMA-App\/1\.0/i.test(navigator.userAgent || '');
+        // Store pending update info for manual update button
+        localStorage.setItem(AUTO_UPDATE_CONFIG.UPDATE_AVAILABLE_KEY, 'true');
         
-        if (isKiumaApp) {
-            // For native app - clear caches and reload
-            showAutoUpdateBanner();
-        } else {
-            // For web - trigger service worker update
-            if ('serviceWorker' in navigator) {
-                try {
-                    const registration = await navigator.serviceWorker.getRegistration();
-                    if (registration) {
-                        await registration.update();
-                        if (registration.waiting) {
-                            showUpdateBanner(registration.waiting);
-                        }
-                    }
-                } catch (e) {
-                    console.warn('[AutoUpdate] SW update failed:', e);
-                }
-            }
-        }
+        return serverVersion;
     }
+    
+    return null;
 }
 
-// Start periodic version checking
-function startVersionChecker() {
-    // Check immediately on first load
-    setTimeout(() => performVersionCheck(), 2000);
+// Clear all caches and force refresh (only when user clicks update)
+async function clearAllCachesAndReload() {
+    console.log('[AutoUpdate] Clearing caches and forcing refresh...');
     
-    // Then check periodically
+    try {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
+        console.log('[AutoUpdate] All caches cleared');
+    } catch (e) {
+        console.warn('[AutoUpdate] Cache clearing failed:', e);
+    }
+    
+    try {
+        localStorage.removeItem(AUTO_UPDATE_CONFIG.CACHE_VERSION_KEY);
+    } catch (e) {}
+    
+    // Force reload without cache
+    window.location.reload(true);
+}
+
+// Manual update - user clicks to update (silent - no loading indicators)
+async function performManualUpdate() {
+    // SILENT UPDATE - no UI changes, just do it in background
+    await clearAllCachesAndReload();
+}
+
+// Check for updates silently (no auto-refresh)
+async function performVersionCheck() {
+    // Check if update is already available
+    const updateAvailable = localStorage.getItem(AUTO_UPDATE_CONFIG.UPDATE_AVAILABLE_KEY);
+    if (updateAvailable === 'true') {
+        pendingUpdate = true;
+    }
+    
+    // Perform silent check
+    await silentUpdate();
+    
+    // Update manual update button visibility
+    updateManualUpdateButton();
+}
+
+// Start periodic version checking (silent)
+function startVersionChecker() {
+    // Check once on first load (after a delay)
+    setTimeout(() => performVersionCheck(), 5000);
+    
+    // Then check periodically (every 5 minutes)
     setInterval(() => {
         if (navigator.onLine) {
             performVersionCheck();
@@ -174,11 +156,11 @@ function startVersionChecker() {
 // Also check when coming back online
 window.addEventListener('online', () => {
     console.log('[AutoUpdate] Back online, checking for updates...');
-    setTimeout(() => performVersionCheck(), 1000);
+    setTimeout(() => performVersionCheck(), 2000);
 });
 
 // ============================================================
-// Service Worker Registration with Instant Update Detection
+// Service Worker Registration - DISABLED AUTO-UPDATES
 // ============================================================
 
 if ('serviceWorker' in navigator) {
@@ -187,24 +169,22 @@ if ('serviceWorker' in navigator) {
             .then(reg => {
                 console.log('Service Worker registered:', reg.scope);
 
-                // Check for updates every 60 seconds when online
-                setInterval(() => {
-                    if (navigator.onLine) reg.update().catch(() => {});
-                }, 60000);
-
-                // Detect waiting worker (new version ready)
+                // AUTO-UPDATE CHECKS DISABLED - Service worker will NOT auto-update
+                
+                // Detect waiting worker - but DON'T auto-reload
                 if (reg.waiting) {
-                    showUpdateBanner(reg.waiting);
+                    console.log('[AutoUpdate] New service worker waiting - will activate on next navigation');
                 }
 
-                // Detect new SW installing
+                // Detect new SW installing - but don't trigger auto-refresh
                 reg.addEventListener('updatefound', () => {
                     const newWorker = reg.installing;
                     if (!newWorker) return;
                     newWorker.addEventListener('statechange', () => {
                         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            // New version installed & old one is active — prompt user
-                            showUpdateBanner(newWorker);
+                            // New version installed - just log it, don't reload
+                            console.log('[AutoUpdate] New service worker ready for next navigation');
+                            // Don't set pendingUpdate or trigger auto-refresh
                         }
                     });
                 });
@@ -212,130 +192,94 @@ if ('serviceWorker' in navigator) {
             .catch(err => console.log('Service Worker registration failed:', err));
     });
 
-    // Auto-reload when new SW takes over
+    // Prevent auto-reload on controller change
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
         if (refreshing) return;
         refreshing = true;
-        window.location.reload();
+        // Don't auto-reload - user must manually refresh
     });
 }
 
-// Start the auto-update system
+// Start the version checker but it will NOT auto-refresh (intervals disabled)
 startVersionChecker();
 
-function showUpdateBanner(worker) {
-    // Don't show if already showing
-    if (document.getElementById('swUpdateBanner')) return;
-    var banner = document.createElement('div');
-    banner.id = 'swUpdateBanner';
-    banner.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;padding:12px 20px;border-radius:12px;z-index:99999;display:flex;align-items:center;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,0.3);font-size:14px;font-weight:500;max-width:90%;animation:slideUpBanner 0.4s ease;';
-    banner.innerHTML = '<i class="fas fa-sync-alt" style="font-size:18px;"></i><span>New update available!</span><button onclick="applySwUpdate()" style="background:#fff;color:#1B5E20;border:none;padding:6px 16px;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">Update Now</button><button onclick="this.parentElement.remove()" style="background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:18px;padding:0 4px;">×</button>';
-    // Add animation keyframes if not present
-    if (!document.getElementById('swUpdateStyle')) {
-        var style = document.createElement('style');
-        style.id = 'swUpdateStyle';
-        style.textContent = '@keyframes slideUpBanner{from{opacity:0;transform:translateX(-50%) translateY(30px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}';
-        document.head.appendChild(style);
-    }
-    document.body.appendChild(banner);
-    // Store worker reference for the update button
-    window._pendingSwWorker = worker;
-}
+// ============================================================
+// Manual Update Button (Floating)
+// ============================================================
 
-function applySwUpdate() {
-    var banner = document.getElementById('swUpdateBanner');
-    if (banner) banner.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
-    if (window._pendingSwWorker) {
-        window._pendingSwWorker.postMessage({ type: 'SKIP_WAITING' });
-    } else if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
-    }
-    // Fallback reload after 3s if controllerchange doesn't fire
-    setTimeout(function() { window.location.reload(); }, 3000);
-}
-
-// Offline/Online Detection and Notification Banner
-(function() {
-    const isKiumaApp = /KIUMA-App\/1\.0/i.test(navigator.userAgent || '');
-    if (isKiumaApp) return;
-
-    let offlineBanner = null;
+function updateManualUpdateButton() {
+    const existingBtn = document.getElementById('manualUpdateBtn');
     
-    function createOfflineBanner() {
-        if (offlineBanner) return offlineBanner;
-        
-        offlineBanner = document.createElement('div');
-        offlineBanner.id = 'offlineBanner';
-        offlineBanner.style.cssText = `
+    // Only show button if there's a pending update
+    const hasUpdate = pendingUpdate || localStorage.getItem(AUTO_UPDATE_CONFIG.UPDATE_AVAILABLE_KEY) === 'true';
+    
+    if (hasUpdate && !existingBtn) {
+        // Create floating update button
+        const btn = document.createElement('button');
+        btn.id = 'manualUpdateBtn';
+        btn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Update Available';
+        btn.style.cssText = `
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            bottom: 80px;
+            right: 20px;
+            background: linear-gradient(135deg, #1B5E20, #2E7D32);
             color: white;
-            padding: 10px 15px;
-            text-align: center;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
             font-size: 14px;
             font-weight: 600;
             z-index: 99999;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            transform: translateY(-100%);
-            transition: transform 0.3s ease;
+            gap: 8px;
+            animation: pulseUpdateBtn 2s infinite;
         `;
-        offlineBanner.innerHTML = '<i class="fas fa-wifi-slash" style="font-size: 16px;"></i> You are offline, some features may be limited';
-        document.body.appendChild(offlineBanner);
-        return offlineBanner;
-    }
-    
-    function showOfflineBanner() {
-        const banner = createOfflineBanner();
-        setTimeout(() => {
-            banner.style.transform = 'translateY(0)';
-        }, 100);
-    }
-    
-    function hideOfflineBanner() {
-        if (offlineBanner) {
-            offlineBanner.style.transform = 'translateY(-100%)';
-            setTimeout(() => {
-                if (offlineBanner && offlineBanner.parentNode) {
-                    offlineBanner.parentNode.removeChild(offlineBanner);
-                    offlineBanner = null;
+        
+        // Add animation keyframes
+        if (!document.getElementById('updateBtnStyle')) {
+            const style = document.createElement('style');
+            style.id = 'updateBtnStyle';
+            style.textContent = `
+                @keyframes pulseUpdateBtn {
+                    0% { transform: scale(1); }
+                    50% { transform: scale(1.05); }
+                    100% { transform: scale(1); }
                 }
-            }, 300);
+            `;
+            document.head.appendChild(style);
         }
+        
+        btn.onclick = performManualUpdate;
+        document.body.appendChild(btn);
+    } else if (!hasUpdate && existingBtn) {
+        existingBtn.remove();
     }
-    
-    function updateConnectionStatus() {
-        if (navigator.onLine) {
-            hideOfflineBanner();
-        } else {
-            showOfflineBanner();
-        }
+}
+
+// Make functions globally accessible
+window.checkForUpdatesNow = async function() {
+    await performVersionCheck();
+    if (pendingUpdate) {
+        alert('A new version is available! Click the green button to update.');
+    } else {
+        alert('You have the latest version.');
     }
-    
-    // Check initial status
-    window.addEventListener('DOMContentLoaded', () => {
-        if (!navigator.onLine) {
-            showOfflineBanner();
-        }
-    });
-    
-    // Listen for online/offline events
-    window.addEventListener('online', () => {
-        hideOfflineBanner();
-        showToast('Back online!', 'success', 2000);
-    });
-    
-    window.addEventListener('offline', () => {
-        showOfflineBanner();
-    });
-})();
+};
+
+window.applyManualUpdate = performManualUpdate;
+
+// Silent offline/online handling - no banners or loading indicators
+window.addEventListener('online', () => {
+    console.log('[Connection] Back online');
+});
+
+window.addEventListener('offline', () => {
+    console.log('[Connection] Gone offline');
+});
 
 
 const THEME_PREFERENCE_KEY = 'themePreference';
@@ -426,16 +370,10 @@ function showToast(message, type = 'default', duration = 3000) {
     }, duration);
 }
 
-// Page Navigation with Transition
+// Page Navigation - INSTANT (no delay, no loading animation)
 function navigateTo(url) {
-    const main = document.querySelector('.main-content');
-    if (main) {
-        main.style.opacity = '0';
-        main.style.transform = 'translateY(10px)';
-    }
-    setTimeout(() => {
-        window.location.href = url;
-    }, 150);
+    // Instant navigation - no delay, no animation, no freeze
+    window.location.href = url;
 }
 
 // Firebase Cloud Messaging (FCM) for Push Notifications
@@ -443,24 +381,46 @@ let fcmToken = null;
 let fcmInitialized = false;
 let fcmSwRegistration = null;
 
+// Detect if running in WebView/mobile app
+function isRunningInWebView() {
+    const userAgent = navigator.userAgent || '';
+    // Check for various WebView indicators
+    return /KIUMA-App|iPhone|iPad|iPod|WebView|Android.*Mobile/i.test(userAgent) && 
+           /Chrome|Safari/.test(userAgent);
+}
+
 async function initializeFCM() {
     if (fcmInitialized) return;
     
+    const isWebView = isRunningInWebView();
+    console.log('[FCM] Running in WebView:', isWebView);
+    console.log('[FCM] User Agent:', navigator.userAgent);
+    
     // Check if Firebase and messaging are available
     if (typeof firebase === 'undefined') {
-        console.log('Firebase not loaded yet, retrying...');
+        console.log('[FCM] Firebase not loaded yet, retrying...');
         setTimeout(initializeFCM, 2000);
         return;
     }
     
     if (!firebase.messaging) {
-        console.log('Firebase Messaging not available');
+        console.log('[FCM] Firebase Messaging not available');
+        // For WebView, still initialize to allow in-app notifications
+        if (isWebView) {
+            console.log('[FCM] WebView detected - using in-app notifications');
+            fcmInitialized = true;
+        }
         return;
     }
     
     // Check if notifications are supported
     if (!('Notification' in window)) {
-        console.log('Notifications not supported in this browser');
+        console.log('[FCM] Notifications not supported in this browser');
+        // For WebView, still initialize to allow in-app notifications
+        if (isWebView) {
+            console.log('[FCM] WebView detected - using in-app notifications');
+            fcmInitialized = true;
+        }
         return;
     }
     
