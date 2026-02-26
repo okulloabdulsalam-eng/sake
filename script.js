@@ -1,4 +1,186 @@
+// ============================================================
+// AUTO-UPDATE SYSTEM - Version Checking & Cache Refresh
+// ============================================================
+
+const AUTO_UPDATE_CONFIG = {
+    VERSION_URL: './version.json',
+    VERSION_CHECK_INTERVAL: 30000, // Check every 30 seconds when online
+    CACHE_VERSION_KEY: 'kiuma_cache_version',
+    LAST_UPDATE_CHECK_KEY: 'kiuma_last_update_check',
+    UPDATE_AVAILABLE_KEY: 'kiuma_update_available',
+    FORCE_REFRESH_AFTER_MS: 3000 // Force refresh after 3 seconds if no response
+};
+
+// Store current cached version
+let currentCachedVersion = null;
+
+// Check if this is a fresh reload (to prevent infinite loops)
+function isFreshReload() {
+    const fresh = sessionStorage.getItem('kiuma_fresh_reload') === 'true';
+    if (!fresh) {
+        sessionStorage.setItem('kiuma_fresh_reload', 'true');
+    }
+    return fresh;
+}
+
+// Get cached version from localStorage
+function getCachedVersion() {
+    try {
+        return localStorage.getItem(AUTO_UPDATE_CONFIG.CACHE_VERSION_KEY);
+    } catch (e) {
+        return null;
+    }
+}
+
+// Save version to localStorage
+function saveCachedVersion(version) {
+    try {
+        localStorage.setItem(AUTO_UPDATE_CONFIG.CACHE_VERSION_KEY, version);
+    } catch (e) {}
+}
+
+// Check version from server
+async function checkForUpdates() {
+    // Skip if offline
+    if (!navigator.onLine) return null;
+    
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), AUTO_UPDATE_CONFIG.FORCE_REFRESH_AFTER_MS);
+        
+        const response = await fetch(AUTO_UPDATE_CONFIG.VERSION_URL + '?t=' + Date.now(), {
+            signal: controller.signal,
+            cache: 'no-store' // Force fresh fetch
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+            const data = await response.json();
+            return data.version || data.build || null;
+        }
+    } catch (error) {
+        console.log('[AutoUpdate] Version check failed:', error.message);
+    }
+    
+    return null;
+}
+
+// Clear all caches and force refresh
+async function clearAllCachesAndReload() {
+    console.log('[AutoUpdate] Clearing caches and forcing refresh...');
+    
+    try {
+        // Delete all caches
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
+        console.log('[AutoUpdate] All caches cleared');
+    } catch (e) {
+        console.warn('[AutoUpdate] Cache clearing failed:', e);
+    }
+    
+    // Clear version cache to force fresh fetch
+    try {
+        localStorage.removeItem(AUTO_UPDATE_CONFIG.CACHE_VERSION_KEY);
+    } catch (e) {}
+    
+    // Force reload without cache
+    window.location.reload(true);
+}
+
+// Show update notification and auto-refresh
+function showAutoUpdateBanner() {
+    // Don't show if already showing
+    if (document.getElementById('autoUpdateBanner')) return;
+    
+    const banner = document.createElement('div');
+    banner.id = 'autoUpdateBanner';
+    banner.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;padding:12px 20px;border-radius:12px;z-index:99999;display:flex;align-items:center;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,0.3);font-size:14px;font-weight:500;max-width:90%;animation:slideUpBanner 0.4s ease;';
+    banner.innerHTML = '<i class="fas fa-sync-alt" style="font-size:18px;"></i><span>Updating to latest version...</span><i class="fas fa-spinner fa-spin" style="font-size:16px;"></i>';
+    
+    // Add animation keyframes if not present
+    if (!document.getElementById('swUpdateStyle')) {
+        const style = document.createElement('style');
+        style.id = 'swUpdateStyle';
+        style.textContent = '@keyframes slideUpBanner{from{opacity:0;transform:translateX(-50%) translateY(30px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}';
+        document.head.appendChild(style);
+    }
+    
+    document.body.appendChild(banner);
+    
+    // Auto-refresh after showing banner
+    setTimeout(() => clearAllCachesAndReload(), 1500);
+}
+
+// Main update check function
+async function performVersionCheck() {
+    const serverVersion = await checkForUpdates();
+    
+    if (!serverVersion) return; // Can't check version (offline or error)
+    
+    const cachedVersion = getCachedVersion();
+    
+    console.log('[AutoUpdate] Server version:', serverVersion, 'Cached:', cachedVersion);
+    
+    // First time - cache the version
+    if (!cachedVersion) {
+        saveCachedVersion(serverVersion);
+        return;
+    }
+    
+    // Version changed - trigger update
+    if (serverVersion !== cachedVersion) {
+        console.log('[AutoUpdate] Version mismatch detected! Server:', serverVersion, 'Cached:', cachedVersion);
+        saveCachedVersion(serverVersion);
+        
+        // Check if this is a native app (KIUMA-App)
+        const isKiumaApp = /KIUMA-App\/1\.0/i.test(navigator.userAgent || '');
+        
+        if (isKiumaApp) {
+            // For native app - clear caches and reload
+            showAutoUpdateBanner();
+        } else {
+            // For web - trigger service worker update
+            if ('serviceWorker' in navigator) {
+                try {
+                    const registration = await navigator.serviceWorker.getRegistration();
+                    if (registration) {
+                        await registration.update();
+                        if (registration.waiting) {
+                            showUpdateBanner(registration.waiting);
+                        }
+                    }
+                } catch (e) {
+                    console.warn('[AutoUpdate] SW update failed:', e);
+                }
+            }
+        }
+    }
+}
+
+// Start periodic version checking
+function startVersionChecker() {
+    // Check immediately on first load
+    setTimeout(() => performVersionCheck(), 2000);
+    
+    // Then check periodically
+    setInterval(() => {
+        if (navigator.onLine) {
+            performVersionCheck();
+        }
+    }, AUTO_UPDATE_CONFIG.VERSION_CHECK_INTERVAL);
+}
+
+// Also check when coming back online
+window.addEventListener('online', () => {
+    console.log('[AutoUpdate] Back online, checking for updates...');
+    setTimeout(() => performVersionCheck(), 1000);
+});
+
+// ============================================================
 // Service Worker Registration with Instant Update Detection
+// ============================================================
+
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
@@ -38,6 +220,9 @@ if ('serviceWorker' in navigator) {
         window.location.reload();
     });
 }
+
+// Start the auto-update system
+startVersionChecker();
 
 function showUpdateBanner(worker) {
     // Don't show if already showing

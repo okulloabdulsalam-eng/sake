@@ -167,7 +167,7 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// Fetch event - Network-first for HTML, stale-while-revalidate for assets
+// Fetch event - Network-first for all content to ensure fresh updates
 self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
@@ -231,6 +231,7 @@ self.addEventListener('fetch', (event) => {
                           url.pathname.endsWith('.html') || 
                           url.pathname.endsWith('/');
 
+    // ALWAYS use network-first for HTML pages to ensure fresh content
     if (isHTMLRequest) {
         // Network-first strategy for HTML - always try to get fresh content
         event.respondWith(
@@ -259,29 +260,34 @@ self.addEventListener('fetch', (event) => {
                 })
         );
     } else {
-        // Stale-while-revalidate for assets (CSS, JS, images)
+        // For static assets (CSS, JS, images), use network-first with cache fallback
+        // This ensures users always get the latest version
         event.respondWith(
-            caches.match(request)
-                .then((cachedResponse) => {
-                    // Update cache in background
-                    const fetchPromise = fetch(request)
-                        .then((networkResponse) => {
-                            if (networkResponse && networkResponse.status === 200) {
-                                const responseClone = networkResponse.clone();
-                                caches.open(CACHE_NAME)
-                                    .then((cache) => {
-                                        cache.put(request, responseClone);
-                                    });
+            fetch(request)
+                .then((networkResponse) => {
+                    // Fresh content received - cache it and return
+                    if (networkResponse && networkResponse.status === 200) {
+                        const responseClone = networkResponse.clone();
+                        caches.open(CACHE_NAME)
+                            .then((cache) => {
+                                cache.put(request, responseClone);
+                            });
+                    }
+                    return networkResponse;
+                })
+                .catch(() => {
+                    // Network failed - try cache as fallback
+                    return caches.match(request)
+                        .then((cachedResponse) => {
+                            if (cachedResponse) {
+                                return cachedResponse;
                             }
-                            return networkResponse;
-                        })
-                        .catch(() => null);
-
-                    // Return cached version immediately, or wait for network
-                    return cachedResponse || fetchPromise || new Response('Offline', {
-                        status: 503,
-                        statusText: 'Service Unavailable'
-                    });
+                            // No cache available
+                            return new Response('Offline - Resource not cached', {
+                                status: 503,
+                                statusText: 'Service Unavailable'
+                            });
+                        });
                 })
         );
     }

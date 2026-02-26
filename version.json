@@ -1,6 +1,6 @@
 {
-  "version": "2.1.0",
-  "build": "2026-02-21",
+  "version": "2.1.1",
+  "build": "2026-02-24",
   "minAppVersion": "1.0.0",
-  "changelog": "Smart upload routing with 10GB auto-rotation, in-app downloads, no external download links"
+  "changelog": "Auto-update system - app now automatically detects and applies website updates without requiring cache clearing"
 }
