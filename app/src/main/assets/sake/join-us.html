@@ -169,6 +169,10 @@
                                 <span id="detailPhone" style="font-weight: 600; color: var(--dark-gray);">-</span>
                             </div>
                             <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--light-gray);">
+                                <span style="color: var(--text-gray);"><i class="fab fa-whatsapp" style="width: 20px; color: var(--primary-green);"></i> WhatsApp</span>
+                                <span id="detailWhatsApp" style="font-weight: 600; color: var(--dark-gray);">-</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--light-gray);">
                                 <span style="color: var(--text-gray);"><i class="fas fa-id-badge" style="width: 20px; color: var(--primary-green);"></i> Reg Number</span>
                                 <span id="detailRegNo" style="font-weight: 600; color: var(--dark-gray);">-</span>
                             </div>
@@ -336,7 +340,16 @@
         
         // Check login state and update UI
         function updateJoinPageUI() {
-            const userData = localStorage.getItem('userData');
+            // Load from native storage (Room) when in app, else from localStorage
+            let userData = null;
+            if (typeof AndroidApp !== 'undefined' && AndroidApp.getAccountDetails) {
+                try {
+                    const native = AndroidApp.getAccountDetails();
+                    if (native && native.length > 0) userData = native;
+                } catch (e) {}
+            }
+            if (!userData) userData = localStorage.getItem('userData');
+
             const notLoggedInSection = document.getElementById('notLoggedInSection');
             const loggedInSection = document.getElementById('loggedInSection');
             const settingsSection = document.getElementById('settingsSection');
@@ -344,7 +357,7 @@
             const pageTitle = document.querySelector('.page-title');
             
             if (userData) {
-                const user = JSON.parse(userData);
+                const user = typeof userData === 'string' ? JSON.parse(userData) : userData;
                 if (notLoggedInSection) notLoggedInSection.style.display = 'none';
                 if (loggedInSection) loggedInSection.style.display = 'block';
                 if (settingsSection) settingsSection.style.display = 'block';
@@ -362,17 +375,22 @@
                 const profileEmail = document.getElementById('profileEmail');
                 if (profileEmail) profileEmail.textContent = user.email || '';
                 
-                // Update account details
+                // Update account details (read-only display from storage)
                 const detailFullName = document.getElementById('detailFullName');
                 const detailEmail = document.getElementById('detailEmail');
                 const detailPhone = document.getElementById('detailPhone');
+                const detailWhatsApp = document.getElementById('detailWhatsApp');
                 const detailRegNo = document.getElementById('detailRegNo');
                 const detailGender = document.getElementById('detailGender');
-                
+
+                const regNoVal = user.regNo || user.registrationNumber || '';
+                const orNotProvided = function(v) { return (v && String(v).trim()) ? v : 'Not Provided'; };
+
                 if (detailFullName) detailFullName.textContent = fullName;
                 if (detailEmail) detailEmail.textContent = user.email || '-';
                 if (detailPhone) detailPhone.textContent = user.phone || user.phoneNumber || '-';
-                if (detailRegNo) detailRegNo.textContent = user.regNo || user.registrationNumber || '-';
+                if (detailWhatsApp) detailWhatsApp.textContent = user.whatsapp || '-';
+                if (detailRegNo) detailRegNo.textContent = orNotProvided(regNoVal);
                 if (detailGender) detailGender.textContent = user.gender || '-';
                 
                 // Update bottom nav to show Settings
@@ -408,18 +426,30 @@
         
         // Handle logout
         function handleLogout() {
-            if (confirm('Are you sure you want to log out?')) {
-                if (typeof logout === 'function') {
-                    logout();
-                } else {
-                    // Fallback logout
-                    if (typeof firebase !== 'undefined' && firebase.auth) {
-                        firebase.auth().signOut();
-                    }
-                    localStorage.removeItem('userData');
-                    updateJoinPageUI();
-                    alert('You have been logged out.');
+            if (!confirm('Are you sure you want to log out?')) return;
+            // In Android app: clearLoginState clears prefs + Room and redirects to login screen
+            if (typeof AndroidApp !== 'undefined' && AndroidApp.clearLoginState) {
+                try { if (typeof firebase !== 'undefined' && firebase.auth) firebase.auth().signOut(); } catch (e) {}
+                if (typeof currentUser !== 'undefined') currentUser = null;
+                localStorage.removeItem('userData');
+                localStorage.removeItem('kiuma_user');
+                AndroidApp.clearLoginState();
+                return;
+            }
+            if (typeof AndroidApp !== 'undefined' && AndroidApp.clearAccountDetails) {
+                try { AndroidApp.clearAccountDetails(); } catch (e) {}
+            }
+            if (typeof logout === 'function') {
+                logout();
+            } else {
+                if (typeof firebase !== 'undefined' && firebase.auth) {
+                    firebase.auth().signOut();
                 }
+                localStorage.removeItem('userData');
+                localStorage.removeItem('kiuma_user');
+                if (typeof currentUser !== 'undefined') currentUser = null;
+                updateJoinPageUI();
+                alert('You have been logged out.');
             }
         }
         

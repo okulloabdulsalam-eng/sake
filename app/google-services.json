@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "69327390212",
+    "project_id": "kiuma-mob-app",
+    "storage_bucket": "kiuma-mob-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:69327390212:android:bc519469946b80a7",
+        "android_client_info": {
+          "package_name": "com.kiuma.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDOZ1UzDPXuxmGMZTxKcB7CzeWi7esB08c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

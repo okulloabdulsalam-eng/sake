@@ -14,6 +14,12 @@ import android.util.Log
 import android.webkit.JavascriptInterface
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import com.kiuma.app.data.local.AppDatabase
+import com.kiuma.app.data.local.UserAccountEntity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -88,6 +94,34 @@ class WebAppInterface(private val activity: MainActivity) {
             } catch (e: Exception) {
                 Log.e(TAG, "Error opening external link", e)
                 Toast.makeText(activity, "Could not open link", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    /** Open native Notifications screen (offline-first from Room). */
+    @JavascriptInterface
+    fun openNativeNotifications() {
+        activity.runOnUiThread {
+            try {
+                val intent = Intent(activity, com.kiuma.app.ui.notifications.NotificationsActivity::class.java)
+                activity.startActivity(intent)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error opening native notifications", e)
+                Toast.makeText(activity, "Could not open Notifications", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    /** Open native Media screen (offline-first list, downloads, ExoPlayer). Use from WebView when user navigates to media. */
+    @JavascriptInterface
+    fun openNativeMedia() {
+        activity.runOnUiThread {
+            try {
+                val intent = Intent(activity, com.kiuma.app.ui.media.MediaActivity::class.java)
+                activity.startActivity(intent)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error opening native media", e)
+                Toast.makeText(activity, "Could not open Media", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -174,6 +208,28 @@ class WebAppInterface(private val activity: MainActivity) {
             } catch (e: Exception) {
                 Log.e(TAG, "Error downloading file", e)
                 Toast.makeText(activity, "Download failed", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    @JavascriptInterface
+    fun getDownloadedFiles(): String {
+        return try {
+            (activity as? com.kiuma.app.MainActivity)?.getDownloadIndexJson() ?: "[]"
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting downloads", e)
+            "[]"
+        }
+    }
+
+    @JavascriptInterface
+    fun openFile(path: String) {
+        activity.runOnUiThread {
+            try {
+                (activity as? com.kiuma.app.MainActivity)?.openDownloadedFile(path)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error opening file", e)
+                Toast.makeText(activity, "Could not open file", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -567,5 +623,93 @@ class WebAppInterface(private val activity: MainActivity) {
                 Log.e(TAG, "Error opening app settings", e)
             }
         }
+    }
+
+    // ===== Account persistence (Room) =====
+
+    /** Persist account details to Room. Called after signup and after profile edit. */
+    @JavascriptInterface
+    fun saveAccountDetails(json: String) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val db = AppDatabase.getInstance(activity)
+                db.userAccountDao().insert(
+                    UserAccountEntity(userJson = json, updatedAt = System.currentTimeMillis())
+                )
+                Log.d(TAG, "Account details saved to Room")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error saving account details", e)
+            }
+        }
+    }
+
+    /** Return persisted account details as JSON, or empty string if none. */
+    @JavascriptInterface
+    fun getAccountDetails(): String {
+        return runBlocking(Dispatchers.IO) {
+            try {
+                val db = AppDatabase.getInstance(activity)
+                db.userAccountDao().getAccount()?.userJson ?: ""
+            } catch (e: Exception) {
+                Log.e(TAG, "Error getting account details", e)
+                ""
+            }
+        }
+    }
+
+    /** Clear persisted account (e.g. on logout). */
+    @JavascriptInterface
+    fun clearAccountDetails() {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                AppDatabase.getInstance(activity).userAccountDao().clear()
+                Log.d(TAG, "Account details cleared from Room")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error clearing account details", e)
+            }
+        }
+    }
+
+    // ===== Persistent login state (SharedPreferences) =====
+
+    private val loginPrefs by lazy {
+        activity.getSharedPreferences("kiuma_prefs", android.content.Context.MODE_PRIVATE)
+    }
+
+    /** Call after successful login/signup. isLoggedIn "true" = logged in, else = not logged in. */
+    @JavascriptInterface
+    fun setLoginState(isLoggedIn: String) {
+        loginPrefs.edit()
+            .putBoolean("is_logged_in", "true" == isLoggedIn)
+            .apply()
+        Log.d(TAG, "Login state set: is_logged_in=${"true" == isLoggedIn}")
+    }
+
+    /** Optionally store user id for display or recovery. */
+    @JavascriptInterface
+    fun saveUserId(userId: String) {
+        if (userId.isNotEmpty()) {
+            loginPrefs.edit().putString("user_id", userId).apply()
+        }
+    }
+
+    /** Call on logout: clear login state, clear account in Room, then navigate to login screen. */
+    @JavascriptInterface
+    fun clearLoginState() {
+        loginPrefs.edit()
+            .remove("is_logged_in")
+            .remove("user_id")
+            .apply()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                AppDatabase.getInstance(activity).userAccountDao().clear()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error clearing account on logout", e)
+            }
+        }
+        activity.runOnUiThread {
+            (activity as? MainActivity)?.loadLoginScreen()
+        }
+        Log.d(TAG, "Login state cleared, navigated to login screen")
     }
 }

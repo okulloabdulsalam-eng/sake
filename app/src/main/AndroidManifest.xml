@@ -77,6 +77,32 @@
             </intent-filter>
         </activity>
 
+        <!-- Native offline-first media list and playback (no WebView) -->
+        <activity
+            android:name=".ui.media.MediaActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize" />
+
+        <activity
+            android:name=".ui.media.MediaPlayerActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize"
+            android:theme="@style/Theme.KIUMA2026" />
+
+        <activity
+            android:name=".ui.notifications.NotificationsActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize" />
+
+        <!-- Firebase Cloud Messaging - handles push notifications in background/foreground -->
+        <service
+            android:name=".services.KiumaFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
         <!-- Download Service -->
         <service
             android:name=".services.DownloadService"

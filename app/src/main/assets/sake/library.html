@@ -172,6 +172,9 @@
         window.addEventListener('DOMContentLoaded', function() {
             loadBooksFromStorage();
         });
+        window.addEventListener('kiumaDownloadComplete', function() {
+            if (currentLibFilter === 'downloads') loadBooksFromStorage('downloads');
+        });
 
         // Filter books function - globally accessible
         window.filterBooks = function(category) {
@@ -410,8 +413,25 @@
         const OFFLINE_CACHE_NAME = 'kiuma-offline-library';
         const OFFLINE_INDEX_KEY  = 'kiuma-offline-library-index';
 
+        function getAndroidDownloads() {
+            if (typeof Android === 'undefined' || typeof Android.getDownloadedFiles !== 'function') return [];
+            try {
+                const raw = Android.getDownloadedFiles();
+                const arr = typeof raw === 'string' ? JSON.parse(raw || '[]') : (raw || []);
+                return arr.filter(f => (f.category === 'books' || f.category === 'other')).map(f => ({
+                    url: f.path, path: f.path, name: f.name || (f.path && f.path.split('/').pop()) || 'File',
+                    category: 'other', size: f.size || 0, _native: true
+                }));
+            } catch (e) { return []; }
+        }
         function getOfflineIndex() {
-            try { return JSON.parse(localStorage.getItem(OFFLINE_INDEX_KEY) || '[]'); } catch(e) { return []; }
+            try {
+                let idx = JSON.parse(localStorage.getItem(OFFLINE_INDEX_KEY) || '[]');
+                const android = getAndroidDownloads();
+                const seen = new Set(idx.map(f => f.url));
+                android.forEach(f => { if (!seen.has(f.url)) { seen.add(f.url); idx.push(f); } });
+                return idx;
+            } catch (e) { return []; }
         }
         function saveOfflineIndex(idx) { localStorage.setItem(OFFLINE_INDEX_KEY, JSON.stringify(idx)); }
 
@@ -624,6 +644,10 @@
         // In-app book viewer
         // ==============================
         function openBookViewer(url, fileName, title) {
+            if (typeof Android !== 'undefined' && typeof Android.openFile === 'function' && url && (url.startsWith('/') || url.includes('Android/data') || url.includes('KIUMA'))) {
+                Android.openFile(url);
+                return;
+            }
             const ext = fileName.split('.').pop().toLowerCase();
             const modal = document.getElementById('bookViewerModal');
             const content = document.getElementById('bookViewerContent');

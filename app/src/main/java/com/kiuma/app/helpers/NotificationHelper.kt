@@ -64,6 +64,49 @@ class NotificationHelper(private val context: Context) {
         return notificationId
     }
 
+    /**
+     * Show notification with optional click URL. When tapped, opens MainActivity and loads the URL in WebView
+     * (or native screen for media.html / notifications.html).
+     */
+    fun showNotificationWithClickUrl(
+        title: String,
+        message: String,
+        clickUrl: String? = null,
+        channelId: String = KiumaApplication.CHANNEL_NOTIFICATIONS
+    ): Int {
+        if (!hasNotificationPermission()) return -1
+
+        val notificationId = notificationIdCounter.incrementAndGet()
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            if (clickUrl != null) putExtra(MainActivity.EXTRA_PENDING_URL, clickUrl)
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            notificationId,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .setVibrate(longArrayOf(0, 300, 200, 300))
+            .setDefaults(NotificationCompat.DEFAULT_SOUND or NotificationCompat.DEFAULT_LIGHTS)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .build()
+
+        notificationManager.notify(notificationId, notification)
+        return notificationId
+    }
+
     fun showDownloadNotification(
         fileName: String,
         progress: Int,

@@ -1,3 +1,58 @@
+// ============================================================
+// SEAMLESS UPDATE - Replace full reload with fetch-and-swap
+// Preserves scroll, avoids visible flash. Works in WebView and browser.
+// ============================================================
+function performSeamlessUpdate(url) {
+    url = url || window.location.href;
+    var scrollPos = { x: window.scrollX || window.pageXOffset, y: window.scrollY || window.pageYOffset };
+    var fallbackReload = function () {
+        try { sessionStorage.setItem('kiuma_restore_scroll', JSON.stringify(scrollPos)); } catch (e) {}
+        window.location.reload();
+    };
+    return fetch(url, { cache: 'reload', credentials: 'same-origin' })
+        .then(function (r) { return r.text(); })
+        .then(function (html) {
+            var parser = new DOMParser();
+            var doc = parser.parseFromString(html, 'text/html');
+            if (!doc.body) { fallbackReload(); return; }
+            var mainContent = document.querySelector('.main-content') || document.querySelector('main') || document.body;
+            var newMain = doc.body.querySelector('.main-content') || doc.body.querySelector('main') || doc.body;
+            if (!mainContent || !newMain) {
+                document.body.innerHTML = doc.body.innerHTML;
+                mainContent = document.body;
+            } else {
+                mainContent.innerHTML = newMain.innerHTML;
+            }
+            mainContent.querySelectorAll('script').forEach(function (oldScript) {
+                var s = document.createElement('script');
+                if (oldScript.src) { s.src = oldScript.src; } else { s.textContent = oldScript.textContent; }
+                oldScript.parentNode.replaceChild(s, oldScript);
+            });
+            window.scrollTo(scrollPos.x || 0, scrollPos.y || 0);
+            window.dispatchEvent(new CustomEvent('kiumaContentUpdated', { detail: { url: url } }));
+            console.log('[SeamlessUpdate] Content updated without reload');
+        })
+        .catch(function (err) {
+            console.warn('[SeamlessUpdate] Fetch failed:', err);
+            fallbackReload();
+        });
+}
+function restoreScrollFromSeamless() {
+    try {
+        var raw = sessionStorage.getItem('kiuma_restore_scroll');
+        if (raw) {
+            sessionStorage.removeItem('kiuma_restore_scroll');
+            var pos = JSON.parse(raw);
+            requestAnimationFrame(function () { window.scrollTo(pos.x || 0, pos.y || 0); });
+        }
+    } catch (e) {}
+}
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', restoreScrollFromSeamless);
+} else {
+    restoreScrollFromSeamless();
+}
+
 // Service Worker Registration with Instant Update Detection
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -30,12 +85,16 @@ if ('serviceWorker' in navigator) {
             .catch(err => console.log('Service Worker registration failed:', err));
     });
 
-    // Auto-reload when new SW takes over
-    let refreshing = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
+    // Seamless update when new SW takes over (no visible reload)
+    var refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
         if (refreshing) return;
         refreshing = true;
-        window.location.reload();
+        if (typeof performSeamlessUpdate === 'function') {
+            performSeamlessUpdate().catch(function () { window.location.reload(); });
+        } else {
+            window.location.reload();
+        }
     });
 }
 
@@ -66,8 +125,10 @@ function applySwUpdate() {
     } else if (navigator.serviceWorker && navigator.serviceWorker.controller) {
         navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
     }
-    // Fallback reload after 3s if controllerchange doesn't fire
-    setTimeout(function() { window.location.reload(); }, 3000);
+    // controllerchange will trigger seamless update; fallback only if it doesn't fire
+    setTimeout(function () {
+        if (banner) banner.innerHTML = '<span>Update applied. <a href="#" onclick="location.reload();return false;">Refresh page</a> if needed.</span>';
+    }, 3000);
 }
 
 // Offline/Online Detection and Notification Banner
@@ -1153,9 +1214,18 @@ setInterval(updateDates, 3600000); // 1 hour = 3600000ms
 let currentUser = null;
 
 function loadUserData() {
-    const userData = localStorage.getItem('userData');
+    let userData = null;
+    if (typeof AndroidApp !== 'undefined' && AndroidApp.getAccountDetails) {
+        try {
+            const native = AndroidApp.getAccountDetails();
+            if (native && native.length > 0) userData = native;
+        } catch (e) {}
+    }
+    if (!userData) userData = localStorage.getItem('userData');
     if (userData) {
-        currentUser = JSON.parse(userData);
+        currentUser = typeof userData === 'string' ? JSON.parse(userData) : userData;
+        localStorage.setItem('userData', JSON.stringify(currentUser));
+        localStorage.setItem('kiuma_user', JSON.stringify(currentUser));
         updateUserDisplay();
         return true;
     }
@@ -1517,6 +1587,21 @@ window.handleLogin = async function(e) {
         
         localStorage.setItem('userData', JSON.stringify(currentUser));
         localStorage.setItem('kiuma_user', JSON.stringify(currentUser));
+
+        // Persist to native storage when in Android app
+        if (typeof AndroidApp !== 'undefined' && AndroidApp.saveAccountDetails) {
+            try {
+                AndroidApp.saveAccountDetails(JSON.stringify(currentUser));
+            } catch (e) { console.warn('Native save failed:', e); }
+        }
+        // Persistent login: so user stays logged in after closing the app
+        if (typeof AndroidApp !== 'undefined') {
+            try {
+                if (AndroidApp.setLoginState) AndroidApp.setLoginState('true');
+                if (AndroidApp.saveUserId && currentUser.uid) AndroidApp.saveUserId(currentUser.uid);
+            } catch (e) { console.warn('setLoginState failed:', e); }
+        }
+
         updateUserDisplay();
         if (typeof updateJoinPageUI === 'function') {
             updateJoinPageUI();
@@ -1616,12 +1701,32 @@ window.handleSignup = async function(e) {
         currentUser = userData;
         localStorage.setItem('userData', JSON.stringify(currentUser));
         localStorage.setItem('kiuma_user', JSON.stringify(currentUser));
+
+        // Persist to native storage (Room) when running in Android app
+        if (typeof AndroidApp !== 'undefined' && AndroidApp.saveAccountDetails) {
+            try {
+                AndroidApp.saveAccountDetails(JSON.stringify(userData));
+            } catch (e) { console.warn('Native save failed:', e); }
+        }
+        // Persistent login: stay logged in after closing the app
+        if (typeof AndroidApp !== 'undefined') {
+            try {
+                if (AndroidApp.setLoginState) AndroidApp.setLoginState('true');
+                if (AndroidApp.saveUserId) AndroidApp.saveUserId(firebaseUser.uid);
+            } catch (e) { console.warn('setLoginState failed:', e); }
+        }
+
         updateUserDisplay();
         if (typeof updateJoinPageUI === 'function') {
             updateJoinPageUI();
         }
         window.closeAccountModal();
         alert('Account created successfully! Welcome, ' + firstName + '!');
+
+        // Navigate to account screen (join-us) to show saved details
+        if (!window.location.pathname.includes('join-us')) {
+            window.location.href = 'join-us.html';
+        }
     } catch (error) {
         console.error('Signup error:', error);
         console.error('Error code:', error.code);
@@ -1674,23 +1779,34 @@ window.showAccountInfo = function() {
 }
 
 window.handleLogout = async function() {
-    if (confirm('Are you sure you want to logout?')) {
+    if (!confirm('Are you sure you want to logout?')) return;
+    // In Android app: clear login state and account, then native redirects to login screen
+    if (typeof AndroidApp !== 'undefined' && AndroidApp.clearLoginState) {
         try {
-            await firebase.auth().signOut();
-            currentUser = null;
-            localStorage.removeItem('userData');
-            updateUserDisplay();
-            window.closeAccountModal();
-            alert('You have been logged out.');
-        } catch (error) {
-            console.error('Logout error:', error);
-            // Still clear local data even if Firebase logout fails
-            currentUser = null;
-            localStorage.removeItem('userData');
-            updateUserDisplay();
-            window.closeAccountModal();
-        }
+            if (typeof firebase !== 'undefined' && firebase.auth) {
+                firebase.auth().signOut();
+            }
+        } catch (e) {}
+        currentUser = null;
+        localStorage.removeItem('userData');
+        localStorage.removeItem('kiuma_user');
+        AndroidApp.clearLoginState();
+        return;
     }
+    try {
+        if (typeof firebase !== 'undefined' && firebase.auth) {
+            await firebase.auth().signOut();
+        }
+    } catch (error) {
+        console.error('Logout error:', error);
+    }
+    currentUser = null;
+    localStorage.removeItem('userData');
+    localStorage.removeItem('kiuma_user');
+    if (typeof updateUserDisplay === 'function') updateUserDisplay();
+    if (typeof updateJoinPageUI === 'function') updateJoinPageUI();
+    if (typeof window.closeAccountModal === 'function') window.closeAccountModal();
+    alert('You have been logged out.');
 };
 
 // Edit Profile Functions
@@ -1701,8 +1817,16 @@ window.showEditProfile = function() {
     const accountInfo = document.getElementById('accountInfo');
     const accountInfoCard = document.querySelector('.account-info-card');
     
-    // Get user from multiple sources
+    // Get user from multiple sources (native storage, localStorage, currentUser)
     let user = currentUser;
+    if (!user) {
+        try {
+            if (typeof AndroidApp !== 'undefined' && AndroidApp.getAccountDetails) {
+                const native = AndroidApp.getAccountDetails();
+                if (native && native.length > 0) user = JSON.parse(native);
+            }
+        } catch (e) {}
+    }
     if (!user) {
         try {
             const stored = localStorage.getItem('userData');
@@ -1833,6 +1957,13 @@ window.saveProfileChanges = async function() {
         // Save to all localStorage keys for reliability
         localStorage.setItem('userData', JSON.stringify(user));
         localStorage.setItem('kiuma_user', JSON.stringify(user));
+
+        // Persist to native storage (Room) when in Android app
+        if (typeof AndroidApp !== 'undefined' && AndroidApp.saveAccountDetails) {
+            try {
+                AndroidApp.saveAccountDetails(JSON.stringify(user));
+            } catch (e) { console.warn('Native save failed:', e); }
+        }
         
         // Update global currentUser
         currentUser = user;

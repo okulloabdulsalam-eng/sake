@@ -244,8 +244,8 @@ async function signOut() {
         if (typeof updateUserDisplay === 'function') updateUserDisplay();
         if (typeof window.updateUserDisplay === 'function') window.updateUserDisplay();
         
-        // Reload page to reset state
-        window.location.reload();
+        // Navigate to home to reset state (no visible full reload)
+        window.location.href = './index.html';
     } catch (error) {
         console.error('Sign out error:', error);
         throw error;

@@ -1,6 +1,6 @@
 // KIUMA Service Worker - Enables offline functionality
 // Cache version - UPDATE THIS when you deploy changes to force refresh
-const CACHE_VERSION = '2026-02-21-v10';
+const CACHE_VERSION = '2026-02-22-v11';
 const CACHE_NAME = 'kiuma-cache-' + CACHE_VERSION;
 const OFFLINE_URL = 'offline.html';
 
@@ -100,6 +100,13 @@ const STATIC_ASSETS = [
     './zakat-form.html',
     './offline.html',
     './styles.css',
+    './fonts/fontawesome.min.css',
+    './fonts/webfonts/fa-brands-400.woff2',
+    './fonts/webfonts/fa-regular-400.woff2',
+    './fonts/webfonts/fa-solid-900.woff2',
+    './fonts/webfonts/fa-brands-400.ttf',
+    './fonts/webfonts/fa-regular-400.ttf',
+    './fonts/webfonts/fa-solid-900.ttf',
     './css/search.css',
     './script.js',
     './js/search.js',
@@ -223,30 +230,34 @@ self.addEventListener('fetch', (event) => {
                           url.pathname.endsWith('/');
 
     if (isHTMLRequest) {
-        // Network-first strategy for HTML - always try to get fresh content
+        // Cache-first (stale‑while‑revalidate) for HTML:
+        //  - Show cached page immediately so UI feels instant, even on slow networks
+        //  - In the background, try to fetch a fresh copy and update the cache
         event.respondWith(
-            fetch(request)
-                .then((networkResponse) => {
-                    // Got fresh content - cache it and return
-                    if (networkResponse && networkResponse.status === 200) {
-                        const responseClone = networkResponse.clone();
-                        caches.open(CACHE_NAME)
-                            .then((cache) => {
-                                cache.put(request, responseClone);
-                            });
-                    }
-                    return networkResponse;
-                })
-                .catch(() => {
-                    // Network failed - try cache
-                    return caches.match(request)
-                        .then((cachedResponse) => {
-                            if (cachedResponse) {
-                                return cachedResponse;
+            caches.match(request)
+                .then((cachedResponse) => {
+                    const fetchPromise = fetch(request)
+                        .then((networkResponse) => {
+                            if (networkResponse && networkResponse.status === 200) {
+                                const responseClone = networkResponse.clone();
+                                caches.open(CACHE_NAME)
+                                    .then((cache) => {
+                                        cache.put(request, responseClone);
+                                    });
                             }
-                            // No cache - show offline page
-                            return caches.match('./offline.html');
-                        });
+                            return networkResponse;
+                        })
+                        .catch(() => null);
+
+                    // If we have a cached page, return it immediately and refresh in background.
+                    if (cachedResponse) {
+                        // Kick off background update, but don't block the response.
+                        fetchPromise;
+                        return cachedResponse;
+                    }
+
+                    // No cache yet – fall back to network, then offline page.
+                    return fetchPromise || caches.match('./offline.html');
                 })
         );
     } else {

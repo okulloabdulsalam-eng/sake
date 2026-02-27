@@ -181,8 +181,25 @@
         const OFFLINE_CACHE_NAME = 'kiuma-offline-media';
         const OFFLINE_INDEX_KEY  = 'kiuma-offline-media-index';
 
+        function getAndroidDownloads() {
+            if (typeof Android === 'undefined' || typeof Android.getDownloadedFiles !== 'function') return [];
+            try {
+                const raw = Android.getDownloadedFiles();
+                const arr = typeof raw === 'string' ? JSON.parse(raw || '[]') : (raw || []);
+                return arr.filter(f => (f.category === 'video' || f.category === 'audio')).map(f => ({
+                    url: f.path, path: f.path, name: f.name || (f.path && f.path.split('/').pop()) || 'File',
+                    type: f.category, size: f.size || 0, _native: true
+                }));
+            } catch (e) { return []; }
+        }
         function getOfflineIndex() {
-            try { return JSON.parse(localStorage.getItem(OFFLINE_INDEX_KEY) || '[]'); } catch(e) { return []; }
+            try {
+                let idx = JSON.parse(localStorage.getItem(OFFLINE_INDEX_KEY) || '[]');
+                const android = getAndroidDownloads();
+                const seen = new Set(idx.map(f => f.url));
+                android.forEach(f => { if (!seen.has(f.url)) { seen.add(f.url); idx.push(f); } });
+                return idx;
+            } catch (e) { return []; }
         }
         function saveOfflineIndex(idx) { localStorage.setItem(OFFLINE_INDEX_KEY, JSON.stringify(idx)); }
 
@@ -412,6 +429,10 @@
         // In-app file viewer
         // ==============================
         function openMediaViewer(url, type, title) {
+            if (typeof Android !== 'undefined' && typeof Android.openFile === 'function' && url && (url.startsWith('/') || url.includes('Android/data') || url.includes('KIUMA'))) {
+                Android.openFile(url);
+                return;
+            }
             const modal = document.getElementById('mediaViewerModal');
             const content = document.getElementById('viewerContent');
             document.getElementById('viewerTitle').textContent = title || 'Media';
@@ -441,6 +462,9 @@
 
         window.addEventListener('popstate', closeMediaViewer);
         window.addEventListener('DOMContentLoaded', function() { loadMediaFromStorage('all'); });
+        window.addEventListener('kiumaDownloadComplete', function() {
+            if (currentMediaFilter === 'downloads') loadMediaFromStorage('downloads');
+        });
     </script>
 
 </body>

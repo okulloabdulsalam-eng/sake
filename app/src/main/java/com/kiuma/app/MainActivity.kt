@@ -76,12 +76,15 @@ class MainActivity : AppCompatActivity() {
     private val prefs by lazy { getSharedPreferences("kiuma_prefs", Context.MODE_PRIVATE) }
 
     companion object {
+        const val EXTRA_PENDING_URL = "pending_url"
         private const val TAG = "KIUMA"
         private const val WEB_URL = "https://okulloabdulsalam-eng.github.io/sake/"
         private const val ASSETS_PATH = "file:///android_asset/sake/"
         private const val REQUEST_PERMISSIONS = 1001
         private const val REQUEST_MEDIA_PERMISSIONS = 1003
         private const val PREF_OFFLINE_BANNER_DISMISSED = "offlineBannerDismissed"
+        private const val PREF_IS_LOGGED_IN = "is_logged_in"
+        private const val PREF_USER_ID = "user_id"
         private const val UPGRADE_CHECK_INTERVAL_MS = 4000L
         private const val UPGRADE_STABLE_REQUIRED_SUCCESSES = 2
         private const val UPGRADE_HTTP_TIMEOUT_MS = 2000
@@ -127,7 +130,59 @@ class MainActivity : AppCompatActivity() {
     private val downloadCompleteReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             val downloadId = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1) ?: return
-            downloadHelper.onDownloadComplete(downloadId)
+            val path = downloadHelper.onDownloadComplete(downloadId)
+            if (!path.isNullOrEmpty()) {
+                runOnUiThread { notifyWebViewDownloadComplete(path) }
+            }
+        }
+    }
+
+    private fun notifyWebViewDownloadComplete(path: String) {
+        try {
+            val name = path.substringAfterLast('/')
+            val script = "javascript:try{if(window.dispatchEvent){window.dispatchEvent(new CustomEvent('kiumaDownloadComplete',{detail:{path:\"${path.replace("\"", "\\\"")}\",name:\"${name.replace("\"", "\\\"")}\"}}));}}catch(e){}"
+            binding.webView.evaluateJavascript(script, null)
+        } catch (_: Exception) {}
+    }
+
+    fun getDownloadIndexJson(): String = downloadHelper.getDownloadIndex()
+
+    fun openDownloadedFile(path: String) {
+        try {
+            val file = File(path)
+            if (!file.exists()) {
+                Toast.makeText(this, "File not found", Toast.LENGTH_SHORT).show()
+                return
+            }
+            val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                FileProvider.getUriForFile(this, "${packageName}.fileprovider", file)
+            } else {
+                Uri.fromFile(file)
+            }
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, getMimeType(path))
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            startActivity(Intent.createChooser(intent, "Open with"))
+        } catch (e: Exception) {
+            Log.e(TAG, "Error opening file", e)
+            Toast.makeText(this, "Could not open file", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun getMimeType(path: String): String {
+        val ext = path.substringAfterLast('.', "").lowercase()
+        return when (ext) {
+            "pdf" -> "application/pdf"
+            "epub" -> "application/epub+zip"
+            "mp4", "m4v" -> "video/mp4"
+            "webm" -> "video/webm"
+            "mp3", "m4a" -> "audio/mpeg"
+            "wav" -> "audio/wav"
+            "jpg", "jpeg" -> "image/jpeg"
+            "png" -> "image/png"
+            else -> "application/octet-stream"
         }
     }
 
@@ -150,6 +205,7 @@ class MainActivity : AppCompatActivity() {
         setupNetworkMonitoring()
 
         loadContent()
+        handleNotificationClickUrl(intent?.getStringExtra(EXTRA_PENDING_URL))
     }
 
     private fun setupOfflineBannerDismiss() {
@@ -208,7 +264,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleNetworkStateChanged(isOnline: Boolean) {
-        val wasOffline = isOfflineMode
         isOfflineMode = !isOnline
 
         if (isOnline) {
@@ -219,15 +274,8 @@ class MainActivity : AppCompatActivity() {
                 startOnlineUpgradeMonitoring()
                 return
             }
-
-            if (wasOffline) {
-                val reloadUrl = when {
-                    lastLoadedUrl?.startsWith(WEB_URL) == true -> lastLoadedUrl!!
-                    else -> WEB_URL
-                }
-                binding.webView.loadUrl(reloadUrl)
-                lastLoadedUrl = reloadUrl
-            }
+            // Do NOT reload WebView on reconnect - preserves current UI state.
+            // Native screens (Media, Notifications) refresh via NetworkMonitor in KiumaApplication.
         } else {
             stopOnlineUpgradeMonitoring()
             stabilitySuccessCount = 0
@@ -380,23 +428,33 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** True if user has been logged in and not yet logged out (persists across app restarts). */
+    fun isLoggedIn(): Boolean = prefs.getBoolean(PREF_IS_LOGGED_IN, false)
+
+    /** Relative path for entry page: index.html (home) when logged in, join-us.html (login) when not. */
+    private fun getEntryPagePath(): String = if (isLoggedIn()) "index.html" else "join-us.html"
+
+    /** Navigate WebView to login screen (join-us). Used after logout. */
+    fun loadLoginScreen() {
+        val url = if (isShowingAssets) ASSETS_PATH + "join-us.html" else WEB_URL + "join-us.html"
+        binding.webView.settings.cacheMode = WebSettings.LOAD_DEFAULT
+        binding.webView.loadUrl(url)
+        lastLoadedUrl = url
+    }
+
     private fun loadContent() {
         // HTML splash handles loading - no native overlay needed
         binding.errorView.visibility = View.GONE
-
-        if (offlineHelper.hasLocalAssets()) {
-            loadBundledAssetsHome()
-            startOnlineUpgradeMonitoring()
-            return
-        }
-
+        
         if (isNetworkAvailable()) {
             isOfflineMode = false
             isShowingAssets = false
             updateOfflineIndicatorVisibility()
             binding.webView.settings.cacheMode = WebSettings.LOAD_DEFAULT
-            binding.webView.loadUrl(WEB_URL)
-            lastLoadedUrl = WEB_URL
+            val entryPath = getEntryPagePath()
+            val url = if (entryPath == "index.html") WEB_URL else WEB_URL + entryPath
+            binding.webView.loadUrl(url)
+            lastLoadedUrl = url
         } else {
             loadOfflineContent()
         }
@@ -409,7 +467,7 @@ class MainActivity : AppCompatActivity() {
         isShowingAssets = true
         isOfflineMode = !isNetworkAvailable()
         updateOfflineIndicatorVisibility()
-        val url = ASSETS_PATH + "index.html"
+        val url = ASSETS_PATH + getEntryPagePath()
         binding.webView.loadUrl(url)
         lastLoadedUrl = url
     }
@@ -541,10 +599,11 @@ class MainActivity : AppCompatActivity() {
         binding.errorView.visibility = View.GONE
 
         // Prefer the cached live website (service worker / webview cache) so you keep the latest UI offline.
-        // If this device has never loaded the website online before, this may fail, and we will fallback to assets.
+        val entryPath = getEntryPagePath()
+        val url = if (entryPath == "index.html") WEB_URL else WEB_URL + entryPath
         binding.webView.settings.cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
-        binding.webView.loadUrl(WEB_URL)
-        lastLoadedUrl = WEB_URL
+        binding.webView.loadUrl(url)
+        lastLoadedUrl = url
 
         applyForceDarkMode()
     }
@@ -556,7 +615,7 @@ class MainActivity : AppCompatActivity() {
         isShowingAssets = true
         isOfflineMode = !isNetworkAvailable()
         updateOfflineIndicatorVisibility()
-        val url = ASSETS_PATH + "index.html"
+        val url = ASSETS_PATH + getEntryPagePath()
         binding.webView.loadUrl(url)
         lastLoadedUrl = url
         startOnlineUpgradeMonitoring()
@@ -718,6 +777,14 @@ class MainActivity : AppCompatActivity() {
                 }
                 url.contains("youtube.com") || url.contains("youtu.be") -> {
                     openExternalApp(url)
+                    true
+                }
+                url.contains("media.html") && (url.startsWith(WEB_URL) || url.startsWith(ASSETS_PATH)) -> {
+                    startActivity(Intent(this@MainActivity, com.kiuma.app.ui.media.MediaActivity::class.java))
+                    true
+                }
+                url.contains("notifications.html") && (url.startsWith(WEB_URL) || url.startsWith(ASSETS_PATH)) -> {
+                    startActivity(Intent(this@MainActivity, com.kiuma.app.ui.notifications.NotificationsActivity::class.java))
                     true
                 }
                 url.startsWith("https://okulloabdulsalam-eng.github.io/sake") ||
@@ -1035,7 +1102,32 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        handleDeepLink(intent)
+        handleNotificationClickUrl(intent?.getStringExtra(EXTRA_PENDING_URL))
+        if (intent?.getStringExtra(EXTRA_PENDING_URL) == null) handleDeepLink(intent)
+    }
+
+    private fun handleNotificationClickUrl(url: String?) {
+        if (url.isNullOrBlank()) return
+        when {
+            url.contains("media.html") -> {
+                startActivity(Intent(this, com.kiuma.app.ui.media.MediaActivity::class.java))
+            }
+            url.contains("notifications.html") -> {
+                startActivity(Intent(this, com.kiuma.app.ui.notifications.NotificationsActivity::class.java))
+            }
+            else -> {
+                val fullUrl = when {
+                    url.startsWith("http://") || url.startsWith("https://") -> url
+                    url.startsWith("/") -> "https://okulloabdulsalam-eng.github.io$url"
+                    else -> WEB_URL + url.removePrefix("/")
+                }
+                isShowingAssets = false
+                binding.webView.settings.cacheMode = WebSettings.LOAD_DEFAULT
+                binding.webView.loadUrl(fullUrl)
+                lastLoadedUrl = fullUrl
+            }
+        }
+        intent?.removeExtra(EXTRA_PENDING_URL)
     }
 
     private fun handleDeepLink(intent: Intent?) {

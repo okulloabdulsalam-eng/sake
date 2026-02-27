@@ -175,23 +175,22 @@
         // Retry connection
         function retryConnection() {
             if (navigator.onLine) {
-                // If online, try to go back or reload
                 if (window.history.length > 1) {
                     window.history.back();
                 } else {
                     window.location.href = './index.html';
                 }
             } else {
-                // Still offline, just reload the page
-                window.location.reload();
+                // Still offline - re-check status without full reload
+                updateConnectionStatus();
             }
         }
         
         // Listen for online/offline events
-        window.addEventListener('online', () => {
+        window.addEventListener('online', function () {
             updateConnectionStatus();
-            // Auto-redirect to home when back online
-            setTimeout(() => {
+            // Navigate to home when back online (no full reload, just navigation)
+            setTimeout(function () {
                 window.location.href = './index.html';
             }, 1000);
         });
