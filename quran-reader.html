@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Al Quran - KIUMA</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; padding: 0; background: #f5f5f5; font-family: 'Poppins', sans-serif; }
+        .quran-app { max-width: 428px; margin: 0 auto; min-height: 100vh; background: #fff; position: relative; }
+        .q-view { display: none; min-height: 100vh; flex-direction: column; padding-bottom: 70px; }
+        .q-view.active { display: flex; }
+
+        /* ========== Screen 1: Home ========== */
+        .q-home .q-header { background: #2E7D32; color: #fff; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; }
+        .q-home .q-header h1 { font-size: 18px; font-weight: 600; margin: 0; }
+        .q-home .q-header-actions { display: flex; gap: 12px; align-items: center; }
+        .q-home .q-header-actions i { font-size: 18px; cursor: pointer; }
+        .q-home .q-body { padding: 16px; flex: 1; background: #fafafa; }
+        .q-home .q-section-title { font-size: 14px; font-weight: 600; color: #212121; margin-bottom: 10px; }
+        .q-home .last-read-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+        .q-home .chip { background: #fff; color: #2E7D32; border: 1px solid #E8F5E9; border-radius: 20px; padding: 8px 14px; font-size: 13px; font-weight: 500; cursor: pointer; }
+        .q-home .chip:active { opacity: 0.9; }
+        .q-home .quick-links { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 20px; -webkit-overflow-scrolling: touch; }
+        .q-home .quick-links .chip { white-space: nowrap; }
+        .q-home .q-tabs { display: flex; background: #e0e0e0; border-radius: 10px; padding: 4px; margin-bottom: 16px; }
+        .q-home .q-tab { flex: 1; padding: 10px 8px; border: none; background: transparent; border-radius: 8px; font-size: 13px; color: #616161; cursor: pointer; }
+        .q-home .q-tab.active { background: #fff; color: #212121; font-weight: 600; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+        .q-home .surah-list { list-style: none; padding: 0; margin: 0; }
+        .q-home .surah-item { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; cursor: pointer; }
+        .q-home .surah-item:active { background: #f0f0f0; }
+        .q-home .surah-num { width: 28px; height: 28px; border-radius: 50%; background: #E8F5E9; color: #2E7D32; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0; }
+        .q-home .surah-info { flex: 1; min-width: 0; }
+        .q-home .surah-name { font-size: 15px; font-weight: 600; color: #2E7D32; }
+        .q-home .surah-meta { font-size: 12px; color: #9e9e9e; }
+        .q-home .surah-ar { font-family: 'Amiri', serif; font-size: 16px; color: #333; margin-left: 8px; }
+        .q-home .q-bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 428px; background: #2E7D32; color: #fff; display: flex; justify-content: space-around; padding: 10px 0 14px; z-index: 100; }
+        .q-home .q-bottom-nav span { display: flex; flex-direction: column; align-items: center; font-size: 11px; cursor: pointer; color: rgba(255,255,255,0.7); }
+        .q-home .q-bottom-nav span.active { color: #fff; font-weight: 600; }
+        .q-home .q-bottom-nav i { font-size: 20px; margin-bottom: 4px; }
+
+        /* ========== Screen 2 & 3: Reader (Arabic / With Meaning) ========== */
+        .q-reader .q-r-header { background: #2E7D32; color: #fff; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
+        .q-reader .q-r-back { background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; padding: 4px; }
+        .q-reader .q-r-title-wrap { flex: 1; text-align: center; margin: 0 8px; }
+        .q-reader .q-r-title { font-size: 16px; font-weight: 600; display: block; }
+        .q-reader .q-r-page { font-size: 12px; opacity: 0.9; }
+        .q-reader .q-r-actions { display: flex; gap: 12px; }
+        .q-reader .q-r-actions button { background: none; border: none; color: #fff; font-size: 18px; cursor: pointer; }
+        .q-reader .q-r-body { padding: 16px; flex: 1; background: #fff; overflow-y: auto; }
+        .q-reader .q-r-body.dark { background: #0d0d0d; color: #fff; }
+        .q-reader .surah-title-ar { font-family: 'Amiri', serif; font-size: 24px; text-align: center; margin: 16px 0; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; }
+        .q-reader .q-r-body.dark .surah-title-ar { border-color: #333; }
+        .q-reader .bismillah { font-family: 'Amiri', serif; font-size: 20px; text-align: center; margin-bottom: 20px; color: #333; }
+        .q-reader .q-r-body.dark .bismillah { color: #ccc; }
+        .q-reader .verse { margin-bottom: 16px; }
+        .q-reader .verse-ar { font-family: 'Amiri', serif; font-size: 22px; line-height: 1.9; color: #111; direction: rtl; text-align: right; }
+        .q-reader .q-r-body.dark .verse-ar { color: #fff; }
+        .q-reader .verse-num { display: inline-flex; width: 28px; height: 28px; border-radius: 50%; background: #E8F5E9; color: #2E7D32; font-size: 14px; font-weight: 600; align-items: center; justify-content: center; margin-left: 6px; }
+        .q-reader .q-r-body.dark .verse-num { background: #1b3d1e; color: #81C784; }
+        .q-reader .verse-en { font-size: 14px; color: #616161; margin-top: 6px; line-height: 1.6; padding-left: 8px; }
+        .q-reader .q-r-body.dark .verse-en { color: #b0b0b0; }
+        .q-reader .q-r-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 428px; background: #2E7D32; color: #fff; display: flex; justify-content: space-around; padding: 12px 8px 14px; z-index: 100; }
+        .q-reader .q-r-bar span, .q-reader .q-r-bar button { display: flex; flex-direction: column; align-items: center; font-size: 11px; cursor: pointer; background: none; border: none; color: rgba(255,255,255,0.9); }
+        .q-reader .q-r-bar span i, .q-reader .q-r-bar button i { font-size: 20px; margin-bottom: 4px; }
+        .q-reader .q-r-bar .active { color: #fff; font-weight: 600; }
+        .q-reader .q-r-bar .mic-active { color: #81C784; }
+
+        /* ========== Screen 4: Dark reader (Tarteel-style) ========== */
+        .q-dark .q-r-header { background: #0d0d0d; border-bottom: 1px solid #222; }
+        .q-dark .q-r-body { background: #0d0d0d !important; }
+        .q-dark .q-r-bar { background: #1a1a1a; color: #fff; }
+        .q-dark .q-r-bar .mic-active { color: #4CAF50; }
+
+        .q-loading { text-align: center; padding: 40px 20px; color: #616161; }
+        .q-error { color: #f44336; padding: 16px; text-align: center; }
+        .q-dropdown { position: relative; }
+        .q-dropdown-panel { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); background: #fff; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); max-height: 280px; overflow-y: auto; z-index: 200; min-width: 220px; margin-top: 4px; }
+        .q-dropdown-panel .opt { padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 14px; }
+        .q-dropdown-panel .opt:last-child { border-bottom: none; }
+        .q-dropdown-panel .opt:active { background: #E8F5E9; }
+        .q-dropdown-panel .opt .ar { font-family: 'Amiri', serif; font-size: 16px; display: block; margin-top: 4px; }
+
+        /* Quran Reader locked - Under Maintenance overlay */
+        #quranMaintenanceOverlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 50%, #1B5E20 100%); z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; }
+        #quranMaintenanceOverlay .maint-icon { font-size: 64px; color: rgba(255,255,255,0.9); margin-bottom: 20px; }
+        #quranMaintenanceOverlay .maint-title { font-size: 22px; font-weight: 700; color: #fff; margin: 0 0 12px 0; }
+        #quranMaintenanceOverlay .maint-text { font-size: 15px; color: rgba(255,255,255,0.85); margin: 0 0 24px 0; line-height: 1.5; max-width: 320px; }
+        #quranMaintenanceOverlay .maint-btn { display: inline-block; padding: 14px 28px; background: #fff; color: #2E7D32; font-size: 16px; font-weight: 600; text-decoration: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        #quranMaintenanceOverlay .maint-btn:hover { opacity: 0.95; }
+    </style>
+</head>
+<body>
+    <!-- Quran Reader locked: Under Maintenance (remove this overlay to re-enable) -->
+    <div id="quranMaintenanceOverlay">
+        <i class="fas fa-tools maint-icon"></i>
+        <h1 class="maint-title">Under Maintenance</h1>
+        <p class="maint-text">Al Quran reader is temporarily unavailable. We are working to bring it back soon. Please check again later.</p>
+        <a href="index.html" class="maint-btn" id="quranMaintBackBtn" role="button" onclick="window.location.href='index.html'; return false;"><i class="fas fa-home" style="margin-right:8px;"></i> Back to Home</a>
+    </div>
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="counselling.html" class="nav-link"><i class="fas fa-hands-helping"></i> Counselling</a></li>
+            <li><a href="library.html" class="nav-link"><i class="fas fa-book-open"></i> Library</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="media-settings.html" class="nav-link"><i class="fas fa-sliders-h"></i> Media Settings</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+    <div class="container">
+        <div class="page-hero">
+            <div class="hero-deco"></div>
+            <nav class="hero-nav">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <span class="hero-nav-title" id="heroNavPageTitle"></span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="notifications-btn" id="notificationsBtn"><i class="fas fa-bell"></i><span class="badge" style="display:none;"></span></button>
+                    <div class="hero-profile-avatar" onclick="if(typeof toggleAccountModal==='function')toggleAccountModal()"><i class="fas fa-user"></i></div>
+                </div>
+            </nav>
+            <div class="hero-logo-row">
+                <div class="hero-logo-ring">
+                    <img src="logo.png" alt="KIUMA" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="logo-fallback" style="display:none;">KU</div>
+                </div>
+            </div>
+            <div class="hero-title-area">
+                <div class="hero-org-name">KIUMA</div>
+                <h1 class="hero-page-title">Al Quran</h1>
+                <p class="hero-subtitle">Read and listen</p>
+                <div class="hero-accent-line"></div>
+            </div>
+        </div>
+        <main class="main-content">
+    <div class="quran-app">
+        <!-- Screen 1: Home -->
+        <div class="q-view q-home active" id="qScreenHome">
+            <header class="q-header">
+                <button type="button" onclick="qBack()" aria-label="Back"><i class="fas fa-arrow-left"></i></button>
+                <h1>Al Quran</h1>
+                <div class="q-header-actions">
+                    <i class="fas fa-bolt" title="Streak"></i>
+                    <i class="fas fa-gift" title="Gift"></i>
+                    <i class="fas fa-search" onclick="qShowSearch()" title="Search"></i>
+            </div>
+        </header>
+            <div class="q-body">
+                <div class="q-section-title">Last Read</div>
+                <div class="last-read-chips" id="qLastRead"></div>
+                <div class="q-section-title">Quick Links</div>
+                <div class="quick-links" id="qQuickLinks"></div>
+                <div class="q-tabs">
+                    <button type="button" class="q-tab active" data-tab="surah">Surah</button>
+                    <button type="button" class="q-tab" data-tab="page">Page</button>
+                    <button type="button" class="q-tab" data-tab="juz">Juz</button>
+                    <button type="button" class="q-tab" data-tab="hizb">Hizb</button>
+                    <button type="button" class="q-tab" data-tab="ruku">Ruku</button>
+        </div>
+                <ul class="surah-list" id="qSurahList"></ul>
+            </div>
+            <nav class="q-bottom-nav">
+                <span class="active"><i class="fas fa-home"></i> Home</span>
+                <span onclick="qToast('Planner')"><i class="fas fa-calendar-check"></i> Planner</span>
+                <span onclick="qToast('Topics')"><i class="fas fa-th-large"></i> Topics</span>
+                <span onclick="qToast('Library')"><i class="fas fa-book"></i> Library</span>
+                <span onclick="qToast('Stats')"><i class="fas fa-chart-bar"></i> Stats</span>
+            </nav>
+        </div>
+
+        <!-- Screen 2: Reader (Arabic) -->
+        <div class="q-view q-reader" id="qScreenReader">
+            <header class="q-r-header">
+                <button type="button" class="q-r-back" onclick="qShowHome()"><i class="fas fa-arrow-left"></i></button>
+                <div class="q-r-title-wrap q-dropdown">
+                    <span class="q-r-title" id="qReaderTitle" onclick="qToggleSurahDropdown()">1. Al-Fatihah <i class="fas fa-caret-down"></i></span>
+                    <span class="q-r-page" id="qReaderPage">Page 1</span>
+                    <div class="q-dropdown-panel" id="qSurahDropdown" style="display:none;"></div>
+            </div>
+                <div class="q-r-actions">
+                    <button type="button" onclick="qShowMeaning()" title="With meaning"><i class="fas fa-book-open"></i></button>
+                    <button type="button" onclick="qShowDark()" title="Dark mode"><i class="fas fa-moon"></i></button>
+                    <button type="button"><i class="fas fa-gift"></i></button>
+                    <button type="button"><i class="fas fa-cog"></i></button>
+                </div>
+            </header>
+            <div class="q-r-body" id="qReaderBody">
+                <div id="qReaderContent"></div>
+            </div>
+            <div class="q-r-bar">
+                <span onclick="qShowHome()"><i class="fas fa-list"></i> Contents</span>
+                <span onclick="qToast('Auto Scroll')"><i class="fas fa-arrows-alt-v"></i> Auto Scroll</span>
+                <span onclick="qToast('Play Audio')"><i class="fas fa-play"></i> Play Audio</span>
+                <span onclick="qToast('Planner')"><i class="fas fa-calendar-check"></i> Planner</span>
+            </div>
+        </div>
+
+        <!-- Screen 3: Reader with Meaning -->
+        <div class="q-view q-reader" id="qScreenMeaning">
+            <header class="q-r-header">
+                <button type="button" class="q-r-back" onclick="qShowReader()"><i class="fas fa-arrow-left"></i></button>
+                <div class="q-r-title-wrap">
+                    <span class="q-r-title" id="qMeaningTitle">1. Al-Fatihah</span>
+                    <span class="q-r-page" id="qMeaningPage">Page 1 • Ruku 1</span>
+        </div>
+                <div class="q-r-actions">
+                    <button type="button" onclick="qShowDark()" title="Dark mode"><i class="fas fa-moon"></i></button>
+                    <button type="button"><i class="fas fa-gift"></i></button>
+                    <button type="button"><i class="fas fa-info-circle"></i></button>
+                    <button type="button"><i class="fas fa-cog"></i></button>
+    </div>
+            </header>
+            <div class="q-r-body" id="qMeaningBody">
+                <div class="q-surah-info-card" id="qSurahInfoCard" style="background:#f5f5f5;border-radius:12px;padding:14px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+                    <div style="width:48px;height:48px;background:#E8F5E9;border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-kaaba" style="color:#2E7D32;font-size:20px;"></i></div>
+                    <div>
+                        <div id="qSurahInfoName" style="font-weight:700;color:#212121;">Al-Fatihah</div>
+                        <div id="qSurahInfoMeta" style="font-size:13px;color:#757575;">The Opening • 7 Ayahs</div>
+                </div>
+            </div>
+                <div id="qMeaningContent"></div>
+                </div>
+            <div class="q-r-bar">
+                <span onclick="qShowHome()"><i class="fas fa-list"></i> Contents</span>
+                <span onclick="qToast('Auto Scroll')"><i class="fas fa-arrows-alt-v"></i> Auto Scroll</span>
+                <span onclick="qToast('Play Audio')"><i class="fas fa-play"></i> Play Audio</span>
+                <span onclick="qToast('Planner')"><i class="fas fa-calendar-check"></i> Planner</span>
+            </div>
+                </div>
+
+        <!-- Screen 4: Dark reader -->
+        <div class="q-view q-reader q-dark" id="qScreenDark">
+            <header class="q-r-header">
+                <button type="button" class="q-r-back" onclick="qShowReader()"><i class="fas fa-arrow-left"></i></button>
+                <div class="q-r-title-wrap">
+                    <span class="q-r-title" id="qDarkTitle">An-Naba</span>
+                    <span class="q-r-page" id="qDarkPage">Page 582 | Juz 30 | Hizb 59</span>
+            </div>
+                <div class="q-r-actions">
+                    <button type="button"><i class="fas fa-bookmark"></i></button>
+                    <button type="button"><i class="fas fa-search"></i></button>
+                    <button type="button"><i class="fas fa-gift"></i></button>
+                    <button type="button"><i class="fas fa-cog"></i></button>
+            </div>
+            </header>
+            <div class="q-r-body dark" id="qDarkBody">
+                <div id="qDarkContent"></div>
+                </div>
+            <div class="q-r-bar">
+                <span><i class="fas fa-expand-alt"></i></span>
+                <span><i class="fas fa-pen"></i></span>
+                <span><i class="fas fa-hashtag"></i></span>
+                <span><i class="fas fa-share-alt"></i></span>
+                <button type="button" class="mic-active"><i class="fas fa-microphone"></i> Recite</button>
+            </div>
+        </div>
+    </div>
+        </main>
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
+            <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
+            <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
+        </nav>
+    </div>
+
+    <script src="js/app-bridge.js" defer></script>
+    <script src="script.min.js" defer></script>
+    <script src="js/router-bridge.js" defer></script>
+    <script>
+(function () {
+    'use strict';
+    var Q = {
+        surahs: [],
+        currentSurah: 1,
+        currentView: 'home',
+        lastRead: [],
+        baseUrl: 'https://api.alquran.cloud/v1'
+    };
+
+    function qToast(msg) { try { if (typeof showToast === 'function') showToast(msg); else alert(msg); } catch (e) { alert(msg); } }
+
+    function qBack() {
+        try { history.back(); } catch (e) { window.location.href = 'index.html'; }
+    }
+
+    function qShowView(name) {
+        document.querySelectorAll('.q-view').forEach(function (el) { el.classList.remove('active'); });
+        var el = document.getElementById('qScreen' + (name === 'home' ? 'Home' : name === 'reader' ? 'Reader' : name === 'meaning' ? 'Meaning' : 'Dark'));
+        if (el) el.classList.add('active');
+        Q.currentView = name;
+    }
+
+    function qShowHome() { qShowView('home'); }
+    function qShowReader() { qShowView('reader'); }
+    function qShowMeaning() { qShowView('meaning'); }
+    function qShowDark() { qShowView('Dark'); }
+
+    function qToggleSurahDropdown() {
+        var p = document.getElementById('qSurahDropdown');
+        p.style.display = p.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function qShowSearch() { qToast('Search'); }
+
+    // Last read & quick links
+    var QUICK = [
+        { surah: 67, label: 'AL-MULK' },
+        { surah: 18, label: 'AL-KAHF' },
+        { surah: 2, ayah: 255, label: 'AYATUL KURSI' },
+        { surah: 36, label: 'YA SI' }
+    ];
+
+    function renderLastRead() {
+        var key = 'quran_last_read';
+        try { Q.lastRead = JSON.parse(localStorage.getItem(key) || '[]'); } catch (e) { Q.lastRead = []; }
+        var html = '';
+        if (Q.lastRead.length === 0) {
+            html = '<span class="chip" onclick="window.qOpenSurah(1)">AL-FATIHAH 1:1</span>';
+            html += '<span class="chip" onclick="window.qOpenSurah(2)">AL-BAQARAH 2:1</span>';
+            html += '<span class="chip" onclick="window.qOpenSurah(7)">AL-A\'RAF 7:1</span>';
+                } else {
+            Q.lastRead.slice(0, 6).forEach(function (r) {
+                var s = Q.surahs[r.surah - 1];
+                var label = s ? (s.englishName + (r.ayah ? ' ' + r.surah + ':' + r.ayah : '')) : 'Surah ' + r.surah;
+                html += '<span class="chip" onclick="window.qOpenSurah(' + r.surah + ',' + (r.ayah || 1) + ')">' + label + '</span>';
+            });
+        }
+        document.getElementById('qLastRead').innerHTML = html || '<span class="chip">No recent</span>';
+    }
+
+    function renderQuickLinks() {
+        var html = QUICK.map(function (q) {
+            return '<span class="chip" onclick="window.qOpenSurah(' + q.surah + ',' + (q.ayah || 1) + ')">' + q.label + '</span>';
+        }).join('');
+        document.getElementById('qQuickLinks').innerHTML = html;
+    }
+
+    function saveLastRead(surah, ayah) {
+        ayah = ayah || 1;
+        Q.lastRead = Q.lastRead.filter(function (r) { return !(r.surah === surah && r.ayah === ayah); });
+        Q.lastRead.unshift({ surah: surah, ayah: ayah });
+        Q.lastRead = Q.lastRead.slice(0, 10);
+        try { localStorage.setItem('quran_last_read', JSON.stringify(Q.lastRead)); } catch (e) {}
+    }
+
+    function renderSurahList() {
+        var list = document.getElementById('qSurahList');
+        if (!Q.surahs.length) { list.innerHTML = '<li class="q-loading">Loading surahs...</li>'; return; }
+        list.innerHTML = Q.surahs.map(function (s) {
+            return '<li class="surah-item" onclick="window.qOpenSurah(' + s.number + ')">' +
+                '<span class="surah-num">' + s.number + '</span>' +
+                '<div class="surah-info"><span class="surah-name">' + s.englishName + '</span><div class="surah-meta">' + s.englishNameTranslation + ' • ' + s.numberOfAyahs + ' verses</div></div>' +
+                '<span class="surah-ar">' + s.name + '</span></li>';
+        }).join('');
+    }
+
+    function openSurah(num, ayah) {
+        Q.currentSurah = num;
+        saveLastRead(num, ayah);
+        var s = Q.surahs[num - 1];
+        if (!s) return;
+        document.getElementById('qReaderTitle').innerHTML = num + '. ' + s.englishName + ' <i class="fas fa-caret-down"></i>';
+        document.getElementById('qMeaningTitle').textContent = num + '. ' + s.englishName;
+        document.getElementById('qDarkTitle').textContent = s.englishName;
+        document.getElementById('qSurahInfoName').textContent = s.englishName;
+        document.getElementById('qSurahInfoMeta').textContent = s.englishNameTranslation + ' • ' + s.numberOfAyahs + ' Ayahs';
+        document.getElementById('qSurahDropdown').style.display = 'none';
+        qLoadSurah(num);
+        qShowView('reader');
+    }
+
+    function qLoadSurah(num) {
+        var body = document.getElementById('qReaderBody');
+        var content = document.getElementById('qReaderContent');
+        var meaningContent = document.getElementById('qMeaningContent');
+        var darkContent = document.getElementById('qDarkContent');
+        content.innerHTML = '<div class="q-loading">Loading...</div>';
+        meaningContent.innerHTML = '<div class="q-loading">Loading...</div>';
+        darkContent.innerHTML = '<div class="q-loading">Loading...</div>';
+
+        Promise.all([
+            fetch(Q.baseUrl + '/surah/' + num + '/quran-uthmani').then(function (r) { return r.json(); }),
+            fetch(Q.baseUrl + '/surah/' + num + '/en.asad').then(function (r) { return r.json(); }).catch(function () { return null; })
+        ]).then(function (res) {
+            var ar = res[0] && res[0].data && res[0].data.ayahs;
+            var en = res[1] && res[1].data && res[1].data.ayahs;
+            if (!ar) { content.innerHTML = '<div class="q-error">Could not load surah.</div>'; return; }
+            var s = Q.surahs[num - 1];
+            var pageNum = num === 1 ? 1 : num === 2 ? 2 : Math.min(604, 2 + Math.floor((num - 2) * 5.2));
+            var pageInfo = 'Page ' + pageNum;
+            document.getElementById('qReaderPage').textContent = pageInfo;
+            document.getElementById('qMeaningPage').textContent = pageInfo + ' • Ruku 1';
+            var juz = num >= 78 ? 30 : num >= 58 ? 29 : num >= 29 ? 28 : Math.ceil(num / 4) || 1;
+            document.getElementById('qDarkPage').textContent = pageInfo + ' | Juz ' + juz + ' | Hizb 59';
+
+            var arHtml = '';
+            var meaningHtml = '';
+            var darkHtml = '';
+            var titleAr = s ? s.name : '';
+            var bismillah = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ';
+            if (num !== 1) {
+                arHtml += '<div class="bismillah">' + bismillah + '</div>';
+                darkHtml += '<div class="bismillah">' + bismillah + '</div>';
+            }
+            ar.forEach(function (a, i) {
+                var enText = en && en[i] ? en[i].text : '';
+                arHtml += '<div class="verse"><span class="verse-ar">' + a.text + ' <span class="verse-num">' + a.numberInSurah + '</span></span></div>';
+                meaningHtml += '<div class="verse"><span class="verse-ar">' + a.text + ' <span class="verse-num">' + a.numberInSurah + '</span></span>' + (enText ? '<div class="verse-en">' + enText + '</div>' : '') + '</div>';
+                darkHtml += '<div class="verse"><span class="verse-ar">' + a.text + ' <span class="verse-num">' + a.numberInSurah + '</span></span></div>';
+            });
+            content.innerHTML = '<div class="surah-title-ar">' + titleAr + '</div>' + arHtml;
+            meaningContent.innerHTML = '<div class="surah-title-ar">' + titleAr + '</div><div class="bismillah">' + bismillah + '</div>' + meaningHtml;
+            darkContent.innerHTML = '<div class="surah-title-ar">' + titleAr + '</div>' + darkHtml;
+        }).catch(function (err) {
+            content.innerHTML = '<div class="q-error">Failed to load. Check connection.</div>';
+            meaningContent.innerHTML = '<div class="q-error">Failed to load.</div>';
+            darkContent.innerHTML = '<div class="q-error">Failed to load.</div>';
+        });
+    }
+
+    function fillSurahDropdown() {
+        var panel = document.getElementById('qSurahDropdown');
+        panel.innerHTML = Q.surahs.map(function (s) {
+            return '<div class="opt" onclick="window.qOpenSurah(' + s.number + '); document.getElementById(\'qSurahDropdown\').style.display=\'none\'">' + s.number + '. ' + s.englishName + '<span class="ar">' + s.name + '</span></div>';
+        }).join('');
+    }
+
+    document.getElementById('qSurahList').addEventListener('click', function (e) {
+        if (e.target.closest('.surah-item')) return;
+        var item = e.target.closest('li');
+        if (item) {
+            var n = parseInt(item.getAttribute('data-num'), 10);
+            if (n) openSurah(n);
+        }
+    });
+
+    document.querySelectorAll('.q-home .q-tab').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('.q-home .q-tab').forEach(function (b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            var tab = btn.getAttribute('data-tab');
+            if (tab === 'surah') renderSurahList();
+            else qToast(tab.charAt(0).toUpperCase() + tab.slice(1) + ' view');
+        });
+    });
+
+    fetch(Q.baseUrl + '/surah').then(function (r) { return r.json(); }).then(function (res) {
+        if (res && res.data) Q.surahs = res.data;
+        renderSurahList();
+        renderLastRead();
+        renderQuickLinks();
+        fillSurahDropdown();
+    }).catch(function () {
+        document.getElementById('qSurahList').innerHTML = '<li class="q-error">Could not load surah list.</li>';
+    });
+
+    document.getElementById('qSurahList').addEventListener('click', function (e) {
+        var li = e.target.closest('.surah-item');
+        if (!li) return;
+        var idx = Array.from(li.parentNode.children).indexOf(li);
+        if (idx >= 0 && Q.surahs[idx]) openSurah(Q.surahs[idx].number);
+    });
+
+    window.qOpenSurah = openSurah;
+    window.qShowHome = qShowHome;
+    window.qShowReader = qShowReader;
+    window.qShowMeaning = qShowMeaning;
+    window.qShowDark = qShowDark;
+    window.qToast = qToast;
+})();
+    </script>
+</body>
+</html>

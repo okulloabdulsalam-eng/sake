@@ -1,0 +1,11 @@
+# Main storage worker for kiuma4 — deploy as kiuma-storage-kiuma4.workers.dev
+name = "kiuma-storage-kiuma4"
+main = "../worker.js"
+compatibility_date = "2024-01-01"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "kiuma-files"
+
+# Set ADMIN_TOKEN as a secret via:
+#   cd cloudflare/storage-kiuma4 && npx wrangler secret put ADMIN_TOKEN

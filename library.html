@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library - KIUMA</title>
+    <script>
+        (function() {
+            var t;
+            try { t = localStorage.getItem('themePreference'); } catch(e) {}
+            if (t === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="styles.min.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    <!-- Font Awesome: CDN primary, local fallback -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="fonts/fontawesome.min.css">
+    <!-- PDF.js for rendering PDF cover pages -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+</head>
+<body>
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="counselling.html" class="nav-link"><i class="fas fa-hands-helping"></i> Counselling</a></li>
+            <li><a href="library.html" class="nav-link active"><i class="fas fa-book-open"></i> Library</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="media-settings.html" class="nav-link"><i class="fas fa-sliders-h"></i> Media Settings</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="page-hero">
+            <div class="hero-deco"></div>
+            <nav class="hero-nav">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <span class="hero-nav-title" id="heroNavPageTitle"></span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="notifications-btn" id="notificationsBtn">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge" style="display:none;"></span>
+                    </button>
+                    <div class="hero-profile-avatar" onclick="if(typeof toggleAccountModal==='function')toggleAccountModal()"><i class="fas fa-user"></i></div>
+                </div>
+            </nav>
+            <div class="hero-logo-row">
+                <div class="hero-logo-ring">
+                    <img src="logo.png" alt="KIUMA" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="logo-fallback" style="display:none;">KU</div>
+                </div>
+            </div>
+            <div class="hero-title-area">
+                <div class="hero-org-name">KIUMA</div>
+                <h1 class="hero-page-title">Library</h1>
+                <p class="hero-subtitle">Browse our book collection</p>
+                <div class="hero-accent-line"></div>
+            </div>
+        </div>
+
+        <main class="main-content">
+            <div style="height:8px;"></div>
+
+            <style>
+                /* Library page — uses app default CSS variables */
+                .lib-page { padding-bottom:80px; }
+
+                /* Search */
+                .lib-search-bar { position:relative; margin-bottom:18px; }
+                .lib-search-bar input { width:100%; padding:14px 16px 14px 44px; border:1.5px solid var(--border-color); border-radius:var(--radius-md); font-size:14px; background:var(--card-bg); color:var(--dark-gray); outline:none; transition:border .2s; }
+                .lib-search-bar input::placeholder { color:var(--text-gray); }
+                .lib-search-bar input:focus { border-color:var(--primary-green); }
+                .lib-search-bar i { position:absolute; left:16px; top:50%; transform:translateY(-50%); color:var(--text-gray); font-size:14px; }
+
+                /* Filter chips */
+                .lib-filter-bar { display:flex; gap:8px; margin-bottom:18px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
+                .lib-filter-bar::-webkit-scrollbar { display:none; }
+                .lib-filter-btn { padding:8px 16px; border-radius:20px; border:1.5px solid var(--border-color); background:var(--card-bg); color:var(--text-gray); font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; transition:all .2s; }
+                .lib-filter-btn.active { background:var(--primary-green); color:#fff; border-color:var(--primary-green); }
+
+                /* Section headers */
+                .lib-section { margin-bottom:24px; }
+                .lib-section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+                .lib-section-title { font-size:18px; font-weight:700; color:var(--dark-gray); }
+                .lib-section-viewall { font-size:12px; color:var(--primary-green); cursor:pointer; font-weight:600; }
+
+                /* Top books horizontal scroll */
+                .lib-top-scroll { display:flex; gap:14px; overflow-x:auto; padding-bottom:8px; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+                .lib-top-scroll::-webkit-scrollbar { display:none; }
+                .lib-top-card { width:140px; min-width:140px; scroll-snap-align:start; cursor:pointer; transition:transform .15s; }
+                .lib-top-card:active { transform:scale(0.96); }
+                .lib-top-cover { width:140px; height:190px; border-radius:var(--radius-md); overflow:hidden; position:relative; box-shadow:var(--shadow); }
+                .lib-top-cover img, .lib-top-cover canvas { width:100%; height:100%; object-fit:cover; }
+                .lib-top-cover .cover-placeholder { width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:rgba(255,255,255,0.85); }
+                .lib-top-cover .cover-placeholder i { font-size:36px; }
+                .lib-top-cover .cover-placeholder span { font-size:9px; text-transform:uppercase; letter-spacing:1px; font-weight:600; opacity:.7; }
+                .lib-top-info { margin-top:8px; }
+                .lib-top-info .top-title { font-size:12px; font-weight:600; color:var(--dark-gray); line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+                .lib-top-info .top-author { font-size:10px; color:var(--text-gray); margin-top:3px; }
+
+                /* Genre circles */
+                .lib-genre-scroll { display:flex; gap:16px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none; }
+                .lib-genre-scroll::-webkit-scrollbar { display:none; }
+                .lib-genre-item { display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer; min-width:72px; }
+                .lib-genre-circle { width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; color:#fff; transition:transform .15s, box-shadow .15s; }
+                .lib-genre-circle:active { transform:scale(0.92); }
+                .lib-genre-label { font-size:11px; color:var(--text-gray); font-weight:600; text-align:center; white-space:nowrap; }
+
+                /* Book list items (Your Books) */
+                .lib-book-list { display:flex; flex-direction:column; gap:14px; }
+                .lib-book-item { display:flex; gap:14px; align-items:flex-start; padding:12px; background:var(--card-bg); border-radius:var(--radius-lg); cursor:pointer; transition:box-shadow .15s; position:relative; box-shadow:var(--shadow); }
+                .lib-book-item:active { box-shadow:var(--shadow-hover); }
+                .lib-book-thumb { width:70px; height:95px; border-radius:var(--radius-sm); overflow:hidden; flex-shrink:0; box-shadow:var(--shadow); position:relative; }
+                .lib-book-thumb img, .lib-book-thumb canvas { width:100%; height:100%; object-fit:cover; }
+                .lib-book-thumb .cover-placeholder { width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; color:rgba(255,255,255,0.85); }
+                .lib-book-thumb .cover-placeholder i { font-size:24px; }
+                .lib-book-thumb .cover-placeholder span { font-size:8px; text-transform:uppercase; letter-spacing:.5px; font-weight:600; opacity:.7; }
+                .lib-book-info { flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; padding-top:4px; }
+                .lib-book-title { font-size:15px; font-weight:700; color:var(--dark-gray); line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+                .lib-book-author { font-size:12px; color:var(--text-gray); }
+                .lib-book-cat { font-size:10px; padding:3px 8px; border-radius:4px; font-weight:600; display:inline-block; width:fit-content; margin-top:4px; }
+                .lib-book-size { font-size:11px; color:var(--muted-icon); margin-top:auto; }
+                .lib-book-dl { position:absolute; top:12px; right:12px; width:32px; height:32px; border-radius:50%; background:var(--lighter-green); color:var(--primary-green); display:flex; align-items:center; justify-content:center; border:none; font-size:13px; cursor:pointer; transition:background .2s; }
+                .lib-book-dl:active { background:var(--light-green); color:#fff; }
+
+                /* Card grid fallback (downloads, reading lists) */
+                .lib-card-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+                .lib-card { border-radius:var(--radius-lg); overflow:hidden; background:var(--card-bg); box-shadow:var(--shadow); display:flex; flex-direction:column; transition:transform .2s; cursor:pointer; }
+                .lib-card:active { transform:scale(0.98); }
+                .lib-card-cover { position:relative; width:100%; height:140px; overflow:hidden; }
+                .lib-card-cover .cover-placeholder { width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:rgba(255,255,255,0.9); }
+                .lib-card-cover .cover-placeholder i { font-size:38px; }
+                .lib-card-cover .cover-placeholder span { font-size:10px; text-transform:uppercase; letter-spacing:1px; font-weight:600; opacity:.8; }
+                .lib-card-cover canvas { width:100%; height:100%; object-fit:cover; }
+                .lib-card-body { padding:10px 12px 14px; flex:1; display:flex; flex-direction:column; gap:4px; }
+                .lib-card-cat { font-size:10px; text-transform:uppercase; letter-spacing:.5px; font-weight:700; padding:2px 8px; border-radius:4px; display:inline-block; width:fit-content; }
+                .lib-card-title { font-size:13px; font-weight:700; color:var(--dark-gray); line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+                .lib-card-meta { font-size:11px; color:var(--text-gray); margin-top:auto; }
+                .lib-card-dl { position:absolute; bottom:8px; right:8px; width:32px; height:32px; border-radius:50%; background:rgba(0,0,0,0.55); color:#fff; display:flex; align-items:center; justify-content:center; border:none; font-size:13px; backdrop-filter:blur(4px); cursor:pointer; }
+
+                /* More menu */
+                .card-more-btn { position:absolute; top:6px; right:6px; width:28px; height:28px; border-radius:50%; background:rgba(0,0,0,0.5); color:#fff; border:none; display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer; backdrop-filter:blur(4px); z-index:10; }
+                .card-more-menu { position:absolute; top:38px; right:6px; background:var(--card-bg); border-radius:10px; box-shadow:0 4px 20px rgba(0,0,0,0.18); z-index:100; min-width:160px; overflow:hidden; display:none; }
+                .card-more-menu.open { display:block; }
+                .card-more-menu button { display:flex; align-items:center; gap:10px; width:100%; padding:12px 16px; border:none; background:none; font-size:14px; font-weight:500; color:var(--dark-gray); cursor:pointer; text-align:left; }
+                .card-more-menu button:active { background:var(--light-gray); }
+                .card-more-menu button.danger { color:var(--danger-red); }
+                .card-more-menu button i { width:16px; text-align:center; }
+
+                /* Downloads section */
+                .dl-category-header { display:flex; align-items:center; gap:8px; margin-top:18px; margin-bottom:10px; padding:10px 14px; border-radius:10px; background:var(--lighter-green); }
+                .dl-category-header i { font-size:16px; color:var(--primary-green); }
+                .dl-category-header span { font-weight:700; font-size:14px; color:var(--dark-gray); }
+                .dl-category-header .dl-count { font-size:12px; color:var(--text-gray); margin-left:auto; }
+
+                /* Reading list folder cards */
+                .rl-folder-row { display:flex; gap:12px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none; }
+                .rl-folder-row::-webkit-scrollbar { display:none; }
+                .rl-folder { width:150px; min-width:150px; border-radius:14px; overflow:hidden; cursor:pointer; transition:transform .15s; box-shadow:var(--shadow); }
+                .rl-folder:active { transform:scale(0.96); }
+                .rl-folder-cover { height:90px; display:flex; align-items:center; justify-content:center; position:relative; }
+                .rl-folder-cover i.folder-icon { font-size:32px; color:rgba(255,255,255,0.85); }
+                .rl-folder-count { position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.45); color:#fff; font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; backdrop-filter:blur(4px); }
+                .rl-folder-body { padding:8px 10px 10px; background:var(--card-bg); }
+                .rl-folder-name { font-size:12px; font-weight:700; color:var(--dark-gray); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+                .rl-folder-meta { font-size:10px; color:var(--text-gray); margin-top:2px; }
+                .rl-expanded { margin-bottom:24px; background:var(--lighter-green,#f1f8e9); border-radius:14px; padding:14px; }
+                .rl-expanded-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+                .rl-expanded-title { font-size:15px; font-weight:700; color:var(--dark-gray); display:flex; align-items:center; gap:8px; }
+                .rl-expanded-title i { color:var(--primary-green); }
+                .rl-expanded-close { background:none; border:none; font-size:18px; color:var(--text-gray); cursor:pointer; padding:4px 8px; }
+            </style>
+
+            <section class="page-content">
+                <div class="lib-page">
+                    <div class="lib-search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="libSearchInput" placeholder="Search by Book title, Author, etc" oninput="searchBooks(this.value)">
+                    </div>
+
+                    <div class="lib-filter-bar" id="libFilterBar">
+                        <button class="lib-filter-btn active" data-filter="all" onclick="filterBooks('all')"><i class="fas fa-th"></i> All</button>
+                        <button class="lib-filter-btn" data-filter="islamic" onclick="filterBooks('islamic')"><i class="fas fa-quran"></i> Islamic</button>
+                        <button class="lib-filter-btn" data-filter="educational" onclick="filterBooks('educational')"><i class="fas fa-graduation-cap"></i> Educational</button>
+                        <button class="lib-filter-btn" data-filter="quran" onclick="filterBooks('quran')"><i class="fas fa-book-open"></i> Quran</button>
+                        <button class="lib-filter-btn" data-filter="downloads" onclick="filterBooks('downloads')"><i class="fas fa-download"></i> Downloads</button>
+                    </div>
+                    <div id="collectionFilterBar" class="lib-filter-bar" style="display:none;margin-top:4px;flex-wrap:wrap;gap:6px;"></div>
+
+                    <div id="libraryGrid">
+                        <!-- Sections will be loaded here -->
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
+            <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
+            <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
+        </nav>
+    </div>
+
+    <!-- In-app book viewer modal -->
+    <div id="bookViewerModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.92);flex-direction:column;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;flex-shrink:0;">
+            <div id="bookViewerTitle" style="color:#fff;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;margin-right:10px;"></div>
+            <div style="display:flex;gap:10px;">
+                
+                <button onclick="closeBookViewer()" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <div id="bookViewerContent" style="flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;padding:10px;"></div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="js/router-bridge.js"></script>
+    <script src="js/app-bridge.js" defer></script>
+    <script src="script.js"></script>
+    <style>
+        .lib-card-dl.danger-dl { background: rgba(244,67,54,0.85) !important; }
+        .lib-card-dl.danger-dl:hover { background: rgba(244,67,54,1) !important; }
+    </style>
+    <script src="app-storage.js"></script>
+    <script>
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', async function() {
+            await syncPlaylistsFromFirestore();
+            loadBooksFromStorage();
+        });
+
+        // Filter books function - globally accessible
+        window.filterBooks = function(category) {
+            currentCollection = 'all';
+            document.querySelectorAll('#libFilterBar .lib-filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-filter') === category);
+            });
+            loadBooksFromStorage(category);
+        };
+
+        window.closeAddBookModal = function() {
+            const modal = document.getElementById('addBookModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+            const form = document.getElementById('addBookForm');
+            if (form) {
+                form.reset();
+            }
+            // Clear preview
+            const coverPreview = document.getElementById('coverPreview');
+            const previewImage = document.getElementById('previewCoverImage');
+            if (coverPreview) coverPreview.style.display = 'none';
+            if (previewImage) previewImage.style.display = 'none';
+        };
+
+        window.handleBookCoverSelect = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const coverPreview = document.getElementById('coverPreview');
+            const previewImage = document.getElementById('previewCoverImage');
+
+            // Hide preview first
+            if (previewImage) previewImage.style.display = 'none';
+            if (coverPreview) coverPreview.style.display = 'none';
+
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    if (previewImage) {
+                        previewImage.src = e.target.result;
+                        previewImage.style.display = 'block';
+                    }
+                    if (coverPreview) coverPreview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+
+        window.addBook = function(e) {
+            if (e) {
+                e.preventDefault();
+            }
+            
+            // Check admin login status
+            const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true';
+            if (!adminStatus) {
+                alert('You must be logged in as admin to add books.');
+                if (typeof window.showAdminLogin === 'function') {
+                    window.showAdminLogin();
+                }
+                return false;
+            }
+
+            const titleInput = document.getElementById('bookTitle');
+            const authorInput = document.getElementById('bookAuthor');
+            const isbnInput = document.getElementById('bookISBN');
+            const categoryInput = document.getElementById('bookCategory');
+            const descriptionInput = document.getElementById('bookDescription');
+            const coverInput = document.getElementById('bookCover');
+            const coverUrlInput = document.getElementById('bookCoverUrl');
+            
+            const title = titleInput ? titleInput.value.trim() : '';
+            const author = authorInput ? authorInput.value.trim() : '';
+            const isbn = isbnInput ? isbnInput.value.trim() : '';
+            const category = categoryInput ? categoryInput.value : '';
+            const description = descriptionInput ? descriptionInput.value.trim() : '';
+            const coverUrl = coverUrlInput ? coverUrlInput.value.trim() : '';
+            
+            if (!title || !author || !category) {
+                alert('Please fill in title, author, and category.');
+                return false;
+            }
+
+            // Create FormData for upload
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('author', author);
+            formData.append('isbn', isbn);
+            formData.append('category', category);
+            formData.append('description', description);
+            formData.append('coverImageUrl', coverUrl);
+            
+            // Add book file if provided
+            const bookFileInput = document.getElementById('bookFile');
+            if (bookFileInput && bookFileInput.files && bookFileInput.files[0]) {
+                formData.append('bookFile', bookFileInput.files[0]);
+            }
+
+            // Show loading
+            const submitBtn = document.querySelector('#addBookForm button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+
+            // Upload to server
+            fetch(API_BASE_URL + '/upload_book.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+                
+                if (data.success) {
+                    alert('Book added successfully!');
+                    window.closeAddBookModal();
+                    loadBooksFromStorage(); // Reload books
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to add book'));
+                }
+            })
+            .catch(error => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+                console.error('Error:', error);
+                alert('Error uploading book. Please try again.');
+            });
+        };
+
+        // Helper function to create and add book item
+        function createBookItem(title, author, isbn, category, description, coverImageUrl, libraryData) {
+            const bookItem = {
+                id: Date.now().toString(),
+                title: title,
+                author: author,
+                isbn: isbn,
+                category: category,
+                description: description,
+                coverImage: coverImageUrl || '',
+                date: new Date().toISOString()
+            };
+
+            libraryData.unshift(bookItem); // Add to beginning
+            
+            // Try to save to localStorage with error handling
+            try {
+                const dataString = JSON.stringify(libraryData);
+                localStorage.setItem('libraryData', dataString);
+            } catch (e) {
+                if (e.name === 'QuotaExceededError') {
+                    // Remove the item we just added since we can't save it
+                    libraryData.shift();
+                    
+                    // Try to free up space by removing oldest items
+                    if (libraryData.length > 0) {
+                        const removed = libraryData.pop(); // Remove oldest
+                        try {
+                            localStorage.setItem('libraryData', JSON.stringify(libraryData));
+                            alert('Storage is full! The oldest book was removed to make space. Please try adding your book again, or delete more items manually.');
+                        } catch (e2) {
+                            // Still can't save, need to remove more or clear
+                            alert('Storage is completely full! Please delete some books manually or clear your browser storage, then try again.');
+                        }
+                    } else {
+                        alert('Storage is full and cannot be cleared automatically. Please clear your browser storage or delete books manually.');
+                    }
+                    return false;
+                } else {
+                    alert('Error saving book: ' + e.message);
+                    return false;
+                }
+            }
+
+            // Create and display book item
+            const libraryGrid = document.getElementById('libraryGrid');
+            const newBookItem = document.createElement('div');
+            newBookItem.className = 'media-item';
+            newBookItem.dataset.category = category;
+            newBookItem.dataset.id = bookItem.id;
+
+            const safeTitle = title.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+            const safeAuthor = author.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+            const safeDescription = (description || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+            const safeCover = coverImageUrl ? coverImageUrl.replace(/'/g, "&#39;") : '';
+            
+            // Default cover if no image provided
+            const coverDisplay = safeCover ? 
+                `<img src="${safeCover}" alt="${safeTitle}" loading="lazy" style="width: 100%; height: 200px; object-fit: cover;">` :
+                `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;"><i class="fas fa-book"></i></div>`;
+            
+            newBookItem.innerHTML = `
+                <div style="width: 100%; height: 100%; position: relative; border-radius: 8px; overflow: hidden; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column;">
+                    ${coverDisplay}
+                    <div style="padding: 12px; flex: 1; display: flex; flex-direction: column;">
+                        <h4 style="margin: 0 0 5px 0; font-size: 14px; font-weight: 600; color: var(--dark-gray); line-height: 1.3;">${safeTitle}</h4>
+                        <p style="margin: 0 0 5px 0; font-size: 12px; color: var(--text-gray);">by ${safeAuthor}</p>
+                        ${isbn ? `<p style="margin: 0 0 5px 0; font-size: 11px; color: var(--text-gray);">ISBN: ${isbn}</p>` : ''}
+                        ${safeDescription ? `<p style="margin: 5px 0 0 0; font-size: 11px; color: var(--text-gray); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${safeDescription}</p>` : ''}
+                    </div>
+                </div>
+            `;
+
+            // Insert at the beginning
+            if (libraryGrid) {
+                libraryGrid.insertBefore(newBookItem, libraryGrid.firstChild);
+                window.closeAddBookModal();
+                alert('Book added successfully!');
+                // Reload books to ensure consistency
+                setTimeout(function() {
+                    loadBooksFromStorage();
+                }, 100);
+            } else {
+                alert('Error: Could not find library grid container.');
+            }
+        }
+
+        // ==============================
+        // Multi-Account R2 Storage config (aligned with media.html – same kiuma4 defaults)
+        // ==============================
+        const DEFAULT_R2_WORKER_URL = 'https://kiuma-storage-kiuma4.workers.dev';
+        const DEFAULT_R2_ACCOUNTS = {
+            video: [
+                { workerUrl: 'https://kiuma-storage-kiuma4.workers.dev', label: 'Storage 1' },
+                { workerUrl: 'https://kiuma-video1.kiuma4.workers.dev', label: 'Video 1' },
+                { workerUrl: 'https://kiuma-video2.kiuma4.workers.dev', label: 'Video 2' },
+                { workerUrl: 'https://kiuma-video3.kiuma4.workers.dev', label: 'Video 3' },
+                { workerUrl: 'https://kiuma-video4.kiuma4.workers.dev', label: 'Video 4' },
+                { workerUrl: 'https://kiuma-video5.kiuma4.workers.dev', label: 'Video 5' }
+            ],
+            audio: { workerUrl: 'https://kiuma-audio.kiuma4.workers.dev' },
+            library: { workerUrl: 'https://kiuma-library.kiuma4.workers.dev' }
+        };
+        function getR2MultiConfig() {
+            try { const s = localStorage.getItem('r2MultiConfig'); if (s) return JSON.parse(s); } catch(e) {}
+            try { const old = JSON.parse(localStorage.getItem('r2StorageConfig') || '{}'); if (old.workerUrl) return { video: [old, ...DEFAULT_R2_ACCOUNTS.video.slice(1)], audio: DEFAULT_R2_ACCOUNTS.audio, library: DEFAULT_R2_ACCOUNTS.library }; } catch(e) {}
+            return JSON.parse(JSON.stringify(DEFAULT_R2_ACCOUNTS));
+        }
+        function getR2Config() {
+            const mc = getR2MultiConfig();
+            if (mc.library && mc.library.workerUrl) return mc.library;
+            if (mc.video && mc.video.length > 0 && mc.video[0].workerUrl) return mc.video[0];
+            return { workerUrl: DEFAULT_R2_WORKER_URL };
+        }
+        function getLibraryR2Accounts() {
+            const mc = getR2MultiConfig();
+            const accounts = [];
+            const seen = new Set();
+            // Dedicated library account first
+            if (mc.library && mc.library.workerUrl) { accounts.push(mc.library); seen.add(mc.library.workerUrl); }
+            // Also check all video accounts (files may have been uploaded there before library account was configured)
+            (mc.video || []).forEach(a => { if (a.workerUrl && !seen.has(a.workerUrl)) { accounts.push(a); seen.add(a.workerUrl); } });
+            return accounts;
+        }
+        const GITHUB_OWNER = 'okulloabdulsalam-eng';
+        const GITHUB_REPO  = 'kiuma-storage';
+        function getGitHubToken() {
+            try { return JSON.parse(localStorage.getItem('githubStorageConfig') || '{}').token || ''; } catch(e) { return ''; }
+        }
+
+        // ==============================
+        // Offline storage (IndexedDB via AppStorage — persistent like app files)
+        // ==============================
+        function getOfflineIndex() {
+            return window.AppStorage ? window.AppStorage.getLocalIndex().filter(f => f.category) : [];
+        }
+
+        async function saveFileOffline(url, meta, onProgress) {
+            if (!window.AppStorage) return false;
+            return await window.AppStorage.downloadAndSave(url, meta, onProgress);
+        }
+
+        async function removeFileOffline(url) {
+            if (!window.AppStorage) return false;
+            return await window.AppStorage.removeFile(url);
+        }
+
+        function isFileSavedOffline(url) { return window.AppStorage ? window.AppStorage.isFileSaved(url) : false; }
+
+        // ==============================
+        // Helpers
+        // ==============================
+        function _mimeFromExtLib(ext) {
+            var m = { pdf:'application/pdf', epub:'application/epub+zip', txt:'text/plain', doc:'application/msword', docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document', jpg:'image/jpeg', jpeg:'image/jpeg', png:'image/png', gif:'image/gif', webp:'image/webp' };
+            return m[(ext || '').toLowerCase()] || 'application/octet-stream';
+        }
+        // In-app download: use bridge to save to device when in app, else fetch + <a download>
+        async function inAppDownload(url, filename) {
+            if (!url) return;
+            var btn = event ? event.currentTarget : null;
+            var origHTML = btn ? btn.innerHTML : '';
+            if (btn) { btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true; }
+            if (window.KiumaBridge && window.KiumaBridge.isInApp() && typeof window.KiumaBridge.saveFileToDevice === 'function') {
+                var name = filename || url.split('/').pop() || 'download';
+                var ext = name.split('.').pop();
+                var mime = _mimeFromExtLib(ext);
+                try {
+                    var ok = await window.KiumaBridge.saveFileToDevice(url, name, mime);
+                    if (btn) { btn.innerHTML = ok ? '<i class="fas fa-check"></i>' : '<i class="fas fa-exclamation-triangle"></i>'; setTimeout(function() { btn.innerHTML = origHTML; btn.disabled = false; }, 2000); }
+                } catch (e) {
+                    if (btn) { btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i>'; setTimeout(function() { btn.innerHTML = origHTML; btn.disabled = false; }, 2000); }
+                }
+                return;
+            }
+            try {
+                var res = await fetch(url);
+                if (!res.ok) throw new Error('Download failed');
+                var blob = await res.blob();
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = filename || url.split('/').pop() || 'download';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+                if (btn) { btn.innerHTML = '<i class="fas fa-check"></i>'; setTimeout(function() { btn.innerHTML = origHTML; btn.disabled = false; }, 2000); }
+            } catch(e) {
+                console.error('Download error:', e);
+                if (btn) { btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i>'; setTimeout(function() { btn.innerHTML = origHTML; btn.disabled = false; }, 2000); }
+            }
+        }
+        window.inAppDownload = inAppDownload;
+
+        function toggleMoreMenu(id) {
+            const menu = document.getElementById(id);
+            if (!menu) return;
+            const isOpen = menu.classList.contains('open');
+            closeAllMoreMenus();
+            if (!isOpen) menu.classList.add('open');
+        }
+        function closeAllMoreMenus() {
+            document.querySelectorAll('.card-more-menu.open').forEach(m => m.classList.remove('open'));
+        }
+        window.toggleMoreMenu = toggleMoreMenu;
+        window.closeAllMoreMenus = closeAllMoreMenus;
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.card-more-btn') && !e.target.closest('.card-more-menu')) closeAllMoreMenus();
+        });
+
+        function fmtSize(b) {
+            if (!b && b !== 0) return '';
+            if (b >= 1073741824) return (b/1073741824).toFixed(1)+' GB';
+            if (b >= 1048576) return (b/1048576).toFixed(1)+' MB';
+            if (b >= 1024) return (b/1024).toFixed(1)+' KB';
+            return b+' B';
+        }
+        function parseMeta(fn) {
+            const w = fn.replace(/^\d+_[a-z0-9]+_/,'').replace(/\.[^/.]+$/,'');
+            let t=w, a='';
+            if (w.includes('__')) { const p=w.split(/__+/); t=p[0]; a=p[1]||''; }
+            else { const i=w.toLowerCase().lastIndexOf('_by_'); if(i!==-1){ t=w.slice(0,i); a=w.slice(i+4); } }
+            return { title: t.replace(/_/g,' ').trim()||'Untitled', author: a.replace(/_/g,' ').trim()||'Unknown' };
+        }
+        function san(t) { return !t?'':t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+        function bookCat(key) {
+            if (key.includes('/islamic/')) return 'islamic';
+            if (key.includes('/quran/')) return 'quran';
+            if (key.includes('/educational/')) return 'educational';
+            return 'other';
+        }
+
+        // ==============================
+        // Load books — R2 first, if empty fall back to GitHub
+        // ==============================
+        let currentLibFilter = 'all';
+        let currentCollection = 'all';
+        let allLoadedBooks = [];
+
+        function extractCollection(key) {
+            // key: library/islamic/hadith/123_name.pdf -> collection = 'hadith'
+            // key: library/islamic/123_name.pdf -> collection = '' (none)
+            const parts = key.split('/');
+            if (parts.length >= 4 && !/^\d+_/.test(parts[2])) return parts[2];
+            return '';
+        }
+
+        // Search
+        let _libSearchQuery = '';
+        window.searchBooks = function(q) {
+            _libSearchQuery = q.toLowerCase().trim();
+            renderLibraryLayout(allLoadedBooks);
+        };
+
+        window.filterByCollection = function(col) {
+            currentCollection = col;
+            document.querySelectorAll('#collectionFilterBar .lib-filter-btn').forEach(b => b.classList.remove('active'));
+            if (event && event.currentTarget) event.currentTarget.classList.add('active');
+            const filtered = col === 'all' ? allLoadedBooks : allLoadedBooks.filter(f => f.collection === col);
+            renderLibraryLayout(filtered);
+            renderOfflineLibSection(currentLibFilter);
+        };
+
+        function buildCollectionBar(files) {
+            const bar = document.getElementById('collectionFilterBar');
+            if (!bar) return;
+            const collections = [...new Set(files.map(f => f.collection).filter(c => c && c.length > 0))];
+            if (collections.length === 0) { bar.style.display = 'none'; return; }
+            collections.sort();
+            bar.style.display = 'flex';
+            bar.innerHTML = '<button class="lib-filter-btn active" onclick="filterByCollection(\'all\')"><i class="fas fa-list"></i> All</button>' +
+                collections.map(c => '<button class="lib-filter-btn" onclick="filterByCollection(\'' + c + '\')"><i class="fas fa-folder"></i> ' + c.replace(/-/g,' ').replace(/\b\w/g,l=>l.toUpperCase()) + '</button>').join('');
+        }
+
+        // ==============================
+        // Admin-Managed Reading Lists (synced from Firestore)
+        // ==============================
+        function getAdminPlaylists() {
+            try { return JSON.parse(localStorage.getItem('kiuma_playlists') || '[]'); } catch(e) { return []; }
+        }
+        async function waitForFirebase(maxWait) {
+            maxWait = maxWait || 3000;
+            const start = Date.now();
+            while (!window.firebaseDb && (Date.now() - start) < maxWait) {
+                await new Promise(r => setTimeout(r, 200));
+            }
+            return !!window.firebaseDb;
+        }
+        async function syncPlaylistsFromFirestore() {
+            try {
+                await waitForFirebase(3000);
+                const db = window.firebaseDb;
+                if (!db) { console.warn('Firebase not ready for playlist sync'); return; }
+                const doc = await db.collection('config').doc('playlists').get();
+                if (doc.exists && doc.data().data) {
+                    localStorage.setItem('kiuma_playlists', JSON.stringify(doc.data().data));
+                }
+            } catch(e) { console.warn('Playlist sync error:', e); }
+        }
+
+        // Merge admin reading list items into loaded books
+        function getReadingListBookItems() {
+            const pls = getAdminPlaylists().filter(p => p.type === 'library' && p.items.length > 0);
+            const items = [];
+            pls.forEach(pl => {
+                pl.items.forEach(item => {
+                    items.push({
+                        name: item.name || item.title || 'Untitled',
+                        title: item.title || '',
+                        author: item.author || '',
+                        category: item.category || 'other',
+                        url: item.url,
+                        size: item.size || 0,
+                        collection: pl.name || ''
+                    });
+                });
+            });
+            return items;
+        }
+
+        async function fetchBooksR2(cat) {
+            const accounts = getLibraryR2Accounts();
+            if (accounts.length === 0) return [];
+            const folders = cat === 'all' ? ['library/islamic','library/educational','library/quran','library/other'] : ['library/'+cat];
+            const allFiles = [];
+            for (const acct of accounts) {
+                const results = await Promise.all(folders.map(async prefix => {
+                    try {
+                        const res = await fetch(acct.workerUrl+'/list?prefix='+encodeURIComponent(prefix+'/'));
+                        if (!res.ok) return [];
+                        const data = await res.json();
+                        return (data.files||[]).map(f => ({ name:f.name, category:bookCat(f.key), collection:extractCollection(f.key), url:acct.workerUrl+'/file/'+encodeURIComponent(f.key), size:f.size }));
+                    } catch(e) { return []; }
+                }));
+                allFiles.push(...results.flat());
+            }
+            return allFiles;
+        }
+
+        async function fetchBooksGitHub(cat) {
+            const folders = cat === 'all' ? ['islamic','educational','quran','other'] : [cat];
+            const token = getGitHubToken();
+            const headers = token ? { 'Authorization':'token '+token } : {};
+            const results = await Promise.all(folders.map(async folder => {
+                try {
+                    const res = await fetch('https://api.github.com/repos/'+GITHUB_OWNER+'/'+GITHUB_REPO+'/contents/library/'+folder, { headers });
+                    if (!res.ok) return [];
+                    const files = await res.json();
+                    if (!Array.isArray(files)) return [];
+                    return files.filter(f=>f.type==='file').map(f=>({ name:f.name, category:folder, url:f.download_url, size:f.size }));
+                } catch(e) { return []; }
+            }));
+            return results.flat();
+        }
+
+        // Genre definitions for circles
+        const genreStyles = {
+            islamic: { icon:'fa-quran', gradient:'linear-gradient(135deg,#4CAF50,#2E7D32)', label:'Islamic' },
+            quran: { icon:'fa-book-open', gradient:'linear-gradient(135deg,#9C27B0,#6A1B9A)', label:'Quran' },
+            educational: { icon:'fa-graduation-cap', gradient:'linear-gradient(135deg,#2196F3,#1565C0)', label:'Educational' },
+            other: { icon:'fa-book', gradient:'linear-gradient(135deg,#607D8B,#37474F)', label:'Other' }
+        };
+
+        // Reading list folder gradients
+        const rlFolderGradients = [
+            'linear-gradient(135deg,#4CAF50,#2E7D32)',
+            'linear-gradient(135deg,#9C27B0,#6A1B9A)',
+            'linear-gradient(135deg,#2196F3,#1565C0)',
+            'linear-gradient(135deg,#FF6F00,#E65100)',
+            'linear-gradient(135deg,#00838F,#006064)',
+            'linear-gradient(135deg,#C62828,#B71C1C)'
+        ];
+
+        function renderReadingListFolders(readingLists) {
+            if (!readingLists || readingLists.length === 0) return '';
+            let html = '<div class="lib-section"><div class="lib-section-header"><span class="lib-section-title"><i class="fas fa-folder-open" style="color:var(--primary-green);"></i> Reading Lists</span></div>';
+            html += '<div class="rl-folder-row">';
+            readingLists.forEach((rl, i) => {
+                const grad = rlFolderGradients[i % rlFolderGradients.length];
+                const label = rl.name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                html += '<div class="rl-folder" onclick="toggleReadingListExpand(\'' + san(rl.name).replace(/'/g, "\\&#39;") + '\')">';
+                html += '<div class="rl-folder-cover" style="background:' + grad + '"><i class="fas fa-folder folder-icon"></i>';
+                html += '<span class="rl-folder-count">' + rl.items.length + '</span></div>';
+                html += '<div class="rl-folder-body"><div class="rl-folder-name">' + san(label) + '</div>';
+                html += '<div class="rl-folder-meta">' + rl.items.length + ' book' + (rl.items.length !== 1 ? 's' : '') + '</div></div></div>';
+            });
+            html += '</div></div>';
+            return html;
+        }
+
+        window.toggleReadingListExpand = function(rlName) {
+            const existing = document.getElementById('rlExpanded');
+            if (existing) {
+                if (existing.dataset.name === rlName) { existing.remove(); return; }
+                existing.remove();
+            }
+            // Find items from admin playlists + collection matches
+            const pls = getAdminPlaylists().filter(p => p.type === 'library' && p.name === rlName);
+            const items = [];
+            if (pls.length) {
+                pls[0].items.forEach(item => {
+                    items.push({ name: item.name || item.title || 'Untitled', title: item.title || '', author: item.author || '', category: item.category || 'other', url: item.url, size: item.size || 0 });
+                });
+            }
+            const collItems = allLoadedBooks.filter(f => f.collection === rlName);
+            const seenUrls = new Set(items.map(it => it.url));
+            collItems.forEach(f => { if (!seenUrls.has(f.url)) { seenUrls.add(f.url); items.push(f); } });
+
+            const div = document.createElement('div');
+            div.className = 'rl-expanded';
+            div.id = 'rlExpanded';
+            div.dataset.name = rlName;
+            const label = rlName.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            let inner = '<div class="rl-expanded-header"><span class="rl-expanded-title"><i class="fas fa-folder-open"></i> ' + san(label) + '</span><button class="rl-expanded-close" onclick="document.getElementById(\'rlExpanded\').remove()"><i class="fas fa-times"></i></button></div>';
+            inner += '<div class="lib-book-list">';
+            items.forEach(book => {
+                const meta = parseMeta(book.name);
+                const t = book.title || meta.title;
+                const a = book.author || meta.author;
+                const s = catStyles[book.category] || catStyles.other;
+                const isPdf = book.name.toLowerCase().endsWith('.pdf');
+                inner += '<div class="lib-book-item" onclick="openBookViewer(\'' + book.url + '\',\'' + san(book.name).replace(/'/g, "\\&#39;") + '\',\'' + san(t).replace(/'/g, "\\&#39;") + '\')">';
+                inner += '<div class="lib-book-thumb"><div class="cover-placeholder" style="background:' + s.gradient + '"><i class="fas ' + (isPdf ? 'fa-file-pdf' : s.icon) + '"></i></div></div>';
+                inner += '<div class="lib-book-info"><div class="lib-book-title">' + san(t) + '</div>';
+                inner += '<div class="lib-book-author">By ' + san(a) + '</div>';
+                inner += '<span class="lib-book-cat" style="background:' + s.catBg + ';color:' + s.catColor + ';">' + san(book.category) + '</span>';
+                inner += '<div class="lib-book-size">' + fmtSize(book.size) + '</div></div></div>';
+            });
+            inner += '</div>';
+            div.innerHTML = inner;
+            const grid = document.getElementById('libraryGrid');
+            if (grid) grid.insertBefore(div, grid.firstChild);
+            div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        };
+
+        // Main Qalbox-style library layout
+        function renderLibraryLayout(books) {
+            const grid = document.getElementById('libraryGrid');
+            if (!grid) return;
+
+            // Apply search filter
+            let filtered = books;
+            if (_libSearchQuery) {
+                filtered = books.filter(f => {
+                    const meta = parseMeta(f.name);
+                    const s = ((f.title || meta.title) + ' ' + (f.author || meta.author) + ' ' + f.name + ' ' + (f.category||'')).toLowerCase();
+                    return s.includes(_libSearchQuery);
+                });
+            }
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div style="text-align:center;padding:50px 20px;color:var(--text-gray);"><i class="fas fa-book-open" style="font-size:48px;margin-bottom:12px;display:block;color:var(--border-color);"></i><p>' + (_libSearchQuery ? 'No results for "'+san(_libSearchQuery)+'"' : 'No books found') + '</p></div>';
+                return;
+            }
+
+            let html = '';
+
+            // Reading lists as folder cards
+            const adminRLs = getAdminPlaylists().filter(p => p.type === 'library' && p.items.length > 0);
+            const collNames = [...new Set(filtered.filter(f => f.collection && f.collection.length > 0).map(f => f.collection))];
+            const allRLNames = [...new Set([...adminRLs.map(p => p.name), ...collNames])];
+            const readingLists = allRLNames.map(name => {
+                const adminPl = adminRLs.find(p => p.name === name);
+                const collItems = filtered.filter(f => f.collection === name);
+                const adminItems = adminPl ? adminPl.items.map(item => ({ url: item.url })) : [];
+                const seenUrls = new Set(collItems.map(f => f.url));
+                adminItems.forEach(ai => { if (!seenUrls.has(ai.url)) seenUrls.add(ai.url); });
+                return { name, items: [...Array(seenUrls.size)] };
+            }).filter(rl => rl.items.length > 0);
+
+            // Rebuild item counts properly
+            readingLists.forEach(rl => {
+                const adminPl = adminRLs.find(p => p.name === rl.name);
+                const collItems = filtered.filter(f => f.collection === rl.name);
+                const urls = new Set();
+                if (adminPl) adminPl.items.forEach(it => urls.add(it.url));
+                collItems.forEach(f => urls.add(f.url));
+                rl.items = Array.from(urls).map(u => ({ url: u }));
+            });
+
+            if (readingLists.length > 0) {
+                html += renderReadingListFolders(readingLists);
+            }
+
+            // Filter out reading-list-only items for individual display
+            const individualBooks = filtered.filter(f => !f.collection || f.collection.length === 0);
+            const displayBooks = individualBooks.length > 0 ? individualBooks : filtered;
+
+            // 1. Top Available for you! (horizontal scroll of top books)
+            const topBooks = displayBooks.slice(0, 10);
+            html += '<div class="lib-section"><div class="lib-section-header"><span class="lib-section-title">Top Available for you!</span></div>';
+            html += '<div class="lib-top-scroll">';
+            topBooks.forEach(book => {
+                const meta = parseMeta(book.name);
+                const t = book.title || meta.title;
+                const a = book.author || meta.author;
+                const s = catStyles[book.category] || catStyles.other;
+                const isPdf = book.name.toLowerCase().endsWith('.pdf');
+                const coverId = 'tc-' + Math.random().toString(36).substr(2, 8);
+                html += '<div class="lib-top-card" onclick="openBookViewer(\''+book.url+'\',\''+san(book.name).replace(/'/g,"\\&#39;")+'\',\''+san(t).replace(/'/g,"\\&#39;")+'\')">';
+                html += '<div class="lib-top-cover" id="'+coverId+'" data-url="'+book.url+'" data-pdf="'+(isPdf?'1':'0')+'"><div class="cover-placeholder" style="background:'+s.gradient+'"><i class="fas '+(isPdf?'fa-file-pdf':s.icon)+'"></i><span>'+san(book.category)+'</span></div></div>';
+                html += '<div class="lib-top-info"><div class="top-title">'+san(t)+'</div><div class="top-author">By '+san(a)+'</div></div></div>';
+            });
+            html += '</div></div>';
+
+            // 2. Pick from Popular Genres (circles)
+            const availableCats = [...new Set(displayBooks.map(f => f.category))];
+            if (availableCats.length > 1) {
+                html += '<div class="lib-section"><div class="lib-section-header"><span class="lib-section-title">Browse by Genre</span></div>';
+                html += '<div class="lib-genre-scroll">';
+                availableCats.forEach(cat => {
+                    const g = genreStyles[cat] || genreStyles.other;
+                    html += '<div class="lib-genre-item" onclick="filterBooks(\''+cat+'\')">';
+                    html += '<div class="lib-genre-circle" style="background:'+g.gradient+'"><i class="fas '+g.icon+'"></i></div>';
+                    html += '<span class="lib-genre-label">'+g.label+'</span></div>';
+                });
+                html += '</div></div>';
+            }
+
+            // 3. Your Books (list view)
+            html += '<div class="lib-section"><div class="lib-section-header"><span class="lib-section-title">Your Books</span><span class="lib-section-count" style="color:var(--text-gray);">'+displayBooks.length+' books</span></div>';
+            html += '<div class="lib-book-list">';
+            displayBooks.forEach(book => {
+                const meta = parseMeta(book.name);
+                const t = book.title || meta.title;
+                const a = book.author || meta.author;
+                const s = catStyles[book.category] || catStyles.other;
+                const isPdf = book.name.toLowerCase().endsWith('.pdf');
+                const coverId = 'bl-' + Math.random().toString(36).substr(2, 8);
+                const saved = isFileSavedOffline(book.url);
+
+                let dlBtn = '';
+                if (saved) {
+                    dlBtn = '<button class="lib-book-dl" style="color:#4CAF50;" onclick="event.stopPropagation();handleRemoveOfflineLib(this,\''+encodeURIComponent(book.url)+'\')"><i class="fas fa-check"></i></button>';
+                } else {
+                    const encodedMeta = encodeURIComponent(JSON.stringify({url:book.url,name:book.name,category:book.category,title:t,author:a,size:book.size}));
+                    dlBtn = '<button class="lib-book-dl" onclick="event.stopPropagation();handleSaveOfflineLib(this,\''+encodedMeta+'\')"><i class="fas fa-download"></i></button>';
+                }
+
+                html += '<div class="lib-book-item" onclick="openBookViewer(\''+book.url+'\',\''+san(book.name).replace(/'/g,"\\&#39;")+'\',\''+san(t).replace(/'/g,"\\&#39;")+'\')">';
+                html += '<div class="lib-book-thumb" id="'+coverId+'" data-url="'+book.url+'" data-pdf="'+(isPdf?'1':'0')+'"><div class="cover-placeholder" style="background:'+s.gradient+'"><i class="fas '+(isPdf?'fa-file-pdf':s.icon)+'"></i></div></div>';
+                html += '<div class="lib-book-info"><div class="lib-book-title">'+san(t)+'</div>';
+                html += '<div class="lib-book-author">By '+san(a)+'</div>';
+                html += '<span class="lib-book-cat" style="background:'+s.catBg+';color:'+s.catColor+';">'+san(book.category)+'</span>';
+                html += '<div class="lib-book-size">'+fmtSize(book.size)+'</div></div>';
+                html += dlBtn + '</div>';
+            });
+            html += '</div></div>';
+
+            grid.innerHTML = html;
+
+            // Render PDF covers async
+            if (window.pdfjsLib) {
+                document.querySelectorAll('[data-pdf="1"]').forEach(el => {
+                    renderPdfCover(el.dataset.url, el.id);
+                });
+            }
+        }
+
+        async function loadBooksFromStorage(category) {
+            category = category || 'all';
+            currentLibFilter = category;
+            const grid = document.getElementById('libraryGrid');
+            if (!grid) return;
+
+            if (category === 'downloads') {
+                grid.innerHTML = '';
+                renderOfflineLibSection(category);
+                return;
+            }
+
+            grid.innerHTML = '<div style="text-align:center;padding:40px;"><i class="fas fa-spinner fa-spin" style="font-size:32px;color:var(--primary-green);"></i></div>';
+
+            try {
+                let allFiles = await fetchBooksR2(category);
+                if (allFiles.length === 0) allFiles = await fetchBooksGitHub(category);
+
+                // Merge admin reading list items (dedup by URL)
+                const seenUrls = new Set(allFiles.map(f => f.url));
+                const rlItems = getReadingListBookItems();
+                rlItems.forEach(item => {
+                    if (!seenUrls.has(item.url)) {
+                        seenUrls.add(item.url);
+                        allFiles.push(item);
+                    }
+                });
+
+                allLoadedBooks = allFiles;
+
+                buildCollectionBar(allFiles);
+
+                const displayFiles = (currentCollection !== 'all') ? allFiles.filter(f => f.collection === currentCollection) : allFiles;
+
+                renderLibraryLayout(displayFiles);
+            } catch(err) {
+                console.error('Library load error:', err);
+                grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-gray);"><p>Error loading books</p></div>';
+            }
+
+            renderOfflineLibSection(category);
+        }
+
+        const catStyles = {
+            islamic: { icon:'fa-quran', gradient:'linear-gradient(135deg,#4CAF50,#388E3C)', catBg:'#e8f5e9', catColor:'#2E7D32' },
+            quran: { icon:'fa-book-open', gradient:'linear-gradient(135deg,#9C27B0,#7B1FA2)', catBg:'#f3e5f5', catColor:'#7B1FA2' },
+            educational: { icon:'fa-graduation-cap', gradient:'linear-gradient(135deg,#2196F3,#1976D2)', catBg:'#e3f2fd', catColor:'#1565C0' },
+            other: { icon:'fa-book', gradient:'linear-gradient(135deg,#607D8B,#455A64)', catBg:'#eceff1', catColor:'#455A64' }
+        };
+
+        function renderBookCards(container, files, isOffline) {
+            files.forEach(book => {
+                const meta = parseMeta(book.name);
+                const t = book.title || meta.title;
+                const a = book.author || meta.author;
+                const safeTitle = san(t);
+                const safeAuthor = san(a);
+                const s = catStyles[book.category] || catStyles.other;
+                const saved = isFileSavedOffline(book.url);
+                const isPdf = book.name.toLowerCase().endsWith('.pdf');
+                const coverId = 'cover-' + Math.random().toString(36).substr(2, 9);
+                const card = document.createElement('div');
+                card.className = 'lib-card';
+                card.style.cursor = 'pointer';
+                card.onclick = function(e) {
+                    if (e.target.closest('.card-more-btn') || e.target.closest('.card-more-menu') || e.target.closest('.lib-card-dl')) return;
+                    openBookViewer(book.url, book.name, t);
+                };
+
+                let actionButton = '';
+                if (saved) {
+                    // Downloaded: show 3-dot menu with Delete option
+                    const menuId = 'lm-' + Math.random().toString(36).substr(2, 8);
+                    actionButton = 
+                        '<button class="card-more-btn" onclick="event.stopPropagation();toggleMoreMenu(\''+menuId+'\');">&#8942;</button>'+
+                        '<div class="card-more-menu" id="'+menuId+'">'+
+                            '<button onclick="event.stopPropagation();closeAllMoreMenus();handleRemoveOfflineLib(this.closest(\'.lib-card\').querySelector(\'.card-more-btn\'),\''+encodeURIComponent(book.url)+'\')" class="danger"><i class="fas fa-trash"></i>Remove Download</button>'+
+                        '</div>';
+                } else {
+                    // Not downloaded: show download icon
+                    const encodedMeta = encodeURIComponent(JSON.stringify({url:book.url,name:book.name,category:book.category,title:t,author:a,size:book.size}));
+                    actionButton = '<button class="lib-card-dl" aria-label="Download" onclick="event.stopPropagation();handleSaveOfflineLib(this,\''+encodedMeta+'\')"><i class="fas fa-download"></i></button>';
+                }
+
+                card.innerHTML =
+                    '<div class="lib-card-cover" id="'+coverId+'"><div class="cover-placeholder" style="background:'+s.gradient+'"><i class="fas '+(isPdf?'fa-file-pdf':s.icon)+'"></i><span>'+book.category+'</span></div>'+
+                    actionButton+
+                    '</div>'+
+                    '<div class="lib-card-body"><span class="lib-card-cat" style="background:'+s.catBg+';color:'+s.catColor+';">'+book.category+'</span>'+
+                    '<div class="lib-card-title">'+safeTitle+'</div>'+
+                    '<div class="lib-card-meta"><i class="fas fa-user" style="margin-right:3px;"></i>'+safeAuthor+' &middot; '+fmtSize(book.size)+'</div></div>';
+                container.appendChild(card);
+
+                // Render PDF first page as cover thumbnail
+                if (isPdf && window.pdfjsLib) {
+                    renderPdfCover(book.url, coverId);
+                }
+            });
+        }
+
+        // Render first page of a PDF as a canvas thumbnail in the given cover element
+        async function renderPdfCover(url, coverId) {
+            try {
+                const pdf = await pdfjsLib.getDocument({ url: url, disableAutoFetch: true, disableStream: true }).promise;
+                const page = await pdf.getPage(1);
+                const scale = 1;
+                const viewport = page.getViewport({ scale: scale });
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                // Fit to cover size
+                const coverEl = document.getElementById(coverId);
+                if (!coverEl) return;
+                const coverW = coverEl.offsetWidth || 180;
+                const coverH = coverEl.offsetHeight || 140;
+                const fitScale = Math.max(coverW / viewport.width, coverH / viewport.height);
+                const fitViewport = page.getViewport({ scale: fitScale });
+                canvas.width = fitViewport.width;
+                canvas.height = fitViewport.height;
+                await page.render({ canvasContext: ctx, viewport: fitViewport }).promise;
+                // Replace placeholder with canvas
+                const placeholder = coverEl.querySelector('.cover-placeholder');
+                if (placeholder) placeholder.style.display = 'none';
+                coverEl.insertBefore(canvas, coverEl.firstChild);
+            } catch(e) {
+                // Silently fail — keep the gradient placeholder
+                console.log('PDF cover render skipped:', e.message);
+            }
+        }
+
+        // ==============================
+        // Offline section
+        // ==============================
+        function renderOfflineLibSection(cat) {
+            cat = cat || currentLibFilter || 'all';
+            let section = document.getElementById('offlineLibSection');
+            if (!section) {
+                section = document.createElement('div');
+                section.id = 'offlineLibSection';
+                const grid = document.getElementById('libraryGrid');
+                if (grid) grid.parentNode.insertBefore(section, grid.nextSibling);
+            }
+
+            const idx = getOfflineIndex();
+
+            // Downloads tab: show all offline books grouped by category
+            if (cat === 'downloads') {
+                document.getElementById('libraryGrid').innerHTML = '';
+                if (idx.length === 0) {
+                    section.innerHTML = '<div style="text-align:center;padding:50px 20px;color:var(--text-gray);"><i class="fas fa-download" style="font-size:48px;margin-bottom:12px;display:block;color:var(--border-color);"></i><p>No downloaded books yet</p><p style="font-size:12px;margin-top:8px;">Tap the <i class="fas fa-arrow-down"></i> button on any book to save it for offline reading.</p></div>';
+                    return;
+                }
+                let html = '<div style="margin-top:8px;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><i class="fas fa-download" style="color:var(--primary-green);"></i><span style="font-weight:700;font-size:16px;color:var(--dark-gray);">My Library Downloads</span><span style="font-size:12px;color:var(--text-gray);">('+idx.length+' books)</span></div>';
+                section.innerHTML = html;
+
+                const categories = [
+                    { key: 'islamic', label: 'Downloaded Islamic Books', icon: 'fa-quran', color: '#2E7D32' },
+                    { key: 'quran', label: 'Downloaded Quran Resources', icon: 'fa-book-open', color: '#7B1FA2' },
+                    { key: 'educational', label: 'Downloaded Educational', icon: 'fa-graduation-cap', color: '#1565C0' },
+                    { key: 'other', label: 'Downloaded Other', icon: 'fa-book', color: '#455A64' }
+                ];
+                categories.forEach(c => {
+                    const catFiles = idx.filter(f => f.category === c.key);
+                    if (catFiles.length === 0) return;
+                    const header = document.createElement('div');
+                    header.className = 'dl-category-header';
+                    header.innerHTML = '<i class="fas '+c.icon+'" style="color:'+c.color+';"></i><span>'+c.label+'</span><span class="dl-count">'+catFiles.length+' book'+(catFiles.length>1?'s':'')+'</span>';
+                    section.appendChild(header);
+                    const catGrid = document.createElement('div');
+                    catGrid.className = 'lib-card-grid';
+                    section.appendChild(catGrid);
+                    renderBookCards(catGrid, catFiles, true);
+                });
+                return;
+            }
+
+            const filtered = cat === 'all' ? idx : idx.filter(f => f.category === cat);
+
+            if (filtered.length === 0) { section.innerHTML = ''; return; }
+
+            section.innerHTML = '<div style="margin-top:24px;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><i class="fas fa-wifi-slash" style="color:var(--primary-green);"></i><span style="font-weight:700;font-size:15px;color:var(--dark-gray);">Saved Offline</span><span style="font-size:12px;color:var(--text-gray);">('+filtered.length+' files)</span></div>';
+            const offGrid = document.createElement('div');
+            offGrid.className = 'lib-card-grid';
+            section.appendChild(offGrid);
+            renderBookCards(offGrid, filtered, true);
+        }
+
+        // ==============================
+        // Save / Remove offline handlers
+        // ==============================
+        async function handleSaveOfflineLib(btn, encodedData) {
+            var data = JSON.parse(decodeURIComponent(encodedData));
+            var card = btn.closest('.lib-card');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:12px;"></i>';
+            btn.style.background = 'rgba(76,175,80,0.9)';
+            btn.style.color = '#fff';
+            btn.disabled = true;
+            if (window.KiumaBridge && window.KiumaBridge.isInApp() && typeof window.KiumaBridge.saveFileToDevice === 'function') {
+                var extFromUrl = data.url && data.url.match(/\.(\w+)(\?|$)/);
+var name = data.fileName || (data.title || 'book').replace(/[^a-zA-Z0-9._-]/g, '_') + (extFromUrl ? '.' + extFromUrl[1] : '.pdf');
+                var mime = _mimeFromExtLib(name.split('.').pop());
+                var ok = await window.KiumaBridge.saveFileToDevice(data.url, name, mime);
+                if (ok) {
+                    btn.innerHTML = '<i class="fas fa-check" style="font-size:12px;"></i>';
+                    btn.style.background = 'rgba(76,175,80,0.9)';
+                    setTimeout(function() { loadBooksFromStorage(currentLibFilter); }, 600);
+                } else {
+                    btn.innerHTML = '<i class="fas fa-exclamation"></i>'; btn.style.background = 'rgba(244,67,54,0.85)';
+                    setTimeout(function() { btn.innerHTML = '<i class="fas fa-download"></i>'; btn.style.background = 'rgba(0,0,0,0.6)'; btn.style.color = ''; btn.disabled = false; }, 2000);
+                }
+                return;
+            }
+            var ok = await saveFileOffline(data.url, data, function(percent, loaded, total) {
+                if (percent >= 0) btn.innerHTML = '<span style="font-size:9px;font-weight:700;">'+percent+'%</span>';
+                else btn.innerHTML = '<span style="font-size:8px;font-weight:700;">'+((loaded/1048576).toFixed(1))+'M</span>';
+            });
+            if (ok) {
+                btn.innerHTML = '<i class="fas fa-check" style="font-size:12px;"></i>';
+                btn.style.background = 'rgba(76,175,80,0.9)';
+                setTimeout(function() { loadBooksFromStorage(currentLibFilter); }, 800);
+            } else {
+                btn.innerHTML = '<i class="fas fa-exclamation"></i>';
+                btn.style.background = 'rgba(244,67,54,0.85)';
+                setTimeout(function() { btn.innerHTML = '<i class="fas fa-download"></i>'; btn.style.background = 'rgba(0,0,0,0.6)'; btn.style.color = ''; btn.disabled = false; }, 2000);
+            }
+        }
+        window.handleSaveOfflineLib = handleSaveOfflineLib;
+
+        async function handleRemoveOfflineLib(btn, encodedUrl) {
+            const url = decodeURIComponent(encodedUrl);
+            await removeFileOffline(url);
+            loadBooksFromStorage(currentLibFilter);
+        }
+        window.handleRemoveOfflineLib = handleRemoveOfflineLib;
+
+        async function handleSaveToDeviceLib(btn, encodedUrl, encodedName) {
+            var url = decodeURIComponent(encodedUrl);
+            var name = decodeURIComponent(encodedName);
+            var origHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:12px;"></i>';
+            btn.disabled = true;
+            if (window.KiumaBridge && window.KiumaBridge.isInApp() && typeof window.KiumaBridge.saveToPublicDownloads === 'function') {
+                var ext = name.split('.').pop();
+                var mime = _mimeFromExtLib(ext);
+                var ok = await window.KiumaBridge.saveToPublicDownloads(url, name, mime);
+                btn.innerHTML = ok ? '<i class="fas fa-check" style="font-size:12px;"></i>' : '<i class="fas fa-exclamation" style="font-size:12px;"></i>';
+                setTimeout(function() { btn.innerHTML = origHTML; btn.disabled = false; }, 2000);
+                return;
+            }
+            try {
+                var res = await fetch(url);
+                var blob = await res.blob();
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = name || 'download';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+                btn.innerHTML = '<i class="fas fa-check" style="font-size:12px;"></i>';
+            } catch(e) {
+                btn.innerHTML = '<i class="fas fa-exclamation" style="font-size:12px;"></i>';
+            }
+            setTimeout(function() { btn.innerHTML = origHTML; btn.disabled = false; }, 2000);
+        }
+        window.handleSaveToDeviceLib = handleSaveToDeviceLib;
+
+        // ==============================
+        // In-app book viewer
+        // ==============================
+        function openBookViewer(url, fileName, title) {
+            const ext = fileName.split('.').pop().toLowerCase();
+            const modal = document.getElementById('bookViewerModal');
+            const content = document.getElementById('bookViewerContent');
+            document.getElementById('bookViewerTitle').textContent = title || 'Book';
+            const dlBtn = document.getElementById('bookViewerDownload');
+            dlBtn.dataset.url = url;
+            dlBtn.dataset.name = fileName || (title || 'book').replace(/[^a-zA-Z0-9._-]/g, '_') + '.' + ext;
+
+            if (ext === 'pdf') {
+                // Use Google Docs viewer for mobile PDF viewing (works on all devices)
+                const gdocUrl = 'https://docs.google.com/gview?embedded=true&url=' + encodeURIComponent(url);
+                content.innerHTML = '<iframe src="'+gdocUrl+'" style="width:100%;height:100%;border:none;background:#fff;"></iframe>';
+            } else if (['jpg','jpeg','png','gif','webp','svg'].includes(ext)) {
+                content.innerHTML = '<img src="'+url+'" loading="lazy" style="max-width:100%;max-height:100%;object-fit:contain;">';
+            } else if (ext === 'txt') {
+                content.innerHTML = '<div style="padding:20px;color:#fff;text-align:center;"><i class="fas fa-spinner fa-spin" style="font-size:24px;"></i></div>';
+                fetch(url).then(r => r.text()).then(text => {
+                    content.innerHTML = '<pre style="background:#fff;color:#333;padding:20px;border-radius:8px;max-width:100%;overflow:auto;white-space:pre-wrap;word-wrap:break-word;font-size:14px;line-height:1.6;max-height:100%;">'+san(text)+'</pre>';
+                }).catch(() => {
+                    content.innerHTML = '<p style="color:#fff;">Could not load file. <button onclick="inAppDownload(\''+url+'\',\''+encodeURIComponent(title||'file')+'\')" style="background:none;border:none;color:#4CAF50;cursor:pointer;text-decoration:underline;font-size:inherit;">Download instead</button></p>';
+                });
+            } else {
+                content.innerHTML = '<div style="text-align:center;color:#fff;padding:30px;"><i class="fas fa-file-alt" style="font-size:60px;margin-bottom:16px;display:block;color:#ccc;"></i><p style="font-size:16px;margin-bottom:20px;">'+san(title)+'</p><p style="color:#aaa;margin-bottom:20px;">This file type (.'+ext+') cannot be previewed in the app.</p><button onclick="inAppDownload(\''+url+'\',\''+encodeURIComponent(title||'file')+'.'+ext+'\')" style="display:inline-block;padding:12px 28px;background:var(--primary-green);color:#fff;border-radius:10px;border:none;font-weight:600;font-size:14px;cursor:pointer;"><i class="fas fa-download"></i> Download File</button></div>';
+            }
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeBookViewer() {
+            const modal = document.getElementById('bookViewerModal');
+            document.getElementById('bookViewerContent').innerHTML = '';
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+        window.addEventListener('popstate', closeBookViewer);
+
+    </script>
+
+    <!-- Floating Hot Events Button -->
+    <div class="floating-kizumu-btn" onclick="showActivitiesModal()" style="background: linear-gradient(135deg, #ff6b35, #e74c3c); animation: pulse-hot 1.5s infinite; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5);">
+        <i class="fas fa-fire" style="color: #fff;"></i>
+        <span style="font-weight: bold;">HOT EVENTS!</span>
+    </div>
+    <style>
+    @keyframes pulse-hot {
+        0%, 100% { transform: scale(1); box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5); }
+        50% { transform: scale(1.05); box-shadow: 0 6px 20px rgba(231, 76, 60, 0.7); }
+    }
+    </style>
+
+    <!-- Activities Modal -->
+    <div class="modal-overlay" id="activitiesModal" style="display: none;">
+        <div class="modal-content activities-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-fire" style="color: #ff6b35;"></i> Hot Events - Act Now!</h3>
+                <button class="modal-close" onclick="closeActivitiesModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="activities-modal-list">
+                <div class="activity-modal-item" onclick="window.location.href='activities.html#charity-visit'" style="border-left: 4px solid #ff6b35;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #ff6b35, #e74c3c);">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4 style="color: #e74c3c;">Kizumu Tahfiz Visit — FINISHED</h4>
+                        <p>Thank you for your support! Results and media released soon.</p>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color: #e74c3c;"></i>
+                </div>
+
+                <div class="activity-modal-item" onclick="window.location.href='activities.html#quran-competition'" style="border-left: 4px solid #9c27b0;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #9c27b0, #673ab7);">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4 style="color: #9c27b0;">Quran Competition — FINISHED</h4>
+                        <p>Thank you for participating! Results and media released soon.</p>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color: #9c27b0;"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="window.location.href='pay.html?type=charity&donation=tuition-brothers'">
+                    <div class="activity-modal-icon" style="background: var(--primary-green);">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Tuition for Brothers</h4>
+                        <p>Support brothers' education and learning</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+
+

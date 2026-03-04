@@ -1,0 +1,302 @@
+/**
+ * Supabase Storage Helper Functions
+ * 
+ * Handles file uploads, downloads, and deletions from Supabase Storage
+ * Replaces Firebase Storage for media files (images, videos, audio)
+ */
+
+/**
+ * Get Supabase client instance
+ * Uses the singleton client from services/supabaseClient.js
+ * This function delegates to the singleton to ensure only one client exists
+ */
+function getSupabaseClient() {
+    // Use the singleton client if available (preferred method)
+    if (typeof window.getSupabaseClient === 'function') {
+        try {
+            return window.getSupabaseClient();
+        } catch (error) {
+            console.error('[Supabase Storage] Error getting singleton client:', error);
+            throw error;
+        }
+    }
+    
+    // Fallback to deprecated method (for backward compatibility)
+    if (typeof initializeSupabase === 'function') {
+        const client = initializeSupabase();
+        if (client) {
+            return client;
+        }
+    }
+    
+    throw new Error('Supabase not initialized. Make sure services/supabaseClient.js is loaded with type="module".');
+}
+
+// Auto-initialize Supabase client when script loads
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                getSupabaseClient();
+            } catch (e) {
+                console.warn('Supabase initialization deferred:', e.message);
+            }
+        });
+    } else {
+        try {
+            getSupabaseClient();
+        } catch (e) {
+            console.warn('Supabase initialization deferred:', e.message);
+        }
+    }
+}
+
+/**
+ * Upload file to Supabase Storage
+ * 
+ * @param {File} file - File object to upload
+ * @param {string} folder - Folder path in storage (e.g., 'media/videos', 'media/images')
+ * @param {Function} onProgress - Progress callback (optional)
+ * @returns {Promise<Object>} Upload result with download URL and storage path
+ */
+async function uploadToSupabaseStorage(file, folder = 'media', onProgress = null) {
+    let progressInterval = null;
+    let uploadTimeout = null;
+    
+    try {
+        const supabase = getSupabaseClient();
+        if (!supabase) {
+            throw new Error('Supabase client not available');
+        }
+
+        // Generate unique filename
+        const timestamp = Date.now();
+        const randomString = Math.random().toString(36).substring(2, 15);
+        const fileExtension = file.name.split('.').pop();
+        const fileName = `${timestamp}_${randomString}.${fileExtension}`;
+        const filePath = `${folder}/${fileName}`;
+        
+        // Start progress simulation (will be cleared when upload completes)
+        if (onProgress) {
+            let progress = 0;
+            progressInterval = setInterval(() => {
+                progress += 5;
+                if (progress < 90) { // Don't go to 100% until upload actually completes
+                    onProgress(progress);
+                }
+            }, 200);
+        }
+        
+        // Set upload timeout (5 minutes for large files)
+        const timeoutPromise = new Promise((_, reject) => {
+            uploadTimeout = setTimeout(() => {
+                reject(new Error('Upload timeout: File upload took too long. Please try again with a smaller file.'));
+            }, 5 * 60 * 1000); // 5 minutes
+        });
+        
+        // Upload file to Supabase Storage with timeout
+        const uploadPromise = supabase.storage
+            .from(window.supabaseConfig.storageBucket || 'media')
+            .upload(filePath, file, {
+                cacheControl: '3600',
+                upsert: false
+            });
+        
+        const { data, error } = await Promise.race([uploadPromise, timeoutPromise]);
+
+        // Clear timeout and progress interval
+        if (uploadTimeout) clearTimeout(uploadTimeout);
+        if (progressInterval) clearInterval(progressInterval);
+
+        if (error) {
+            // Provide more helpful error messages for RLS issues
+            if (error.message && error.message.includes('row-level security')) {
+                throw new Error('Storage access denied. Please check Supabase Storage policies. The bucket may require authentication or have restricted upload policies. See SUPABASE_RLS_FIX_COMPLETE.md for instructions.');
+            }
+            throw error;
+        }
+
+        // Update progress to 100%
+        if (onProgress) {
+            onProgress(100);
+        }
+
+        // Get public URL
+        const { data: urlData } = supabase.storage
+            .from(window.supabaseConfig.storageBucket || 'media')
+            .getPublicUrl(filePath);
+
+        const downloadURL = urlData.publicUrl;
+
+        return {
+            success: true,
+            downloadURL: downloadURL,
+            storagePath: filePath,
+            fileName: file.name,
+            fileSize: file.size,
+            contentType: file.type
+        };
+
+    } catch (error) {
+        // Clean up intervals and timeouts on error
+        if (uploadTimeout) clearTimeout(uploadTimeout);
+        if (progressInterval) clearInterval(progressInterval);
+        
+        console.error('Error uploading to Supabase Storage:', error);
+        return {
+            success: false,
+            error: error.message || 'Upload failed'
+        };
+    }
+}
+
+/**
+ * Delete file from Supabase Storage
+ * 
+ * @param {string} storagePath - Path to file in Supabase Storage
+ * @returns {Promise<boolean>} True if deletion successful
+ */
+async function deleteFromSupabaseStorage(storagePath) {
+    try {
+        const supabase = getSupabaseClient();
+        if (!supabase) {
+            throw new Error('Supabase client not available');
+        }
+
+        const { error } = await supabase.storage
+            .from(window.supabaseConfig.storageBucket || 'media')
+            .remove([storagePath]);
+
+        if (error) {
+            // If file doesn't exist, consider it a success
+            if (error.message && error.message.includes('not found')) {
+                return true;
+            }
+            throw error;
+        }
+
+        return true;
+
+    } catch (error) {
+        console.error('Error deleting from Supabase Storage:', error);
+        // If file doesn't exist, consider it a success
+        if (error.message && error.message.includes('not found')) {
+            return true;
+        }
+        throw error;
+    }
+}
+
+/**
+ * Get public URL for a file in Supabase Storage
+ * 
+ * @param {string} storagePath - Path to file in Supabase Storage
+ * @returns {string} Public URL
+ */
+async function getSupabaseStorageUrl(storagePath) {
+    try {
+        const supabase = getSupabaseClient();
+        if (!supabase) {
+            throw new Error('Supabase client not available');
+        }
+
+        const { data } = supabase.storage
+            .from(window.supabaseConfig.storageBucket || 'media')
+            .getPublicUrl(storagePath);
+
+        return data.publicUrl;
+    } catch (error) {
+        console.error('Error getting Supabase Storage URL:', error);
+        return null;
+    }
+}
+
+/**
+ * Generate thumbnail for image (resize using canvas)
+ * 
+ * @param {File} imageFile - Image file
+ * @param {number} maxWidth - Maximum width for thumbnail
+ * @param {number} maxHeight - Maximum height for thumbnail
+ * @returns {Promise<File>} Thumbnail file
+ */
+async function generateThumbnail(imageFile, maxWidth = 300, maxHeight = 300) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                // Calculate new dimensions
+                let width = img.width;
+                let height = img.height;
+                
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height = (height * maxWidth) / width;
+                        width = maxWidth;
+                    }
+                } else {
+                    if (height > maxHeight) {
+                        width = (width * maxHeight) / height;
+                        height = maxHeight;
+                    }
+                }
+                
+                // Create canvas and resize
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // Convert to blob
+                canvas.toBlob((blob) => {
+                    const thumbnailFile = new File([blob], `thumb_${imageFile.name}`, {
+                        type: imageFile.type
+                    });
+                    resolve(thumbnailFile);
+                }, imageFile.type);
+            };
+            
+            img.onerror = reject;
+            img.src = e.target.result;
+        };
+        
+        reader.onerror = reject;
+        reader.readAsDataURL(imageFile);
+    });
+}
+
+/**
+ * Get file type category
+ * 
+ * @param {string} mimeType - MIME type
+ * @returns {string} 'video', 'audio', or 'image'
+ */
+function getFileTypeCategory(mimeType) {
+    if (mimeType.startsWith('video/')) {
+        return 'video';
+    } else if (mimeType.startsWith('audio/')) {
+        return 'audio';
+    } else if (mimeType.startsWith('image/')) {
+        return 'image';
+    }
+    return 'unknown';
+}
+
+// Make functions globally available (with backward compatibility aliases)
+if (typeof window !== 'undefined') {
+    // Supabase functions
+    window.uploadToSupabaseStorage = uploadToSupabaseStorage;
+    window.deleteFromSupabaseStorage = deleteFromSupabaseStorage;
+    window.getSupabaseStorageUrl = getSupabaseStorageUrl;
+    
+    // Backward compatibility - redirect Firebase Storage calls to Supabase
+    window.uploadToFirebaseStorage = uploadToSupabaseStorage;
+    window.deleteFromFirebaseStorage = deleteFromSupabaseStorage;
+    
+    // Utility functions
+    window.generateThumbnail = generateThumbnail;
+    window.getFileTypeCategory = getFileTypeCategory;
+}
+

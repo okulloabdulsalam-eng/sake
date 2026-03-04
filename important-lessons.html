@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Important Lessons - KIUMA</title>
+    <script>
+        (function() {
+            var t;
+            try { t = localStorage.getItem('themePreference'); } catch(e) {}
+            if (t === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="styles.min.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    <!-- Font Awesome: CDN primary, local fallback -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="fonts/fontawesome.min.css">
+</head>
+<body>
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="quran.html" class="nav-link"><i class="fas fa-quran"></i> Quran</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="counselling.html" class="nav-link"><i class="fas fa-hands-helping"></i> Counselling</a></li>
+            <li><a href="library.html" class="nav-link"><i class="fas fa-book-open"></i> Library</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="media-settings.html" class="nav-link"><i class="fas fa-sliders-h"></i> Media Settings</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="page-hero">
+            <div class="hero-deco"></div>
+            <nav class="hero-nav">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <span class="hero-nav-title" id="heroNavPageTitle"></span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="notifications-btn" id="notificationsBtn">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge" style="display:none;"></span>
+                    </button>
+                    <div class="hero-profile-avatar" onclick="if(typeof toggleAccountModal==='function')toggleAccountModal()"><i class="fas fa-user"></i></div>
+                </div>
+            </nav>
+            <div class="hero-logo-row">
+                <div class="hero-logo-ring">
+                    <img src="logo.png" alt="KIUMA" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="logo-fallback" style="display:none;">KU</div>
+                </div>
+            </div>
+            <div class="hero-title-area">
+                <div class="hero-org-name">KIUMA</div>
+                <h1 class="hero-page-title">Important Lessons</h1>
+                <p class="hero-subtitle">Essential Islamic knowledge</p>
+                <div class="hero-accent-line"></div>
+            </div>
+        </div>
+
+        <main class="main-content">
+            <div style="height:8px;"></div>
+
+            <section class="page-content">
+                <!-- Learn the Prayer -->
+                <div id="learn-prayer" class="info-card" style="margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                        <i class="fas fa-pray" style="font-size: 28px; color: var(--primary-green);"></i>
+                        <h3 style="margin: 0; color: var(--dark-green);">Learn the Prayer</h3>
+                    </div>
+                    <div style="line-height: 1.8; color: var(--dark-gray);">
+                        <p style="margin-bottom: 15px;">Learn how to perform Salah (prayer) correctly according to the Sunnah of Prophet Muhammad (peace be upon him).</p>
+                        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                            <p style="margin: 0; font-weight: 600; color: var(--dark-green); margin-bottom: 10px;">Key Topics:</p>
+                            <ul style="margin: 0; padding-left: 20px; color: var(--text-gray);">
+                                <li>Wudu (Ablution) - How to perform it correctly</li>
+                                <li>Five Daily Prayers - Times and Rak'ahs</li>
+                                <li>Takbir, Ruku, Sujud - Correct positions</li>
+                                <li>Dua and Dhikr in Prayer</li>
+                                <li>Common mistakes to avoid</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Important Misunderstood Concepts -->
+                <div id="misunderstood-concepts" class="info-card" style="margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                        <i class="fas fa-lightbulb" style="font-size: 28px; color: #FF9800;"></i>
+                        <h3 style="margin: 0; color: var(--dark-green);">Important Misunderstood Concepts</h3>
+                    </div>
+                    <div style="line-height: 1.8; color: var(--dark-gray);">
+                        <p style="margin-bottom: 15px;">Clarifying common misconceptions in Islamic teachings and beliefs.</p>
+                        <div style="background: #fff3e0; padding: 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #FF9800;">
+                            <p style="margin: 0; font-weight: 600; color: #E65100; margin-bottom: 10px;">Topics Covered:</p>
+                            <ul style="margin: 0; padding-left: 20px; color: var(--text-gray);">
+                                <li>Tawheed (Oneness of Allah) - Common misunderstandings</li>
+                                <li>Bid'ah (Innovation) - What is and isn't Bid'ah</li>
+                                <li>Intercession (Shafa'ah) - Correct understanding</li>
+                                <li>Qadr (Divine Decree) - Free will vs. Predestination</li>
+                                <li>Jihad - True meaning and application</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Few Important Hadiths of the Prophet (PBUH) -->
+                <div id="important-hadiths" class="info-card" style="margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                        <i class="fas fa-book-quran" style="font-size: 28px; color: #9C27B0;"></i>
+                        <h3 style="margin: 0; color: var(--dark-green);">Few Important Hadiths of the Prophet (PBUH)</h3>
+                    </div>
+                    <div style="line-height: 1.8; color: var(--dark-gray);">
+                        <p style="margin-bottom: 15px;">Essential sayings and teachings of Prophet Muhammad (peace be upon him) that every Muslim should know.</p>
+                        <div style="background: #f3e5f5; padding: 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #9C27B0;">
+                            <div style="margin-bottom: 15px;">
+                                <p style="margin: 0 0 8px 0; font-weight: 600; color: #7B1FA2;">Hadith 1:</p>
+                                <p style="margin: 0 0 5px 0; font-style: italic; color: var(--text-gray);">"Actions are but by intention, and every man shall have but that which he intended..."</p>
+                                <p style="margin: 0; font-size: 14px; color: #666;">- Sahih al-Bukhari</p>
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <p style="margin: 0 0 8px 0; font-weight: 600; color: #7B1FA2;">Hadith 2:</p>
+                                <p style="margin: 0 0 5px 0; font-style: italic; color: var(--text-gray);">"None of you truly believes until he loves for his brother what he loves for himself."</p>
+                                <p style="margin: 0; font-size: 14px; color: #666;">- Sahih al-Bukhari</p>
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <p style="margin: 0 0 8px 0; font-weight: 600; color: #7B1FA2;">Hadith 3:</p>
+                                <p style="margin: 0 0 5px 0; font-style: italic; color: var(--text-gray);">"The best of people are those who are most beneficial to people."</p>
+                                <p style="margin: 0; font-size: 14px; color: #666;">- Al-Mu'jam al-Awsat</p>
+                            </div>
+                            <div>
+                                <p style="margin: 0 0 8px 0; font-weight: 600; color: #7B1FA2;">Hadith 4:</p>
+                                <p style="margin: 0 0 5px 0; font-style: italic; color: var(--text-gray);">"Whoever believes in Allah and the Last Day should speak good or remain silent."</p>
+                                <p style="margin: 0; font-size: 14px; color: #666;">- Sahih al-Bukhari</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Did You Know -->
+                <div id="did-you-know" class="info-card" style="margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                        <i class="fas fa-info-circle" style="font-size: 28px; color: #2196F3;"></i>
+                        <h3 style="margin: 0; color: var(--dark-green);">Did You Know</h3>
+                    </div>
+                    <div style="line-height: 1.8; color: var(--dark-gray);">
+                        <p style="margin-bottom: 15px;">Interesting and beneficial Islamic facts and knowledge.</p>
+                        <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #2196F3;">
+                            <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #90caf9;">
+                                <p style="margin: 0 0 5px 0; font-weight: 600; color: #1565C0;">Did you know?</p>
+                                <p style="margin: 0; color: var(--text-gray);">The word "Salah" (prayer) is mentioned 99 times in the Quran, emphasizing its importance in a Muslim's life.</p>
+                            </div>
+                            <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #90caf9;">
+                                <p style="margin: 0 0 5px 0; font-weight: 600; color: #1565C0;">Did you know?</p>
+                                <p style="margin: 0; color: var(--text-gray);">The first revelation to Prophet Muhammad (PBUH) was "Iqra" (Read), highlighting the importance of knowledge in Islam.</p>
+                            </div>
+                            <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #90caf9;">
+                                <p style="margin: 0 0 5px 0; font-weight: 600; color: #1565C0;">Did you know?</p>
+                                <p style="margin: 0; color: var(--text-gray);">Smiling at your brother is considered a form of charity (Sadaqah) in Islam.</p>
+                            </div>
+                            <div>
+                                <p style="margin: 0 0 5px 0; font-weight: 600; color: #1565C0;">Did you know?</p>
+                                <p style="margin: 0; color: var(--text-gray);">The Prophet (PBUH) said that seeking knowledge is obligatory upon every Muslim, male and female.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Islamic Character (Akhlaq) Series -->
+                <div id="akhlaq-series" class="info-card" style="margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                        <i class="fas fa-heart" style="font-size: 28px; color: #E91E63;"></i>
+                        <h3 style="margin: 0; color: var(--dark-green);">Islamic Character (Akhlaq) Series</h3>
+                    </div>
+                    <div style="line-height: 1.8; color: var(--dark-gray);">
+                        <p style="margin-bottom: 15px;">Learn about essential Islamic character traits and how to develop them in your daily life.</p>
+                        
+                        <!-- Truthfulness -->
+                        <div style="margin-bottom: 12px; border: 2px solid #E91E63; border-radius: 10px; overflow: hidden;">
+                            <button onclick="toggleAkhlaqItem('truthfulness')" style="width: 100%; padding: 15px 20px; background: linear-gradient(135deg, #FCE4EC, #F8BBD0); border: none; text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; color: #C2185B; font-size: 16px;">
+                                <span><i class="fas fa-check-circle" style="margin-right: 10px;"></i>Truthfulness (Sidq)</span>
+                                <i class="fas fa-chevron-down" id="truthfulnessChevron" style="transition: transform 0.3s;"></i>
+                            </button>
+                            <div id="truthfulnessContent" style="display: none; padding: 20px; background: #FFF5F8; border-top: 2px solid #E91E63;">
+                                <p style="margin: 0 0 10px 0; font-weight: 600; color: #C2185B;">What is Truthfulness?</p>
+                                <p style="margin: 0 0 15px 0; color: var(--text-gray);">Truthfulness (Sidq) is being honest in words, actions, and intentions. It is one of the fundamental pillars of Islamic character.</p>
+                                <p style="margin: 0 0 10px 0; font-weight: 600; color: #C2185B;">From the Quran:</p>
+                                <p style="margin: 0 0 10px 0; font-style: italic; color: var(--text-gray);">"O you who believe! Fear Allah and be with those who are truthful (As-Sadiqeen)." (Quran 9:119)</p>
+                                <p style="margin: 0 0 10px 0; font-weight: 600; color: #C2185B;">From the Hadith:</p>
+                                <p style="margin: 0 0 10px 0; font-style: italic; color: var(--text-gray);">The Prophet (PBUH) said: "Truthfulness leads to righteousness, and righteousness leads to Paradise. A man continues to tell the truth until he becomes a truthful person." (Sahih al-Bukhari)</p>
+                                <p style="margin: 0 0 10px 0; font-weight: 600; color: #C2185B;">How to Practice:</p>
+                                <ul style="margin: 0; padding-left: 20px; color: var(--text-gray);">
+                                    <li>Always speak the truth, even when it's difficult</li>
+                                    <li>Keep your promises and commitments</li>
+                                    <li>Be honest in your business dealings</li>
+                                    <li>Avoid exaggeration and false claims</li>
+                                    <li>Be truthful in your intentions and actions</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Patience -->
+                        <div style="margin-bottom: 12px; border: 2px solid #E91E63; border-radius: 10px; overflow: hidden;">
+                            <button onclick="toggleAkhlaqItem('patience')" style="width: 100%; padding: 15px 20px; background: linear-gradient(135deg, #FCE4EC, #F8BBD0); border: none; text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; color: #C2185B; font-size: 16px;">
+                                <span><i class="fas fa-hourglass-half" style="margin-right: 10px;"></i>Patience (Sabr)</span>
+                                <i class="fas fa-chevron-down" id="patienceChevron" style="transition: transform 0.3s;"></i>
+                            </button>
+                            <div id="patienceContent" style="display: none; padding: 20px; background: #FFF5F8; border-top: 2px solid #E91E63;">
+                                <p style="margin: 0 0 10px 0; font-weight: 600; color: #C2185B;">What is Patience?</p>
+                                <p style="margin: 0 0 15px 0; color: var(--text-gray);">Patience (Sabr) is the ability to remain steadfast and calm in the face of difficulties, trials, and hardships. It is highly praised in Islam.</p>
+                                <p style="margin: 0 0 10px 0; font-weight: 600; color: #C2185B;">From the Quran:</p>
+                                <p style="margin: 0 0 10px 0; font-style: italic; color: var(--text-gray);">"And be patient, for indeed, Allah is with the patient." (Quran 8:46)</p>
+                                <p style="margin: 0 0 10px 0; font-style: italic; color: var(--text-gray);">"O you who believe! Seek help through patience and prayer. Indeed, Allah is with the patient." (Quran 2:153)</p>
+                                <p style="margin: 0 0 10px 0; font-weight: 600; color: #C2185B;">From the Hadith:</p>
+                                <p style="margin: 0 0 10px 0; font-style: italic; color: var(--text-gray);">The Prophet (PBUH) said: "No one is given a gift better and more comprehensive than patience." (Sahih al-Bukhari)</p>
+                                <p style="margin: 0 0 10px 0; font-weight: 600; color: #C2185B;">Types of Patience:</p>
+                                <ul style="margin: 0; padding-left: 20px; color: var(--text-gray);">
+                                    <li>Patience in obedience to Allah</li>
+                                    <li>Patience in avoiding sins</li>
+                                    <li>Patience during trials and hardships</li>
+                                    <li>Patience with people's behavior</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Gratitude -->
+                        <div style="margin-bottom: 12px; border: 2px solid #E91E63; border-radius: 10px; overflow: hidden;">
+                            <button onclick="toggleAkhlaqItem('gratitude')" style="width: 100%; padding: 15px 20px; background: linear-gradient(135deg, #FCE4EC, #F8BBD0); border: none; text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; color: #C2185B; font-size: 16px;">
+                                <span><i class="fas fa-hands-praying" style="margin-right: 10px;"></i>Gratitude (Shukr)</span>
+                                <i class="fas fa-chevron-down" id="gratitudeChevron" style="transition: transform 0.3s;"></i>
+                            </button>
+                            <div id="gratitudeContent" style="display: none; padding: 20px; background: #FFF5F8; border-top: 2px solid #E91E63;">
+                                <p style="margin: 0 0 10px 0; font-weight: 600; color: #C2185B;">What is Gratitude?</p>
+                                <p style="margin: 0 0 15px 0; color: var(--text-gray);">Gratitude (Shukr) is recognizing and appreciating the blessings Allah has bestowed upon us and expressing thanks through words and actions.</p>
+                                <p style="margin: 0 0 10px 0; font-weight: 600; color: #C2185B;">From the Quran:</p>
+                                <p style="margin: 0 0 10px 0; font-style: italic; color: var(--text-gray);">"And [remember] when your Lord proclaimed: 'If you are grateful, I will surely increase you [in favor]; but if you deny, indeed, My punishment is severe.'" (Quran 14:7)</p>
+                                <p style="margin: 0 0 10px 0; font-weight: 600; color: #C2185B;">From the Hadith:</p>
+                                <p style="margin: 0 0 10px 0; font-style: italic; color: var(--text-gray);">The Prophet (PBUH) said: "He who does not thank people, does not thank Allah." (Sunan Abi Dawud)</p>
+                                <p style="margin: 0 0 10px 0; font-weight: 600; color: #C2185B;">How to Practice Gratitude:</p>
+                                <ul style="margin: 0; padding-left: 20px; color: var(--text-gray);">
+                                    <li>Say "Alhamdulillah" (Praise be to Allah) regularly</li>
+                                    <li>Thank people for their kindness</li>
+                                    <li>Use your blessings to help others</li>
+                                    <li>Reflect on Allah's favors daily</li>
+                                    <li>Be content with what Allah has given you</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Anger Management -->
+                        <div style="margin-bottom: 12px; border: 2px solid #E91E63; border-radius: 10px; overflow: hidden;">
+                            <button onclick="toggleAkhlaqItem('anger')" style="width: 100%; padding: 15px 20px; background: linear-gradient(135deg, #FCE4EC, #F8BBD0); border: none; text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; color: #C2185B; font-size: 16px;">
+                                <span><i class="fas fa-peace" style="margin-right: 10px;"></i>Anger Management</span>
+                                <i class="fas fa-chevron-down" id="angerChevron" style="transition: transform 0.3s;"></i>
+                            </button>
+                            <div id="angerContent" style="display: none; padding: 20px; background: #FFF5F8; border-top: 2px solid #E91E63;">
+                                <p style="margin: 0 0 10px 0; font-weight: 600; color: #C2185B;">Controlling Anger in Islam:</p>
+                                <p style="margin: 0 0 15px 0; color: var(--text-gray);">Anger is a natural emotion, but Islam teaches us to control it and respond with wisdom and patience.</p>
+                                <p style="margin: 0 0 10px 0; font-weight: 600; color: #C2185B;">From the Hadith:</p>
+                                <p style="margin: 0 0 10px 0; font-style: italic; color: var(--text-gray);">A man said to the Prophet (PBUH): "Advise me." He said: "Do not become angry." The man repeated his question several times, and each time the Prophet (PBUH) replied: "Do not become angry." (Sahih al-Bukhari)</p>
+                                <p style="margin: 0 0 10px 0; font-weight: 600; color: #C2185B;">The Prophet's Advice:</p>
+                                <p style="margin: 0 0 10px 0; font-style: italic; color: var(--text-gray);">The Prophet (PBUH) said: "If any of you becomes angry, let him keep silent." (Musnad Ahmad)</p>
+                                <p style="margin: 0 0 10px 0; font-weight: 600; color: #C2185B;">Practical Steps:</p>
+                                <ul style="margin: 0; padding-left: 20px; color: var(--text-gray);">
+                                    <li>Seek refuge in Allah from Satan when angry</li>
+                                    <li>Change your position (sit if standing, lie if sitting)</li>
+                                    <li>Perform Wudu (ablution) to cool down</li>
+                                    <li>Remain silent and don't speak</li>
+                                    <li>Remember the reward for controlling anger</li>
+                                    <li>Think before reacting</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Humility -->
+                        <div style="margin-bottom: 12px; border: 2px solid #E91E63; border-radius: 10px; overflow: hidden;">
+                            <button onclick="toggleAkhlaqItem('humility')" style="width: 100%; padding: 15px 20px; background: linear-gradient(135deg, #FCE4EC, #F8BBD0); border: none; text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; color: #C2185B; font-size: 16px;">
+                                <span><i class="fas fa-hands-clasping" style="margin-right: 10px;"></i>Humility (Tawadu')</span>
+                                <i class="fas fa-chevron-down" id="humilityChevron" style="transition: transform 0.3s;"></i>
+                            </button>
+                            <div id="humilityContent" style="display: none; padding: 20px; background: #FFF5F8; border-top: 2px solid #E91E63;">
+                                <p style="margin: 0 0 10px 0; font-weight: 600; color: #C2185B;">What is Humility?</p>
+                                <p style="margin: 0 0 15px 0; color: var(--text-gray);">Humility (Tawadu') is having a modest view of oneself and recognizing that all good comes from Allah. It is the opposite of arrogance and pride.</p>
+                                <p style="margin: 0 0 10px 0; font-weight: 600; color: #C2185B;">From the Quran:</p>
+                                <p style="margin: 0 0 10px 0; font-style: italic; color: var(--text-gray);">"And do not walk upon the earth exultantly. Indeed, you will never tear the earth [apart], and you will never reach the mountains in height." (Quran 17:37)</p>
+                                <p style="margin: 0 0 10px 0; font-weight: 600; color: #C2185B;">From the Hadith:</p>
+                                <p style="margin: 0 0 10px 0; font-style: italic; color: var(--text-gray);">The Prophet (PBUH) said: "No one who has an atom's weight of pride in his heart will enter Paradise." (Sahih Muslim)</p>
+                                <p style="margin: 0 0 10px 0; font-weight: 600; color: #C2185B;">Signs of Humility:</p>
+                                <ul style="margin: 0; padding-left: 20px; color: var(--text-gray);">
+                                    <li>Treating others with respect regardless of their status</li>
+                                    <li>Not boasting about one's achievements</li>
+                                    <li>Accepting advice and criticism</li>
+                                    <li>Helping others without expecting recognition</li>
+                                    <li>Recognizing that all abilities come from Allah</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Dealing with Hardship -->
+                        <div style="margin-bottom: 12px; border: 2px solid #E91E63; border-radius: 10px; overflow: hidden;">
+                            <button onclick="toggleAkhlaqItem('hardship')" style="width: 100%; padding: 15px 20px; background: linear-gradient(135deg, #FCE4EC, #F8BBD0); border: none; text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; color: #C2185B; font-size: 16px;">
+                                <span><i class="fas fa-shield-heart" style="margin-right: 10px;"></i>Dealing with Hardship</span>
+                                <i class="fas fa-chevron-down" id="hardshipChevron" style="transition: transform 0.3s;"></i>
+                            </button>
+                            <div id="hardshipContent" style="display: none; padding: 20px; background: #FFF5F8; border-top: 2px solid #E91E63;">
+                                <p style="margin: 0 0 10px 0; font-weight: 600; color: #C2185B;">Understanding Hardships:</p>
+                                <p style="margin: 0 0 15px 0; color: var(--text-gray);">Trials and difficulties are part of life. Islam teaches us how to face them with faith, patience, and trust in Allah's wisdom.</p>
+                                <p style="margin: 0 0 10px 0; font-weight: 600; color: #C2185B;">From the Quran:</p>
+                                <p style="margin: 0 0 10px 0; font-style: italic; color: var(--text-gray);">"And We will surely test you with something of fear and hunger and a loss of wealth and lives and fruits, but give good tidings to the patient." (Quran 2:155)</p>
+                                <p style="margin: 0 0 10px 0; font-style: italic; color: var(--text-gray);">"And it may be that you dislike a thing which is good for you and that you like a thing which is bad for you. Allah knows but you do not know." (Quran 2:216)</p>
+                                <p style="margin: 0 0 10px 0; font-weight: 600; color: #C2185B;">From the Hadith:</p>
+                                <p style="margin: 0 0 10px 0; font-style: italic; color: var(--text-gray);">The Prophet (PBUH) said: "No fatigue, nor disease, nor sorrow, nor sadness, nor hurt, nor distress befalls a Muslim, even if it were the prick he receives from a thorn, but that Allah expiates some of his sins for that." (Sahih al-Bukhari)</p>
+                                <p style="margin: 0 0 10px 0; font-weight: 600; color: #C2185B;">How to Deal with Hardships:</p>
+                                <ul style="margin: 0; padding-left: 20px; color: var(--text-gray);">
+                                    <li>Remember that trials are a test from Allah</li>
+                                    <li>Be patient and seek Allah's help through prayer</li>
+                                    <li>Trust in Allah's wisdom and plan</li>
+                                    <li>Know that with hardship comes ease</li>
+                                    <li>Seek support from the Muslim community</li>
+                                    <li>Remember that difficulties expiate sins</li>
+                                    <li>Maintain hope and positive thinking</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
+            <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
+            <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
+        </nav>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js" defer></script>
+    <script src="firebase-config.js" defer></script>
+    <script src="script.min.js" defer></script>
+    <script src="update-navigation.js" defer></script>
+</body>
+</html>
+
+
+

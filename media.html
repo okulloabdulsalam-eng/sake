@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media - KIUMA</title>
+    <script>
+        (function() {
+            var t;
+            try { t = localStorage.getItem('themePreference'); } catch(e) {}
+            if (t === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="styles.min.css">
+    <link rel="stylesheet" href="assets/css/player.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    <!-- Font Awesome: CDN primary, local fallback -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="fonts/fontawesome.min.css">
+</head>
+<body>
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="counselling.html" class="nav-link"><i class="fas fa-hands-helping"></i> Counselling</a></li>
+            <li><a href="library.html" class="nav-link"><i class="fas fa-book-open"></i> Library</a></li>
+            <li><a href="media.html" class="nav-link active"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="media-settings.html" class="nav-link"><i class="fas fa-sliders-h"></i> Media Settings</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="page-hero">
+            <div class="hero-deco"></div>
+            <nav class="hero-nav">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <span class="hero-nav-title" id="heroNavPageTitle"></span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <a href="admin.html" class="hero-nav-icon" title="Admin" style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;color:var(--primary-green, #4CAF50);text-decoration:none;"><i class="fas fa-cog"></i></a>
+                    <button class="notifications-btn" id="notificationsBtn">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge" style="display:none;"></span>
+                    </button>
+                    <div class="hero-profile-avatar" onclick="if(typeof toggleAccountModal==='function')toggleAccountModal()"><i class="fas fa-user"></i></div>
+                </div>
+            </nav>
+            <div class="hero-logo-row">
+                <div class="hero-logo-ring">
+                    <img src="logo.png" alt="KIUMA" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="logo-fallback" style="display:none;">KU</div>
+                </div>
+            </div>
+            <div class="hero-title-area">
+                <div class="hero-org-name">KIUMA</div>
+                <h1 class="hero-page-title">Media Gallery</h1>
+                <p class="hero-subtitle">Browse our media collection</p>
+                <div class="hero-accent-line"></div>
+            </div>
+        </div>
+
+        <main class="main-content">
+            <div style="height:8px;"></div>
+
+            <style>
+                /* Search */
+                .media-search-bar { position:relative; margin-bottom:14px; }
+                .media-search-bar input { width:100%; padding:12px 16px 12px 42px; border:1.5px solid #e0e0e0; border-radius:12px; font-size:14px; background:#fff; outline:none; transition:border .2s; }
+                .media-search-bar input:focus { border-color:var(--primary-green); }
+                .media-search-bar i { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#999; font-size:14px; }
+
+                /* Filter chips */
+                .media-filter-bar { display:flex; gap:8px; margin-bottom:16px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; -ms-overflow-style:none; }
+                .media-filter-bar::-webkit-scrollbar { display:none; }
+                .media-filter-btn { padding:8px 18px; border-radius:20px; border:1.5px solid #e0e0e0; background:white; color:#555; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; transition:all .2s; }
+                .media-filter-btn.active { background:var(--primary-green); color:white; border-color:var(--primary-green); }
+
+                /* Hero Banner */
+                .media-hero { position:relative; width:100%; height:220px; border-radius:16px; overflow:hidden; margin-bottom:20px; cursor:pointer; }
+                .media-hero .hero-bg { width:100%; height:100%; object-fit:cover; }
+                .media-hero .hero-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:64px; color:rgba(255,255,255,0.7); }
+                .media-hero .hero-overlay { position:absolute; inset:0; background:linear-gradient(transparent 30%, rgba(0,0,0,0.85)); display:flex; flex-direction:column; justify-content:flex-end; padding:20px; }
+                .media-hero .hero-badge { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:700; color:#fff; width:fit-content; margin-bottom:8px; }
+                .media-hero .hero-badge.video { background:rgba(244,67,54,0.9); }
+                .media-hero .hero-badge.audio { background:rgba(156,39,176,0.9); }
+                .media-hero .hero-badge.image { background:rgba(33,150,243,0.9); }
+                .media-hero .hero-title { color:#fff; font-size:20px; font-weight:700; line-height:1.3; margin-bottom:4px; text-shadow:0 2px 8px rgba(0,0,0,0.5); }
+                .media-hero .hero-meta { color:rgba(255,255,255,0.7); font-size:12px; }
+                .media-hero .hero-play { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:56px; height:56px; border-radius:50%; background:rgba(255,255,255,0.2); backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; border:2px solid rgba(255,255,255,0.5); }
+                .media-hero .hero-play i { font-size:24px; color:#fff; margin-left:3px; }
+
+                /* Category Row */
+                .media-section { margin-bottom:24px; }
+                .media-section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+                .media-section-title { font-size:16px; font-weight:700; color:#333; display:flex; align-items:center; gap:8px; }
+                .media-section-title i { font-size:14px; color:var(--primary-green); }
+                .media-section-count { font-size:12px; color:#999; }
+                .media-scroll-row { display:flex; gap:12px; overflow-x:auto; padding-bottom:8px; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none; }
+                .media-scroll-row::-webkit-scrollbar { display:none; }
+
+                /* Scroll Cards (Qalbox style - wider landscape) */
+                .media-card { width:200px; min-width:200px; border-radius:12px; overflow:hidden; background:#fff; box-shadow:0 2px 12px rgba(0,0,0,0.08); display:flex; flex-direction:column; scroll-snap-align:start; transition:transform .15s; cursor:pointer; }
+                .media-card:active { transform:scale(0.97); }
+                .media-card-thumb { position:relative; width:100%; height:120px; overflow:hidden; }
+                .media-card-thumb img, .media-card-thumb video { width:100%; height:100%; object-fit:cover; }
+                .media-card-thumb .thumb-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:36px; color:rgba(255,255,255,0.9); }
+                .media-card-thumb .video-play-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.2); pointer-events:none; }
+                .media-card-thumb .video-play-overlay i { font-size:28px; color:rgba(255,255,255,0.9); filter:drop-shadow(0 2px 6px rgba(0,0,0,0.4)); }
+                .media-card-badge { position:absolute; top:6px; left:6px; padding:2px 7px; border-radius:5px; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#fff; backdrop-filter:blur(4px); }
+                .media-card-badge.video { background:rgba(244,67,54,0.85); }
+                .media-card-badge.audio { background:rgba(156,39,176,0.85); }
+                .media-card-badge.image { background:rgba(33,150,243,0.85); }
+                .media-card-body { padding:8px 10px 10px; flex:1; display:flex; flex-direction:column; gap:3px; }
+                .media-card-title { font-size:12px; font-weight:600; color:#333; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+                .media-card-meta { font-size:10px; color:#999; display:flex; align-items:center; gap:5px; margin-top:auto; }
+
+                /* Card action buttons */
+                .card-more-btn { position:absolute; top:6px; right:6px; width:28px; height:28px; border-radius:50%; background:rgba(0,0,0,0.5); color:#fff; border:none; display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer; backdrop-filter:blur(4px); z-index:10; }
+                .card-more-btn:active { background:rgba(0,0,0,0.8); }
+                .card-more-menu { position:absolute; top:38px; right:6px; background:#fff; border-radius:10px; box-shadow:0 4px 20px rgba(0,0,0,0.18); z-index:100; min-width:160px; overflow:hidden; display:none; }
+                .card-more-menu.open { display:block; }
+                .card-more-menu button { display:flex; align-items:center; gap:10px; width:100%; padding:12px 16px; border:none; background:none; font-size:14px; font-weight:500; color:#333; cursor:pointer; text-align:left; }
+                .card-more-menu button:active { background:#f5f5f5; }
+                .card-more-menu button.danger { color:#e53935; }
+                .card-more-menu button i { width:16px; text-align:center; }
+                .media-card-dl { position:absolute; bottom:6px; right:6px; width:28px; height:28px; border-radius:50%; background:rgba(0,0,0,0.55); color:#fff; display:flex; align-items:center; justify-content:center; text-decoration:none; font-size:12px; backdrop-filter:blur(4px); border:none; cursor:pointer; }
+
+                /* Grid fallback for downloads */
+                .media-card-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+                .media-card-grid .media-card { width:auto; min-width:unset; }
+                .dl-category-header { display:flex; align-items:center; gap:8px; margin-top:18px; margin-bottom:10px; padding:10px 14px; border-radius:10px; background:var(--lighter-green,#e8f5e9); }
+                .dl-category-header i { font-size:16px; color:var(--primary-green); }
+                .dl-category-header span { font-weight:700; font-size:14px; color:#333; }
+                .dl-category-header .dl-count { font-size:12px; color:#999; margin-left:auto; }
+
+                /* Playlist folder cards */
+                .playlist-folder-row { display:flex; gap:12px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none; }
+                .playlist-folder-row::-webkit-scrollbar { display:none; }
+                .playlist-folder { width:160px; min-width:160px; border-radius:14px; overflow:hidden; cursor:pointer; transition:transform .15s; position:relative; }
+                .playlist-folder:active { transform:scale(0.96); }
+                .playlist-folder-cover { height:100px; display:flex; align-items:center; justify-content:center; position:relative; }
+                .playlist-folder-cover i.folder-icon { font-size:36px; color:rgba(255,255,255,0.85); }
+                .playlist-folder-count { position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.45); color:#fff; font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; backdrop-filter:blur(4px); }
+                .playlist-folder-body { padding:8px 10px 10px; background:#fff; }
+                .playlist-folder-name { font-size:13px; font-weight:700; color:#333; line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+                .playlist-folder-meta { font-size:10px; color:#999; margin-top:2px; }
+
+                /* Expanded playlist view */
+                .playlist-expanded { margin-bottom:24px; background:#f9fafb; border-radius:14px; padding:14px; }
+                .playlist-expanded-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+                .playlist-expanded-title { font-size:15px; font-weight:700; color:#333; display:flex; align-items:center; gap:8px; }
+                .playlist-expanded-title i { color:var(--primary-green); }
+                .playlist-expanded-close { background:none; border:none; font-size:18px; color:#999; cursor:pointer; padding:4px 8px; }
+
+                @media (min-width:600px) {
+                    .media-hero { height:300px; }
+                    .media-card { width:220px; min-width:220px; }
+                    .media-card-thumb { height:140px; }
+                }
+            </style>
+
+            <section class="page-content">
+                <div class="media-search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="mediaSearchInput" placeholder="Search media..." oninput="searchMedia(this.value)">
+                </div>
+
+                <div class="media-filter-bar" id="mediaFilterBar">
+                    <button class="media-filter-btn active" data-filter="all" onclick="filterMedia('all')"><i class="fas fa-th"></i> All</button>
+                    <button class="media-filter-btn" data-filter="video" onclick="filterMedia('video')"><i class="fas fa-video"></i> Videos</button>
+                    <button class="media-filter-btn" data-filter="audio" onclick="filterMedia('audio')"><i class="fas fa-music"></i> Audio</button>
+                    <button class="media-filter-btn" data-filter="image" onclick="filterMedia('image')"><i class="fas fa-image"></i> Images</button>
+                    <button class="media-filter-btn" data-filter="downloads" onclick="filterMedia('downloads')"><i class="fas fa-download"></i> Downloads</button>
+                </div>
+                <div id="mediaHero"></div>
+                <div id="mediaCacheBanner" style="display:none;margin:8px 0;padding:10px 14px;background:#e3f2fd;color:#1565c0;border-radius:10px;font-size:13px;"><i class="fas fa-wifi-slash"></i> Showing cached list. Updates when you're back online.</div>
+                <div id="mediaGrid">
+                    <!-- Category rows will be loaded here -->
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
+            <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
+            <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
+        </nav>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="js/router-bridge.js"></script>
+    <script src="js/app-bridge.js" defer></script>
+    <script src="script.js"></script>
+    <script src="app-storage.js"></script>
+    <style>
+        .media-card-dl.danger-dl { background: rgba(244,67,54,0.85) !important; }
+        .media-card-dl.danger-dl:hover { background: rgba(244,67,54,1) !important; }
+    </style>
+    <script src="media-offline.js"></script>
+    <script src="js/register-service-worker.js"></script>
+    <!-- In-app file viewer modal -->
+    <div id="mediaViewerModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.92);flex-direction:column;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;flex-shrink:0;">
+            <div id="viewerTitle" style="color:#fff;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;margin-right:10px;"></div>
+            <div style="display:flex;gap:10px;">
+                
+                <button onclick="closeMediaViewer()" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <div id="viewerContent" style="flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;padding:10px;"></div>
+    </div>
+
+    <script>
+        // ==============================
+        // Multi-Account R2 Storage config (SAKE core – kiuma4 defaults)
+        // ==============================
+        const DEFAULT_R2_WORKER_URL = 'https://kiuma-storage-kiuma4.workers.dev';
+        const DEFAULT_R2_ACCOUNTS = {
+            video: [
+                { workerUrl: 'https://kiuma-storage-kiuma4.workers.dev', label: 'Storage 1' },
+                { workerUrl: 'https://kiuma-video1.kiuma4.workers.dev', label: 'Video 1' },
+                { workerUrl: 'https://kiuma-video2.kiuma4.workers.dev', label: 'Video 2' },
+                { workerUrl: 'https://kiuma-video3.kiuma4.workers.dev', label: 'Video 3' },
+                { workerUrl: 'https://kiuma-video4.kiuma4.workers.dev', label: 'Video 4' },
+                { workerUrl: 'https://kiuma-video5.kiuma4.workers.dev', label: 'Video 5' }
+            ],
+            audio: { workerUrl: 'https://kiuma-audio.kiuma4.workers.dev' },
+            library: { workerUrl: 'https://kiuma-library.kiuma4.workers.dev' }
+        };
+        function getR2MultiConfig() {
+            try { var s = localStorage.getItem('r2MultiConfig'); if (s) return JSON.parse(s); } catch(e) {}
+            try { var old = JSON.parse(localStorage.getItem('r2StorageConfig') || '{}'); if (old.workerUrl) return { video: [old, ...DEFAULT_R2_ACCOUNTS.video.slice(1)], audio: DEFAULT_R2_ACCOUNTS.audio, library: DEFAULT_R2_ACCOUNTS.library }; } catch(e) {}
+            return JSON.parse(JSON.stringify(DEFAULT_R2_ACCOUNTS));
+        }
+        function getStorageAccounts() {
+            var mc = getR2MultiConfig();
+            var list = [];
+            (mc.video || []).forEach(function(a) { if (a && a.workerUrl) list.push({ workerUrl: a.workerUrl, label: a.label || 'Storage' }); });
+            if (mc.audio && mc.audio.workerUrl) list.push({ workerUrl: mc.audio.workerUrl, label: 'Audio' });
+            if (mc.library && mc.library.workerUrl) list.push({ workerUrl: mc.library.workerUrl, label: 'Library' });
+            return list.length ? list : [{ workerUrl: DEFAULT_R2_WORKER_URL, label: 'Storage 1' }];
+        }
+        function getR2Config() {
+            const accounts = getStorageAccounts();
+            return accounts.length > 0 ? accounts[0] : { workerUrl: DEFAULT_R2_WORKER_URL };
+        }
+        function getR2AccountsForType(type) {
+            return getStorageAccounts().filter(a => a.workerUrl);
+        }
+        const GITHUB_OWNER = 'okulloabdulsalam-eng';
+        const GITHUB_REPO  = 'kiuma-storage';
+        const GITHUB_REPO_FALLBACK = 'sake';
+        var r2SkippedThisSession = false;
+        var githubMediaProbed = false;
+        var githubMediaRepo = null;
+        function getGitHubToken() {
+            try { return JSON.parse(localStorage.getItem('githubStorageConfig') || '{}').token || ''; } catch(e) { return ''; }
+        }
+
+        // ==============================
+        // Offline storage (SAKE: KiuFS then AppStorage; SAKE-MAIN has AppStorage + MediaOffline)
+        // ==============================
+        async function getOfflineIndex() {
+            if (window.KiuFS) {
+                const all = await window.KiuFS.getAllDownloads();
+                return all.filter(f => f.type === 'video' || f.type === 'audio' || f.type === 'image');
+            }
+            return window.AppStorage ? window.AppStorage.getLocalIndex().filter(f => f.type === 'video' || f.type === 'audio' || f.type === 'image') : [];
+        }
+
+        async function saveFileOffline(url, meta, onProgress) {
+            if (window.KiuFS) return await window.KiuFS.downloadAndSave(url, meta, onProgress);
+            if (window.AppStorage) return await window.AppStorage.downloadAndSave(url, meta, onProgress);
+            return false;
+        }
+
+        async function removeFileOffline(url) {
+            if (window.KiuFS) return await window.KiuFS.removeFile(url);
+            if (window.AppStorage) return await window.AppStorage.removeFile(url);
+            return false;
+        }
+
+        async function isFileSavedOffline(url) {
+            if (window.KiuFS) return await window.KiuFS.hasFile(url);
+            return window.AppStorage ? window.AppStorage.isFileSaved(url) : false;
+        }
+
+        function _mimeFromExt(ext) {
+            var m = { mp4:'video/mp4', webm:'video/webm', m4a:'audio/mp4', mp3:'audio/mpeg', ogg:'audio/ogg', pdf:'application/pdf', jpg:'image/jpeg', jpeg:'image/jpeg', png:'image/png', gif:'image/gif', webp:'image/webp' };
+            return m[(ext || '').toLowerCase()] || '';
+        }
+        async function _inAppDownload(url, filename) {
+            if (!url) return;
+            var btn = event ? event.currentTarget : null;
+            var origHTML = btn ? btn.innerHTML : '';
+            if (btn) { btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true; }
+            try {
+                if (window.KiumaBridge && window.KiumaBridge.isInApp() && typeof window.KiumaBridge.saveFileToDevice === 'function') {
+                    var name = (filename && decodeURIComponent(filename)) || url.split('/').pop() || 'download';
+                    var ext = name.split('.').pop();
+                    var mime = _mimeFromExt(ext);
+                    var ok = await window.KiumaBridge.saveFileToDevice(url, name, mime, { saveToAppDirectory: true });
+                    if (btn) { btn.innerHTML = ok ? '<i class="fas fa-check"></i>' : '<i class="fas fa-exclamation-triangle"></i>'; setTimeout(function() { btn.innerHTML = origHTML; btn.disabled = false; }, 2000); }
+                    if (ok) return;
+                }
+                var res = await fetch(url);
+                if (!res.ok) throw new Error('Download failed');
+                var blob = await res.blob();
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = filename || url.split('/').pop() || 'download';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+                if (btn) { btn.innerHTML = '<i class="fas fa-check"></i>'; setTimeout(function() { btn.innerHTML = origHTML; btn.disabled = false; }, 2000); }
+            } catch(e) {
+                console.error('Download error:', e);
+                if (btn) { btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i>'; setTimeout(function() { btn.innerHTML = origHTML; btn.disabled = false; }, 2000); }
+            }
+        }
+        window.inAppDownload = _inAppDownload;
+
+        function toggleMoreMenu(id) {
+            const menu = document.getElementById(id);
+            if (!menu) return;
+            const isOpen = menu.classList.contains('open');
+            closeAllMoreMenus();
+            if (!isOpen) menu.classList.add('open');
+        }
+        function closeAllMoreMenus() {
+            document.querySelectorAll('.card-more-menu.open').forEach(m => m.classList.remove('open'));
+        }
+        window.toggleMoreMenu = toggleMoreMenu;
+        window.closeAllMoreMenus = closeAllMoreMenus;
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.card-more-btn') && !e.target.closest('.card-more-menu')) closeAllMoreMenus();
+        });
+
+        function fmtSize(b) {
+            if (!b && b !== 0) return '';
+            if (b >= 1073741824) return (b/1073741824).toFixed(1)+' GB';
+            if (b >= 1048576) return (b/1048576).toFixed(1)+' MB';
+            if (b >= 1024) return (b/1024).toFixed(1)+' KB';
+            return b+' B';
+        }
+        function parseMeta(fn) {
+            const w = fn.replace(/^\d+_[a-z0-9]+_/,'').replace(/\.[^/.]+$/,'');
+            let t=w, a='';
+            if (w.includes('__')) { const p=w.split(/__+/); t=p[0]; a=p[1]||''; }
+            else { const i=w.toLowerCase().lastIndexOf('_by_'); if(i!==-1){ t=w.slice(0,i); a=w.slice(i+4); } }
+            return { title: t.replace(/_/g,' ').trim()||'Untitled', author: a.replace(/_/g,' ').trim()||'Unknown' };
+        }
+        function san(t) { return !t?'':t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+        function fileType(n) {
+            const e = n.split('.').pop().toLowerCase();
+            if (['mp4','webm','ogg','mov','avi'].includes(e)) return 'video';
+            if (['mp3','wav','flac','aac','m4a'].includes(e)) return 'audio';
+            if (['jpg','jpeg','png','gif','webp','svg','bmp'].includes(e)) return 'image';
+            return 'other';
+        }
+
+        // ==============================
+        // Filter
+        // ==============================
+        let currentMediaFilter = 'all';
+        let allLoadedFiles = [];
+
+        window.filterMedia = function(type) {
+            currentMediaFilter = type;
+            document.querySelectorAll('#mediaFilterBar .media-filter-btn').forEach(b => {
+                b.classList.toggle('active', b.getAttribute('data-filter') === type);
+            });
+            loadMediaFromStorage(type);
+        };
+
+        // ==============================
+        // Admin-Managed Playlists (synced from Firestore)
+        // ==============================
+        function getAdminPlaylists() {
+            try { return JSON.parse(localStorage.getItem('kiuma_playlists') || '[]'); } catch(e) { return []; }
+        }
+        async function waitForFirebase(maxWait) {
+            maxWait = maxWait || 3000;
+            const start = Date.now();
+            while (!window.firebaseDb && (Date.now() - start) < maxWait) {
+                await new Promise(r => setTimeout(r, 200));
+            }
+            return !!window.firebaseDb;
+        }
+        async function syncPlaylistsFromFirestore() {
+            try {
+                await waitForFirebase(3000);
+                const db = window.firebaseDb;
+                if (!db) { console.warn('Firebase not ready for playlist sync'); return; }
+                const doc = await db.collection('config').doc('playlists').get();
+                if (doc.exists && doc.data().data) {
+                    localStorage.setItem('kiuma_playlists', JSON.stringify(doc.data().data));
+                }
+            } catch(e) { console.warn('Playlist sync error:', e); }
+        }
+
+        // Merge admin playlist items into loaded files
+        function getPlaylistMediaItems() {
+            const pls = getAdminPlaylists().filter(p => p.type === 'media' && p.items.length > 0);
+            const items = [];
+            pls.forEach(pl => {
+                pl.items.forEach(item => {
+                    items.push({
+                        name: item.name || item.title || 'Untitled',
+                        title: item.title || '',
+                        author: item.author || '',
+                        type: item.type || fileType(item.name || ''),
+                        url: item.url,
+                        size: item.size || 0,
+                        playlist: pl.name || 'general'
+                    });
+                });
+            });
+            return items;
+        }
+
+        // ==============================
+        // Load files — R2 first, if empty fall back to GitHub
+        // ==============================
+        function extractPlaylist(key) {
+            // key format: media/{type}/{category}/{timestamp}_{name}.ext OR media/{type}/{timestamp}_{name}.ext
+            const parts = key.split('/');
+            // parts: ['media', 'video', 'lectures', '123_name.mp4'] -> category = 'lectures'
+            // parts: ['media', 'video', '123_name.mp4'] -> category = 'general'
+            if (parts.length >= 4 && !/^\d+_/.test(parts[2])) return parts[2];
+            return 'general';
+        }
+
+        async function fetchFromR2(type) {
+            if (r2SkippedThisSession) return [];
+            const allFiles = [];
+            const seen = new Set();
+            const accounts = getR2AccountsForType('video');
+            const firstWorkerUrl = (accounts && accounts[0] && accounts[0].workerUrl) ? accounts[0].workerUrl : DEFAULT_R2_WORKER_URL;
+            try {
+                const ctrl = new AbortController();
+                const t = setTimeout(function() { ctrl.abort(); }, 4000);
+                await fetch(firstWorkerUrl + '/list?prefix=media%2Fvideo%2F', { signal: ctrl.signal });
+                clearTimeout(t);
+            } catch (e) {
+                r2SkippedThisSession = true;
+                return [];
+            }
+            const types = type === 'all' ? ['video', 'audio', 'image'] : [type];
+            for (const t of types) {
+                const dedicated = getR2AccountsForType(t);
+                const videoAccts = (t !== 'video' && t !== 'image') ? getR2AccountsForType('video') : [];
+                const typeAccounts = [...dedicated, ...videoAccts.filter(va => !dedicated.some(d => d.workerUrl === va.workerUrl))];
+                const prefix = 'media/' + t;
+                for (const acct of typeAccounts) {
+                    try {
+                        const res = await fetch(acct.workerUrl + '/list?prefix=' + encodeURIComponent(prefix + '/'));
+                        if (!res.ok) continue;
+                        const data = await res.json();
+                        (data.files || []).forEach(f => {
+                            const url = acct.workerUrl + '/file/' + encodeURIComponent(f.key);
+                            if (seen.has(f.key)) return;
+                            seen.add(f.key);
+                            allFiles.push({ name: f.name, type: fileType(f.name), url: url, size: f.size, playlist: extractPlaylist(f.key) });
+                        });
+                    } catch(e) {}
+                }
+            }
+            return allFiles;
+        }
+
+        async function probeGitHubMedia() {
+            if (githubMediaProbed) return githubMediaRepo;
+            githubMediaProbed = true;
+            const token = getGitHubToken();
+            const headers = token ? { 'Authorization':'token '+token } : {};
+            try {
+                let res = await fetch('https://api.github.com/repos/'+GITHUB_OWNER+'/'+GITHUB_REPO+'/contents/media', { headers });
+                if (res.ok) { githubMediaRepo = GITHUB_REPO; return GITHUB_REPO; }
+                if (res.status === 404 && GITHUB_REPO_FALLBACK) {
+                    res = await fetch('https://api.github.com/repos/'+GITHUB_OWNER+'/'+GITHUB_REPO_FALLBACK+'/contents/media', { headers });
+                    if (res.ok) { githubMediaRepo = GITHUB_REPO_FALLBACK; return GITHUB_REPO_FALLBACK; }
+                }
+            } catch(e) {}
+            githubMediaRepo = null;
+            return null;
+        }
+
+        async function fetchFromGitHub(type) {
+            const repo = await probeGitHubMedia();
+            if (!repo) return [];
+            const folders = type === 'all' ? ['video','audio','image'] : [type];
+            const token = getGitHubToken();
+            const headers = token ? { 'Authorization':'token '+token } : {};
+            const results = await Promise.all(folders.map(async folder => {
+                try {
+                    const res = await fetch('https://api.github.com/repos/'+GITHUB_OWNER+'/'+repo+'/contents/media/'+folder, { headers });
+                    if (!res.ok) return [];
+                    const files = await res.json();
+                    if (!Array.isArray(files)) return [];
+                    return files.filter(f=>f.type==='file').map(f=>({ name:f.name, type:folder, url:f.download_url, size:f.size }));
+                } catch(e) { return []; }
+            }));
+            return results.flat();
+        }
+
+        // Search media
+        let _searchQuery = '';
+        window.searchMedia = function(q) {
+            _searchQuery = q.toLowerCase().trim();
+            renderQalboxLayout(allLoadedFiles);
+        };
+
+        // Hero banner for the latest/featured item
+        function renderHeroBanner(files) {
+            const hero = document.getElementById('mediaHero');
+            if (!hero) return;
+            if (!files || files.length === 0) { hero.innerHTML = ''; return; }
+
+            // Pick latest file (first in array, assumed sorted by newest)
+            const item = files[0];
+            const meta = parseMeta(item.name);
+            const t = item.title || meta.title;
+            const a = item.author || meta.author;
+            const isVid = item.type === 'video';
+            const isImg = item.type === 'image';
+            const grad = gradients[item.type] || gradients.image;
+
+            let bgContent;
+            if (isVid) {
+                bgContent = '<video class="hero-bg" src="'+item.url+'" preload="metadata" muted playsinline onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"></video><div class="hero-placeholder" style="display:none;background:'+grad+'"><i class="fas fa-video"></i></div>';
+            } else if (isImg) {
+                bgContent = '<img class="hero-bg" src="'+item.url+'" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="hero-placeholder" style="display:none;background:'+grad+'"><i class="fas fa-image"></i></div>';
+            } else {
+                bgContent = '<div class="hero-placeholder" style="background:'+grad+'"><i class="fas fa-music"></i></div>';
+            }
+
+            hero.innerHTML = `
+                <div class="media-hero" onclick="openMediaViewer('${item.url}','${item.type}','${san(t)}')">
+                    ${bgContent}
+                    ${isVid ? '<div class="hero-play"><i class="fas fa-play"></i></div>' : ''}
+                    <div class="hero-overlay">
+                        <span class="hero-badge ${item.type}"><i class="fas ${icons[item.type]||'fa-file'}"></i> ${item.type}</span>
+                        <div class="hero-title">${san(t)}</div>
+                        <div class="hero-meta"><i class="fas fa-user" style="margin-right:4px;"></i>${san(a)} &middot; ${fmtSize(item.size)}</div>
+                    </div>
+                </div>`;
+        }
+
+        // Render a single horizontal scroll category row
+        function renderCategoryRow(title, icon, files, isOffline, savedSet) {
+            if (!files || files.length === 0) return '';
+            let html = '<div class="media-section">';
+            html += '<div class="media-section-header"><span class="media-section-title"><i class="fas '+icon+'"></i> '+title+'</span><span class="media-section-count">'+files.length+'</span></div>';
+            html += '<div class="media-scroll-row">';
+            files.forEach(media => {
+                const meta = parseMeta(media.name);
+                const t = media.title || meta.title;
+                const a = media.author || meta.author;
+                const isVid = media.type === 'video';
+                const isImg = media.type === 'image';
+                const grad = gradients[media.type] || gradients.image;
+                const ico = icons[media.type] || 'fa-file';
+                let thumb;
+                if (isVid) {
+                    thumb = '<video src="'+media.url+'" preload="metadata" muted playsinline style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"></video><div class="thumb-placeholder" style="display:none;background:'+grad+'"><i class="fas '+ico+'"></i></div><div class="video-play-overlay"><i class="fas fa-play-circle"></i></div>';
+                } else if (isImg) {
+                    thumb = '<img src="'+media.url+'" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="thumb-placeholder" style="display:none;background:'+grad+'"><i class="fas '+ico+'"></i></div>';
+                } else {
+                    thumb = '<div class="thumb-placeholder" style="background:'+grad+'"><i class="fas '+ico+'"></i></div>';
+                }
+                const saved = savedSet ? savedSet.has(media.url) : (media.isDownloaded === true);
+                let actionBtn = '';
+                if (saved) {
+                    const menuId = 'mm-' + Math.random().toString(36).substr(2,8);
+                    actionBtn = '<button class="card-more-btn" onclick="event.stopPropagation();toggleMoreMenu(\''+menuId+'\')">&#8942;</button><div class="card-more-menu" id="'+menuId+'"><button onclick="event.stopPropagation();closeAllMoreMenus();handleRemoveOffline(this.closest(\'.media-card\').querySelector(\'.card-more-btn\'),\''+encodeURIComponent(media.url)+'\')" class="danger"><i class="fas fa-trash"></i>Remove</button></div>';
+                } else {
+                    actionBtn = '<button class="media-card-dl" onclick="event.stopPropagation();handleSaveOffline(this,\''+encodeURIComponent(JSON.stringify({url:media.url,name:media.name,type:media.type,title:t,author:a,size:media.size}))+'\')"><i class="fas fa-download"></i></button>';
+                }
+                html += '<div class="media-card" onclick="openMediaViewer(\''+media.url+'\',\''+media.type+'\',\''+san(t).replace(/'/g,"\\&#39;")+'\')">';
+                html += '<div class="media-card-thumb">'+thumb+'<span class="media-card-badge '+media.type+'">'+media.type+'</span>'+actionBtn+'</div>';
+                html += '<div class="media-card-body"><div class="media-card-title">'+san(t)+'</div>';
+                html += '<div class="media-card-meta"><span><i class="fas fa-user" style="margin-right:2px;"></i>'+san(a)+'</span><span>&middot; '+fmtSize(media.size)+'</span></div></div></div>';
+            });
+            html += '</div></div>';
+            return html;
+        }
+
+        // Playlist folder gradients
+        const folderGradients = [
+            'linear-gradient(135deg,#43A047,#2E7D32)',
+            'linear-gradient(135deg,#1565C0,#0D47A1)',
+            'linear-gradient(135deg,#7B1FA2,#4A148C)',
+            'linear-gradient(135deg,#E65100,#BF360C)',
+            'linear-gradient(135deg,#00838F,#006064)',
+            'linear-gradient(135deg,#AD1457,#880E4F)'
+        ];
+
+        // Render playlist folder cards row
+        function renderPlaylistFolders(playlists) {
+            if (!playlists || playlists.length === 0) return '';
+            let html = '<div class="media-section">';
+            html += '<div class="media-section-header"><span class="media-section-title"><i class="fas fa-folder-open"></i> Playlists</span><span class="media-section-count">' + playlists.length + '</span></div>';
+            html += '<div class="playlist-folder-row">';
+            playlists.forEach((pl, i) => {
+                const grad = folderGradients[i % folderGradients.length];
+                const typeIcon = pl.items.length > 0 ? (icons[pl.items[0].type] || 'fa-file') : 'fa-music';
+                const plId = 'pl-' + pl.name.replace(/[^a-zA-Z0-9]/g, '_');
+                html += '<div class="playlist-folder" onclick="togglePlaylistExpand(\'' + san(pl.name).replace(/'/g, "\\&#39;") + '\')">';
+                html += '<div class="playlist-folder-cover" style="background:' + grad + '"><i class="fas fa-folder folder-icon"></i>';
+                html += '<span class="playlist-folder-count">' + pl.items.length + ' items</span></div>';
+                html += '<div class="playlist-folder-body"><div class="playlist-folder-name">' + san(pl.name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())) + '</div>';
+                html += '<div class="playlist-folder-meta"><i class="fas ' + typeIcon + '" style="margin-right:3px;"></i>' + pl.items.length + ' file' + (pl.items.length !== 1 ? 's' : '') + '</div></div></div>';
+            });
+            html += '</div></div>';
+            return html;
+        }
+
+        // Expand a playlist folder inline
+        window.togglePlaylistExpand = function(plName) {
+            const existing = document.getElementById('playlistExpanded');
+            if (existing) {
+                if (existing.dataset.name === plName) { existing.remove(); return; }
+                existing.remove();
+            }
+            // Find playlist items
+            const pls = getAdminPlaylists().filter(p => p.type === 'media' && p.name === plName);
+            if (!pls.length) return;
+            const items = pls[0].items.map(item => ({
+                name: item.name || item.title || 'Untitled',
+                title: item.title || '',
+                author: item.author || '',
+                type: item.type || fileType(item.name || ''),
+                url: item.url,
+                size: item.size || 0
+            }));
+            // Also find R2 files in this playlist/category
+            const r2Items = allLoadedFiles.filter(f => f.playlist === plName);
+            const seenUrls = new Set(items.map(it => it.url));
+            r2Items.forEach(f => { if (!seenUrls.has(f.url)) { seenUrls.add(f.url); items.push(f); } });
+
+            const div = document.createElement('div');
+            div.className = 'playlist-expanded';
+            div.id = 'playlistExpanded';
+            div.dataset.name = plName;
+            const label = plName.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            let inner = '<div class="playlist-expanded-header"><span class="playlist-expanded-title"><i class="fas fa-folder-open"></i> ' + san(label) + '</span><button class="playlist-expanded-close" onclick="document.getElementById(\'playlistExpanded\').remove()"><i class="fas fa-times"></i></button></div>';
+            inner += '<div class="media-scroll-row">';
+            items.forEach(media => {
+                const meta = parseMeta(media.name);
+                const t = media.title || meta.title;
+                const a = media.author || meta.author;
+                const isVid = media.type === 'video';
+                const isImg = media.type === 'image';
+                const grad = gradients[media.type] || gradients.image;
+                const ico = icons[media.type] || 'fa-file';
+                let thumb;
+                if (isVid) {
+                    thumb = '<video src="'+media.url+'" preload="metadata" muted playsinline style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"></video><div class="thumb-placeholder" style="display:none;background:'+grad+'"><i class="fas '+ico+'"></i></div><div class="video-play-overlay"><i class="fas fa-play-circle"></i></div>';
+                } else if (isImg) {
+                    thumb = '<img src="'+media.url+'" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="thumb-placeholder" style="display:none;background:'+grad+'"><i class="fas '+ico+'"></i></div>';
+                } else {
+                    thumb = '<div class="thumb-placeholder" style="background:'+grad+'"><i class="fas '+ico+'"></i></div>';
+                }
+                inner += '<div class="media-card" onclick="openMediaViewer(\''+media.url+'\',\''+media.type+'\',\''+san(t).replace(/'/g,"\\&#39;")+'\')">';
+                inner += '<div class="media-card-thumb">'+thumb+'<span class="media-card-badge '+media.type+'">'+media.type+'</span></div>';
+                inner += '<div class="media-card-body"><div class="media-card-title">'+san(t)+'</div>';
+                inner += '<div class="media-card-meta"><span><i class="fas fa-user" style="margin-right:2px;"></i>'+san(a)+'</span><span>&middot; '+fmtSize(media.size)+'</span></div></div></div>';
+            });
+            inner += '</div>';
+            div.innerHTML = inner;
+            const grid = document.getElementById('mediaGrid');
+            if (grid) grid.insertBefore(div, grid.firstChild);
+            div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        };
+
+        // Main Qalbox-style layout renderer
+        async function renderQalboxLayout(files) {
+            const grid = document.getElementById('mediaGrid');
+            const hero = document.getElementById('mediaHero');
+            if (!grid) return;
+
+            const savedSet = new Set((await getOfflineIndex()).map(f => f.url));
+
+            // Apply search filter
+            let filtered = files;
+            if (_searchQuery) {
+                filtered = files.filter(f => {
+                    const meta = parseMeta(f.name);
+                    const searchStr = ((f.title || meta.title) + ' ' + (f.author || meta.author) + ' ' + f.name + ' ' + (f.type||'')).toLowerCase();
+                    return searchStr.includes(_searchQuery);
+                });
+            }
+
+            if (filtered.length === 0) {
+                if (hero) hero.innerHTML = '';
+                grid.innerHTML = '<div style="text-align:center;padding:50px 20px;color:#999;"><i class="fas fa-photo-video" style="font-size:48px;margin-bottom:12px;display:block;color:#ddd;"></i><p>' + (_searchQuery ? 'No results for "'+san(_searchQuery)+'"' : 'No media files found') + '</p></div>';
+                return;
+            }
+
+            // Hero: show newest item
+            renderHeroBanner(filtered);
+
+            let html = '';
+            const rest = filtered.slice(1); // skip hero item
+
+            // Separate individual files vs playlist-grouped files
+            const individualFiles = rest.filter(f => !f.playlist || f.playlist === 'general');
+            const playlistNames = [...new Set(rest.filter(f => f.playlist && f.playlist !== 'general').map(f => f.playlist))];
+
+            // Build playlist objects (combine R2 categories with admin playlists)
+            const adminPls = getAdminPlaylists().filter(p => p.type === 'media' && p.items.length > 0);
+            const allPlaylistNames = [...new Set([...playlistNames, ...adminPls.map(p => p.name)])];
+            const playlistObjs = allPlaylistNames.map(name => {
+                const r2Items = rest.filter(f => f.playlist === name);
+                const adminPl = adminPls.find(p => p.name === name);
+                const adminItems = adminPl ? adminPl.items.map(item => ({
+                    name: item.name || item.title || 'Untitled',
+                    type: item.type || fileType(item.name || ''),
+                    url: item.url, size: item.size || 0
+                })) : [];
+                // Merge dedup
+                const seenUrls = new Set(r2Items.map(f => f.url));
+                adminItems.forEach(ai => { if (!seenUrls.has(ai.url)) { seenUrls.add(ai.url); r2Items.push(ai); } });
+                return { name, items: r2Items };
+            }).filter(p => p.items.length > 0);
+
+            // Render playlists as folder cards
+            if (playlistObjs.length > 0) {
+                html += renderPlaylistFolders(playlistObjs);
+            }
+
+            // Render "Recently Added" (individual files, first 10)
+            if (individualFiles.length > 0) {
+                html += renderCategoryRow('Recently Added', 'fa-clock', individualFiles.slice(0, 10), false, savedSet);
+            }
+
+            // Render type rows (individual files only)
+            const videos = individualFiles.filter(f => f.type === 'video');
+            const audios = individualFiles.filter(f => f.type === 'audio');
+            const images = individualFiles.filter(f => f.type === 'image');
+            if (videos.length > 0) html += renderCategoryRow('Videos', 'fa-video', videos, false, savedSet);
+            if (audios.length > 0) html += renderCategoryRow('Audio', 'fa-music', audios, false, savedSet);
+            if (images.length > 0) html += renderCategoryRow('Images', 'fa-image', images, false, savedSet);
+
+            grid.innerHTML = html;
+        }
+
+        async function loadMediaFromStorage(type) {
+            type = type || 'all';
+            const grid = document.getElementById('mediaGrid');
+            const hero = document.getElementById('mediaHero');
+            if (!grid) return;
+
+            // Downloads tab — from IndexedDB only, works offline
+            if (type === 'downloads') {
+                if (hero) hero.innerHTML = '';
+                grid.innerHTML = '<div style="text-align:center;padding:40px;"><i class="fas fa-spinner fa-spin" style="font-size:32px;color:var(--primary-green);"></i></div>';
+                try {
+                    const idbList = window.MediaOffline ? await window.MediaOffline.getDownloadedList() : [];
+                    const legacyList = await getOfflineIndex();
+                    const idbUrls = new Set(idbList.map(r => r.url));
+                    const combined = idbList.map(r => ({
+                        name: r.name || r.title || 'Untitled',
+                        title: r.title || r.name || 'Untitled',
+                        type: r.type || 'other',
+                        url: r.url,
+                        size: 0,
+                        isDownloaded: true
+                    }));
+                    legacyList.forEach(f => {
+                        if (!idbUrls.has(f.url)) combined.push({ name: f.name, title: f.title || f.name, type: f.type || 'other', url: f.url, size: f.size || 0, isDownloaded: true });
+                    });
+                    grid.innerHTML = '';
+                    if (combined.length === 0) {
+                        grid.innerHTML = '<div style="text-align:center;padding:50px 20px;color:#999;"><i class="fas fa-download" style="font-size:48px;margin-bottom:12px;display:block;color:#ddd;"></i><p>No downloaded files yet</p><p style="font-size:12px;margin-top:8px;">Tap the <i class="fas fa-arrow-down"></i> button on any media to save it for offline use.</p></div>';
+                    } else {
+                        const section = document.createElement('div');
+                        section.innerHTML = '<div class="dl-category-header"><i class="fas fa-download" style="color:var(--primary-green);"></i><span>My Downloads</span><span class="dl-count">' + combined.length + ' file(s)</span></div>';
+                        const catGrid = document.createElement('div');
+                        catGrid.className = 'media-card-grid';
+                        section.appendChild(catGrid);
+                        renderMediaCards(catGrid, combined, true);
+                        grid.appendChild(section);
+                    }
+                } catch (e) {
+                    console.error('Downloads load error:', e);
+                    grid.innerHTML = '<div style="text-align:center;padding:40px;color:#666;"><p>Error loading downloads</p></div>';
+                }
+                await renderOfflineMediaSection(type);
+                return;
+            }
+
+            if (hero) hero.innerHTML = '';
+            grid.innerHTML = '<div style="text-align:center;padding:40px;"><i class="fas fa-spinner fa-spin" style="font-size:32px;color:var(--primary-green);"></i></div>';
+
+            try {
+                if (navigator.onLine) {
+                    let allFiles = await fetchFromR2(type);
+                    if (allFiles.length === 0) allFiles = await fetchFromGitHub(type);
+                    const seenUrls = new Set(allFiles.map(f => f.url));
+                    const plItems = getPlaylistMediaItems();
+                    plItems.forEach(item => {
+                        if (!seenUrls.has(item.url)) {
+                            seenUrls.add(item.url);
+                            allFiles.push(item);
+                        }
+                    });
+                    // Enrich with isDownloaded from IndexedDB / AppStorage
+                    for (const item of allFiles) {
+                        item.isDownloaded = !!(window.MediaOffline && await window.MediaOffline.hasDownload(item.url)) || !!(window.AppStorage && window.AppStorage.isFileSaved(item.url));
+                    }
+                    if (window.MediaOffline) await window.MediaOffline.setMediaList(allFiles);
+                    allLoadedFiles = allFiles;
+                } else {
+                    const stored = window.MediaOffline ? await window.MediaOffline.getMediaList() : [];
+                    allLoadedFiles = stored.map(item => ({
+                        name: item.title || item.name || 'Untitled',
+                        title: item.title || item.name || 'Untitled',
+                        author: item.author || '',
+                        type: item.type || 'other',
+                        url: item.url,
+                        size: item.size || 0,
+                        playlist: item.playlist || 'general',
+                        isDownloaded: !!item.isDownloaded
+                    }));
+                }
+                renderQalboxLayout(allLoadedFiles);
+            } catch(err) {
+                console.error('Media load error:', err);
+                grid.innerHTML = '<div style="text-align:center;padding:40px;color:#666;"><p>Error loading media</p></div>';
+            }
+
+            await renderOfflineMediaSection(type);
+        }
+
+        const gradients = { video:'linear-gradient(135deg,#e53935,#b71c1c)', audio:'linear-gradient(135deg,#7B1FA2,#4A148C)', image:'linear-gradient(135deg,#1565C0,#0D47A1)' };
+        const icons = { video:'fa-video', audio:'fa-music', image:'fa-image' };
+
+        function renderMediaCards(container, files, isOffline) {
+            if (!container) return;
+            if (!Array.isArray(files)) files = [];
+            files.forEach(media => {
+                const meta = parseMeta(media.name);
+                const t = media.title || meta.title;
+                const a = media.author || meta.author;
+                const safeName = san(t);
+                const safeAuthor = san(a);
+                const isImg = media.type === 'image';
+                const isVid = media.type === 'video';
+                const grad = gradients[media.type] || gradients.image;
+                const ico = icons[media.type] || 'fa-file';
+                let thumb;
+                if (isVid) {
+                    // Video: show first frame as preview with play overlay
+                    thumb = '<video src="'+media.url+'" preload="metadata" muted playsinline style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"></video>'+
+                        '<div class="thumb-placeholder" style="display:none;background:'+grad+'"><i class="fas '+ico+'"></i></div>'+
+                        '<div class="video-play-overlay"><i class="fas fa-play-circle"></i></div>';
+                } else if (isImg) {
+                    thumb = '<img src="'+media.url+'" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="thumb-placeholder" style="display:none;background:'+grad+'"><i class="fas '+ico+'"></i></div>';
+                } else {
+                    thumb = '<div class="thumb-placeholder" style="background:'+grad+'"><i class="fas '+ico+'"></i></div>';
+                }
+
+                const saved = media.isDownloaded === true;
+                const card = document.createElement('div');
+                card.className = 'media-card';
+                card.style.cursor = 'pointer';
+                card.onclick = function(e) {
+                    if (e.target.closest('.card-more-btn') || e.target.closest('.card-more-menu') || e.target.closest('.media-card-dl')) return;
+                    openMediaViewer(media.url, media.type, t);
+                };
+
+                let actionButton = '';
+                if (saved) {
+                    // Downloaded: show 3-dot menu with Save to Phone and Delete
+                    const menuId = 'mm-' + Math.random().toString(36).substr(2, 8);
+                    actionButton = 
+                        '<button class="card-more-btn" onclick="event.stopPropagation();toggleMoreMenu(\''+menuId+'\')">&#8942;</button>'+
+                        '<div class="card-more-menu" id="'+menuId+'">'+
+                            '<button onclick="event.stopPropagation();closeAllMoreMenus();handleRemoveOffline(this.closest(\'.media-card\').querySelector(\'.card-more-btn\'),\''+encodeURIComponent(media.url)+'\')" class="danger"><i class="fas fa-trash"></i>Remove Download</button>'+
+                        '</div>';
+                } else {
+                    // Not downloaded: show download icon
+                    actionButton = '<button class="media-card-dl" aria-label="Download" onclick="event.stopPropagation();handleSaveOffline(this,\''+encodeURIComponent(JSON.stringify({url:media.url,name:media.name,type:media.type,title:t,author:a,size:media.size}))+'\')"><i class="fas fa-download"></i></button>';
+                }
+
+                card.innerHTML =
+                    '<div class="media-card-thumb">'+thumb+
+                    '<span class="media-card-badge '+media.type+'">'+media.type+'</span>'+
+                    actionButton+
+                    '</div>'+
+                    '<div class="media-card-body"><div class="media-card-title">'+safeName+'</div>'+
+                    '<div class="media-card-meta"><span><i class="fas fa-user" style="margin-right:3px;"></i>'+safeAuthor+'</span>'+
+                    '<span>&middot; '+fmtSize(media.size)+'</span></div></div>';
+                container.appendChild(card);
+            });
+        }
+
+        // ==============================
+        // Offline section
+        // ==============================
+        async function renderOfflineMediaSection(type) {
+            type = type || currentMediaFilter || 'all';
+            let section = document.getElementById('offlineMediaSection');
+            if (!section) {
+                section = document.createElement('div');
+                section.id = 'offlineMediaSection';
+                const grid = document.getElementById('mediaGrid');
+                if (grid) grid.parentNode.insertBefore(section, grid.nextSibling);
+            }
+
+            let idx = await getOfflineIndex();
+            if (!Array.isArray(idx)) idx = [];
+
+            // If 'downloads' filter is active, show only offline files grouped by category
+            if (type === 'downloads') {
+                document.getElementById('mediaGrid').innerHTML = '';
+                if (idx.length === 0) {
+                    section.innerHTML = '<div style="text-align:center;padding:50px 20px;color:#999;"><i class="fas fa-download" style="font-size:48px;margin-bottom:12px;display:block;color:#ddd;"></i><p>No downloaded files yet</p><p style="font-size:12px;margin-top:8px;">Tap the <i class="fas fa-arrow-down"></i> button on any media to save it for offline use.</p></div>';
+                    return;
+                }
+                let html = '<div style="margin-top:8px;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><i class="fas fa-download" style="color:var(--primary-green);"></i><span style="font-weight:700;font-size:16px;color:#333;">My Downloads</span><span style="font-size:12px;color:#999;">('+idx.length+' files)</span></div>';
+                section.innerHTML = html;
+
+                const categories = [
+                    { key: 'video', label: 'Downloaded Videos', icon: 'fa-video', color: '#e53935' },
+                    { key: 'audio', label: 'Downloaded Audio', icon: 'fa-music', color: '#7B1FA2' },
+                    { key: 'image', label: 'Downloaded Images', icon: 'fa-image', color: '#1565C0' }
+                ];
+                categories.forEach(cat => {
+                    const catFiles = idx.filter(f => f.type === cat.key);
+                    if (catFiles.length === 0) return;
+                    const header = document.createElement('div');
+                    header.className = 'dl-category-header';
+                    header.innerHTML = '<i class="fas '+cat.icon+'" style="color:'+cat.color+';"></i><span>'+cat.label+'</span><span class="dl-count">'+catFiles.length+' file'+(catFiles.length>1?'s':'')+'</span>';
+                    section.appendChild(header);
+                    const catGrid = document.createElement('div');
+                    catGrid.className = 'media-card-grid';
+                    section.appendChild(catGrid);
+                    renderMediaCards(catGrid, catFiles, true);
+                });
+                return;
+            }
+
+            const filtered = type === 'all' ? idx : idx.filter(f => f.type === type);
+
+            if (filtered.length === 0) {
+                section.innerHTML = '';
+                return;
+            }
+
+            section.innerHTML = '<div style="margin-top:24px;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><i class="fas fa-wifi-slash" style="color:var(--primary-green);"></i><span style="font-weight:700;font-size:15px;color:#333;">Saved Offline</span><span style="font-size:12px;color:#999;">('+filtered.length+' files)</span></div>';
+            const offGrid = document.createElement('div');
+            offGrid.className = 'media-card-grid';
+            section.appendChild(offGrid);
+            renderMediaCards(offGrid, filtered, true);
+        }
+
+        // ==============================
+        // Save / Remove offline handlers
+        // ==============================
+        async function handleSaveOffline(btn, encodedData) {
+            var data = JSON.parse(decodeURIComponent(encodedData));
+            var card = btn.closest('.media-card');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:12px;"></i>';
+            btn.style.background = 'rgba(33,150,243,0.85)';
+            btn.disabled = true;
+            if (window.KiumaBridge && window.KiumaBridge.isInApp() && typeof window.KiumaBridge.saveFileToDevice === 'function') {
+                var name = data.name || (data.title || 'media') + (data.type === 'video' ? '.mp4' : data.type === 'audio' ? '.m4a' : data.type === 'image' ? '.jpg' : '.bin');
+                var mime = _mimeFromExt(name.split('.').pop());
+                var ok = await window.KiumaBridge.saveFileToDevice(data.url, name, mime, { saveToAppDirectory: true });
+                if (ok) {
+                    btn.innerHTML = '<i class="fas fa-check" style="font-size:12px;"></i>';
+                    btn.style.background = 'rgba(76,175,80,0.9)';
+                    setTimeout(function() { loadMediaFromStorage(currentMediaFilter); }, 600);
+                } else {
+                    btn.innerHTML = '<i class="fas fa-exclamation"></i>'; btn.style.background = 'rgba(244,67,54,0.85)';
+                    setTimeout(function() { btn.innerHTML = '<i class="fas fa-download"></i>'; btn.style.background = 'rgba(0,0,0,0.6)'; btn.disabled = false; }, 2000);
+                }
+                return;
+            }
+            var ok = await saveFileOffline(data.url, data, function(percent, loaded, total) {
+                if (percent >= 0) btn.innerHTML = '<span style="font-size:9px;font-weight:700;">'+percent+'%</span>';
+                else btn.innerHTML = '<span style="font-size:8px;font-weight:700;">'+((loaded/1048576).toFixed(1))+'M</span>';
+            });
+            if (ok) {
+                btn.innerHTML = '<i class="fas fa-check" style="font-size:12px;"></i>';
+                btn.style.background = 'rgba(76,175,80,0.9)';
+                setTimeout(function() { loadMediaFromStorage(currentMediaFilter); }, 800);
+            } else {
+                btn.innerHTML = '<i class="fas fa-exclamation"></i>';
+                btn.style.background = 'rgba(244,67,54,0.85)';
+                setTimeout(function() { btn.innerHTML = '<i class="fas fa-download"></i>'; btn.style.background = 'rgba(0,0,0,0.6)'; btn.disabled = false; }, 2000);
+            }
+        }
+        window.handleSaveOffline = handleSaveOffline;
+
+        async function handleRemoveOffline(btn, encodedUrl) {
+            const url = decodeURIComponent(encodedUrl);
+            await removeFileOffline(url);
+            loadMediaFromStorage(currentMediaFilter);
+        }
+        window.handleRemoveOffline = handleRemoveOffline;
+
+        async function handleSaveToDevice(btn, encodedUrl, encodedName) {
+            var url = decodeURIComponent(encodedUrl);
+            var name = decodeURIComponent(encodedName);
+            var origHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:12px;"></i>';
+            btn.disabled = true;
+            if (window.KiumaBridge && window.KiumaBridge.isInApp() && typeof window.KiumaBridge.saveToPublicDownloads === 'function') {
+                var ext = name.split('.').pop();
+                var mime = _mimeFromExt(ext);
+                var ok = await window.KiumaBridge.saveToPublicDownloads(url, name, mime);
+                btn.innerHTML = ok ? '<i class="fas fa-check" style="font-size:12px;"></i>' : '<i class="fas fa-exclamation" style="font-size:12px;"></i>';
+                setTimeout(function() { btn.innerHTML = origHTML; btn.disabled = false; }, 2000);
+                return;
+            }
+            // Fallback: browser download
+            try {
+                var res = await fetch(url);
+                var blob = await res.blob();
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = name || 'download';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+                btn.innerHTML = '<i class="fas fa-check" style="font-size:12px;"></i>';
+            } catch(e) {
+                btn.innerHTML = '<i class="fas fa-exclamation" style="font-size:12px;"></i>';
+            }
+            setTimeout(function() { btn.innerHTML = origHTML; btn.disabled = false; }, 2000);
+        }
+        window.handleSaveToDevice = handleSaveToDevice;
+
+        // ==============================
+        // In-app file viewer (offline: use blob URL if downloaded)
+        // ==============================
+        let _viewerBlobUrl = null;
+        async function openMediaViewer(url, type, title) {
+            let playUrl = url;
+            if (window.KiuFS && typeof window.KiuFS.hasFile === 'function' && await window.KiuFS.hasFile(url)) {
+                const blobUrl = await window.KiuFS.getOfflineUrl(url);
+                if (blobUrl) { playUrl = blobUrl; _viewerBlobUrl = blobUrl; }
+            } else if (window.MediaOffline && typeof window.MediaOffline.getBlobUrl === 'function') {
+                const blobUrl = await window.MediaOffline.getBlobUrl(url);
+                if (blobUrl) { playUrl = blobUrl; _viewerBlobUrl = blobUrl; }
+            } else if (window.AppStorage && typeof window.AppStorage.getOfflineUrl === 'function') {
+                const blobUrl = await window.AppStorage.getOfflineUrl(url);
+                if (blobUrl) { playUrl = blobUrl; _viewerBlobUrl = blobUrl; }
+            }
+            if (!navigator.onLine && playUrl === url) {
+                alert('Internet connection required to play or download.');
+                return;
+            }
+            const modal = document.getElementById('mediaViewerModal');
+            const content = document.getElementById('viewerContent');
+            document.getElementById('viewerTitle').textContent = title || 'Media';
+            const dlBtn = document.getElementById('viewerDownload');
+            dlBtn.dataset.url = url;
+            var nameFromUrl = url.split('/').pop().split('?')[0];
+            dlBtn.dataset.name = (nameFromUrl && /\.\w+$/.test(nameFromUrl)) ? nameFromUrl : (title || 'media').replace(/[^a-zA-Z0-9._-]/g, '_') + (type === 'video' ? '.mp4' : type === 'audio' ? '.m4a' : type === 'image' ? '.jpg' : '.bin');
+
+            if (type === 'video') {
+                content.innerHTML = '<video controls playsinline style="max-width:100%;max-height:100%;border-radius:8px;"><source src="'+playUrl+'">Your browser does not support video.</video>';
+            } else if (type === 'audio') {
+                content.innerHTML = '<div style="text-align:center;width:100%;max-width:360px;"><div style="width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#7B1FA2,#4A148C);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;"><i class="fas fa-music" style="font-size:40px;color:#fff;"></i></div><div style="color:#fff;font-size:16px;font-weight:600;margin-bottom:16px;">'+san(title)+'</div><audio controls style="width:100%;"><source src="'+playUrl+'">Your browser does not support audio.</audio></div>';
+            } else if (type === 'image') {
+                content.innerHTML = '<img src="'+playUrl+'" loading="lazy" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:4px;" onclick="closeMediaViewer()">';
+            } else {
+                content.innerHTML = '<iframe src="'+playUrl+'" style="width:100%;height:100%;border:none;border-radius:8px;background:#fff;"></iframe>';
+            }
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMediaViewer() {
+            if (_viewerBlobUrl) {
+                try { URL.revokeObjectURL(_viewerBlobUrl); } catch(e) {}
+                _viewerBlobUrl = null;
+            }
+            const modal = document.getElementById('mediaViewerModal');
+            const content = document.getElementById('viewerContent');
+            content.querySelectorAll('video,audio').forEach(el => { try { el.pause(); el.removeAttribute('src'); el.load(); } catch(e){} });
+            content.innerHTML = '';
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        window.addEventListener('popstate', closeMediaViewer);
+        window.addEventListener('DOMContentLoaded', async function() {
+            await syncPlaylistsFromFirestore();
+            loadMediaFromStorage('all');
+        });
+    </script>
+
+</body>
+</html>
+
+

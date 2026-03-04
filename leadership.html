@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leadership - KIUMA</title>
+    <script>
+        (function() {
+            var t;
+            try { t = localStorage.getItem('themePreference'); } catch(e) {}
+            if (t === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="styles.min.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    <!-- Font Awesome: CDN primary, local fallback -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="fonts/fontawesome.min.css">
+</head>
+<body>
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link active"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="counselling.html" class="nav-link"><i class="fas fa-hands-helping"></i> Counselling</a></li>
+            <li><a href="library.html" class="nav-link"><i class="fas fa-book-open"></i> Library</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="media-settings.html" class="nav-link"><i class="fas fa-sliders-h"></i> Media Settings</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="page-hero">
+            <div class="hero-deco"></div>
+            <nav class="hero-nav">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <span class="hero-nav-title" id="heroNavPageTitle"></span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="notifications-btn" id="notificationsBtn">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge" style="display:none;"></span>
+                    </button>
+                    <div class="hero-profile-avatar" onclick="if(typeof toggleAccountModal==='function')toggleAccountModal()"><i class="fas fa-user"></i></div>
+                </div>
+            </nav>
+            <div class="hero-logo-row">
+                <div class="hero-logo-ring">
+                    <img src="logo.png" alt="KIUMA" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="logo-fallback" style="display:none;">KU</div>
+                </div>
+            </div>
+            <div class="hero-title-area">
+                <div class="hero-org-name">KIUMA</div>
+                <h1 class="hero-page-title">Leadership</h1>
+                <p class="hero-subtitle">Meet our dedicated leadership team</p>
+                <div class="hero-accent-line"></div>
+            </div>
+        </div>
+
+        <main class="main-content">
+            <div style="height:8px;"></div>
+
+            <section class="page-content">
+                <div class="info-card">
+                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                        <div class="activity-icon" style="width: 60px; height: 60px; margin-right: 15px;">
+                            <i class="fas fa-user-tie" style="font-size: 28px;"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <h3 style="margin: 0; color: var(--dark-green);">KIWUUWA FAHAD LUYIRIKA ABU SALSABEELAH</h3>
+                            <p style="margin: 5px 0 0 0; color: var(--text-gray); font-size: 14px;">AMIR</p>
+                        </div>
+                    </div>
+                    <p>Leading our community and providing spiritual guidance. Specializes in Quran (tafsir) studies and Islamic jurisprudence.</p>
+                </div>
+
+                <div class="info-card">
+                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                        <div class="activity-icon" style="width: 60px; height: 60px; margin-right: 15px;">
+                            <i class="fas fa-user-graduate" style="font-size: 28px;"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <h3 style="margin: 0; color: var(--dark-green);">LUBEGA ABDULRAHMAN IBN AUF</h3>
+                            <p style="margin: 5px 0 0 0; color: var(--text-gray); font-size: 14px;">AMIR DAAWA</p>
+                        </div>
+                    </div>
+                    <p>Teaching Kitaabu Tawheed and other foundational Islamic studies (Quran and Hadith). Dedicated to spreading authentic Islamic knowledge.</p>
+                </div>
+
+                <div class="info-card">
+                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                        <div class="activity-icon" style="width: 60px; height: 60px; margin-right: 15px;">
+                            <i class="fas fa-money-bill-wave" style="font-size: 28px;"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <h3 style="margin: 0; color: var(--dark-green);">KIMULI NAJIIBU</h3>
+                            <p style="margin: 5px 0 0 0; color: var(--text-gray); font-size: 14px;">AMIR FINANCE</p>
+                        </div>
+                    </div>
+                    <p>For all payment-related inquiries, subscriptions, and zakat assistance.</p>
+                </div>
+
+                <div class="info-card">
+                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                        <div class="activity-icon" style="width: 60px; height: 60px; margin-right: 15px;">
+                            <i class="fas fa-user" style="font-size: 28px;"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <h3 style="margin: 0; color: var(--dark-green);">NAMULI SHALUWA</h3>
+                            <p style="margin: 5px 0 0 0; color: var(--text-gray); font-size: 14px;">AMIIRAH</p>
+                        </div>
+                    </div>
+                    <p>Supporting sisters and guiding community development.</p>
+                </div>
+
+                <div class="info-card">
+                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                        <div class="activity-icon" style="width: 60px; height: 60px; margin-right: 15px;">
+                            <i class="fas fa-bullhorn" style="font-size: 28px;"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <h3 style="margin: 0; color: var(--dark-green);">FATUMA NASSALI</h3>
+                            <p style="margin: 5px 0 0 0; color: var(--text-gray); font-size: 14px;">AMIRA DAAWA</p>
+                        </div>
+                    </div>
+                    <p>For sisters' Daawa and Islamic learning support.</p>
+                </div>
+
+                <div class="info-card">
+                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                        <div class="activity-icon" style="width: 60px; height: 60px; margin-right: 15px;">
+                            <i class="fas fa-hand-holding-heart" style="font-size: 28px;"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <h3 style="margin: 0; color: var(--dark-green);">HADIJAH NASURU</h3>
+                            <p style="margin: 5px 0 0 0; color: var(--text-gray); font-size: 14px;">AMIRA WELFARE</p>
+                        </div>
+                    </div>
+                    <p>For welfare support and urgent assistance.</p>
+                </div>
+            </section>
+
+            <!-- Contact Leaders Section -->
+            <section class="page-content" style="margin-top: 20px;">
+                <h3 style="color: var(--dark-green); margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-address-book"></i> Contact Leaders
+                </h3>
+
+                <!-- Leader 1 -->
+                <div class="info-card" style="padding: 15px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="flex: 1; min-width: 0;">
+                            <h4 style="margin: 0; color: var(--dark-green); font-size: 16px;">KIWUUWA FAHAD LUYIRIKA ABU SALSABEELAH</h4>
+                            <p style="margin: 3px 0; color: var(--text-gray); font-size: 13px;">AMIR</p>
+                        </div>
+                        <div style="display: flex; gap: 10px; flex-shrink: 0;">
+                            <a href="tel:+256708840983" style="background: var(--primary-green); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none;">
+                                <i class="fas fa-phone"></i>
+                            </a>
+                            <a href="https://wa.me/256708840983" target="_blank" style="background: #25D366; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none;">
+                                <i class="fa-brands fa-whatsapp"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leader 2 -->
+
+                <div class="info-card" style="padding: 15px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="flex: 1; min-width: 0;">
+                            <h4 style="margin: 0; color: var(--dark-green); font-size: 16px;">LUBEGA ABDULRAHMAN IBN AUF</h4>
+                            <p style="margin: 3px 0; color: var(--text-gray); font-size: 13px;">AMIR DAAWA</p>
+                        </div>
+                        <div style="display: flex; gap: 10px; flex-shrink: 0;">
+                            <a href="tel:+256777351331" style="background: var(--primary-green); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none;">
+                                <i class="fas fa-phone"></i>
+                            </a>
+                            <a href="https://wa.me/256777351331" target="_blank" style="background: #25D366; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none;">
+                                <i class="fa-brands fa-whatsapp"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leader 3 -->
+
+                <div class="info-card" style="padding: 15px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="flex: 1;">
+                            <h4 style="margin: 0; color: var(--dark-green); font-size: 16px;">KIMULI NAJIIBU</h4>
+                            <p style="margin: 3px 0; color: var(--text-gray); font-size: 13px;">AMIR FINANCE</p>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <a href="tel:+256757591824" style="background: var(--primary-green); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none;">
+                                <i class="fas fa-phone"></i>
+                            </a>
+                            <a href="https://wa.me/256757591824" target="_blank" style="background: #25D366; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none;">
+                                <i class="fa-brands fa-whatsapp"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leader 4 -->
+
+                <div class="info-card" style="padding: 15px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="flex: 1;">
+                            <h4 style="margin: 0; color: var(--dark-green); font-size: 16px;">NAMULI SHALUWA</h4>
+                            <p style="margin: 3px 0; color: var(--text-gray); font-size: 13px;">AMIIRAH</p>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <a href="tel:+256708911546" style="background: var(--primary-green); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none;">
+                                <i class="fas fa-phone"></i>
+                            </a>
+                            <a href="https://wa.me/256708911546" target="_blank" style="background: #25D366; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none;">
+                                <i class="fa-brands fa-whatsapp"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leader 5 -->
+
+                <div class="info-card" style="padding: 15px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="flex: 1;">
+                            <h4 style="margin: 0; color: var(--dark-green); font-size: 16px;">FATUMA NASSALI</h4>
+                            <p style="margin: 3px 0; color: var(--text-gray); font-size: 13px;">AMIRA DAAWA</p>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <a href="tel:+256709314903" style="background: var(--primary-green); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none;">
+                                <i class="fas fa-phone"></i>
+                            </a>
+                            <a href="https://wa.me/256745562165" target="_blank" style="background: #25D366; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none;">
+                                <i class="fa-brands fa-whatsapp"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leader 6 -->
+
+                <div class="info-card" style="padding: 15px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="flex: 1;">
+                            <h4 style="margin: 0; color: var(--dark-green); font-size: 16px;">HADIJAH NASURU</h4>
+                            <p style="margin: 3px 0; color: var(--text-gray); font-size: 13px;">AMIRA WELFARE</p>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <a href="tel:+256700296823" style="background: var(--primary-green); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none;">
+                                <i class="fas fa-phone"></i>
+                            </a>
+                            <a href="https://wa.me/256700296823" target="_blank" style="background: #25D366; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none;">
+                                <i class="fa-brands fa-whatsapp"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
+            <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
+            <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
+        </nav>
+    </div>
+
+    <!-- Floating Hot Events Button -->
+    <div class="floating-kizumu-btn" onclick="showActivitiesModal()" style="background: linear-gradient(135deg, #ff6b35, #e74c3c); animation: pulse-hot 1.5s infinite; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5);">
+        <i class="fas fa-fire" style="color: var(--white);"></i>
+        <span style="font-weight: bold;">HOT EVENTS!</span>
+    </div>
+    <style>
+    @keyframes pulse-hot {
+        0%, 100% { transform: scale(1); box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5); }
+        50% { transform: scale(1.05); box-shadow: 0 6px 20px rgba(231, 76, 60, 0.7); }
+    }
+    </style>
+
+    <!-- Activities Modal -->
+    <div class="modal-overlay" id="activitiesModal" style="display: none;">
+        <div class="modal-content activities-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-fire" style="color: #ff6b35;"></i> Hot Events - Act Now!</h3>
+                <button class="modal-close" onclick="closeActivitiesModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="activities-modal-list">
+                <div class="activity-modal-item" onclick="window.location.href='activities.html#charity-visit'" style="border-left: 4px solid #ff6b35;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #ff6b35, #e74c3c);">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4 style="color: #e74c3c;">Kizumu Tahfiz Visit — FINISHED</h4>
+                        <p>Thank you for your support! Results and media released soon.</p>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color: #e74c3c;"></i>
+                </div>
+
+                <div class="activity-modal-item" onclick="window.location.href='activities.html#quran-competition'" style="border-left: 4px solid #9c27b0;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #9c27b0, #673ab7);">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4 style="color: #9c27b0;">Quran Competition — FINISHED</h4>
+                        <p>Thank you for participating! Results and media released soon.</p>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color: #9c27b0;"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="window.location.href='pay.html?type=charity&donation=tuition-brothers'">
+                    <div class="activity-modal-icon" style="background: var(--primary-green);">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Tuition for Brothers</h4>
+                        <p>Support brothers' education and learning</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="script.min.js" defer></script>
+</body>
+</html>
+
+
+
