@@ -78,14 +78,14 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: var(--body-bg);
+    background-color: var(--gray, #e0e0e0);
     color: var(--dark-gray);
     overflow-x: hidden;
     padding-bottom: 80px;
 }
 
 .container {
-    max-width: 100%;
+    max-width: 428px;
     margin: 0 auto;
     background: var(--card-bg);
     min-height: 100vh;
@@ -754,7 +754,7 @@ body {
     left: 50%;
     transform: translateX(-50%);
     width: 100%;
-    max-width: 100%;
+    max-width: 428px;
     background: var(--card-bg);
     display: flex;
     justify-content: space-around;
@@ -995,8 +995,9 @@ body {
 .sticky-mini-bar {
     position: fixed;
     top: 0;
-    left: 0;
-    right: 0;
+    left: 50%;
+    width: 100%;
+    max-width: 428px;
     height: 52px;
     background: linear-gradient(135deg, #43A047 0%, #2E7D32 50%, #1B5E20 100%);
     display: flex;
@@ -1004,12 +1005,12 @@ body {
     justify-content: space-between;
     padding: 0 16px;
     z-index: 1100;
-    transform: translateY(-100%);
+    transform: translateX(-50%) translateY(-100%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 2px 8px rgba(0,0,0,0.18);
 }
 .sticky-mini-bar.visible {
-    transform: translateY(0);
+    transform: translateX(-50%) translateY(0);
 }
 .sticky-mini-bar .smb-left,
 .sticky-mini-bar .smb-right {
@@ -2064,7 +2065,7 @@ textarea.form-input {
 .floating-kizumu-btn {
     position: fixed;
     bottom: 100px;
-    right: 20px;
+    right: max(20px, calc(50% - 194px));
     background: linear-gradient(135deg, #E91E63, #C2185B);
     color: var(--white);
     padding: 12px 20px;
@@ -2325,7 +2326,7 @@ textarea.form-input {
 .floating-action-btn {
     position: fixed;
     bottom: 90px;
-    right: 20px;
+    right: max(20px, calc(50% - 194px));
     width: 56px;
     height: 56px;
     border-radius: 50%;

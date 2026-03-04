@@ -60,16 +60,15 @@ async function initializePayment(paymentData) {
     throw new Error('Payment description is required');
   }
   
-  // Check if user is authenticated
+  // Attach user info if logged in (but do NOT require login to pay)
   if (typeof firebase !== 'undefined' && firebase.auth) {
-    const user = firebase.auth().currentUser;
-    if (!user) {
-      throw new Error('User must be logged in to make payments');
-    }
-    paymentData.userId = user.uid;
-    paymentData.email = paymentData.email || user.email;
-  } else {
-    throw new Error('User authentication required');
+    try {
+      const user = firebase.auth().currentUser;
+      if (user) {
+        paymentData.userId = user.uid;
+        paymentData.email = paymentData.email || user.email;
+      }
+    } catch (e) { /* guest checkout */ }
   }
   
   try {
@@ -112,9 +111,7 @@ async function initializePayment(paymentData) {
     // Handle specific error codes
     let errorMessage = 'Failed to initialize payment. Please try again.';
     
-    if (error.code === 'unauthenticated') {
-      errorMessage = 'Please log in to make payments.';
-    } else if (error.code === 'invalid-argument') {
+    if (error.code === 'invalid-argument') {
       errorMessage = error.message || 'Invalid payment details.';
     } else if (error.message) {
       errorMessage = error.message;
