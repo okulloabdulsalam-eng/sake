@@ -9,7 +9,7 @@
     var ORIGIN = location.origin;
 
     // Pages that must full-load so their inline scripts run (avoid incomplete/empty content)
-    var FULL_LOAD_PAGES = ['media.html', 'library.html', 'notifications.html', 'quran-reader.html', 'search.html', 'media-settings.html', 'counselling.html', 'admin.html', 'subscription-form.html', 'zakat-form.html', 'ask-question.html', 'pay.html', 'join-programs.html', 'important-lessons.html', 'mosques.html', 'dhikr.html', 'names-of-allah.html', 'streaming.html', 'payment-callback.html', 'whatsapp-join-modal.html'];
+    var FULL_LOAD_PAGES = ['index.html', 'media.html', 'library.html', 'notifications.html', 'quran-reader.html', 'search.html', 'media-settings.html', 'counselling.html', 'admin.html', 'subscription-form.html', 'zakat-form.html', 'ask-question.html', 'pay.html', 'join-programs.html', 'important-lessons.html', 'mosques.html', 'dhikr.html', 'names-of-allah.html', 'streaming.html', 'payment-callback.html', 'whatsapp-join-modal.html'];
 
     function isSameOriginSameScope(href) {
         if (!href || href.indexOf('mailto:') === 0 || href.indexOf('tel:') === 0) return false;
@@ -26,7 +26,7 @@
     }
 
     function requiresFullLoad(pathname) {
-        var name = pathname.split('/').pop() || pathname;
+        var name = pathname.split('/').pop() || 'index.html';
         return FULL_LOAD_PAGES.some(function (p) { return name === p || pathname.indexOf(p) !== -1; });
     }
 
@@ -87,6 +87,23 @@
     }, true);
 
     window.addEventListener('popstate', function (e) {
+        var targetUrl = (e.state && e.state.url) || location.href;
+        var targetPath = '';
+        try { targetPath = new URL(targetUrl, location.href).pathname; } catch(err) { targetPath = location.pathname; }
+
+        // If the target page requires a full load, always do a full reload
+        if (requiresFullLoad(targetPath)) {
+            location.reload();
+            return;
+        }
+
+        // If the current page is a full-load page (e.g. pay.html), soft-loading into it
+        // would leave stale inline scripts running — always do a full reload instead
+        if (requiresFullLoad(location.pathname)) {
+            location.href = targetUrl;
+            return;
+        }
+
         if (e.state && e.state.kiumaRouter && e.state.url) {
             fetch(e.state.url, { credentials: 'same-origin' })
                 .then(function (res) { return res.ok ? res.text() : Promise.reject(); })
@@ -95,6 +112,9 @@
                     pageInit();
                 })
                 .catch(function () { location.href = e.state.url; });
+        } else {
+            // No router state — do a full reload to ensure clean page
+            location.reload();
         }
     });
 

@@ -422,82 +422,112 @@ document.addEventListener('DOMContentLoaded', function initHeroNavPageTitle() {
     }
 });
 
-// Sticky mini-bar — shows when scrolled past upper nav; always has menu, notifications, accounts
+// Sticky mini-bar — appears when user scrolls past the upper hero/nav area
 (function initStickyMiniBar() {
-    const hero = document.querySelector('.page-hero') || document.querySelector('.page-hero-compact');
-    if (!hero) return; // no hero on this page, skip
+    try {
+    if (document.getElementById('stickyMiniBar')) return;
 
-    // Extract page title from hero (standard or compact)
-    const titleEl = hero.querySelector('.hero-page-title') || hero.querySelector('.hero-compact-title h1');
-    const pageTitle = titleEl ? titleEl.textContent.trim() : (document.getElementById('heroNavPageTitle') && document.getElementById('heroNavPageTitle').textContent) || 'KIUMA';
+    function getPageTitle() {
+        var heroTitle = document.querySelector('.hero-page-title');
+        if (heroTitle && heroTitle.textContent.trim()) return heroTitle.textContent.trim();
+        var heroNavTitle = document.getElementById('heroNavPageTitle');
+        if (heroNavTitle && heroNavTitle.textContent.trim()) return heroNavTitle.textContent.trim();
+        var h1 = document.querySelector('main h1, .page-content h1, .hero-compact-title h1');
+        if (h1 && h1.textContent.trim()) return h1.textContent.trim();
+        return (document.title || 'KIUMA').replace(/\s*[-|]\s*KIUMA\s*$/i, '').trim() || 'KIUMA';
+    }
 
-    // Check for admin link in the hero (optional)
-    const adminLink = hero.querySelector('.hero-admin-link');
-    const adminHref = adminLink ? adminLink.getAttribute('href') : null;
-
-    // Build the mini-bar: menu (left), title, then notifications + account (right)
-    const bar = document.createElement('div');
+    var bar = document.createElement('div');
+    bar.id = 'stickyMiniBar';
     bar.className = 'sticky-mini-bar';
     bar.innerHTML =
         '<div class="smb-left">' +
-            '<button class="smb-btn" id="smbMenuToggle" title="Menu"><i class="fas fa-bars"></i></button>' +
-            '<span class="smb-title">' + (pageTitle || 'KIUMA') + '</span>' +
+            '<button class="smb-btn" id="smbMenuToggle" aria-label="Menu"><i class="fas fa-bars"></i></button>' +
+            '<span class="smb-title">' + getPageTitle() + '</span>' +
         '</div>' +
         '<div class="smb-right">' +
-            (adminHref ? '<a href="' + adminHref + '" class="smb-admin-link"><i class="fas fa-cog"></i> Admin</a>' : '') +
-            '<button class="smb-btn" id="smbNotifications" title="Notifications" onclick="window.location.href=\'notifications.html\'">' +
+            '<button class="smb-btn" id="smbNotifications" aria-label="Notifications" onclick="window.location.href=\'notifications.html\'">' +
                 '<i class="fas fa-bell"></i>' +
-                '<span class="badge" data-notification-badge style="display:none;"></span>' +
+                '<span class="badge" id="smbBadge" data-notification-badge style="display:none;"></span>' +
             '</button>' +
-            '<div class="smb-profile-avatar" title="Account" onclick="if(typeof toggleAccountModal===\'function\')toggleAccountModal()"><i class="fas fa-user"></i></div>' +
+            '<div class="smb-profile-avatar" id="smbAccount" aria-label="Account"><i class="fas fa-user"></i></div>' +
         '</div>';
 
     document.body.appendChild(bar);
 
-    // Wire menu toggle to same nav sidebar
-    const smbMenu = document.getElementById('smbMenuToggle');
-    if (smbMenu) {
-        smbMenu.addEventListener('click', function() {
-            var nm = document.getElementById('navMenu');
-            var ov = document.querySelector('.overlay');
-            if (nm) nm.classList.add('active');
-            if (ov) ov.classList.add('active');
-        });
-    }
+    // Menu toggle — opens the side nav
+    document.getElementById('smbMenuToggle').addEventListener('click', function() {
+        var nm = document.getElementById('navMenu');
+        var ov = document.querySelector('.overlay');
+        if (nm) nm.classList.add('active');
+        if (ov) ov.classList.add('active');
+    });
 
-    // Show minibar when user has scrolled past the upper navigation (hero area)
-    var observer = new IntersectionObserver(function(entries) {
-        entries.forEach(function(entry) {
-            if (entry.isIntersecting) {
-                bar.classList.remove('visible');
-            } else {
+    // Account avatar
+    document.getElementById('smbAccount').addEventListener('click', function() {
+        if (typeof toggleAccountModal === 'function') toggleAccountModal();
+    });
+
+    // Show/hide bar: appears when the hero's top nav bar scrolls out of view
+    var heroNav = document.querySelector('.hero-nav') || document.querySelector('.hero-compact-nav');
+    if (heroNav) {
+        // Use IntersectionObserver on the hero nav bar (not the entire hero)
+        try {
+            var observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        bar.classList.remove('visible');
+                    } else {
+                        bar.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0, rootMargin: '0px 0px 0px 0px' });
+            observer.observe(heroNav);
+        } catch (obsErr) {
+            // Fallback if IntersectionObserver fails
+            window.addEventListener('scroll', function() {
+                var rect = heroNav.getBoundingClientRect();
+                if (rect.bottom <= 0) {
+                    bar.classList.add('visible');
+                } else {
+                    bar.classList.remove('visible');
+                }
+            }, { passive: true });
+        }
+    } else {
+        // No hero nav on this page — show bar after scrolling 80px
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 80) {
                 bar.classList.add('visible');
+            } else {
+                bar.classList.remove('visible');
             }
-        });
-    }, { threshold: 0, rootMargin: '-52px 0 0 0' }); // bar appears once nav strip has left the top
-
-    observer.observe(hero);
-
-    // Sync sticky bar notification badge with system notifications (same as hero bar)
-    if (typeof updateNotificationBadge === 'function') {
-        updateNotificationBadge();
+        }, { passive: true });
     }
 
-    // Update sticky mini-bar title on in-app navigation (router link or back/forward)
-    function updateStickyBarTitle() {
+    // Update badge
+    if (typeof updateNotificationBadge === 'function') updateNotificationBadge();
+
+    // Update title on soft navigation
+    window.addEventListener('kiuma-page-changed', function() {
         var smbTitle = bar.querySelector('.smb-title');
-        if (!smbTitle) return;
-        var heroTitle = document.querySelector('.container .hero-page-title, .hero-compact-title h1');
-        var newTitle = (heroTitle && heroTitle.textContent.trim()) || (document.getElementById('heroNavPageTitle') && document.getElementById('heroNavPageTitle').textContent) || (document.title || '').trim() || 'KIUMA';
-        newTitle = (newTitle || '').replace(/\s*[-|]\s*KIUMA\s*$/i, '').trim() || 'KIUMA';
-        smbTitle.textContent = newTitle;
+        if (smbTitle) smbTitle.textContent = getPageTitle();
+        if (typeof updateNotificationBadge === 'function') updateNotificationBadge();
+    });
+
+    // Update title after DOM fully loaded (catches late-setting titles)
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            var smbTitle = bar.querySelector('.smb-title');
+            if (smbTitle) smbTitle.textContent = getPageTitle();
+        });
     }
 
-    window.addEventListener('kiuma-page-changed', updateStickyBarTitle);
+    } catch (e) { console.warn('initStickyMiniBar error:', e); }
 })();
 
 // Hijri month names (global for reuse)
-const hijriMonths = ['Muharram', 'Safar', 'Rabi\' al-awwal', 'Rabi\' al-thani', 
+var hijriMonths = ['Muharram', 'Safar', 'Rabi\' al-awwal', 'Rabi\' al-thani', 
                    'Jumada al-awwal', 'Jumada al-thani', 'Rajab', 'Sha\'ban', 
                    'Ramadan', 'Shawwal', 'Dhu al-Qi\'dah', 'Dhu al-Hijjah'];
 
@@ -1159,11 +1189,11 @@ function loadPrayerTimes() {
 setInterval(loadPrayerTimes, 60000);
 
 // Update dates on load and continuously (auto-update)
-updateDates();
-loadPrayerTimes();
+try { updateDates(); } catch(e) { console.warn('updateDates init error:', e); }
+try { loadPrayerTimes(); } catch(e) { console.warn('loadPrayerTimes init error:', e); }
 
 // Initialize fasting reminder checker (checks every minute for Sunday/Wednesday at 2pm, 6pm, 7:40pm)
-initFastingReminderChecker();
+try { initFastingReminderChecker(); } catch(e) { console.warn('initFastingReminderChecker error:', e); }
 
 // Auto-update dates every hour (Hijri date changes daily, so hourly updates are sufficient)
 // Respects API rate limits: 200 requests per 15 minutes, 1000 per hour
@@ -1171,7 +1201,7 @@ initFastingReminderChecker();
 setInterval(updateDates, 3600000); // 1 hour = 3600000ms
 
 // User Account System
-let currentUser = null;
+var currentUser = null;
 
 function normalizeUserData(rawUser) {
     const user = rawUser || {};
@@ -2183,18 +2213,36 @@ async function enforceFreshAssetsOnLoad() {
 
 window.addEventListener('online', () => enforceFreshAssetsOnLoad());
 
-// Re-initialize home page when restored from bfcache (browser back/forward navigation)
-// DOMContentLoaded does NOT fire on bfcache restore; pageshow with persisted=true does.
+// Robust re-initialization helper — safe to call multiple times
+function reinitHomePageData() {
+    try { if (typeof updateDates === 'function') updateDates(); } catch(e) {}
+    try { if (typeof loadPrayerTimes === 'function') loadPrayerTimes(); } catch(e) {}
+    try {
+        if (typeof initNotificationBadgeListener === 'function') initNotificationBadgeListener();
+    } catch (e) {
+        try { if (typeof updateNotificationBadge === 'function') updateNotificationBadge(); } catch(e2) {}
+    }
+}
+
+// Re-initialize on EVERY pageshow (covers bfcache restore, WebView back nav, normal loads)
 window.addEventListener('pageshow', function(event) {
+    // Always reinit on bfcache restore
     if (event.persisted) {
-        // Re-run dates and prayer times so they don't go blank or show stale values
-        if (typeof updateDates === 'function') updateDates();
-        if (typeof loadPrayerTimes === 'function') loadPrayerTimes();
-        // Re-initialize notification badge so it reflects real unread count
-        try {
-            if (typeof initNotificationBadgeListener === 'function') initNotificationBadgeListener();
-        } catch (e) {
-            try { if (typeof updateNotificationBadge === 'function') updateNotificationBadge(); } catch(e2) {}
+        reinitHomePageData();
+    }
+    // On home page, also reinit after a short delay as safety net
+    var page = (window.location.pathname.split('/').pop() || 'index.html');
+    if (page === 'index.html' || page === '' || page === '/') {
+        setTimeout(reinitHomePageData, 800);
+    }
+});
+
+// Extra safety: reinit when page becomes visible (covers tab-switch and WebView resume)
+document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible') {
+        var page = (window.location.pathname.split('/').pop() || 'index.html');
+        if (page === 'index.html' || page === '' || page === '/') {
+            reinitHomePageData();
         }
     }
 });
