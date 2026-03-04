@@ -229,7 +229,7 @@
         <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;flex-shrink:0;">
             <div id="bookViewerTitle" style="color:#fff;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;margin-right:10px;"></div>
             <div style="display:flex;gap:10px;">
-                
+                <button id="bookViewerDownload" onclick="inAppDownload(this.dataset.url, this.dataset.name)" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;"><i class="fas fa-download"></i></button>
                 <button onclick="closeBookViewer()" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;"><i class="fas fa-times"></i></button>
             </div>
         </div>
@@ -244,10 +244,6 @@
     <script src="js/router-bridge.js"></script>
     <script src="js/app-bridge.js" defer></script>
     <script src="script.js"></script>
-    <style>
-        .lib-card-dl.danger-dl { background: rgba(244,67,54,0.85) !important; }
-        .lib-card-dl.danger-dl:hover { background: rgba(244,67,54,1) !important; }
-    </style>
     <script src="app-storage.js"></script>
     <script>
         // Initialize on page load
@@ -1179,37 +1175,6 @@ var name = data.fileName || (data.title || 'book').replace(/[^a-zA-Z0-9._-]/g, '
         }
         window.handleRemoveOfflineLib = handleRemoveOfflineLib;
 
-        async function handleSaveToDeviceLib(btn, encodedUrl, encodedName) {
-            var url = decodeURIComponent(encodedUrl);
-            var name = decodeURIComponent(encodedName);
-            var origHTML = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:12px;"></i>';
-            btn.disabled = true;
-            if (window.KiumaBridge && window.KiumaBridge.isInApp() && typeof window.KiumaBridge.saveToPublicDownloads === 'function') {
-                var ext = name.split('.').pop();
-                var mime = _mimeFromExtLib(ext);
-                var ok = await window.KiumaBridge.saveToPublicDownloads(url, name, mime);
-                btn.innerHTML = ok ? '<i class="fas fa-check" style="font-size:12px;"></i>' : '<i class="fas fa-exclamation" style="font-size:12px;"></i>';
-                setTimeout(function() { btn.innerHTML = origHTML; btn.disabled = false; }, 2000);
-                return;
-            }
-            try {
-                var res = await fetch(url);
-                var blob = await res.blob();
-                var a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = name || 'download';
-                document.body.appendChild(a);
-                a.click();
-                setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
-                btn.innerHTML = '<i class="fas fa-check" style="font-size:12px;"></i>';
-            } catch(e) {
-                btn.innerHTML = '<i class="fas fa-exclamation" style="font-size:12px;"></i>';
-            }
-            setTimeout(function() { btn.innerHTML = origHTML; btn.disabled = false; }, 2000);
-        }
-        window.handleSaveToDeviceLib = handleSaveToDeviceLib;
-
         // ==============================
         // In-app book viewer
         // ==============================
@@ -1219,8 +1184,9 @@ var name = data.fileName || (data.title || 'book').replace(/[^a-zA-Z0-9._-]/g, '
             const content = document.getElementById('bookViewerContent');
             document.getElementById('bookViewerTitle').textContent = title || 'Book';
             const dlBtn = document.getElementById('bookViewerDownload');
+            const suggestedName = fileName || (title || 'book').replace(/[^a-zA-Z0-9._-]/g, '_') + '.' + ext;
             dlBtn.dataset.url = url;
-            dlBtn.dataset.name = fileName || (title || 'book').replace(/[^a-zA-Z0-9._-]/g, '_') + '.' + ext;
+            dlBtn.dataset.name = suggestedName;
 
             if (ext === 'pdf') {
                 // Use Google Docs viewer for mobile PDF viewing (works on all devices)
@@ -1233,10 +1199,10 @@ var name = data.fileName || (data.title || 'book').replace(/[^a-zA-Z0-9._-]/g, '
                 fetch(url).then(r => r.text()).then(text => {
                     content.innerHTML = '<pre style="background:#fff;color:#333;padding:20px;border-radius:8px;max-width:100%;overflow:auto;white-space:pre-wrap;word-wrap:break-word;font-size:14px;line-height:1.6;max-height:100%;">'+san(text)+'</pre>';
                 }).catch(() => {
-                    content.innerHTML = '<p style="color:#fff;">Could not load file. <button onclick="inAppDownload(\''+url+'\',\''+encodeURIComponent(title||'file')+'\')" style="background:none;border:none;color:#4CAF50;cursor:pointer;text-decoration:underline;font-size:inherit;">Download instead</button></p>';
+                    content.innerHTML = '<p style="color:#fff;">Could not load file. <button onclick="inAppDownload(\''+String(url).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\',\''+String(suggestedName).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')" style="background:none;border:none;color:#4CAF50;cursor:pointer;text-decoration:underline;font-size:inherit;">Download instead</button></p>';
                 });
             } else {
-                content.innerHTML = '<div style="text-align:center;color:#fff;padding:30px;"><i class="fas fa-file-alt" style="font-size:60px;margin-bottom:16px;display:block;color:#ccc;"></i><p style="font-size:16px;margin-bottom:20px;">'+san(title)+'</p><p style="color:#aaa;margin-bottom:20px;">This file type (.'+ext+') cannot be previewed in the app.</p><button onclick="inAppDownload(\''+url+'\',\''+encodeURIComponent(title||'file')+'.'+ext+'\')" style="display:inline-block;padding:12px 28px;background:var(--primary-green);color:#fff;border-radius:10px;border:none;font-weight:600;font-size:14px;cursor:pointer;"><i class="fas fa-download"></i> Download File</button></div>';
+                content.innerHTML = '<div style="text-align:center;color:#fff;padding:30px;"><i class="fas fa-file-alt" style="font-size:60px;margin-bottom:16px;display:block;color:#ccc;"></i><p style="font-size:16px;margin-bottom:20px;">'+san(title)+'</p><p style="color:#aaa;margin-bottom:20px;">This file type (.'+ext+') cannot be previewed in the app.</p><button onclick="inAppDownload(\''+String(url).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\',\''+String(suggestedName).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')" style="display:inline-block;padding:12px 28px;background:var(--primary-green);color:#fff;border-radius:10px;border:none;font-weight:600;font-size:14px;cursor:pointer;"><i class="fas fa-download"></i> Download File</button></div>';
             }
             modal.style.display = 'flex';
             document.body.style.overflow = 'hidden';

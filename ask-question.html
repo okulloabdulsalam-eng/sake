@@ -88,7 +88,7 @@
                 <form id="questionForm" onsubmit="handleQuestionSubmit(event)">
                     <div class="form-group">
                         <label class="form-label">Your Name</label>
-                        <input type="text" class="form-input" id="questionName" placeholder="@kiuma_support" required>
+                        <input type="text" class="form-input" id="questionName" required>
                     </div>
 
                     <div class="form-group">
@@ -172,7 +172,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js" defer></script>
     <script src="firebase-config.js" defer></script>
-    <script src="js/router-bridge.js" defer></script>
     <script src="script.min.js" defer></script>
     <script>
         function handleQuestionSubmit(e) {
@@ -260,8 +259,8 @@ Jazakallahu Khairan`;
             // Encode message for URL
             const encodedMessage = encodeURIComponent(message);
             
-            // WhatsApp number for submission
-            const whatsappNumber = '256768829144';
+            // WhatsApp number: 0768829144 (Uganda format, add country code 256)
+            const whatsappNumber = '256777351331'; // Amir Daawa
             const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
             
             // Open WhatsApp

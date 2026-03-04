@@ -93,7 +93,7 @@
 
                     <div class="form-group" id="nameGroup">
                         <label class="form-label">Full Name</label>
-                        <input type="text" class="form-input" id="programName" placeholder="@kiuma_support" required>
+                        <input type="text" class="form-input" id="programName" required>
                     </div>
 
                     <div class="form-group" id="regNoGroup">
@@ -227,7 +227,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js" defer></script>
     <script src="firebase-config.js" defer></script>
-    <script src="js/router-bridge.js" defer></script>
     <script src="script.min.js" defer></script>
     <script>
         // Auto-fill form if user data exists in localStorage
@@ -352,7 +351,7 @@
                 `Assalaamu Alaikum, I would like to enroll in the above courses. Please confirm my enrollment.\n\n` +
                 `Jazakallahu Khairan`;
 
-            const amirDaawaNumber = '256768829144';
+            const amirDaawaNumber = '256777351331';
             const whatsappLink = `https://wa.me/${amirDaawaNumber}?text=${encodeURIComponent(message)}`;
             window.open(whatsappLink, '_blank');
 
