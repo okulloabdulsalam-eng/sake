@@ -307,13 +307,38 @@ function showForegroundNotification(payload) {
     const title = payload.notification?.title || payload.data?.title || 'KIUMA Update';
     const body = payload.notification?.body || payload.data?.body || '';
     
-    // Show in-app toast
+    // Persist notification to localStorage so it shows in notifications.html
+    try {
+        var notifId = (payload.data && payload.data.notification_id) || (payload.data && payload.data.notificationId) || ('fcm-' + Date.now());
+        var existing = JSON.parse(localStorage.getItem('notificationsData') || '[]');
+        if (!Array.isArray(existing)) existing = [];
+        var alreadyExists = existing.some(function(n) { return n.id === notifId; });
+        if (!alreadyExists) {
+            existing.unshift({
+                id: notifId,
+                title: title,
+                message: body,
+                icon: (payload.data && payload.data.icon) || 'fas fa-bell',
+                category: (payload.data && payload.data.category) || 'general',
+                status: 'unread',
+                date: new Date().toISOString(),
+                source: 'fcm'
+            });
+            localStorage.setItem('notificationsData', JSON.stringify(existing));
+        }
+        if (typeof updateNotificationBadge === 'function') updateNotificationBadge();
+    } catch(e) { console.warn('Failed to save notification locally:', e); }
+
+    // Show in-app toast — persistent until user taps or 30s
     const toast = document.createElement('div');
-    toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--whatsapp-green);color:var(--toast-text);padding:15px 20px;border-radius:10px;z-index:9999;box-shadow:0 4px 15px rgba(0,0,0,0.3);max-width:90%;cursor:pointer;';
-    toast.innerHTML = `<strong>${title}</strong><br><span style="opacity:0.9">${body}</span>`;
-    toast.onclick = () => { window.location.href = 'notifications.html'; toast.remove(); };
+    toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--whatsapp-green);color:var(--toast-text);padding:15px 20px;border-radius:10px;z-index:9999;box-shadow:0 4px 15px rgba(0,0,0,0.3);max-width:90%;cursor:pointer;display:flex;align-items:flex-start;gap:10px;';
+    toast.innerHTML = `<div style="flex:1"><strong>${title}</strong><br><span style="opacity:0.9">${body}</span></div><span style="font-size:18px;opacity:0.7;padding:0 4px;">&times;</span>`;
+    toast.onclick = (e) => {
+        if (e.target.tagName === 'SPAN' && e.target.textContent === '×') { toast.remove(); return; }
+        window.location.href = 'notifications.html'; toast.remove();
+    };
     document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 6000);
+    setTimeout(() => { if (toast.parentNode) toast.remove(); }, 30000);
 }
 
 function showPushNotificationConfirmation() {

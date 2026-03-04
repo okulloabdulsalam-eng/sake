@@ -474,18 +474,17 @@
         // ==============================
         // Multi-Account R2 Storage config (aligned with media.html – same kiuma4 defaults)
         // ==============================
-        const DEFAULT_R2_WORKER_URL = 'https://kiuma-storage-kiuma4.workers.dev';
+        const DEFAULT_R2_WORKER_URL = 'https://kiuma-storage.kiuma.workers.dev';
         const DEFAULT_R2_ACCOUNTS = {
             video: [
-                { workerUrl: 'https://kiuma-storage-kiuma4.workers.dev', label: 'Storage 1' },
-                { workerUrl: 'https://kiuma-video1.kiuma4.workers.dev', label: 'Video 1' },
-                { workerUrl: 'https://kiuma-video2.kiuma4.workers.dev', label: 'Video 2' },
-                { workerUrl: 'https://kiuma-video3.kiuma4.workers.dev', label: 'Video 3' },
+                { workerUrl: 'https://kiuma-storage.kiuma.workers.dev', label: 'Video 1' },
+                { workerUrl: 'https://kiuma-video2.kiuma2.workers.dev', label: 'Video 2' },
+                { workerUrl: 'https://kiuma-video3.kiuma3.workers.dev', label: 'Video 3' },
                 { workerUrl: 'https://kiuma-video4.kiuma4.workers.dev', label: 'Video 4' },
-                { workerUrl: 'https://kiuma-video5.kiuma4.workers.dev', label: 'Video 5' }
+                { workerUrl: 'https://kiuma-video5.kiuma5.workers.dev', label: 'Video 5' }
             ],
-            audio: { workerUrl: 'https://kiuma-audio.kiuma4.workers.dev' },
-            library: { workerUrl: 'https://kiuma-library.kiuma4.workers.dev' }
+            audio: { workerUrl: 'https://kiuma-audio.kiuma6.workers.dev' },
+            library: { workerUrl: 'https://kiuma-library.kiuma7.workers.dev' }
         };
         function getR2MultiConfig() {
             try { const s = localStorage.getItem('r2MultiConfig'); if (s) return JSON.parse(s); } catch(e) {}

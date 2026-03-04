@@ -269,15 +269,8 @@ exports.initializePayment = functions.https.onCall(async (data, context) => {
     );
   }
   
-  // SECURITY: Require authentication
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
-      'unauthenticated',
-      'User must be authenticated to initiate payments'
-    );
-  }
-  
-  const userId = context.auth.uid;
+  // Allow both authenticated and guest checkout
+  const userId = (context.auth && context.auth.uid) || null;
   const { amount, currency = 'UGX', description, callback_url, cancel_url } = data;
   
   // SECURITY: Validate input server-side (never trust frontend)
@@ -324,13 +317,20 @@ exports.initializePayment = functions.https.onCall(async (data, context) => {
     const credentials = getPesapalCredentials();
     
     // Get user email for payment
-    const userRecord = await admin.auth().getUser(userId);
-    const userEmail = userRecord.email || data.email;
+    let userEmail = data.email || '';
+    let userDisplayName = '';
+    if (userId) {
+      try {
+        const userRecord = await admin.auth().getUser(userId);
+        userEmail = userEmail || userRecord.email || '';
+        userDisplayName = userRecord.displayName || '';
+      } catch (e) { /* guest checkout fallback */ }
+    }
     
     if (!userEmail) {
       throw new functions.https.HttpsError(
         'invalid-argument',
-        'User email is required for payment'
+        'Email is required for payment'
       );
     }
     
@@ -347,9 +347,9 @@ exports.initializePayment = functions.https.onCall(async (data, context) => {
         email_address: userEmail,
         phone_number: data.phone || '',
         country_code: 'UG',
-        first_name: data.first_name || userRecord.displayName?.split(' ')[0] || 'User',
+        first_name: data.first_name || (userDisplayName ? userDisplayName.split(' ')[0] : 'User'),
         middle_name: '',
-        last_name: data.last_name || userRecord.displayName?.split(' ').slice(1).join(' ') || '',
+        last_name: data.last_name || (userDisplayName ? userDisplayName.split(' ').slice(1).join(' ') : ''),
         line_1: data.address || '',
         line_2: '',
         city: data.city || '',
@@ -381,7 +381,7 @@ exports.initializePayment = functions.https.onCall(async (data, context) => {
     
     // Store pending payment in Firestore (before user pays)
     await db.collection('payments').add({
-      userId: userId,
+      userId: userId || 'guest',
       reference: reference,
       amount: parseFloat(amount),
       currency: currency,
@@ -409,7 +409,7 @@ exports.initializePayment = functions.https.onCall(async (data, context) => {
     
   } catch (error) {
     console.error('Payment initialization error:', {
-      userId,
+      userId: userId || 'guest',
       amount,
       error: error.message,
       code: error.code

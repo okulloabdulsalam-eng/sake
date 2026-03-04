@@ -42,7 +42,9 @@ try {
                 icon: `${BASE_PATH}/logo.png`,
                 badge: `${BASE_PATH}/logo.png`,
                 tag: payload.data?.notification_id || payload.data?.tag || 'kiuma',
-                data: payload.data || {}
+                data: payload.data || {},
+                requireInteraction: true,
+                vibrate: [200, 100, 200]
             };
 
             return self.registration.showNotification(title, notificationOptions);
