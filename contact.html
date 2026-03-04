@@ -87,6 +87,13 @@
                 </div>
 
                 <div class="info-card">
+                    <h3><i class="fas fa-phone"></i> Phone</h3>
+                    <p>General Inquiries: <a href="tel:+256708840983" style="color: var(--primary-green);">+256 708 840 983</a><br>
+                    Emergency: <a href="tel:+256703268522" style="color: var(--primary-green);">+256 703 268 522</a><br>
+                    WhatsApp: <a href="https://wa.me/256708840983" target="_blank" style="color: #25D366; display: inline-flex; align-items: center; gap: 5px;"><i class="fab fa-whatsapp"></i> +256 708 840 983</a></p>
+                </div>
+
+                <div class="info-card">
                     <h3><i class="fas fa-envelope"></i> Email</h3>
                     <p>General: <a href="mailto:info@kiuma.kiu.ac.ug" style="color: var(--primary-green);">info@kiuma.kiu.ac.ug</a><br>
                     Programs: <a href="mailto:programs@kiuma.kiu.ac.ug" style="color: var(--primary-green);">programs@kiuma.kiu.ac.ug</a><br>
@@ -109,7 +116,7 @@
                         <form id="contactForm" onsubmit="handleContactSubmit(event)">
                             <div class="form-group">
                                 <label class="form-label">Your Name</label>
-                                <input type="text" class="form-input" id="contactName" placeholder="AMIR KIUMA" required>
+                                <input type="text" class="form-input" id="contactName" required>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Your Email</label>
@@ -183,6 +190,7 @@
     <script src="firebase-config.js" defer></script>
     <script src="script.min.js" defer></script>
     <script>
+        // Amir Fahad Kiwuuwa WhatsApp number
         const AMIR_CONTACT_WHATSAPP = '256708840983';
 
         function handleContactSubmit(e) {
@@ -193,6 +201,7 @@
             const subject = subjectSelect.options[subjectSelect.selectedIndex].text;
             const message = document.getElementById('contactMessage').value.trim();
 
+            // Build WhatsApp message
             let whatsappMessage = `*KIUMA Contact Message*\n\n`;
             whatsappMessage += `👤 *Name:* ${name}\n`;
             whatsappMessage += `📧 *Email:* ${email}\n`;
@@ -200,10 +209,12 @@
             whatsappMessage += `\n📝 *Message:*\n${message}\n`;
             whatsappMessage += `\n_Sent via KIUMA App_`;
 
+            // Encode and open WhatsApp
             const encodedMessage = encodeURIComponent(whatsappMessage);
             const whatsappUrl = `https://wa.me/${AMIR_CONTACT_WHATSAPP}?text=${encodedMessage}`;
             window.open(whatsappUrl, '_blank');
 
+            // Reset form
             document.getElementById('contactForm').reset();
         }
         

@@ -70,6 +70,89 @@ function applySwUpdate() {
     setTimeout(function() { window.location.reload(); }, 3000);
 }
 
+// Offline/Online Detection and Notification Banner
+(function() {
+    const isKiumaApp = /KIUMA-App\/1\.0/i.test(navigator.userAgent || '');
+    if (isKiumaApp) return;
+
+    let offlineBanner = null;
+    
+    function createOfflineBanner() {
+        if (offlineBanner) return offlineBanner;
+        
+        offlineBanner = document.createElement('div');
+        offlineBanner.id = 'offlineBanner';
+        offlineBanner.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 10px 15px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+        `;
+        offlineBanner.innerHTML = '<i class="fas fa-wifi-slash" style="font-size: 16px;"></i> You are offline, some features may be limited';
+        document.body.appendChild(offlineBanner);
+        return offlineBanner;
+    }
+    
+    function showOfflineBanner() {
+        const banner = createOfflineBanner();
+        setTimeout(() => {
+            banner.style.transform = 'translateY(0)';
+        }, 100);
+    }
+    
+    function hideOfflineBanner() {
+        if (offlineBanner) {
+            offlineBanner.style.transform = 'translateY(-100%)';
+            setTimeout(() => {
+                if (offlineBanner && offlineBanner.parentNode) {
+                    offlineBanner.parentNode.removeChild(offlineBanner);
+                    offlineBanner = null;
+                }
+            }, 300);
+        }
+    }
+    
+    function updateConnectionStatus() {
+        if (navigator.onLine) {
+            hideOfflineBanner();
+        } else {
+            showOfflineBanner();
+        }
+    }
+    
+    // Check initial status
+    window.addEventListener('DOMContentLoaded', () => {
+        if (!navigator.onLine) {
+            showOfflineBanner();
+        }
+    });
+    
+    // Listen for online/offline events
+    window.addEventListener('online', () => {
+        hideOfflineBanner();
+        showToast('Back online!', 'success', 2000);
+    });
+    
+    window.addEventListener('offline', () => {
+        showOfflineBanner();
+    });
+})();
+
+
 const THEME_PREFERENCE_KEY = 'themePreference';
 
 function getThemePreference() {
@@ -175,27 +258,38 @@ let fcmToken = null;
 let fcmInitialized = false;
 let fcmSwRegistration = null;
 
+function isFCMAuthOrSubscribeError(err) {
+    const msg = (err && (err.message || err.code || '')) + '';
+    return msg.indexOf('token-subscribe-failed') !== -1 ||
+           msg.indexOf('missing required authentication credential') !== -1 ||
+           msg.indexOf('Expected OAuth 2 access token') !== -1 ||
+           (err && err.code === 'messaging/token-subscribe-failed');
+}
+
 async function initializeFCM() {
     if (fcmInitialized) return;
-    
+    try {
+        if (localStorage.getItem('fcmPermanentlyFailed') === '1') return;
+    } catch (e) {}
+
     // Check if Firebase and messaging are available
     if (typeof firebase === 'undefined') {
         console.log('Firebase not loaded yet, retrying...');
         setTimeout(initializeFCM, 2000);
         return;
     }
-    
+
     if (!firebase.messaging) {
         console.log('Firebase Messaging not available');
         return;
     }
-    
+
     // Check if notifications are supported
     if (!('Notification' in window)) {
         console.log('Notifications not supported in this browser');
         return;
     }
-    
+
     try {
         const messaging = firebase.messaging();
 
@@ -207,10 +301,10 @@ async function initializeFCM() {
                 console.warn('FCM SW not ready:', swError);
             }
         }
-        
+
         // Request permission if not already granted
         if (Notification.permission === 'granted') {
-            await getFCMToken(messaging, false); // already had permission, don't show toast
+            await getFCMToken(messaging);
             fcmInitialized = true;
         } else if (Notification.permission === 'default') {
             // Show a friendly prompt first
@@ -218,7 +312,7 @@ async function initializeFCM() {
             if (shouldAsk) {
                 const permission = await Notification.requestPermission();
                 if (permission === 'granted') {
-                    await getFCMToken(messaging, true); // just enabled, show toast once
+                    await getFCMToken(messaging);
                     fcmInitialized = true;
                 } else if (permission === 'denied') {
                     localStorage.setItem('fcmDeclined', 'true');
@@ -228,21 +322,26 @@ async function initializeFCM() {
         } else {
             console.log('Notifications blocked by user');
         }
-        
+
         // Handle foreground messages
         messaging.onMessage((payload) => {
             console.log('FCM foreground message:', payload);
             showForegroundNotification(payload);
         });
-        
+
     } catch (error) {
-        console.error('FCM initialization error:', error);
-        // Retry after delay
-        setTimeout(initializeFCM, 5000);
+        if (isFCMAuthOrSubscribeError(error)) {
+            try { localStorage.setItem('fcmPermanentlyFailed', '1'); } catch (e) {}
+            console.warn('FCM not available (auth/config). Push notifications disabled for this browser.');
+            fcmInitialized = true;
+        } else {
+            console.error('FCM initialization error:', error);
+            setTimeout(initializeFCM, 5000);
+        }
     }
 }
 
-async function getFCMToken(messaging, showConfirmation) {
+async function getFCMToken(messaging) {
     try {
         const tokenOptions = {
             vapidKey: 'BOGSBUWSOJQXcKe1SXuR2UBOPSGUt3FUXQi1mUwLkRpqG0gyIzAMRdZWqYNtyU5qjkoE5gnRwFYjxYGdKLVLCbI'
@@ -251,34 +350,24 @@ async function getFCMToken(messaging, showConfirmation) {
             tokenOptions.serviceWorkerRegistration = fcmSwRegistration;
         }
         fcmToken = await messaging.getToken(tokenOptions);
-        
+
         if (fcmToken) {
             console.log('FCM Token obtained:', fcmToken.substring(0, 20) + '...');
             localStorage.setItem('fcmToken', fcmToken);
             saveFCMTokenToFirestore(fcmToken);
-            if (showConfirmation) showPushNotificationConfirmation();
+            showPushNotificationConfirmation();
         }
     } catch (error) {
-        console.error('Failed to get FCM token:', error);
-    }
-}
-
-async function registerTokenWithWorker(token) {
-    try {
-        var WORKER_URL = 'https://kiuma-notifications.kiuma4.workers.dev';
-        await fetch(WORKER_URL + '/api/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: token, platform: 'web' })
-        });
-        console.log('FCM token registered with Cloudflare Worker');
-    } catch (e) {
-        console.warn('Failed to register token with Worker:', e);
+        if (isFCMAuthOrSubscribeError(error)) {
+            try { localStorage.setItem('fcmPermanentlyFailed', '1'); } catch (e) {}
+            console.warn('FCM token unavailable (check Firebase Console > Cloud Messaging > Web Push certificates). Push disabled.');
+        } else {
+            console.error('Failed to get FCM token:', error);
+        }
     }
 }
 
 async function saveFCMTokenToFirestore(token) {
-    registerTokenWithWorker(token);
     if (typeof firebase === 'undefined' || !firebase.firestore) return;
     
     try {
@@ -319,7 +408,7 @@ function showForegroundNotification(payload) {
 function showPushNotificationConfirmation() {
     const toast = document.createElement('div');
     toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--primary-green);color:var(--toast-text);padding:12px 24px;border-radius:8px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.3);';
-    toast.textContent = '✓ Notifications enabled.';
+    toast.textContent = '✓ Notifications enabled! You\'ll receive updates even when the app is closed.';
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 5000);
 }
@@ -422,34 +511,34 @@ document.addEventListener('DOMContentLoaded', function initHeroNavPageTitle() {
     }
 });
 
-// Sticky mini-bar — shows when scrolled past upper nav; always has menu, notifications, accounts
+// Sticky mini-bar — auto-creates and shows/hides on scroll past .page-hero
 (function initStickyMiniBar() {
-    const hero = document.querySelector('.page-hero') || document.querySelector('.page-hero-compact');
+    const hero = document.querySelector('.page-hero');
     if (!hero) return; // no hero on this page, skip
 
-    // Extract page title from hero (standard or compact)
-    const titleEl = hero.querySelector('.hero-page-title') || hero.querySelector('.hero-compact-title h1');
+    // Extract page title from hero
+    const titleEl = hero.querySelector('.hero-page-title');
     const pageTitle = titleEl ? titleEl.textContent.trim() : (document.getElementById('heroNavPageTitle') && document.getElementById('heroNavPageTitle').textContent) || 'KIUMA';
 
-    // Check for admin link in the hero (optional)
+    // Check for admin link in the hero
     const adminLink = hero.querySelector('.hero-admin-link');
     const adminHref = adminLink ? adminLink.getAttribute('href') : null;
 
-    // Build the mini-bar: menu (left), title, then notifications + account (right)
+    // Build the mini-bar
     const bar = document.createElement('div');
     bar.className = 'sticky-mini-bar';
     bar.innerHTML =
         '<div class="smb-left">' +
-            '<button class="smb-btn" id="smbMenuToggle" title="Menu"><i class="fas fa-bars"></i></button>' +
-            '<span class="smb-title">' + (pageTitle || 'KIUMA') + '</span>' +
+            '<button class="smb-btn" id="smbMenuToggle"><i class="fas fa-bars"></i></button>' +
+            '<span class="smb-title">' + pageTitle + '</span>' +
         '</div>' +
         '<div class="smb-right">' +
             (adminHref ? '<a href="' + adminHref + '" class="smb-admin-link"><i class="fas fa-cog"></i> Admin</a>' : '') +
-            '<button class="smb-btn" id="smbNotifications" title="Notifications" onclick="window.location.href=\'notifications.html\'">' +
+            '<button class="smb-btn" id="smbNotifications" onclick="window.location.href=\'notifications.html\'">' +
                 '<i class="fas fa-bell"></i>' +
                 '<span class="badge" data-notification-badge style="display:none;"></span>' +
             '</button>' +
-            '<div class="smb-profile-avatar" title="Account" onclick="if(typeof toggleAccountModal===\'function\')toggleAccountModal()"><i class="fas fa-user"></i></div>' +
+            '<div class="smb-profile-avatar" onclick="if(typeof toggleAccountModal===\'function\')toggleAccountModal()"><i class="fas fa-user"></i></div>' +
         '</div>';
 
     document.body.appendChild(bar);
@@ -465,7 +554,7 @@ document.addEventListener('DOMContentLoaded', function initHeroNavPageTitle() {
         });
     }
 
-    // Show minibar when user has scrolled past the upper navigation (hero area)
+    // Show/hide on scroll with IntersectionObserver (performant)
     var observer = new IntersectionObserver(function(entries) {
         entries.forEach(function(entry) {
             if (entry.isIntersecting) {
@@ -474,7 +563,7 @@ document.addEventListener('DOMContentLoaded', function initHeroNavPageTitle() {
                 bar.classList.add('visible');
             }
         });
-    }, { threshold: 0, rootMargin: '-52px 0 0 0' }); // bar appears once nav strip has left the top
+    }, { threshold: 0, rootMargin: '0px' });
 
     observer.observe(hero);
 
@@ -487,10 +576,11 @@ document.addEventListener('DOMContentLoaded', function initHeroNavPageTitle() {
     function updateStickyBarTitle() {
         var smbTitle = bar.querySelector('.smb-title');
         if (!smbTitle) return;
-        var heroTitle = document.querySelector('.container .hero-page-title, .hero-compact-title h1');
-        var newTitle = (heroTitle && heroTitle.textContent.trim()) || (document.getElementById('heroNavPageTitle') && document.getElementById('heroNavPageTitle').textContent) || (document.title || '').trim() || 'KIUMA';
-        newTitle = (newTitle || '').replace(/\s*[-|]\s*KIUMA\s*$/i, '').trim() || 'KIUMA';
+        var heroTitle = document.querySelector('.container .hero-page-title');
+        var newTitle = (heroTitle && heroTitle.textContent.trim()) || (document.title || '').trim() || 'KIUMA';
+        newTitle = newTitle.replace(/\s*[-|]\s*KIUMA\s*$/i, '').trim() || 'KIUMA';
         smbTitle.textContent = newTitle;
+        console.log('[StickyMiniBar] Title updated to:', newTitle);
     }
 
     window.addEventListener('kiuma-page-changed', updateStickyBarTitle);
@@ -1158,9 +1248,25 @@ function loadPrayerTimes() {
 // Update prayer highlight every minute
 setInterval(loadPrayerTimes, 60000);
 
-// Update dates on load and continuously (auto-update)
-updateDates();
-loadPrayerTimes();
+// Run date and prayer updates when DOM is ready (fixes home page when navigated from other pages)
+function runHomeDateAndPrayer() {
+    if (document.getElementById('hijriDate') || document.getElementById('nextPrayerTime')) {
+        if (typeof updateDates === 'function') updateDates();
+        if (typeof loadPrayerTimes === 'function') loadPrayerTimes();
+    }
+}
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', runHomeDateAndPrayer);
+} else {
+    runHomeDateAndPrayer();
+}
+// Also run when page is restored from back/forward cache (e.g. from pay.html back to home)
+window.addEventListener('pageshow', function(ev) {
+    if (ev.persisted && (document.getElementById('hijriDate') || document.getElementById('nextPrayerTime'))) {
+        if (typeof updateDates === 'function') updateDates();
+        if (typeof loadPrayerTimes === 'function') loadPrayerTimes();
+    }
+});
 
 // Initialize fasting reminder checker (checks every minute for Sunday/Wednesday at 2pm, 6pm, 7:40pm)
 initFastingReminderChecker();
@@ -2182,22 +2288,6 @@ async function enforceFreshAssetsOnLoad() {
 }
 
 window.addEventListener('online', () => enforceFreshAssetsOnLoad());
-
-// Re-initialize home page when restored from bfcache (browser back/forward navigation)
-// DOMContentLoaded does NOT fire on bfcache restore; pageshow with persisted=true does.
-window.addEventListener('pageshow', function(event) {
-    if (event.persisted) {
-        // Re-run dates and prayer times so they don't go blank or show stale values
-        if (typeof updateDates === 'function') updateDates();
-        if (typeof loadPrayerTimes === 'function') loadPrayerTimes();
-        // Re-initialize notification badge so it reflects real unread count
-        try {
-            if (typeof initNotificationBadgeListener === 'function') initNotificationBadgeListener();
-        } catch (e) {
-            try { if (typeof updateNotificationBadge === 'function') updateNotificationBadge(); } catch(e2) {}
-        }
-    }
-});
 
 // Active navigation item
 document.addEventListener('DOMContentLoaded', () => {

@@ -4303,31 +4303,36 @@
         }
 
         async function sendFCMPushNotification(notification) {
-            var WORKER_URL = 'https://kiuma-notifications.kiuma4.workers.dev';
-            var ADMIN_API_KEY = 'km_sk_kiuma_2026_x9f3k7m2p5q8r1';
-            var response = await fetch(WORKER_URL + '/api/send', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-API-Key': ADMIN_API_KEY
-                },
-                body: JSON.stringify({
-                    title: notification.title || 'KIUMA',
-                    body: notification.message || '',
-                    data: {
-                        icon: notification.icon || 'fas fa-bell',
-                        category: notification.category || 'general',
-                        notificationId: notification.id || ''
-                    }
-                })
-            });
-            if (!response.ok) {
-                var err = {};
-                try { err = await response.json(); } catch(e) {}
-                throw new Error(err.error || 'Failed to send notification (HTTP ' + response.status + ')');
+            if (typeof firebase === 'undefined' || !firebase.firestore) {
+                throw new Error('Firebase not available. Check firebase-config.js and that you are on the correct site.');
             }
-            var result = await response.json();
-            return result.sent || 0;
+            var pushData = {
+                title: notification.title || 'KIUMA',
+                body: notification.message || '',
+                icon: notification.icon || 'fas fa-bell',
+                category: notification.category || 'general',
+                notificationId: notification.id || '',
+                status: 'pending'
+            };
+            try {
+                pushData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+            } catch (e) {
+                pushData.createdAt = new Date().toISOString();
+            }
+            try {
+                await firebase.firestore().collection('push_queue').add(pushData);
+            } catch (err) {
+                var msg = err.message || String(err);
+                if (msg.indexOf('permission') !== -1 || (err.code && String(err.code).indexOf('permission') !== -1)) {
+                    throw new Error('Permission denied writing to push_queue. Check Firestore rules allow create on push_queue.');
+                }
+                if (msg.indexOf('unavailable') !== -1 || msg.indexOf('network') !== -1) {
+                    throw new Error('Network error. Check connection and try again.');
+                }
+                throw err;
+            }
+            var tokensSnapshot = await firebase.firestore().collection('fcm_tokens').get();
+            return tokensSnapshot.size;
         }
 
         function deleteNotification(id) {

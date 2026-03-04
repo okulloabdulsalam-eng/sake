@@ -485,7 +485,11 @@
                     cancel_url: base + '/pay.html'
                 });
             } catch (err) {
-                alert(err.message || 'Payment could not be started. Try again.');
+                var msg = (err && err.message) ? String(err.message) : '';
+                if (/FCM|token-subscribe|messaging\/|OAuth 2 access token|authentication credential/i.test(msg)) {
+                    msg = 'Payment could not be started. Please try again.';
+                }
+                alert(msg || 'Payment could not be started. Try again.');
             }
             if (payBtn && window._pesapalPayBtnOriginal) {
                 payBtn.innerHTML = window._pesapalPayBtnOriginal;
