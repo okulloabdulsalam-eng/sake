@@ -1725,6 +1725,41 @@ window.showLoginTab = function() {
     document.getElementById('signupFormElement').style.display = 'none';
 };
 
+// Global aliases so signup/login can be triggered from any page
+window.openSignupModal = function() {
+    var modal = document.getElementById('accountModal');
+    if (!modal && typeof injectAccountModal === 'function') injectAccountModal();
+    modal = document.getElementById('accountModal');
+    if (modal) {
+        document.getElementById('accountTabs').style.display = 'block';
+        document.getElementById('accountModalTitle').innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
+        document.getElementById('loginTab').classList.remove('active');
+        document.getElementById('signupTab').classList.add('active');
+        document.getElementById('loginFormElement').style.display = 'none';
+        document.getElementById('signupFormElement').style.display = 'block';
+        document.getElementById('accountInfo').style.display = 'none';
+        if (document.getElementById('editProfileForm')) document.getElementById('editProfileForm').style.display = 'none';
+        modal.style.display = 'flex';
+    }
+};
+
+window.openLoginModal = function() {
+    var modal = document.getElementById('accountModal');
+    if (!modal && typeof injectAccountModal === 'function') injectAccountModal();
+    modal = document.getElementById('accountModal');
+    if (modal) {
+        document.getElementById('accountTabs').style.display = 'block';
+        document.getElementById('accountModalTitle').innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+        document.getElementById('loginTab').classList.add('active');
+        document.getElementById('signupTab').classList.remove('active');
+        document.getElementById('loginFormElement').style.display = 'block';
+        document.getElementById('signupFormElement').style.display = 'none';
+        document.getElementById('accountInfo').style.display = 'none';
+        if (document.getElementById('editProfileForm')) document.getElementById('editProfileForm').style.display = 'none';
+        modal.style.display = 'flex';
+    }
+};
+
 window.closeAccountModal = function() {
     const modal = document.getElementById('accountModal');
     if (modal) {
