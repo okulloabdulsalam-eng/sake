@@ -112,7 +112,7 @@
     function isExternalUrl(href) {
         if (!href) return false;
         if (/^(tel:|mailto:|sms:|whatsapp:|intent:|market:|geo:)/i.test(href)) return true;
-        if (/wa\.me|chat\.whatsapp\.com|t\.me|youtube\.com|youtu\.be|play\.google\.com|facebook\.com|instagram\.com|twitter\.com|x\.com/i.test(href)) return true;
+        if (/wa\.me|chat\.whatsapp\.com|t\.me|youtube\.com|youtu\.be|play\.google\.com|facebook\.com|instagram\.com|twitter\.com|x\.com|drive\.google\.com|docs\.google\.com|maps\.google\.com|linkedin\.com|tiktok\.com|snapchat\.com|pinterest\.com|reddit\.com|github\.com|medium\.com/i.test(href)) return true;
         try {
             var u = new URL(href, location.href);
             var own = location.hostname;
@@ -136,9 +136,21 @@
         if (isExternalUrl(href)) {
             e.preventDefault();
             e.stopPropagation();
+            e.stopImmediatePropagation();
             sendToParent('OPEN_EXTERNAL', { url: href });
+            return false;
         }
     }, true);
+
+    // Also override window.open to catch target="_blank" links that bypass the click handler
+    var _origOpen = window.open;
+    window.open = function(url, target, features) {
+        if (url && isExternalUrl(url)) {
+            sendToParent('OPEN_EXTERNAL', { url: url });
+            return null;
+        }
+        return _origOpen.call(window, url, target, features);
+    };
 
     console.log('[KiumaBridge] App bridge initialized (in-app mode)');
 })();

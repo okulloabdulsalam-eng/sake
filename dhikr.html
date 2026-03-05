@@ -22,7 +22,7 @@
     <style>
         body {
             background: var(--gray);
-            padding-bottom: 0;
+            padding-bottom: 60px;
         }
         .container {
             max-width: 428px;
@@ -153,36 +153,91 @@
     </style>
 </head>
 <body>
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="counselling.html" class="nav-link"><i class="fas fa-hands-helping"></i> Counselling</a></li>
+            <li><a href="library.html" class="nav-link"><i class="fas fa-book-open"></i> Library</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="media-settings.html" class="nav-link"><i class="fas fa-sliders-h"></i> Media Settings</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
     <div class="container">
-        <div class="page-hero-compact">
+        <div class="page-hero">
             <div class="hero-deco"></div>
-            <div class="hero-compact-nav">
-                <button class="hero-back-btn" onclick="history.back()">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
+            <nav class="hero-nav">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
                 <span class="hero-nav-title" id="heroNavPageTitle"></span>
-                <div class="hero-compact-actions"></div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="notifications-btn" id="notificationsBtn">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge" style="display:none;"></span>
+                    </button>
+                    <div class="hero-profile-avatar" onclick="if(typeof toggleAccountModal==='function')toggleAccountModal()"><i class="fas fa-user"></i></div>
+                </div>
+            </nav>
+            <div class="hero-logo-row">
+                <div class="hero-logo-ring">
+                    <img src="logo.png" alt="KIUMA" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="logo-fallback" style="display:none;">KU</div>
+                </div>
             </div>
-            <div class="hero-compact-title">
-                <h1>Dhikr</h1>
-                <p>Remember Allah with daily adhkar</p>
+            <div class="hero-title-area">
+                <div class="hero-org-name">KIUMA</div>
+                <h1 class="hero-page-title">Dhikr & Duas</h1>
+                <p class="hero-subtitle">Remember Allah with daily adhkar</p>
                 <div class="hero-accent-line"></div>
             </div>
         </div>
 
-        <!-- Dhikr Selection -->
-        <div class="dhikr-selector" id="dhikrSelector">
-            <div class="dhikr-tabs">
-                <button class="dhikr-tab active" onclick="filterDhikr('all')">All</button>
-                <button class="dhikr-tab" onclick="filterDhikr('morning')">Morning</button>
-                <button class="dhikr-tab" onclick="filterDhikr('evening')">Evening</button>
-                <button class="dhikr-tab" onclick="filterDhikr('dua')">Duas</button>
-            </div>
-            <div class="dhikr-cards" id="dhikrCards"></div>
-        </div>
+        <main class="main-content">
+            <div style="height:8px;"></div>
 
+            <section class="page-content">
+                <div class="dhikr-selector" id="dhikrSelector">
+                    <div class="dhikr-tabs">
+                        <button class="dhikr-tab active" onclick="filterDhikr('all')">All</button>
+                        <button class="dhikr-tab" onclick="filterDhikr('morning')">Morning</button>
+                        <button class="dhikr-tab" onclick="filterDhikr('evening')">Evening</button>
+                        <button class="dhikr-tab" onclick="filterDhikr('dua')">Duas</button>
+                    </div>
+                    <div class="dhikr-cards" id="dhikrCards"></div>
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
+            <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
+            <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
+        </nav>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js" defer></script>
+    <script src="firebase-config.js" defer></script>
+    <script src="js/router-bridge.js" defer></script>
     <script src="script.min.js" defer></script>
     <script>
         const dhikrList = [
@@ -255,5 +310,5 @@
             renderDhikrCards();
         });
     </script>
-</body>
+<script src="js/app-bridge.js" defer></script></body>
 </html>

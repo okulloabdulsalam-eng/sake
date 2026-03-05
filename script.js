@@ -2405,6 +2405,22 @@ function selectPaymentMethod(method) {
 }
 
 // Initialize payment method selection
+// Contact Amir via WhatsApp for tuition contribution
+window.contactTuition = function() {
+    var msg = 'Assalamu Alaikum, I want to contribute to tuition for brothers and sisters.';
+    try {
+        var u = JSON.parse(localStorage.getItem('userData'));
+        if (u) {
+            var name = u.firstName ? (u.firstName + ' ' + (u.lastName || '')).trim() : (u.name || '');
+            if (name) msg += '\n\nName: ' + name;
+            if (u.email) msg += '\nEmail: ' + u.email;
+            if (u.phone || u.phoneNumber) msg += '\nPhone: ' + (u.phone || u.phoneNumber);
+            if (u.regNo || u.registrationNumber) msg += '\nReg No: ' + (u.regNo || u.registrationNumber);
+        }
+    } catch (e) {}
+    window.open('https://wa.me/256768829144?text=' + encodeURIComponent(msg), '_blank');
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     const paymentMethods = document.querySelectorAll('.payment-method');
     paymentMethods.forEach(method => {

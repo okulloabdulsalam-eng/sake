@@ -80,18 +80,29 @@
             <div style="height:8px;"></div>
 
             <section class="page-content">
-                <!-- Kizumu Charity Visit — FINISHED -->
+                <!-- Kizumu Tahfiz Visit — Program Continues -->
                 <div class="event-card charity-visit-card" id="charity-visit" style="border: 3px solid #2e7d32; background: linear-gradient(135deg, #e8f5e9 0%, #fff 100%); position: relative; overflow: hidden;">
                     <div class="event-image" style="background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.4)), url('images/charity.webp') center/cover no-repeat; min-height: 120px;">
                     </div>
                     <div class="event-content">
                         <div class="event-date" style="background: linear-gradient(90deg, #2e7d32, #1b5e20); color: white; padding: 8px 15px; border-radius: 20px; display: inline-block; font-weight: bold;">
-                            <i class="fas fa-check-circle"></i> FINISHED
+                            <i class="fas fa-check-circle"></i> GROUP VISIT COMPLETED
                         </div>
-                        <h3 class="event-title" style="color: #2e7d32; font-size: 1.4em;">Kizumu Tahfiz Charity Visit — FINISHED</h3>
+                        <h3 class="event-title" style="color: #2e7d32; font-size: 1.4em;">Kizumu Tahfiz Visit</h3>
                         <p class="event-description" style="font-size: 15px; line-height: 1.6;">
-                            Thank you for your generous support. We are grateful for your contribution to this initiative.
+                            JazakAllahu Khairan to all members for your cooperation and generous support. May Allah reward you abundantly.
                         </p>
+                        <p class="event-description" style="font-size: 15px; line-height: 1.6; margin-top: 10px;">
+                            <strong>The Kizumu Tahfiz program still continues</strong> on an individual and community basis. If you would like to participate or support, please reach out:
+                        </p>
+                        <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
+                            <a href="https://wa.me/256768829144" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; background: #25D366; color: white; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 14px;">
+                                <i class="fab fa-whatsapp" style="font-size: 18px;"></i> WhatsApp: 0768829144
+                            </a>
+                            <a href="tel:+256742890067" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; background: var(--primary-green); color: white; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 14px;">
+                                <i class="fas fa-phone" style="font-size: 16px;"></i> Call: 0742890067
+                            </a>
+                        </div>
                     </div>
                 </div>
 
@@ -167,6 +178,47 @@
         </nav>
     </div>
 
+    <!-- Floating Did You Know Button -->
+    <div class="floating-dyk-btn" onclick="showDykModal()">
+        <i class="fas fa-lightbulb"></i>
+        <span>Did You Know?</span>
+    </div>
+    <div class="modal-overlay" id="dykModal" style="display: none;">
+        <div class="modal-content activities-modal">
+            <div class="modal-header" style="background: linear-gradient(135deg, #1565C0, #0D47A1);">
+                <h3><i class="fas fa-lightbulb"></i> Did You Know?</h3>
+                <button class="modal-close" onclick="closeDykModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="activities-modal-list">
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-tongue'" style="border-left: 4px solid #C62828;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #C62828, #B71C1C);"><i class="fas fa-comment-slash"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #C62828;">Backbiting & The Tongue</h4><p>Terrifying hadiths about gheebah, slander & idle talk</p></div>
+                    <i class="fas fa-chevron-right" style="color: #C62828;"></i>
+                </div>
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-dress'" style="border-left: 4px solid #6A1B9A;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #6A1B9A, #4A148C);"><i class="fas fa-user-shield"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #6A1B9A;">Dress, Hair & Modesty</h4><p>What Islam says about hair, hijab & clothing</p></div>
+                    <i class="fas fa-chevron-right" style="color: #6A1B9A;"></i>
+                </div>
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-warnings'" style="border-left: 4px solid #E65100;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #E65100, #BF360C);"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #E65100;">Warnings People Ignore</h4><p>Lying, hypocrisy, arrogance, riba & more</p></div>
+                    <i class="fas fa-chevron-right" style="color: #E65100;"></i>
+                </div>
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html'" style="border-left: 4px solid #1565C0;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #1565C0, #0D47A1);"><i class="fas fa-book-open"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #1565C0;">View All Sections</h4><p>Deeds, character, worship & more authentic knowledge</p></div>
+                    <i class="fas fa-chevron-right" style="color: #1565C0;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    function showDykModal(){document.getElementById('dykModal').style.display='flex';}
+    function closeDykModal(){document.getElementById('dykModal').style.display='none';}
+    document.addEventListener('DOMContentLoaded',function(){var o=document.getElementById('dykModal');if(o)o.addEventListener('click',function(e){if(e.target===this)closeDykModal();});});
+    </script>
+
     <!-- Floating Hot Events Button -->
     <div class="floating-kizumu-btn" onclick="showActivitiesModal()" style="background: linear-gradient(135deg, #ff6b35, #e74c3c); animation: pulse-hot 1.5s infinite; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5);">
         <i class="fas fa-fire" style="color: #fff;"></i>
@@ -194,8 +246,8 @@
                         <i class="fas fa-heart"></i>
                     </div>
                     <div class="activity-modal-text">
-                        <h4 style="color: #e74c3c;">Kizumu Tahfiz Visit — FINISHED</h4>
-                        <p>Thank you for your support! Results and media released soon.</p>
+                        <h4 style="color: #2e7d32;">Kizumu Tahfiz Visit — Ongoing</h4>
+                        <p>JazakAllahu Khairan! Program continues individually & in communities.</p>
                     </div>
                     <i class="fas fa-chevron-right" style="color: #e74c3c;"></i>
                 </div>
@@ -211,15 +263,15 @@
                     <i class="fas fa-chevron-right" style="color: #9c27b0;"></i>
                 </div>
 
-                <div class="activity-modal-item" onclick="navigateToActivity('tuition-brothers')">
+                <div class="activity-modal-item" onclick="contactTuition()">
                     <div class="activity-modal-icon" style="background: var(--primary-green);">
                         <i class="fas fa-graduation-cap"></i>
                     </div>
                     <div class="activity-modal-text">
-                        <h4>Tuition for Brothers</h4>
-                        <p>Support brothers' education and learning</p>
+                        <h4>Tuition Brothers & Sisters</h4>
+                        <p>Support brothers' and sisters' education</p>
                     </div>
-                    <i class="fas fa-chevron-right"></i>
+                    <i class="fab fa-whatsapp" style="color: #25D366; font-size: 18px;"></i>
                 </div>
                             </div>
         </div>
@@ -257,8 +309,6 @@
                 document.querySelector('.charity-visit-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             } else if (activity === 'quran-competition') {
                 document.querySelector('.quran-competition-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            } else if (activity === 'tuition-brothers') {
-                window.location.href = 'pay.html?type=charity&donation=tuition-brothers';
             }
         }
     </script>
