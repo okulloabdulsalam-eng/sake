@@ -282,26 +282,32 @@
     <script src="firebase-config.js" defer></script>
     <script src="script.min.js" defer></script>
     <script>
-        // Ensure the account modal exists (inject it if script.min.js hasn't done so yet)
-        function ensureAccountModal(callback, retries) {
+        // Check if all required scripts (Firebase + script.min.js) are ready
+        function isScriptsReady() {
+            return typeof firebase !== 'undefined' && firebase.auth && typeof injectAccountModal === 'function' && typeof window.handleLogin === 'function';
+        }
+
+        // Wait for all scripts to load, then call callback
+        function waitForScripts(callback, retries) {
             retries = retries || 0;
-            var modal = document.getElementById('accountModal');
-            if (modal) { callback(modal); return; }
-            // Try injecting it ourselves
-            if (typeof injectAccountModal === 'function') {
-                injectAccountModal();
-                modal = document.getElementById('accountModal');
+            if (isScriptsReady()) {
+                // Also ensure modal exists
+                if (!document.getElementById('accountModal') && typeof injectAccountModal === 'function') {
+                    injectAccountModal();
+                }
+                var modal = document.getElementById('accountModal');
                 if (modal) { callback(modal); return; }
             }
-            // Retry up to 10 times (2 seconds total) waiting for script.min.js to load
-            if (retries < 10) {
-                setTimeout(function() { ensureAccountModal(callback, retries + 1); }, 200);
+            if (retries < 30) { // 6 seconds total
+                setTimeout(function() { waitForScripts(callback, retries + 1); }, 200);
+            } else {
+                alert('Still loading... Please try again in a moment.');
             }
         }
 
         // Open signup modal
         function openSignupModal() {
-            ensureAccountModal(function(modal) {
+            waitForScripts(function(modal) {
                 document.getElementById('accountTabs').style.display = 'block';
                 document.getElementById('accountModalTitle').innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
                 document.getElementById('loginTab').classList.remove('active');
@@ -316,7 +322,7 @@
         
         // Open login modal
         function openLoginModal() {
-            ensureAccountModal(function(modal) {
+            waitForScripts(function(modal) {
                 document.getElementById('accountTabs').style.display = 'block';
                 document.getElementById('accountModalTitle').innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
                 document.getElementById('loginTab').classList.add('active');
@@ -331,22 +337,22 @@
         
         // Check login state and update UI
         function updateJoinPageUI() {
-            const userData = localStorage.getItem('userData');
-            const notLoggedInSection = document.getElementById('notLoggedInSection');
-            const loggedInSection = document.getElementById('loggedInSection');
-            const settingsSection = document.getElementById('settingsSection');
-            const welcomeUserName = document.getElementById('welcomeUserName');
-            const pageTitle = document.querySelector('.page-title');
+            var userData = localStorage.getItem('userData');
+            var notLoggedInSection = document.getElementById('notLoggedInSection');
+            var loggedInSection = document.getElementById('loggedInSection');
+            var settingsSection = document.getElementById('settingsSection');
+            var welcomeUserName = document.getElementById('welcomeUserName');
+            var pageTitle = document.querySelector('.hero-page-title');
             
             if (userData) {
-                const user = JSON.parse(userData);
+                try { var user = JSON.parse(userData); } catch(e) { return; }
                 if (notLoggedInSection) notLoggedInSection.style.display = 'none';
                 if (loggedInSection) loggedInSection.style.display = 'block';
                 if (settingsSection) settingsSection.style.display = 'block';
                 if (pageTitle) pageTitle.textContent = 'Settings & Profile';
                 
                 // Update welcome name
-                const fullName = user.firstName && user.lastName 
+                var fullName = user.firstName && user.lastName 
                     ? user.firstName + ' ' + user.lastName 
                     : (user.firstName || user.name || 'Member');
                 if (welcomeUserName) {
@@ -354,15 +360,15 @@
                 }
                 
                 // Update profile email
-                const profileEmail = document.getElementById('profileEmail');
+                var profileEmail = document.getElementById('profileEmail');
                 if (profileEmail) profileEmail.textContent = user.email || '';
                 
                 // Update account details
-                const detailFullName = document.getElementById('detailFullName');
-                const detailEmail = document.getElementById('detailEmail');
-                const detailPhone = document.getElementById('detailPhone');
-                const detailRegNo = document.getElementById('detailRegNo');
-                const detailGender = document.getElementById('detailGender');
+                var detailFullName = document.getElementById('detailFullName');
+                var detailEmail = document.getElementById('detailEmail');
+                var detailPhone = document.getElementById('detailPhone');
+                var detailRegNo = document.getElementById('detailRegNo');
+                var detailGender = document.getElementById('detailGender');
                 
                 if (detailFullName) detailFullName.textContent = fullName;
                 if (detailEmail) detailEmail.textContent = user.email || '-';
@@ -385,10 +391,10 @@
         
         // Update bottom navigation
         function updateBottomNav(isLoggedIn) {
-            const bottomNavItems = document.querySelectorAll('.bottom-nav .nav-item');
-            bottomNavItems.forEach(item => {
-                const span = item.querySelector('span');
-                const icon = item.querySelector('i');
+            var bottomNavItems = document.querySelectorAll('.bottom-nav .nav-item');
+            bottomNavItems.forEach(function(item) {
+                var span = item.querySelector('span');
+                var icon = item.querySelector('i');
                 if (span && (span.textContent === 'Join' || span.textContent === 'Settings')) {
                     if (isLoggedIn) {
                         span.textContent = 'Settings';
@@ -401,35 +407,30 @@
             });
         }
         
-        // Handle logout
-        function handleLogout() {
-            if (confirm('Are you sure you want to log out?')) {
-                if (typeof logout === 'function') {
-                    logout();
-                } else {
-                    // Fallback logout
-                    if (typeof firebase !== 'undefined' && firebase.auth) {
-                        firebase.auth().signOut();
-                    }
-                    localStorage.removeItem('userData');
-                    updateJoinPageUI();
-                    alert('You have been logged out.');
-                }
-            }
-        }
-        
         // Initialize on page load
         window.addEventListener('DOMContentLoaded', function() {
             updateJoinPageUI();
             
             // Check if URL has signup parameter to auto-open signup modal
-            const urlParams = new URLSearchParams(window.location.search);
+            var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('action') === 'signup') {
-                setTimeout(() => openSignupModal(), 300);
+                setTimeout(function() { openSignupModal(); }, 500);
             } else if (urlParams.get('action') === 'login') {
-                setTimeout(() => openLoginModal(), 300);
+                setTimeout(function() { openLoginModal(); }, 500);
             }
         });
+        
+        // Once Firebase loads, listen for auth state changes to auto-update UI
+        function setupAuthListener() {
+            if (typeof firebase !== 'undefined' && firebase.auth) {
+                firebase.auth().onAuthStateChanged(function() {
+                    updateJoinPageUI();
+                });
+            } else {
+                setTimeout(setupAuthListener, 300);
+            }
+        }
+        setupAuthListener();
         
         // Listen for storage changes (login/logout from other tabs)
         window.addEventListener('storage', function(e) {
