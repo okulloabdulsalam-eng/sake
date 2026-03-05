@@ -174,17 +174,18 @@
                         });
 
                         // Server snapshots are authoritative for Firestore-sourced notifications.
-                        // But we must preserve FCM push notifications (source: 'fcm') that
-                        // are only stored in localStorage and don't exist in Firestore.
+                        // But we must preserve local-only notifications (FCM, admin drafts)
+                        // that are stored in localStorage but don't exist in Firestore.
                         var fromCache = snapshot.metadata && snapshot.metadata.fromCache;
                         var filtered = removeLegacyOldNotifications(firestoreNotifs);
                         if (!fromCache) {
-                            // Server snapshot — merge with FCM-only notifications from localStorage
-                            var fcmOnly = currentNotifications.filter(function(n) { return n.source === 'fcm'; });
+                            // Server snapshot — merge with local-only notifications
                             var firestoreIds = {};
                             filtered.forEach(function(n) { firestoreIds[n.id] = true; });
-                            var mergedFcm = fcmOnly.filter(function(n) { return !firestoreIds[n.id]; });
-                            currentNotifications = filtered.concat(mergedFcm);
+                            var localOnly = currentNotifications.filter(function(n) {
+                                return n.source !== 'firebase' && !firestoreIds[n.id];
+                            });
+                            currentNotifications = filtered.concat(localOnly);
                             localStorage.setItem('notificationsData', JSON.stringify(currentNotifications));
                         } else if (currentNotifications.length === 0 && filtered.length > 0) {
                             // Cache snapshot, but only use if we have nothing yet
