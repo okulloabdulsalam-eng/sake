@@ -956,14 +956,14 @@
             navigator.geolocation.getCurrentPosition(
                 onLocationSuccess,
                 (error) => {
-                    // Try again with lower accuracy
+                    // Try again with lower accuracy and longer timeout
                     navigator.geolocation.getCurrentPosition(
                         onLocationSuccess,
                         onLocationError,
-                        { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+                        { enableHighAccuracy: false, timeout: 30000, maximumAge: 600000 }
                     );
                 },
-                { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
             );
         }
 
@@ -1083,27 +1083,40 @@
         async function fetchOSMMosques() {
             const radius = 5000;
             const query = `
-                [out:json][timeout:25];
+                [out:json][timeout:45];
                 (
                     node["amenity"="place_of_worship"]["religion"="muslim"](around:${radius},${userLat},${userLng});
                     way["amenity"="place_of_worship"]["religion"="muslim"](around:${radius},${userLat},${userLng});
                 );
                 out body center;
             `;
-            const response = await fetch('https://overpass-api.de/api/interpreter', {
-                method: 'POST',
-                body: query
-            });
-            if (!response.ok) throw new Error('OSM fetch failed');
-            const data = await response.json();
-            return data.elements.map((el, i) => ({
-                _id: 'osm-' + i,
-                name: el.tags?.name || 'Mosque',
-                lat: el.lat || el.center?.lat,
-                lng: el.lon || el.center?.lon,
-                address: el.tags?.['addr:street'] || el.tags?.['addr:full'] || '',
-                source: 'osm'
-            })).filter(m => m.lat && m.lng);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000);
+            try {
+                const response = await fetch('https://overpass-api.de/api/interpreter', {
+                    method: 'POST',
+                    body: query,
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                if (!response.ok) throw new Error('OSM fetch failed');
+                const data = await response.json();
+                return data.elements.map((el, i) => ({
+                    _id: 'osm-' + i,
+                    name: el.tags?.name || 'Mosque',
+                    lat: el.lat || el.center?.lat,
+                    lng: el.lon || el.center?.lon,
+                    address: el.tags?.['addr:street'] || el.tags?.['addr:full'] || '',
+                    source: 'osm'
+                })).filter(m => m.lat && m.lng);
+            } catch (e) {
+                clearTimeout(timeoutId);
+                if (e.name === 'AbortError') {
+                    console.warn('OSM request timed out, using defaults');
+                    return [];
+                }
+                throw e;
+            }
         }
 
         async function fetchFirestoreMosques() {

@@ -689,11 +689,76 @@ function getCachedHijriDate() {
     }
 }
 
+// Determine if current time is after Maghrib (Islamic day changes at Maghrib, not midnight)
+// Uses cached Maghrib time from the prayer times on the page, or defaults to ~19:00
+function isAfterMaghrib() {
+    try {
+        var maghribEl = document.getElementById('maghribAdhan');
+        if (maghribEl) {
+            var parts = maghribEl.textContent.trim().split(':');
+            if (parts.length === 2) {
+                var mH = parseInt(parts[0], 10);
+                var mM = parseInt(parts[1], 10);
+                var now = new Date();
+                return (now.getHours() > mH) || (now.getHours() === mH && now.getMinutes() >= mM);
+            }
+        }
+    } catch (e) {}
+    // Default: assume Maghrib is at 19:00 if we can't read it
+    return new Date().getHours() >= 19;
+}
+
+// Advance Hijri date by 1 day (used when after Maghrib — Islamic day changes at sunset)
+function advanceHijriByOneDay(hijriDay, hijriMonth, hijriYear) {
+    function getMonthLength(month, year) {
+        var isLeapYear = ((11 * year + 14) % 30) < 11;
+        if (month === 12 && isLeapYear) return 30;
+        return month % 2 === 1 ? 30 : 29;
+    }
+    hijriDay++;
+    if (hijriDay > getMonthLength(hijriMonth, hijriYear)) {
+        hijriDay = 1;
+        hijriMonth++;
+        if (hijriMonth > 12) {
+            hijriMonth = 1;
+            hijriYear++;
+        }
+    }
+    return { day: hijriDay, month: hijriMonth, year: hijriYear };
+}
+
+// For unclear Hijri dates (29th, 30th, 1st of a month), check Saudi moon sighting confirmation
+// Falls back to calculation if offline or API unavailable
+async function checkSaudiMoonSighting(hijriDay, hijriMonth, hijriYear) {
+    // Only check on ambiguous days (29, 30, or 1)
+    if (hijriDay !== 29 && hijriDay !== 30 && hijriDay !== 1) return null;
+    try {
+        // Use Aladhan calendar API for the current Hijri month to get accurate month start
+        var controller = new AbortController();
+        var timeoutId = setTimeout(function () { controller.abort(); }, 6000);
+        var apiUrl = 'https://api.aladhan.com/v1/hToG/' + hijriDay + '-' + hijriMonth + '-' + hijriYear;
+        var response = await fetch(apiUrl, { signal: controller.signal, headers: { 'Accept': 'application/json' } });
+        clearTimeout(timeoutId);
+        if (!response.ok) return null;
+        var data = await response.json();
+        if (data.code === 200 && data.data && data.data.hijri) {
+            return {
+                day: parseInt(data.data.hijri.day, 10),
+                month: parseInt(data.data.hijri.month.number, 10),
+                year: parseInt(data.data.hijri.year, 10)
+            };
+        }
+    } catch (e) {
+        console.log('Saudi moon sighting check error:', e.message);
+    }
+    return null;
+}
+
 // Update dates (auto-updates) - Hijri from Aladhan API with offline fallback
 // Source: https://aladhan.com - The most reliable Islamic calendar API
 // Uses Umm al-Qura calculation method - the official calendar of Saudi Arabia used in Makkah & Madina
-// FIX: Show both dates immediately (Hijri from cache/calc first), then refresh Hijri from API if online.
-// FIX: Re-query DOM elements before each write so dates don't disappear after router navigation (no stale refs).
+// Islamic day changes at Maghrib (sunset), not at midnight
+// For unclear dates (29th, 30th, 1st), uses Saudi Arabia moon sighting confirmation
 async function updateDates() {
     const now = new Date();
     const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -721,6 +786,14 @@ async function updateDates() {
         hijriYear = calculated.year;
     }
 
+    // Islamic day changes at Maghrib: if after Maghrib, advance by 1 day
+    if (isAfterMaghrib()) {
+        var advanced = advanceHijriByOneDay(hijriDay, hijriMonth, hijriYear);
+        hijriDay = advanced.day;
+        hijriMonth = advanced.month;
+        hijriYear = advanced.year;
+    }
+
     function setHijriText(text) {
         var el = document.getElementById('hijriDate');
         if (el) el.textContent = text;
@@ -732,7 +805,7 @@ async function updateDates() {
         setHijriText('Calculating...');
     }
 
-    // 3) If online, fetch API and update Hijri when response arrives (re-query element to avoid stale ref)
+    // 3) If online, fetch API and update Hijri when response arrives
     if (navigator.onLine) {
         try {
             var dd = String(now.getDate()).padStart(2, '0');
@@ -750,8 +823,33 @@ async function updateDates() {
                 hijriDay = parseInt(hijri.day, 10);
                 hijriMonth = parseInt(hijri.month.number, 10);
                 hijriYear = parseInt(hijri.year, 10);
+                // Advance by 1 if after Maghrib
+                if (isAfterMaghrib()) {
+                    var adv = advanceHijriByOneDay(hijriDay, hijriMonth, hijriYear);
+                    hijriDay = adv.day;
+                    hijriMonth = adv.month;
+                    hijriYear = adv.year;
+                }
                 cacheHijriDate(hijriDay, hijriMonth, hijriYear, now);
                 setHijriText(hijriDay + ' ' + hijriMonths[hijriMonth - 1] + ', ' + hijriYear + ' AH');
+
+                // For unclear dates (29, 30, 1), verify with Saudi moon sighting
+                if (hijriDay === 29 || hijriDay === 30 || hijriDay === 1) {
+                    var saudiCheck = await checkSaudiMoonSighting(hijriDay, hijriMonth, hijriYear);
+                    if (saudiCheck) {
+                        hijriDay = saudiCheck.day;
+                        hijriMonth = saudiCheck.month;
+                        hijriYear = saudiCheck.year;
+                        if (isAfterMaghrib()) {
+                            var adv2 = advanceHijriByOneDay(hijriDay, hijriMonth, hijriYear);
+                            hijriDay = adv2.day;
+                            hijriMonth = adv2.month;
+                            hijriYear = adv2.year;
+                        }
+                        cacheHijriDate(hijriDay, hijriMonth, hijriYear, now);
+                        setHijriText(hijriDay + ' ' + hijriMonths[hijriMonth - 1] + ', ' + hijriYear + ' AH');
+                    }
+                }
             }
         } catch (err) {
             console.log('Hijri API error:', err.message);
