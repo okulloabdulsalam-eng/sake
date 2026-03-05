@@ -946,6 +946,14 @@
 
         function requestLocation() {
             updateLocationStatus('Detecting location...', 'pending');
+
+            // Try KiumaBridge (APK) first for more reliable location in iframe
+            if (window.KiumaBridge && window.KiumaBridge.isInApp && window.KiumaBridge.isInApp()) {
+                try {
+                    window.parent.postMessage({ type: 'GET_LOCATION', requestId: 'mosques_loc_' + Date.now() }, '*');
+                    // Also try native geolocation as fallback
+                } catch(e) {}
+            }
             
             if (!navigator.geolocation) {
                 showLocationError('Geolocation not supported by browser');
@@ -966,6 +974,15 @@
                 { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
             );
         }
+
+        // Listen for location response from APK bridge
+        window.addEventListener('message', function(e) {
+            if (e.data && e.data.type === 'BRIDGE_RESPONSE' && e.data.requestId && e.data.requestId.startsWith('mosques_loc_')) {
+                if (e.data.success && e.data.data && e.data.data.latitude) {
+                    onLocationSuccess({ coords: { latitude: e.data.data.latitude, longitude: e.data.data.longitude } });
+                }
+            }
+        });
 
         function onLocationSuccess(position) {
             userLat = position.coords.latitude;

@@ -1139,21 +1139,7 @@
             btn.style.background = 'rgba(76,175,80,0.9)';
             btn.style.color = '#fff';
             btn.disabled = true;
-            if (window.KiumaBridge && window.KiumaBridge.isInApp() && typeof window.KiumaBridge.saveFileToDevice === 'function') {
-                var extFromUrl = data.url && data.url.match(/\.(\w+)(\?|$)/);
-var name = data.fileName || (data.title || 'book').replace(/[^a-zA-Z0-9._-]/g, '_') + (extFromUrl ? '.' + extFromUrl[1] : '.pdf');
-                var mime = _mimeFromExtLib(name.split('.').pop());
-                var ok = await window.KiumaBridge.saveFileToDevice(data.url, name, mime);
-                if (ok) {
-                    btn.innerHTML = '<i class="fas fa-check" style="font-size:12px;"></i>';
-                    btn.style.background = 'rgba(76,175,80,0.9)';
-                    setTimeout(function() { loadBooksFromStorage(currentLibFilter); }, 600);
-                } else {
-                    btn.innerHTML = '<i class="fas fa-exclamation"></i>'; btn.style.background = 'rgba(244,67,54,0.85)';
-                    setTimeout(function() { btn.innerHTML = '<i class="fas fa-download"></i>'; btn.style.background = 'rgba(0,0,0,0.6)'; btn.style.color = ''; btn.disabled = false; }, 2000);
-                }
-                return;
-            }
+            // Always use IndexedDB for offline downloads so viewer can find files for offline access.
             var ok = await saveFileOffline(data.url, data, function(percent, loaded, total) {
                 if (percent >= 0) btn.innerHTML = '<span style="font-size:9px;font-weight:700;">'+percent+'%</span>';
                 else btn.innerHTML = '<span style="font-size:8px;font-weight:700;">'+((loaded/1048576).toFixed(1))+'M</span>';

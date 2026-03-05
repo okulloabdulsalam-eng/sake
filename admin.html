@@ -4338,16 +4338,22 @@
             return result.sent || 0;
         }
 
-        function deleteNotification(id) {
+        async function deleteNotification(id) {
+            if (!confirm('Delete this notification?')) return;
+            // Update local state immediately
             const list = getStoredNotifications().filter(n => n.id !== id);
+            currentNotifications = list;
             saveNotificationsToStorage(list);
             renderAdminNotificationsList();
-            if (useFirestoreNotifications) {
-                deleteNotificationFromFirestore(id);
-            }
-            if (useGitHubNotifications) {
-                saveNotificationsToGitHub(list, { showStatusMessage: false });
-            }
+            // Delete from remote stores
+            try {
+                if (useFirestoreNotifications) {
+                    await deleteNotificationFromFirestore(id);
+                }
+                if (useGitHubNotifications) {
+                    await saveNotificationsToGitHub(list, { showStatusMessage: false });
+                }
+            } catch(e) { console.warn('Remote delete error:', e); }
             showStatus('notificationStatus', 'Notification removed.', 'success');
         }
 

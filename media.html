@@ -269,7 +269,12 @@
             return accounts.length > 0 ? accounts[0] : { workerUrl: DEFAULT_R2_WORKER_URL };
         }
         function getR2AccountsForType(type) {
-            return getStorageAccounts().filter(a => a.workerUrl);
+            var mc = getR2MultiConfig();
+            if (type === 'audio' && mc.audio && mc.audio.workerUrl) return [mc.audio];
+            if (type === 'library' && mc.library && mc.library.workerUrl) return [mc.library];
+            // video and image use video accounts
+            if (mc.video && mc.video.length) return mc.video.filter(function(a) { return a && a.workerUrl; });
+            return [{ workerUrl: DEFAULT_R2_WORKER_URL, label: 'Storage 1' }];
         }
         const GITHUB_OWNER = 'okulloabdulsalam-eng';
         const GITHUB_REPO  = 'kiuma-storage';
@@ -989,20 +994,9 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:12px;"></i>';
             btn.style.background = 'rgba(33,150,243,0.85)';
             btn.disabled = true;
-            if (window.KiumaBridge && window.KiumaBridge.isInApp() && typeof window.KiumaBridge.saveFileToDevice === 'function') {
-                var name = data.name || (data.title || 'media') + (data.type === 'video' ? '.mp4' : data.type === 'audio' ? '.m4a' : data.type === 'image' ? '.jpg' : '.bin');
-                var mime = _mimeFromExt(name.split('.').pop());
-                var ok = await window.KiumaBridge.saveFileToDevice(data.url, name, mime, { saveToAppDirectory: true });
-                if (ok) {
-                    btn.innerHTML = '<i class="fas fa-check" style="font-size:12px;"></i>';
-                    btn.style.background = 'rgba(76,175,80,0.9)';
-                    setTimeout(function() { loadMediaFromStorage(currentMediaFilter); }, 600);
-                } else {
-                    btn.innerHTML = '<i class="fas fa-exclamation"></i>'; btn.style.background = 'rgba(244,67,54,0.85)';
-                    setTimeout(function() { btn.innerHTML = '<i class="fas fa-download"></i>'; btn.style.background = 'rgba(0,0,0,0.6)'; btn.disabled = false; }, 2000);
-                }
-                return;
-            }
+            // Always use IndexedDB (AppStorage) for offline downloads.
+            // This ensures the viewer can find files for offline playback.
+            // Native bridge (KiumaBridge.saveFileToDevice) is only for "Save to Device" export.
             var ok = await saveFileOffline(data.url, data, function(percent, loaded, total) {
                 if (percent >= 0) btn.innerHTML = '<span style="font-size:9px;font-weight:700;">'+percent+'%</span>';
                 else btn.innerHTML = '<span style="font-size:8px;font-weight:700;">'+((loaded/1048576).toFixed(1))+'M</span>';
