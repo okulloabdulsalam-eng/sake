@@ -4292,9 +4292,9 @@
                     renderAdminNotificationsList();
                 }
                 if (sentCount === 0) {
-                    showStatus('notificationStatus', 'Push queued for 0 devices. No one has allowed notifications on the website yet — users must open the site and click Allow when prompted. See docs/NOTIFICATIONS_PUSH_SETUP.md', 'error');
+                    showStatus('notificationStatus', 'Sent to 0 devices. No registered devices yet — users must install the app and allow notifications.', 'error');
                 } else {
-                    showStatus('notificationStatus', `Push queued for ${sentCount} device(s). If they don\'t receive it, deploy the Cloud Function: firebase deploy --only functions (processPushQueue).`, 'success');
+                    showStatus('notificationStatus', `Push notification sent to ${sentCount} device(s) successfully!`, 'success');
                 }
             } catch (error) {
                 console.error('Failed to send notification', error);
@@ -4302,37 +4302,40 @@
             }
         }
 
+        // Cloudflare Worker for FCM push notifications
+        const _PUSH_WORKER_URL = 'https://kiuma-notifications.kiuma4.workers.dev';
+        const _PUSH_ADMIN_KEY = localStorage.getItem('kiuma_push_admin_key') || '';
+
         async function sendFCMPushNotification(notification) {
-            if (typeof firebase === 'undefined' || !firebase.firestore) {
-                throw new Error('Firebase not available. Check firebase-config.js and that you are on the correct site.');
-            }
-            var pushData = {
-                title: notification.title || 'KIUMA',
-                body: notification.message || '',
-                icon: notification.icon || 'fas fa-bell',
-                category: notification.category || 'general',
-                notificationId: notification.id || '',
-                status: 'pending'
-            };
-            try {
-                pushData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-            } catch (e) {
-                pushData.createdAt = new Date().toISOString();
-            }
-            try {
-                await firebase.firestore().collection('push_queue').add(pushData);
-            } catch (err) {
-                var msg = err.message || String(err);
-                if (msg.indexOf('permission') !== -1 || (err.code && String(err.code).indexOf('permission') !== -1)) {
-                    throw new Error('Permission denied writing to push_queue. Check Firestore rules allow create on push_queue.');
+            var adminKey = _PUSH_ADMIN_KEY || prompt('Enter the Push Notification Admin API Key (saved for this browser):');
+            if (!adminKey) throw new Error('Admin API key is required to send push notifications.');
+            localStorage.setItem('kiuma_push_admin_key', adminKey);
+
+            var res = await fetch(_PUSH_WORKER_URL + '/api/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-API-Key': adminKey
+                },
+                body: JSON.stringify({
+                    title: notification.title || 'KIUMA',
+                    body: notification.message || '',
+                    data: {
+                        icon: notification.icon || 'fas fa-bell',
+                        category: notification.category || 'general',
+                        notificationId: notification.id || ''
+                    }
+                })
+            });
+            var result = await res.json();
+            if (!res.ok) {
+                if (res.status === 401) {
+                    localStorage.removeItem('kiuma_push_admin_key');
+                    throw new Error('Invalid Admin API Key. It has been cleared — try again with the correct key.');
                 }
-                if (msg.indexOf('unavailable') !== -1 || msg.indexOf('network') !== -1) {
-                    throw new Error('Network error. Check connection and try again.');
-                }
-                throw err;
+                throw new Error(result.error || 'Push send failed: HTTP ' + res.status);
             }
-            var tokensSnapshot = await firebase.firestore().collection('fcm_tokens').get();
-            return tokensSnapshot.size;
+            return result.sent || 0;
         }
 
         function deleteNotification(id) {
