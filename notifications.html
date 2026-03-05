@@ -152,10 +152,12 @@
                     console.warn('Firebase not available, using cached notifications');
                     return;
                 }
+                console.log('Starting Firestore notifications listener...');
                 firestoreUnsubscribe = window.firebaseDb.collection('notifications')
                     .orderBy('createdAt', 'desc')
                     .limit(50)
                     .onSnapshot(function(snapshot) {
+                        console.log('Firestore snapshot received:', snapshot.size, 'notifications, fromCache:', snapshot.metadata.fromCache);
                         const firestoreNotifs = [];
                         snapshot.forEach(function(doc) {
                             const data = doc.data();
@@ -171,14 +173,18 @@
                             });
                         });
 
-                        // Server snapshots are authoritative — always use them.
-                        // Cache snapshots may contain stale/deleted data, so only use
-                        // them when we have NO localStorage data yet.
+                        // Server snapshots are authoritative for Firestore-sourced notifications.
+                        // But we must preserve FCM push notifications (source: 'fcm') that
+                        // are only stored in localStorage and don't exist in Firestore.
                         var fromCache = snapshot.metadata && snapshot.metadata.fromCache;
                         var filtered = removeLegacyOldNotifications(firestoreNotifs);
                         if (!fromCache) {
-                            // Server snapshot — authoritative, always apply
-                            currentNotifications = filtered;
+                            // Server snapshot — merge with FCM-only notifications from localStorage
+                            var fcmOnly = currentNotifications.filter(function(n) { return n.source === 'fcm'; });
+                            var firestoreIds = {};
+                            filtered.forEach(function(n) { firestoreIds[n.id] = true; });
+                            var mergedFcm = fcmOnly.filter(function(n) { return !firestoreIds[n.id]; });
+                            currentNotifications = filtered.concat(mergedFcm);
                             localStorage.setItem('notificationsData', JSON.stringify(currentNotifications));
                         } else if (currentNotifications.length === 0 && filtered.length > 0) {
                             // Cache snapshot, but only use if we have nothing yet
