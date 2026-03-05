@@ -282,10 +282,26 @@
     <script src="firebase-config.js" defer></script>
     <script src="script.min.js" defer></script>
     <script>
+        // Ensure the account modal exists (inject it if script.min.js hasn't done so yet)
+        function ensureAccountModal(callback, retries) {
+            retries = retries || 0;
+            var modal = document.getElementById('accountModal');
+            if (modal) { callback(modal); return; }
+            // Try injecting it ourselves
+            if (typeof injectAccountModal === 'function') {
+                injectAccountModal();
+                modal = document.getElementById('accountModal');
+                if (modal) { callback(modal); return; }
+            }
+            // Retry up to 10 times (2 seconds total) waiting for script.min.js to load
+            if (retries < 10) {
+                setTimeout(function() { ensureAccountModal(callback, retries + 1); }, 200);
+            }
+        }
+
         // Open signup modal
         function openSignupModal() {
-            const modal = document.getElementById('accountModal');
-            if (modal) {
+            ensureAccountModal(function(modal) {
                 document.getElementById('accountTabs').style.display = 'block';
                 document.getElementById('accountModalTitle').innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
                 document.getElementById('loginTab').classList.remove('active');
@@ -293,14 +309,14 @@
                 document.getElementById('loginFormElement').style.display = 'none';
                 document.getElementById('signupFormElement').style.display = 'block';
                 document.getElementById('accountInfo').style.display = 'none';
+                if (document.getElementById('editProfileForm')) document.getElementById('editProfileForm').style.display = 'none';
                 modal.style.display = 'flex';
-            }
+            });
         }
         
         // Open login modal
         function openLoginModal() {
-            const modal = document.getElementById('accountModal');
-            if (modal) {
+            ensureAccountModal(function(modal) {
                 document.getElementById('accountTabs').style.display = 'block';
                 document.getElementById('accountModalTitle').innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
                 document.getElementById('loginTab').classList.add('active');
@@ -308,8 +324,9 @@
                 document.getElementById('loginFormElement').style.display = 'block';
                 document.getElementById('signupFormElement').style.display = 'none';
                 document.getElementById('accountInfo').style.display = 'none';
+                if (document.getElementById('editProfileForm')) document.getElementById('editProfileForm').style.display = 'none';
                 modal.style.display = 'flex';
-            }
+            });
         }
         
         // Check login state and update UI
@@ -422,6 +439,47 @@
         });
     </script>
 
+    <!-- Floating Did You Know Button -->
+    <div class="floating-dyk-btn" onclick="showDykModal()">
+        <i class="fas fa-lightbulb"></i>
+        <span>Did You Know?</span>
+    </div>
+    <div class="modal-overlay" id="dykModal" style="display: none;">
+        <div class="modal-content activities-modal">
+            <div class="modal-header" style="background: linear-gradient(135deg, #1565C0, #0D47A1);">
+                <h3><i class="fas fa-lightbulb"></i> Did You Know?</h3>
+                <button class="modal-close" onclick="closeDykModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="activities-modal-list">
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-tongue'" style="border-left: 4px solid #C62828;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #C62828, #B71C1C);"><i class="fas fa-comment-slash"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #C62828;">Backbiting & The Tongue</h4><p>Terrifying hadiths about gheebah, slander & idle talk</p></div>
+                    <i class="fas fa-chevron-right" style="color: #C62828;"></i>
+                </div>
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-dress'" style="border-left: 4px solid #6A1B9A;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #6A1B9A, #4A148C);"><i class="fas fa-user-shield"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #6A1B9A;">Dress, Hair & Modesty</h4><p>What Islam says about hair, hijab & clothing</p></div>
+                    <i class="fas fa-chevron-right" style="color: #6A1B9A;"></i>
+                </div>
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-warnings'" style="border-left: 4px solid #E65100;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #E65100, #BF360C);"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #E65100;">Warnings People Ignore</h4><p>Lying, hypocrisy, arrogance, riba & more</p></div>
+                    <i class="fas fa-chevron-right" style="color: #E65100;"></i>
+                </div>
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html'" style="border-left: 4px solid #1565C0;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #1565C0, #0D47A1);"><i class="fas fa-book-open"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #1565C0;">View All Sections</h4><p>Deeds, character, worship & more authentic knowledge</p></div>
+                    <i class="fas fa-chevron-right" style="color: #1565C0;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    function showDykModal(){document.getElementById('dykModal').style.display='flex';}
+    function closeDykModal(){document.getElementById('dykModal').style.display='none';}
+    document.addEventListener('DOMContentLoaded',function(){var o=document.getElementById('dykModal');if(o)o.addEventListener('click',function(e){if(e.target===this)closeDykModal();});});
+    </script>
+
     <!-- Floating Hot Events Button -->
     <div class="floating-kizumu-btn" onclick="showActivitiesModal()" style="background: linear-gradient(135deg, #ff6b35, #e74c3c); animation: pulse-hot 1.5s infinite; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5);">
         <i class="fas fa-fire" style="color: var(--white);"></i>
@@ -456,8 +514,8 @@
                         <i class="fas fa-heart"></i>
                     </div>
                     <div class="activity-modal-text">
-                        <h4 style="color: #e74c3c;">Kizumu Tahfiz Visit — FINISHED</h4>
-                        <p>Thank you for your support! Results and media released soon.</p>
+                        <h4 style="color: #2e7d32;">Kizumu Tahfiz Visit — Ongoing</h4>
+                        <p>JazakAllahu Khairan! Program continues individually & in communities.</p>
                     </div>
                     <i class="fas fa-chevron-right" style="color: #e74c3c;"></i>
                 </div>
@@ -473,15 +531,15 @@
                     <i class="fas fa-chevron-right" style="color: #9c27b0;"></i>
                 </div>
                 
-                <div class="activity-modal-item" onclick="window.location.href='pay.html?type=charity&donation=tuition-brothers'">
+                <div class="activity-modal-item" onclick="contactTuition()">
                     <div class="activity-modal-icon" style="background: var(--primary-green);">
                         <i class="fas fa-graduation-cap"></i>
                     </div>
                     <div class="activity-modal-text">
-                        <h4>Tuition for Brothers</h4>
-                        <p>Support brothers' education and learning</p>
+                        <h4>Tuition Brothers & Sisters</h4>
+                        <p>Support brothers' and sisters' education</p>
                     </div>
-                    <i class="fas fa-chevron-right"></i>
+                    <i class="fab fa-whatsapp" style="color: #25D366; font-size: 18px;"></i>
                 </div>
             </div>
         </div>

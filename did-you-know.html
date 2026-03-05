@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Did You Know? - KIUMA</title>
+    <script>
+        (function() {
+            var t;
+            try { t = localStorage.getItem('themePreference'); } catch(e) {}
+            if (t === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="styles.min.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="fonts/fontawesome.min.css">
+    <style>
+        .dyk-tabs {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 0 0 12px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        .dyk-tabs::-webkit-scrollbar { display: none; }
+        .dyk-tab {
+            flex-shrink: 0;
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 2px solid #e0e0e0;
+            background: var(--white);
+            color: var(--dark-gray);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        .dyk-tab.active {
+            background: var(--primary-green);
+            color: white;
+            border-color: var(--primary-green);
+        }
+        .dyk-section {
+            margin-bottom: 24px;
+            scroll-margin-top: 20px;
+        }
+        .dyk-section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            border-radius: 14px 14px 0 0;
+            color: white;
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .dyk-section-header i {
+            font-size: 22px;
+        }
+        .dyk-card {
+            background: var(--white);
+            border-radius: 0 0 14px 14px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            margin-bottom: 16px;
+        }
+        .dyk-item {
+            padding: 16px 18px;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+        .dyk-item:last-child {
+            border-bottom: none;
+        }
+        .dyk-item-label {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+        .dyk-item-text {
+            font-size: 15px;
+            line-height: 1.75;
+            color: var(--dark-gray);
+            margin: 0 0 10px;
+        }
+        .dyk-item-arabic {
+            font-size: 20px;
+            line-height: 1.8;
+            text-align: right;
+            direction: rtl;
+            color: var(--primary-green);
+            margin: 8px 0;
+            font-family: 'Traditional Arabic', 'Scheherazade', serif;
+        }
+        .dyk-item-source {
+            font-size: 12px;
+            color: #888;
+            font-style: italic;
+            padding-top: 8px;
+            border-top: 1px dashed rgba(0,0,0,0.08);
+        }
+        .dyk-warning {
+            background: #FFF3E0;
+            border-left: 4px solid #FF9800;
+            padding: 12px 16px;
+            margin: 10px 0;
+            border-radius: 0 8px 8px 0;
+            font-size: 13px;
+            color: #E65100;
+            line-height: 1.6;
+        }
+        .dyk-benefit {
+            background: #E8F5E9;
+            border-left: 4px solid var(--primary-green);
+            padding: 12px 16px;
+            margin: 10px 0;
+            border-radius: 0 8px 8px 0;
+            font-size: 13px;
+            color: #1B5E20;
+            line-height: 1.6;
+        }
+        .dyk-enroll-banner {
+            background: linear-gradient(135deg, #1565C0, #0D47A1);
+            color: white;
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        .dyk-enroll-banner h3 { margin: 0 0 8px; font-size: 18px; }
+        .dyk-enroll-banner p { margin: 0 0 14px; font-size: 13px; opacity: 0.9; }
+        .dyk-enroll-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: white;
+            color: #0D47A1;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .section-hidden { display: none; }
+    </style>
+</head>
+<body>
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="counselling.html" class="nav-link"><i class="fas fa-hands-helping"></i> Counselling</a></li>
+            <li><a href="library.html" class="nav-link"><i class="fas fa-book-open"></i> Library</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="did-you-know.html" class="nav-link active"><i class="fas fa-lightbulb"></i> Did You Know?</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="page-hero">
+            <div class="hero-deco"></div>
+            <nav class="hero-nav">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <span class="hero-nav-title" id="heroNavPageTitle"></span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="notifications-btn" id="notificationsBtn">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge" style="display:none;"></span>
+                    </button>
+                    <div class="hero-profile-avatar" onclick="if(typeof toggleAccountModal==='function')toggleAccountModal()"><i class="fas fa-user"></i></div>
+                </div>
+            </nav>
+            <div class="hero-logo-row">
+                <div class="hero-logo-ring">
+                    <img src="logo.png" alt="KIUMA" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="logo-fallback" style="display:none;">KU</div>
+                </div>
+            </div>
+            <div class="hero-title-area">
+                <div class="hero-org-name">KIUMA</div>
+                <h1 class="hero-page-title">Did You Know?</h1>
+                <p class="hero-subtitle">Essential Islamic knowledge from authentic sources</p>
+                <div class="hero-accent-line"></div>
+            </div>
+        </div>
+
+        <main class="main-content">
+            <div style="height:8px;"></div>
+
+            <section class="page-content">
+                <!-- Enroll Banner -->
+                <div class="dyk-enroll-banner">
+                    <h3><i class="fas fa-graduation-cap"></i> Want to Learn More?</h3>
+                    <p>Join KIUMA programs and deepen your Islamic knowledge with qualified teachers</p>
+                    <a href="join-programs.html" class="dyk-enroll-btn">
+                        <i class="fas fa-user-plus"></i> Enroll in Programs
+                    </a>
+                </div>
+
+                <!-- Filter Tabs -->
+                <div class="dyk-tabs" id="dykTabs">
+                    <button class="dyk-tab active" onclick="filterDykSection('all')">All</button>
+                    <button class="dyk-tab" onclick="filterDykSection('tongue')"><i class="fas fa-comment-slash"></i> The Tongue</button>
+                    <button class="dyk-tab" onclick="filterDykSection('dress')"><i class="fas fa-user-shield"></i> Dress & Modesty</button>
+                    <button class="dyk-tab" onclick="filterDykSection('deeds')"><i class="fas fa-balance-scale"></i> Deeds & Worship</button>
+                    <button class="dyk-tab" onclick="filterDykSection('character')"><i class="fas fa-heart"></i> Character</button>
+                    <button class="dyk-tab" onclick="filterDykSection('warnings')"><i class="fas fa-exclamation-triangle"></i> Warnings</button>
+                    <button class="dyk-tab" onclick="filterDykSection('prayer')"><i class="fas fa-mosque"></i> Prayer</button>
+                    <button class="dyk-tab" onclick="filterDykSection('fornication')"><i class="fas fa-shield-alt"></i> Fornication</button>
+                    <button class="dyk-tab" onclick="filterDykSection('men')"><i class="fas fa-male"></i> Men</button>
+                    <button class="dyk-tab" onclick="filterDykSection('racism')"><i class="fas fa-globe-africa"></i> Racism</button>
+                    <button class="dyk-tab" onclick="filterDykSection('important')"><i class="fas fa-star"></i> Important Hadiths</button>
+                </div>
+
+                <!-- ===== SECTION 1: BACKBITING & THE TONGUE ===== -->
+                <div class="dyk-section" id="section-tongue" data-category="tongue">
+                    <div class="dyk-section-header" style="background: linear-gradient(135deg, #C62828, #B71C1C);">
+                        <i class="fas fa-comment-slash"></i>
+                        <span>Backbiting, Slander & The Tongue</span>
+                    </div>
+                    <div class="dyk-card">
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FFEBEE; color: #C62828;">Severe Warning</span>
+                            <p class="dyk-item-text">The Prophet ﷺ asked his companions: <strong>"Do you know what backbiting (gheebah) is?"</strong> They said: "Allah and His Messenger know best." He said: <strong>"It is mentioning about your brother what he would dislike."</strong> Someone asked: "What if what I say about my brother is true?" He said: <strong>"If what you say is true, then you have backbitten him, and if it is not true, then you have slandered him."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-exclamation-triangle"></i> Even speaking the truth about someone can be a major sin if it is something they would dislike. Slander (saying what is false) is even worse.</div>
+                            <p class="dyk-item-source">📖 Sahih Muslim 2589</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FFEBEE; color: #C62828;">Terrifying Hadith</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"When I was taken on the Night Journey (Isra), I passed by people who had copper nails with which they were scratching their faces and chests. I said: 'Who are these people, O Jibreel?' He said: 'These are the ones who used to eat the flesh of people (backbite them) and attack their honor.'"</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-skull-crossbones"></i> The punishment for backbiters was shown to the Prophet ﷺ during his miraculous journey — they were literally clawing at their own faces and chests.</div>
+                            <p class="dyk-item-source">📖 Sunan Abu Dawud 4878, authenticated by al-Albani</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FFEBEE; color: #C62828;">Your Good Deeds Transferred</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"Do you know who is the bankrupt person?"</strong> They said: "The bankrupt among us is the one who has no money or property." He ﷺ said: <strong>"The bankrupt person from my Ummah is the one who comes on the Day of Judgment with prayers, fasting, and zakat, but he insulted this one, slandered that one, consumed the wealth of this one, shed the blood of that one, and beat this one. So his good deeds will be given to each of them, and if his good deeds run out before his debts are settled, their sins will be thrown onto him, and he will be cast into the Fire."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-exclamation-circle"></i> A person could pray, fast, and give charity their entire life — but lose it ALL on the Day of Judgment because of their tongue. Your good deeds are literally transferred to the people you wronged.</div>
+                            <p class="dyk-item-source">📖 Sahih Muslim 2581</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FFEBEE; color: #C62828;">Quran: Eating Dead Flesh</span>
+                            <p class="dyk-item-text">Allah says: <strong>"O you who believe! Avoid much suspicion; indeed, some suspicion is sin. And do not spy, nor backbite one another. Would one of you like to eat the flesh of his dead brother? You would detest it."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-book-quran"></i> Allah compares backbiting to eating the dead flesh of your own brother — one of the most disgusting images imaginable. This is how severe gheebah is in the sight of Allah.</div>
+                            <p class="dyk-item-source">📖 Surah Al-Hujurat 49:12, Tafsir Ibn Kathir</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FFF3E0; color: #E65100;">Guarding the Tongue</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"Whoever guarantees me what is between his jaws (tongue) and what is between his legs (private parts), I guarantee him Paradise."</strong></p>
+                            <div class="dyk-benefit"><i class="fas fa-check-circle"></i> Controlling your tongue is literally half the path to Paradise. The other half is guarding your chastity.</div>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 6474</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FFF3E0; color: #E65100;">One Word Can Destroy You</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"A servant may speak a word that pleases Allah, not realizing its significance, and Allah raises him in status because of it. And a servant may speak a word that displeases Allah, not thinking much of it, and because of it he will sink into the Hellfire."</strong></p>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 6478</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== SECTION 2: DRESS CODE & MODESTY ===== -->
+                <div class="dyk-section" id="section-dress" data-category="dress">
+                    <div class="dyk-section-header" style="background: linear-gradient(135deg, #6A1B9A, #4A148C);">
+                        <i class="fas fa-user-shield"></i>
+                        <span>Dress Code, Hair & Modesty</span>
+                    </div>
+                    <div class="dyk-card">
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #F3E5F5; color: #6A1B9A;">Women's Hair</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"There are two types of the people of Hell that I have not yet seen: people with whips like the tails of cattle, with which they strike others; and women who are clothed yet naked, walking with an enticing gait, with something like the humps of camels on their heads. They will not enter Paradise, nor will they smell its fragrance, even though its fragrance can be detected from such and such a distance."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-exclamation-triangle"></i> Scholars like Imam An-Nawawi explain "clothed yet naked" means wearing clothing that is tight, transparent, or does not properly cover. "Humps of camels on their heads" refers to piling hair up high or using extensions to create volume. This hadith warns of a severe punishment.</div>
+                            <p class="dyk-item-source">📖 Sahih Muslim 2128</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #F3E5F5; color: #6A1B9A;">Hair Extensions</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"Allah has cursed the woman who adds hair extensions and the one who has them added, and the one who does tattoos and the one who has them done."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-ban"></i> The curse (la'nah) of Allah means being distanced from His mercy. Hair extensions (real or synthetic that imitate real hair) and tattoos are explicitly forbidden. This applies to both the one who does it and the one who requests it.</div>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 5937, Sahih Muslim 2122</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #F3E5F5; color: #6A1B9A;">Men Imitating Women</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"Allah has cursed men who imitate women and women who imitate men."</strong></p>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 5885</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #F3E5F5; color: #6A1B9A;">The Command of Hijab</span>
+                            <p class="dyk-item-text">Allah says: <strong>"And tell the believing women to lower their gaze and guard their chastity, and not to reveal their adornments except what normally appears. Let them draw their veils over their chests, and not reveal their hidden adornments."</strong></p>
+                            <div class="dyk-benefit"><i class="fas fa-book-quran"></i> Ibn Kathir explains that "what normally appears" refers to the outer garments/face according to some scholars. The command to "draw veils over their chests" was revealed because women in pre-Islamic times would leave their chests uncovered. This ayah establishes hijab as a divine obligation, not a cultural practice.</div>
+                            <p class="dyk-item-source">📖 Surah An-Nur 24:31, Tafsir Ibn Kathir</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #F3E5F5; color: #6A1B9A;">Lowering the Gaze</span>
+                            <p class="dyk-item-text">Allah says: <strong>"Tell the believing men to lower their gaze and guard their chastity. That is purer for them. Indeed, Allah is All-Aware of what they do."</strong></p>
+                            <div class="dyk-benefit"><i class="fas fa-eye-slash"></i> The command to men comes FIRST before the command to women. Men are obligated to lower their gaze — the responsibility is not only on women to cover.</div>
+                            <p class="dyk-item-source">📖 Surah An-Nur 24:30</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FFF3E0; color: #E65100;">Dragging Garments in Arrogance</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"Whoever drags his garment out of pride, Allah will not look at him on the Day of Judgment."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-exclamation-triangle"></i> This applies to men wearing their garments (izaar, trousers) below the ankles out of pride and arrogance. Not being looked at by Allah on the Day of Judgment is among the most severe punishments.</div>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 5791, Sahih Muslim 2085</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== SECTION 3: DEEDS & WORSHIP ===== -->
+                <div class="dyk-section" id="section-deeds" data-category="deeds">
+                    <div class="dyk-section-header" style="background: linear-gradient(135deg, #1565C0, #0D47A1);">
+                        <i class="fas fa-balance-scale"></i>
+                        <span>Deeds, Prayer & Worship</span>
+                    </div>
+                    <div class="dyk-card">
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #E3F2FD; color: #1565C0;">Abandoning Prayer</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"The covenant between us and them (the disbelievers) is the prayer. Whoever abandons it has committed kufr (disbelief)."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-exclamation-triangle"></i> Prayer is the dividing line between a Muslim and a disbeliever. Deliberately abandoning salah is described by the Prophet ﷺ himself as kufr. This is the most serious warning about any act of worship.</div>
+                            <p class="dyk-item-source">📖 Sunan at-Tirmidhi 2621, Sunan an-Nasa'i 463, authenticated as sahih</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #E3F2FD; color: #1565C0;">First Thing Judged</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"The first thing for which a person will be brought to account on the Day of Judgment will be his prayer. If it is complete, he will be successful. If it is incomplete, he will be doomed and will have lost. If something is lacking from his obligatory prayers, the Lord will say: 'See if My servant has any voluntary prayers to make up for what is lacking from his obligatory prayers.' Then the rest of his deeds will be dealt with in the same manner."</strong></p>
+                            <div class="dyk-benefit"><i class="fas fa-check-circle"></i> Your voluntary prayers (sunnah, nafl) can fill in gaps in your obligatory prayers. This is why consistent sunnah prayers are so important — they act as a safety net.</div>
+                            <p class="dyk-item-source">📖 Sunan at-Tirmidhi 413, Sunan Abu Dawud 864, authenticated as sahih</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #E3F2FD; color: #1565C0;">Showing Off (Riya)</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"The thing that I fear most for you is minor shirk (associating partners with Allah)."</strong> They asked: "What is minor shirk, O Messenger of Allah?" He said: <strong>"Showing off (riya). Allah will say on the Day of Judgment when people are being rewarded for their deeds: 'Go to those for whom you were showing off in the world and see if you can find any reward with them.'"</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-eye"></i> Doing good deeds to be seen by people, to gain praise, or to show off religiosity — this nullifies the deed entirely. The person who prayed, fasted, or gave charity to impress others will find ZERO reward on the Day of Judgment.</div>
+                            <p class="dyk-item-source">📖 Musnad Ahmad 23630, authenticated by al-Albani</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #E3F2FD; color: #1565C0;">Delaying Prayer</span>
+                            <p class="dyk-item-text">Allah says: <strong>"Woe to those who pray, but are heedless of their prayer."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-book-quran"></i> Ibn Abbas (RA) explained this refers to those who delay their prayer beyond its proper time consistently. "Woe" (Wayl) is a valley in Hell or an expression of severe punishment. This is about those who pray but are careless about the timing.</div>
+                            <p class="dyk-item-source">📖 Surah Al-Ma'un 107:4-5, Tafsir Ibn Kathir</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #E8F5E9; color: #2E7D32;">Immense Reward</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"Whoever prays twelve rak'ahs during the day and night (sunnah prayers), a house will be built for him in Paradise: four before Dhuhr and two after, two after Maghrib, two after Isha, and two before Fajr."</strong></p>
+                            <div class="dyk-benefit"><i class="fas fa-home"></i> A house in Paradise every single day — just for praying 12 extra rak'ahs of sunnah. These are among the easiest deeds with the greatest reward.</div>
+                            <p class="dyk-item-source">📖 Sunan at-Tirmidhi 414, authenticated as sahih</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #E3F2FD; color: #1565C0;">Interest (Riba)</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"Allah has cursed the one who consumes riba (interest/usury), the one who pays it, the one who writes the contract, and the two witnesses. They are all the same in sin."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-exclamation-triangle"></i> All parties involved in an interest-based transaction share in the sin — not just the lender. Allah declared war on those who deal in riba in Surah Al-Baqarah 2:279.</div>
+                            <p class="dyk-item-source">📖 Sahih Muslim 1598</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== SECTION 4: CHARACTER & MANNERS ===== -->
+                <div class="dyk-section" id="section-character" data-category="character">
+                    <div class="dyk-section-header" style="background: linear-gradient(135deg, #2E7D32, #1B5E20);">
+                        <i class="fas fa-heart"></i>
+                        <span>Character, Manners & Brotherhood</span>
+                    </div>
+                    <div class="dyk-card">
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #E8F5E9; color: #2E7D32;">Heaviest on the Scale</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"Nothing will be heavier on the Scale of the believer on the Day of Judgment than good character. Allah hates the one who is vulgar and obscene."</strong></p>
+                            <div class="dyk-benefit"><i class="fas fa-balance-scale"></i> Good character (husn al-khuluq) is heavier on your Scale than many acts of worship. A person with excellent manners can reach the rank of those who pray at night and fast during the day.</div>
+                            <p class="dyk-item-source">📖 Sunan at-Tirmidhi 2002, authenticated as sahih</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #E8F5E9; color: #2E7D32;">Closest to the Prophet ﷺ</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"The dearest and closest of you to me on the Day of Judgment will be those with the best character. And the most hated and furthest from me will be the talkative, the arrogant in speech, and the mutafayhiqun."</strong> They asked: "Who are the mutafayhiqun?" He said: <strong>"The arrogant ones."</strong></p>
+                            <p class="dyk-item-source">📖 Sunan at-Tirmidhi 2018, authenticated as hasan</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FFEBEE; color: #C62828;">Cutting Family Ties</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"The one who severs ties of kinship will not enter Paradise."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-heart-broken"></i> Cutting off family members — refusing to speak to parents, siblings, relatives — is so severe that it can prevent a person from entering Paradise. This applies even if the relatives are difficult or have wronged you.</div>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 5984, Sahih Muslim 2556</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FFEBEE; color: #C62828;">Not Speaking for 3 Days</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"It is not permissible for a Muslim to forsake his brother for more than three days. They meet and each turns away from the other. The better of the two is the one who gives the greeting of salam first."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-user-slash"></i> Refusing to speak to a fellow Muslim for more than 3 days out of anger is haram. The Prophet ﷺ also said: "The gates of Paradise are opened on Monday and Thursday, and every servant who does not associate anything with Allah is forgiven, except a man who has enmity between him and his brother. It is said: 'Wait for these two until they reconcile.'" (Sahih Muslim 2565)</div>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 6077, Sahih Muslim 2560</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #E8F5E9; color: #2E7D32;">Smiling is Charity</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"Your smiling in the face of your brother is charity. Commanding good and forbidding evil is charity. Guiding a person who is lost is charity. Removing a harmful thing from the road is charity."</strong></p>
+                            <div class="dyk-benefit"><i class="fas fa-smile"></i> Islam makes earning reward incredibly easy. Even a simple smile counts as sadaqah. Every small act of kindness is recorded.</div>
+                            <p class="dyk-item-source">📖 Sunan at-Tirmidhi 1956, authenticated as hasan</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FFEBEE; color: #C62828;">Envy</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"Beware of envy (hasad), for envy consumes good deeds just as fire consumes wood."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-fire"></i> Envying what others have literally burns away your good deeds. The cure is to make du'a for the person you envy and to say "MashaAllah, TabarakAllah" when you see a blessing others have.</div>
+                            <p class="dyk-item-source">📖 Sunan Abu Dawud 4903</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== SECTION 5: STERN WARNINGS ===== -->
+                <div class="dyk-section" id="section-warnings" data-category="warnings">
+                    <div class="dyk-section-header" style="background: linear-gradient(135deg, #E65100, #BF360C);">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Stern Warnings Most People Ignore</span>
+                    </div>
+                    <div class="dyk-card">
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FBE9E7; color: #BF360C;">Lying</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"Beware of lying, for lying leads to wickedness, and wickedness leads to the Hellfire. A person will keep lying and seeking to lie until he is written with Allah as a liar."</strong></p>
+                            <p class="dyk-item-text">And he ﷺ said: <strong>"Truthfulness leads to righteousness, and righteousness leads to Paradise. A person will keep speaking the truth and striving for truth until he is written with Allah as truthful (siddiq)."</strong></p>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 6094, Sahih Muslim 2607</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FBE9E7; color: #BF360C;">Signs of a Hypocrite</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"The signs of a hypocrite are three: when he speaks, he lies; when he makes a promise, he breaks it; and when he is entrusted with something, he betrays that trust."</strong></p>
+                            <p class="dyk-item-text">In another narration: <strong>"Even if he prays, fasts, and claims to be a Muslim."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-mask"></i> These aren't minor traits — they are the characteristics of hypocrisy (nifaq). A person who consistently lies, breaks promises, and betrays trust has the qualities of a munafiq, regardless of how religious they appear.</div>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 33, Sahih Muslim 59</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FBE9E7; color: #BF360C;">Oppression (Dhulm)</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"Beware of oppression (dhulm), for oppression will be darkness upon darkness on the Day of Judgment."</strong></p>
+                            <p class="dyk-item-text">And Allah says in a Hadith Qudsi: <strong>"O My servants, I have forbidden oppression for Myself and I have made it forbidden among you, so do not oppress one another."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-gavel"></i> The du'a of the oppressed person is answered by Allah even if they are a disbeliever. The Prophet ﷺ said: "Beware of the du'a of the oppressed, for there is no barrier between it and Allah." (Sahih al-Bukhari 1496)</div>
+                            <p class="dyk-item-source">📖 Sahih Muslim 2578, Sahih Muslim 2577 (Hadith Qudsi)</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FBE9E7; color: #BF360C;">Arrogance</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"No one who has an atom's weight of arrogance in his heart will enter Paradise."</strong> A man asked: "What if a person likes to wear nice clothes and shoes?" He ﷺ said: <strong>"Allah is Beautiful and loves beauty. Arrogance is rejecting the truth and looking down on people."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-crown"></i> An atom's weight of arrogance blocks a person from Paradise. Arrogance isn't about wearing nice things — it's about refusing to accept truth when it's presented to you and feeling superior to others.</div>
+                            <p class="dyk-item-source">📖 Sahih Muslim 91</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FBE9E7; color: #BF360C;">Harming Neighbors</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"By Allah, he does not believe! By Allah, he does not believe! By Allah, he does not believe!"</strong> They asked: "Who, O Messenger of Allah?" He said: <strong>"The one whose neighbor is not safe from his harm."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-house-damage"></i> The Prophet ﷺ swore by Allah THREE times to emphasize this. Harming your neighbor — through noise, gossip, harassment, or any form of harm — negates true faith.</div>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 6016</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FBE9E7; color: #BF360C;">Music & Instruments</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"There will be among my Ummah people who will regard adultery, silk (for men), alcohol, and musical instruments as permissible."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-music"></i> The Prophet ﷺ linked musical instruments with major sins like adultery and alcohol in a single hadith. The majority of scholars consider listening to musical instruments haram based on this and other evidences. The exception is the duff (hand drum) on certain occasions like weddings.</div>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 5590</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== SECTION 6: PRAYER ===== -->
+                <div class="dyk-section" id="section-prayer" data-category="prayer">
+                    <div class="dyk-section-header" style="background: linear-gradient(135deg, #00695C, #004D40);">
+                        <i class="fas fa-mosque"></i>
+                        <span>Prayer (Salah)</span>
+                    </div>
+                    <div class="dyk-card">
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #E0F2F1; color: #00695C;">The Dividing Line</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"The covenant that stands between us and them (i.e. distinguishes a Muslim from a non-Muslim) is the prayer. Whoever abandons it has committed kufr (disbelief)."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-exclamation-triangle"></i> This is not a metaphor. The Prophet ﷺ explicitly stated that the only thing distinguishing a Muslim from a non-Muslim is the prayer. Abandoning it entirely is described as kufr by the Prophet ﷺ himself.</div>
+                            <p class="dyk-item-source">📖 Sunan at-Tirmidhi 2621, Sunan an-Nasa'i 463 — graded sahih by al-Albani</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #E0F2F1; color: #00695C;">Prayer in Congregation</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"Prayer in congregation is twenty-seven times more virtuous than prayer offered individually."</strong></p>
+                            <p class="dyk-item-text">And he ﷺ said: <strong>"I was about to order the prayer to be established, then I would order a man to lead the people in prayer, then I would go with men carrying bundles of firewood to people who do not attend the prayer, and burn their houses down."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-fire"></i> The Prophet ﷺ considered burning the houses of those who skip congregational prayer without excuse. This shows how serious attending the masjid for salah is for men who are able.</div>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 645 (27 times); Sahih al-Bukhari 644, Sahih Muslim 651 (burning houses)</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #E0F2F1; color: #00695C;">Praying on Time</span>
+                            <p class="dyk-item-text">Abdullah ibn Mas'ud (RA) asked: <strong>"Which deed is most beloved to Allah?"</strong> The Prophet ﷺ said: <strong>"Prayer at its proper time."</strong> He asked: "Then what?" He ﷺ said: <strong>"Then kindness to parents."</strong> He asked: "Then what?" He ﷺ said: <strong>"Then jihad in the cause of Allah."</strong></p>
+                            <div class="dyk-benefit"><i class="fas fa-clock"></i> Praying on time ranks ABOVE kindness to parents and even jihad. Delaying prayer carelessly is one of the most common sins people underestimate.</div>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 527, Sahih Muslim 85</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #E0F2F1; color: #00695C;">Khushu' in Prayer</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"The worst type of thief is the one who steals from his prayer."</strong> They asked: "O Messenger of Allah, how can a person steal from his prayer?" He ﷺ said: <strong>"He does not complete his ruku' (bowing) and sujud (prostration) properly."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-exclamation-circle"></i> Rushing through prayer — not bowing fully, not being still in each position — is described as THEFT. Many people pray 5 times a day but their prayer is barely accepted because they rush through it like a pecking bird.</div>
+                            <p class="dyk-item-source">📖 Musnad Ahmad 22695 — graded sahih by al-Albani in Sahih al-Jami' 997</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #E0F2F1; color: #00695C;">The Pecking Prayer</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"The worst people in terms of theft are those who steal from their prayers."</strong> He also said about a man who prayed badly: <strong>"Go back and pray, for you have not prayed."</strong> He repeated this three times until the man asked to be taught. The Prophet ﷺ then taught him to be still in every position.</p>
+                            <div class="dyk-warning"><i class="fas fa-ban"></i> A prayer without proper stillness (tuma'ninah) in each position — standing, bowing, rising, prostrating — is INVALID. The Prophet ﷺ told the man "you have not prayed" even though he went through the motions.</div>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 757, Sahih Muslim 397 (hadith of the man who prayed badly)</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #E8F5E9; color: #2E7D32;">Fajr & Isha Reward</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"Whoever prays Fajr is under the protection of Allah. So do not let Allah find you falling short in any way with regard to His protection."</strong></p>
+                            <p class="dyk-item-text">And he ﷺ said: <strong>"If they knew what (reward) there is in Isha and Fajr prayers, they would come to them even if they had to crawl."</strong></p>
+                            <div class="dyk-benefit"><i class="fas fa-shield-alt"></i> Praying Fajr puts you under Allah's personal protection for the entire day. Praying Isha in congregation equals half the night in prayer, and praying Fajr in congregation equals the entire night in prayer (Sahih Muslim 656).</div>
+                            <p class="dyk-item-source">📖 Sahih Muslim 261 (protection); Sahih al-Bukhari 657 (crawling)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== SECTION 7: FORNICATION & ZINA ===== -->
+                <div class="dyk-section" id="section-fornication" data-category="fornication">
+                    <div class="dyk-section-header" style="background: linear-gradient(135deg, #880E4F, #4A0028);">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Fornication, Zina & Chastity</span>
+                    </div>
+                    <div class="dyk-card">
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FCE4EC; color: #880E4F;">Do Not Even Come Near</span>
+                            <p class="dyk-item-text">Allah says: <strong>"And do not approach unlawful sexual intercourse (zina). Indeed, it is an immorality and is evil as a way."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-book-quran"></i> Allah did NOT just say "do not commit zina" — He said "do not even APPROACH it." This means everything that leads to zina is also forbidden: being alone with the opposite gender (khalwah), inappropriate touching, flirting, watching pornography, exchanging inappropriate messages. All of these are pathways to zina that Allah commanded us to avoid entirely.</div>
+                            <p class="dyk-item-source">📖 Surah Al-Isra 17:32, Tafsir Ibn Kathir</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FCE4EC; color: #880E4F;">Zina of the Eyes, Hands & Feet</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"Allah has decreed for every son of Adam his share of zina, which he will inevitably commit. The zina of the eyes is looking. The zina of the ears is listening. The zina of the tongue is speaking. The zina of the hands is touching. The zina of the feet is walking (towards it). The heart wishes and desires, and the private parts confirm that or deny it."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-eye"></i> Zina isn't only the final act. Every look at what is haram, every flirtatious conversation, every inappropriate touch — these are all forms of zina recorded against you. The only thing that stops it from becoming major zina is whether the private parts act on it.</div>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 6243, Sahih Muslim 2657</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FCE4EC; color: #880E4F;">Punishment on the Day of Judgment</span>
+                            <p class="dyk-item-text">The Prophet ﷺ described what he saw during a night vision: <strong>"We came to something like a tannur (oven), from which came clamor and voices. We looked into it and saw naked men and women, and a flame was coming from below them. When the flame reached them, they cried out."</strong> The Prophet ﷺ asked Jibreel who they were. He said: <strong>"These are the adulterers and adulteresses."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-fire"></i> The Prophet ﷺ was shown the punishment of those who commit zina — naked in a furnace-like pit, screaming as flames rise from beneath them. This is a terrifying image of what awaits those who do not repent from this sin.</div>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 7047</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FCE4EC; color: #880E4F;">Being Alone (Khalwah)</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"No man should be alone with a (non-mahram) woman, and no woman should travel except with a mahram."</strong></p>
+                            <p class="dyk-item-text">And he ﷺ said: <strong>"Beware of entering upon women." A man from the Ansar asked: "O Messenger of Allah, what about the brother-in-law (al-hamu)?" He ﷺ said: "The brother-in-law is death."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-user-slash"></i> Being alone with a non-mahram of the opposite gender is haram. The Prophet ﷺ described the husband's brother/male in-law as "death" — meaning the danger of being alone with them is even greater because people are less cautious with relatives, making fitna more likely.</div>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 5233 (no khalwah); Sahih al-Bukhari 5232, Sahih Muslim 2172 (brother-in-law is death)</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #E8F5E9; color: #2E7D32;">The Reward of Chastity</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"Seven people will be shaded by Allah under His Shade on the Day when there will be no shade except His Shade..."</strong> Among them: <strong>"...a man who is called by a woman of beauty and position, but he says: 'I fear Allah.'"</strong></p>
+                            <div class="dyk-benefit"><i class="fas fa-umbrella"></i> A person who resists temptation — when an attractive person invites them to sin and they refuse for the sake of Allah — will be among the seven granted shade on the Day of Judgment when the sun is brought close. This is one of the highest honors.</div>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 660, Sahih Muslim 1031</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FCE4EC; color: #880E4F;">Faith Leaves During Zina</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"When a person commits fornication, faith (iman) departs from him and hovers over him like a canopy. When he stops, faith returns to him."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-heart-broken"></i> At the very moment a person is committing zina, their iman literally leaves their body. They are in a state completely devoid of faith. This shows the enormity of this sin in the sight of Allah.</div>
+                            <p class="dyk-item-source">📖 Sunan Abu Dawud 4690 — graded sahih by al-Albani; supported by Sahih al-Bukhari 2475</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== SECTION 8: MEN - CLOTHES & PRAYER ===== -->
+                <div class="dyk-section" id="section-men" data-category="men">
+                    <div class="dyk-section-header" style="background: linear-gradient(135deg, #37474F, #263238);">
+                        <i class="fas fa-male"></i>
+                        <span>Men: Clothing, Prayer & Obligations</span>
+                    </div>
+                    <div class="dyk-card">
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #ECEFF1; color: #37474F;">Garments Below the Ankles (Isbal)</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"Whatever of the izaar (lower garment) hangs below the ankles is in the Fire."</strong></p>
+                            <p class="dyk-item-text">And he ﷺ said: <strong>"Allah will not look at the one who drags his garment out of pride."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-exclamation-triangle"></i> For men, letting trousers, thobes or izaar hang below the ankle is a serious matter. The part below the ankles will be in the Fire. When done out of pride, Allah will not even look at the person on the Day of Judgment — one of the most severe punishments.</div>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 5787 (in the Fire); Sahih al-Bukhari 5791, Sahih Muslim 2085 (not look at)</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #ECEFF1; color: #37474F;">Silk & Gold for Men</span>
+                            <p class="dyk-item-text">The Prophet ﷺ took silk in his right hand and gold in his left, raised them and said: <strong>"These two are forbidden for the males of my Ummah and permissible for the females."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-ban"></i> Wearing pure silk clothing and gold jewelry is explicitly haram for men. This includes gold rings, gold watches, gold chains, and silk shirts/ties. Silver rings are permissible for men.</div>
+                            <p class="dyk-item-source">📖 Sunan Abu Dawud 4057, Sunan an-Nasa'i 5148 — graded sahih by al-Albani</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #ECEFF1; color: #37474F;">The Beard</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"Trim the mustache and let the beard grow. Be different from the polytheists."</strong></p>
+                            <p class="dyk-item-text">In another narration: <strong>"Trim the mustache and leave the beard alone."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-cut"></i> The majority of scholars (including the four Imams — Abu Hanifa, Malik, Shafi'i, and Ahmad) held that growing the beard is obligatory for men and shaving it is haram, as the Prophet ﷺ gave a clear command. Trimming what exceeds a fistful is permitted according to some scholars based on the practice of Ibn Umar (RA).</div>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 5892, Sahih Muslim 259</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #ECEFF1; color: #37474F;">Men Must Pray in the Masjid</span>
+                            <p class="dyk-item-text">A blind man came to the Prophet ﷺ and said: <strong>"O Messenger of Allah, I have no guide to lead me to the masjid."</strong> He asked the Prophet ﷺ for permission to pray at home. The Prophet ﷺ gave him permission, then called him back and asked: <strong>"Can you hear the adhan?"</strong> He said: "Yes." The Prophet ﷺ said: <strong>"Then respond to it (i.e. come to the masjid)."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-mosque"></i> If the Prophet ﷺ did not excuse a BLIND man from attending the masjid, what excuse do healthy men have who live close to the mosque? This hadith is strong evidence that congregational prayer in the masjid is obligatory for men who can hear the adhan.</div>
+                            <p class="dyk-item-source">📖 Sahih Muslim 653</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #ECEFF1; color: #37474F;">Dyeing Hair Black</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said regarding Abu Quhafa (the father of Abu Bakr) who had white hair: <strong>"Change this (white hair) with something, but avoid black."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-palette"></i> Dyeing grey/white hair is sunnah, but using pure black dye is prohibited. The Prophet ﷺ specifically said to avoid black. Scholars allow dark brown, henna (reddish), and other colors — but not jet black.</div>
+                            <p class="dyk-item-source">📖 Sahih Muslim 2102</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #ECEFF1; color: #37474F;">Covering the Awrah</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"A man should not look at the awrah of another man, nor should a woman look at the awrah of another woman."</strong></p>
+                            <p class="dyk-item-text">The awrah of a man is from the navel to the knees according to the majority of scholars.</p>
+                            <div class="dyk-warning"><i class="fas fa-user-shield"></i> Men must keep the area from navel to knee covered in front of other men and women (except wives). Wearing very short shorts, exposing the thighs, or swimming trunks that are too tight violate this. This includes in gym changing rooms and public spaces.</div>
+                            <p class="dyk-item-source">📖 Sahih Muslim 338; Sunan Abu Dawud 4015 — the thigh is awrah, graded hasan</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== SECTION 9: RACISM & SEGREGATING RACES ===== -->
+                <div class="dyk-section" id="section-racism" data-category="racism">
+                    <div class="dyk-section-header" style="background: linear-gradient(135deg, #1A237E, #0D1642);">
+                        <i class="fas fa-globe-africa"></i>
+                        <span>Racism & Tribalism: Islam's Zero Tolerance</span>
+                    </div>
+                    <div class="dyk-card">
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #E8EAF6; color: #1A237E;">The Farewell Sermon</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said in his final Hajj sermon: <strong>"O people, your Lord is One and your father (Adam) is one. An Arab has no superiority over a non-Arab, and a non-Arab has no superiority over an Arab. A white has no superiority over a black, and a black has no superiority over a white — except by taqwa (piety and God-consciousness)."</strong></p>
+                            <div class="dyk-benefit"><i class="fas fa-globe"></i> This was declared in the Prophet's ﷺ FAREWELL sermon — his final public address to the entire Ummah. He chose to emphasize racial equality as one of the most important messages of Islam. The ONLY criterion for superiority is taqwa, which only Allah can truly judge.</div>
+                            <p class="dyk-item-source">📖 Musnad Ahmad 23489 — graded sahih by al-Albani in Sahih al-Jami' 7108</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #E8EAF6; color: #1A237E;">Created from One Soul</span>
+                            <p class="dyk-item-text">Allah says: <strong>"O mankind, indeed We have created you from male and female and made you into peoples and tribes that you may know one another. Indeed, the most noble of you in the sight of Allah is the most righteous of you. Indeed, Allah is All-Knowing, All-Aware."</strong></p>
+                            <div class="dyk-benefit"><i class="fas fa-book-quran"></i> Allah created different races, colors, and tribes NOT for one to feel superior over another, but so we may RECOGNIZE and appreciate each other. The ONLY thing that makes someone more honorable is their righteousness (taqwa). Any form of racial discrimination directly contradicts this Quranic principle.</div>
+                            <p class="dyk-item-source">📖 Surah Al-Hujurat 49:13, Tafsir Ibn Kathir</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FFEBEE; color: #C62828;">Tribalism is Jahiliyyah</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"Whoever calls to tribalism (asabiyyah) does not belong to us. Whoever fights for the sake of tribalism does not belong to us. Whoever dies for the sake of tribalism does not belong to us."</strong></p>
+                            <p class="dyk-item-text">And he ﷺ said: <strong>"Leave it (tribalism), for it is rotten."</strong></p>
+                            <div class="dyk-warning"><i class="fas fa-skull-crossbones"></i> The Prophet ﷺ completely disowned anyone who promotes tribalism or racial pride. He called it "rotten" — the stench of jahiliyyah (pre-Islamic ignorance). Saying "my tribe/race is better" or discriminating against others based on ethnicity is something Islam came to abolish.</div>
+                            <p class="dyk-item-source">📖 Sunan Abu Dawud 5121 — graded sahih by al-Albani; Sahih al-Bukhari 4905, Sahih Muslim 2584 (rotten)</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #E8EAF6; color: #1A237E;">Bilal (RA) — The Chosen Muadhin</span>
+                            <p class="dyk-item-text">When Makkah was conquered, the Prophet ﷺ ordered <strong>Bilal ibn Rabah (RA)</strong> — a former Abyssinian (Ethiopian) slave — to climb on top of the Ka'bah and give the adhan. This was the most prestigious honor imaginable. Some of the Quraysh muttered racist remarks. Allah then revealed: <strong>"Indeed, the most noble of you in the sight of Allah is the most righteous of you."</strong> (49:13)</p>
+                            <div class="dyk-benefit"><i class="fas fa-star"></i> The Prophet ﷺ deliberately chose a black man — once a slave — to give the adhan from atop the holiest place in Islam, in front of the entire Quraysh who prided themselves on lineage. This was a powerful, intentional statement that Islam judges people by their faith, not their skin color or social status.</div>
+                            <p class="dyk-item-source">📖 Referenced in Tafsir Ibn Kathir for 49:13; Sahih al-Bukhari 4286 (conquest of Makkah)</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FFEBEE; color: #C62828;">Abu Dharr's Racism Rebuked</span>
+                            <p class="dyk-item-text">Abu Dharr (RA) once insulted Bilal (RA) by saying: <strong>"You son of a black woman!"</strong> When the Prophet ﷺ heard this, he said: <strong>"Did you insult him by his mother? You are a person who still has jahiliyyah (ignorance) in you."</strong></p>
+                            <p class="dyk-item-text">Abu Dharr was so ashamed that he put his cheek on the ground and told Bilal to step on it.</p>
+                            <div class="dyk-warning"><i class="fas fa-gavel"></i> Even a great companion like Abu Dharr was firmly rebuked for making a racist remark. The Prophet ﷺ called it JAHILIYYAH — pre-Islamic ignorance. There is absolutely NO room for racial insults or discrimination in Islam, regardless of who the person is.</div>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 30, Sahih Muslim 1661</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #E8EAF6; color: #1A237E;">Obey Even an Ethiopian Leader</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"Listen and obey, even if an Abyssinian (Ethiopian) slave whose head looks like a raisin is appointed over you."</strong></p>
+                            <div class="dyk-benefit"><i class="fas fa-crown"></i> The Prophet ﷺ explicitly commanded obedience to a leader regardless of their race or appearance. A black person with kinky hair leading Arabs was used as the example to destroy any notion that race determines authority or worth.</div>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 7142</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== SECTION 10: IMPORTANT HADITHS EVERYONE SHOULD KNOW ===== -->
+                <div class="dyk-section" id="section-important" data-category="important">
+                    <div class="dyk-section-header" style="background: linear-gradient(135deg, #F57F17, #E65100);">
+                        <i class="fas fa-star"></i>
+                        <span>Important Hadiths Everyone Must Know</span>
+                    </div>
+                    <div class="dyk-card">
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FFF8E1; color: #F57F17;">Foundation of Islam</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"Islam is built upon five (pillars): the testimony that there is no god but Allah and Muhammad is the Messenger of Allah, establishing the prayer, paying the zakat, performing Hajj to the House, and fasting in Ramadan."</strong></p>
+                            <div class="dyk-benefit"><i class="fas fa-building"></i> These five pillars are non-negotiable. Missing any one of them is a deficiency in one's Islam. The shahada is the foundation, prayer is the pillar, zakat purifies wealth, fasting purifies the soul, and Hajj completes the journey.</div>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 8, Sahih Muslim 16</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FFF8E1; color: #F57F17;">Actions Are by Intentions</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"Actions are judged by intentions, and every person will get what they intended. So whoever migrated for the sake of Allah and His Messenger, his migration is for Allah and His Messenger. And whoever migrated for some worldly gain or to marry a woman, his migration is for what he migrated for."</strong></p>
+                            <div class="dyk-benefit"><i class="fas fa-heart"></i> This is called the "hadith of intention" — Imam al-Bukhari placed it as the FIRST hadith in his Sahih. Every deed is only worth what you intended by it. Praying to show off = zero reward. Giving charity to impress people = zero reward. The intention behind every action determines its value with Allah.</div>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 1, Sahih Muslim 1907</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FFF8E1; color: #F57F17;">Halal & Haram Are Clear</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"The halal is clear and the haram is clear, and between them are doubtful matters that many people do not know. Whoever avoids the doubtful matters has safeguarded his religion and his honor. And whoever falls into doubtful matters falls into the haram, like a shepherd who grazes around a sanctuary, nearly falling into it. Every king has a sanctuary, and the sanctuary of Allah is His prohibitions."</strong></p>
+                            <div class="dyk-benefit"><i class="fas fa-balance-scale"></i> When something is doubtful, the safest path is to avoid it. Don't look for loopholes. The person who "grazes near the boundary" will eventually cross it. This hadith teaches us the principle of precaution (wara') in Islam.</div>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 52, Sahih Muslim 1599</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FFF8E1; color: #F57F17;">Hadith of Jibreel</span>
+                            <p class="dyk-item-text">Umar (RA) narrated that a man came to the Prophet ﷺ (who was Jibreel in human form) and asked about Islam, Iman, and Ihsan. The Prophet ﷺ said Ihsan is: <strong>"To worship Allah as if you see Him, and if you do not see Him, then know that He sees you."</strong></p>
+                            <div class="dyk-benefit"><i class="fas fa-eye"></i> This is the highest level of faith — ihsan. Would you sin if you could physically see Allah watching you? That awareness should be constant. Every moment, in private and in public, Allah sees everything you do, say, and think.</div>
+                            <p class="dyk-item-source">📖 Sahih Muslim 8 (the full hadith of Jibreel)</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FFF8E1; color: #F57F17;">Leave What Doesn't Concern You</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"Part of the perfection of a person's Islam is leaving that which does not concern him."</strong></p>
+                            <div class="dyk-benefit"><i class="fas fa-lock"></i> Stop involving yourself in things that are none of your business — gossip, prying into others' lives, arguing about matters that don't affect you. A perfected Muslim focuses on what benefits them in dunya and akhira.</div>
+                            <p class="dyk-item-source">📖 Sunan at-Tirmidhi 2317 — graded hasan by an-Nawawi in his 40 Hadith (Hadith 12)</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FFF8E1; color: #F57F17;">Do Not Be Angry</span>
+                            <p class="dyk-item-text">A man asked the Prophet ﷺ for advice. He ﷺ said: <strong>"Do not get angry."</strong> The man repeated his request several times, and each time the Prophet ﷺ said: <strong>"Do not get angry."</strong></p>
+                            <div class="dyk-benefit"><i class="fas fa-peace"></i> The Prophet ﷺ repeated this advice multiple times because anger is the root of so many sins — violence, divorce in haste, broken relationships, hurtful words you can never take back. He ﷺ also said: "The strong person is not the one who can wrestle, but the one who controls himself at the time of anger." (Sahih al-Bukhari 6114)</div>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 6116</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FFF8E1; color: #F57F17;">Rights of the Muslim</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"The rights of a Muslim over another Muslim are six: when you meet him, greet him with salam; when he invites you, respond; when he seeks your advice, advise him sincerely; when he sneezes and praises Allah, say 'YarhamukAllah'; when he is sick, visit him; and when he dies, follow his funeral."</strong></p>
+                            <div class="dyk-benefit"><i class="fas fa-handshake"></i> These are obligations, not suggestions. Every Muslim has these six rights over every other Muslim. Fulfilling them strengthens the bonds of brotherhood and sisterhood.</div>
+                            <p class="dyk-item-source">📖 Sahih Muslim 2162</p>
+                        </div>
+
+                        <div class="dyk-item">
+                            <span class="dyk-item-label" style="background: #FFF8E1; color: #F57F17;">The Body of the Ummah</span>
+                            <p class="dyk-item-text">The Prophet ﷺ said: <strong>"The example of the believers in their mutual love, mercy, and compassion is like that of one body: when one limb suffers, the whole body responds with sleeplessness and fever."</strong></p>
+                            <div class="dyk-benefit"><i class="fas fa-users"></i> When Muslims anywhere in the world are suffering — through war, famine, oppression — every Muslim should feel that pain. We are one body. Indifference to the suffering of our brothers and sisters contradicts this fundamental principle.</div>
+                            <p class="dyk-item-source">📖 Sahih al-Bukhari 6011, Sahih Muslim 2586</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Closing CTA -->
+                <div class="dyk-enroll-banner" style="background: linear-gradient(135deg, #2E7D32, #1B5E20); margin-top: 8px;">
+                    <h3><i class="fas fa-hands-praying"></i> May Allah Guide Us All</h3>
+                    <p>Share this knowledge with others. The Prophet ﷺ said: "Convey from me, even if it is one verse." (Sahih al-Bukhari 3461)</p>
+                    <a href="join-us.html?action=signup" class="dyk-enroll-btn" style="color: #1B5E20;">
+                        <i class="fas fa-user-plus"></i> Join KIUMA Community
+                    </a>
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
+            <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
+            <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
+        </nav>
+    </div>
+
+    <script>
+    function filterDykSection(category) {
+        // Update tabs
+        document.querySelectorAll('.dyk-tab').forEach(function(tab) {
+            tab.classList.remove('active');
+        });
+        event.currentTarget.classList.add('active');
+
+        // Show/hide sections
+        document.querySelectorAll('.dyk-section').forEach(function(section) {
+            if (category === 'all' || section.dataset.category === category) {
+                section.classList.remove('section-hidden');
+            } else {
+                section.classList.add('section-hidden');
+            }
+        });
+    }
+
+    // Handle hash navigation
+    document.addEventListener('DOMContentLoaded', function() {
+        var hash = window.location.hash;
+        if (hash) {
+            var target = document.querySelector(hash);
+            if (target) {
+                // Activate the matching tab
+                var cat = target.dataset ? target.dataset.category : '';
+                if (cat) {
+                    filterDykSection(cat);
+                    // Set the right tab active
+                    document.querySelectorAll('.dyk-tab').forEach(function(tab) {
+                        tab.classList.remove('active');
+                    });
+                    document.querySelectorAll('.dyk-tab').forEach(function(tab) {
+                        if (tab.textContent.toLowerCase().includes(cat) || (cat === 'all' && tab.textContent === 'All')) {
+                            tab.classList.add('active');
+                        }
+                    });
+                }
+                setTimeout(function() {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 300);
+            }
+        }
+    });
+    </script>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js" defer></script>
+    <script src="firebase-config.js" defer></script>
+    <script src="js/router-bridge.js" defer></script>
+    <script src="script.min.js" defer></script>
+</body>
+</html>
