@@ -21,6 +21,154 @@
     <!-- Font Awesome: CDN primary, local fallback -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
     <link rel="stylesheet" href="fonts/fontawesome.min.css">
+    <script>
+        // Check if all required scripts (Firebase + script.min.js) are ready
+        function isScriptsReady() {
+            return typeof firebase !== 'undefined' && firebase.auth && typeof injectAccountModal === 'function' && typeof window.handleLogin === 'function';
+        }
+
+        // Wait for all scripts to load, then call callback
+        function waitForScripts(callback, retries) {
+            retries = retries || 0;
+            if (isScriptsReady()) {
+                if (!document.getElementById('accountModal') && typeof injectAccountModal === 'function') {
+                    injectAccountModal();
+                }
+                var modal = document.getElementById('accountModal');
+                if (modal) { callback(modal); return; }
+            }
+            if (retries < 30) {
+                setTimeout(function() { waitForScripts(callback, retries + 1); }, 200);
+            } else {
+                alert('Still loading... Please try again in a moment.');
+            }
+        }
+
+        // Open signup modal
+        function openSignupModal() {
+            waitForScripts(function(modal) {
+                document.getElementById('accountTabs').style.display = 'block';
+                document.getElementById('accountModalTitle').innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
+                document.getElementById('loginTab').classList.remove('active');
+                document.getElementById('signupTab').classList.add('active');
+                document.getElementById('loginFormElement').style.display = 'none';
+                document.getElementById('signupFormElement').style.display = 'block';
+                document.getElementById('accountInfo').style.display = 'none';
+                if (document.getElementById('editProfileForm')) document.getElementById('editProfileForm').style.display = 'none';
+                modal.style.display = 'flex';
+            });
+        }
+
+        // Open login modal
+        function openLoginModal() {
+            waitForScripts(function(modal) {
+                document.getElementById('accountTabs').style.display = 'block';
+                document.getElementById('accountModalTitle').innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+                document.getElementById('loginTab').classList.add('active');
+                document.getElementById('signupTab').classList.remove('active');
+                document.getElementById('loginFormElement').style.display = 'block';
+                document.getElementById('signupFormElement').style.display = 'none';
+                document.getElementById('accountInfo').style.display = 'none';
+                if (document.getElementById('editProfileForm')) document.getElementById('editProfileForm').style.display = 'none';
+                modal.style.display = 'flex';
+            });
+        }
+
+        // Check login state and update UI
+        function updateJoinPageUI() {
+            var userData = localStorage.getItem('userData');
+            var notLoggedInSection = document.getElementById('notLoggedInSection');
+            var loggedInSection = document.getElementById('loggedInSection');
+            var settingsSection = document.getElementById('settingsSection');
+            var welcomeUserName = document.getElementById('welcomeUserName');
+            var pageTitle = document.querySelector('.hero-page-title');
+
+            if (userData) {
+                try { var user = JSON.parse(userData); } catch(e) { return; }
+                if (notLoggedInSection) notLoggedInSection.style.display = 'none';
+                if (loggedInSection) loggedInSection.style.display = 'block';
+                if (settingsSection) settingsSection.style.display = 'block';
+                if (pageTitle) pageTitle.textContent = 'Settings & Profile';
+
+                var fullName = user.firstName && user.lastName
+                    ? user.firstName + ' ' + user.lastName
+                    : (user.firstName || user.name || 'Member');
+                if (welcomeUserName) welcomeUserName.textContent = fullName;
+
+                var profileEmail = document.getElementById('profileEmail');
+                if (profileEmail) profileEmail.textContent = user.email || '';
+
+                var detailFullName = document.getElementById('detailFullName');
+                var detailEmail = document.getElementById('detailEmail');
+                var detailPhone = document.getElementById('detailPhone');
+                var detailRegNo = document.getElementById('detailRegNo');
+                var detailGender = document.getElementById('detailGender');
+
+                if (detailFullName) detailFullName.textContent = fullName;
+                if (detailEmail) detailEmail.textContent = user.email || '-';
+                if (detailPhone) detailPhone.textContent = user.phone || user.phoneNumber || '-';
+                if (detailRegNo) detailRegNo.textContent = user.regNo || user.registrationNumber || '-';
+                if (detailGender) detailGender.textContent = user.gender || '-';
+
+                updateBottomNav(true);
+            } else {
+                if (notLoggedInSection) notLoggedInSection.style.display = 'block';
+                if (loggedInSection) loggedInSection.style.display = 'none';
+                if (settingsSection) settingsSection.style.display = 'none';
+                if (pageTitle) pageTitle.textContent = 'Join Our Community';
+                updateBottomNav(false);
+            }
+        }
+
+        // Update bottom navigation
+        function updateBottomNav(isLoggedIn) {
+            var bottomNavItems = document.querySelectorAll('.bottom-nav .nav-item');
+            bottomNavItems.forEach(function(item) {
+                var span = item.querySelector('span');
+                var icon = item.querySelector('i');
+                if (span && (span.textContent === 'Join' || span.textContent === 'Settings')) {
+                    if (isLoggedIn) {
+                        span.textContent = 'Settings';
+                        if (icon) icon.className = 'fas fa-cog';
+                    } else {
+                        span.textContent = 'Join';
+                        if (icon) icon.className = 'fas fa-user-plus';
+                    }
+                }
+            });
+        }
+
+        // Once Firebase loads, listen for auth state changes to auto-update UI
+        function setupAuthListener() {
+            if (typeof firebase !== 'undefined' && firebase.auth) {
+                firebase.auth().onAuthStateChanged(function() {
+                    updateJoinPageUI();
+                });
+            } else {
+                setTimeout(setupAuthListener, 300);
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateJoinPageUI();
+            setupAuthListener();
+
+            var urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('action') === 'signup') {
+                setTimeout(function() { openSignupModal(); }, 500);
+            } else if (urlParams.get('action') === 'login') {
+                setTimeout(function() { openLoginModal(); }, 500);
+            }
+        });
+
+        // Listen for storage changes (login/logout from other tabs)
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'userData') {
+                updateJoinPageUI();
+            }
+        });
+    </script>
 </head>
 <body>
     <nav class="nav-menu" id="navMenu">
@@ -281,164 +429,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js" defer></script>
     <script src="firebase-config.js" defer></script>
     <script src="script.min.js" defer></script>
-    <script>
-        // Check if all required scripts (Firebase + script.min.js) are ready
-        function isScriptsReady() {
-            return typeof firebase !== 'undefined' && firebase.auth && typeof injectAccountModal === 'function' && typeof window.handleLogin === 'function';
-        }
-
-        // Wait for all scripts to load, then call callback
-        function waitForScripts(callback, retries) {
-            retries = retries || 0;
-            if (isScriptsReady()) {
-                // Also ensure modal exists
-                if (!document.getElementById('accountModal') && typeof injectAccountModal === 'function') {
-                    injectAccountModal();
-                }
-                var modal = document.getElementById('accountModal');
-                if (modal) { callback(modal); return; }
-            }
-            if (retries < 30) { // 6 seconds total
-                setTimeout(function() { waitForScripts(callback, retries + 1); }, 200);
-            } else {
-                alert('Still loading... Please try again in a moment.');
-            }
-        }
-
-        // Open signup modal
-        function openSignupModal() {
-            waitForScripts(function(modal) {
-                document.getElementById('accountTabs').style.display = 'block';
-                document.getElementById('accountModalTitle').innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
-                document.getElementById('loginTab').classList.remove('active');
-                document.getElementById('signupTab').classList.add('active');
-                document.getElementById('loginFormElement').style.display = 'none';
-                document.getElementById('signupFormElement').style.display = 'block';
-                document.getElementById('accountInfo').style.display = 'none';
-                if (document.getElementById('editProfileForm')) document.getElementById('editProfileForm').style.display = 'none';
-                modal.style.display = 'flex';
-            });
-        }
-        
-        // Open login modal
-        function openLoginModal() {
-            waitForScripts(function(modal) {
-                document.getElementById('accountTabs').style.display = 'block';
-                document.getElementById('accountModalTitle').innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
-                document.getElementById('loginTab').classList.add('active');
-                document.getElementById('signupTab').classList.remove('active');
-                document.getElementById('loginFormElement').style.display = 'block';
-                document.getElementById('signupFormElement').style.display = 'none';
-                document.getElementById('accountInfo').style.display = 'none';
-                if (document.getElementById('editProfileForm')) document.getElementById('editProfileForm').style.display = 'none';
-                modal.style.display = 'flex';
-            });
-        }
-        
-        // Check login state and update UI
-        function updateJoinPageUI() {
-            var userData = localStorage.getItem('userData');
-            var notLoggedInSection = document.getElementById('notLoggedInSection');
-            var loggedInSection = document.getElementById('loggedInSection');
-            var settingsSection = document.getElementById('settingsSection');
-            var welcomeUserName = document.getElementById('welcomeUserName');
-            var pageTitle = document.querySelector('.hero-page-title');
-            
-            if (userData) {
-                try { var user = JSON.parse(userData); } catch(e) { return; }
-                if (notLoggedInSection) notLoggedInSection.style.display = 'none';
-                if (loggedInSection) loggedInSection.style.display = 'block';
-                if (settingsSection) settingsSection.style.display = 'block';
-                if (pageTitle) pageTitle.textContent = 'Settings & Profile';
-                
-                // Update welcome name
-                var fullName = user.firstName && user.lastName 
-                    ? user.firstName + ' ' + user.lastName 
-                    : (user.firstName || user.name || 'Member');
-                if (welcomeUserName) {
-                    welcomeUserName.textContent = fullName;
-                }
-                
-                // Update profile email
-                var profileEmail = document.getElementById('profileEmail');
-                if (profileEmail) profileEmail.textContent = user.email || '';
-                
-                // Update account details
-                var detailFullName = document.getElementById('detailFullName');
-                var detailEmail = document.getElementById('detailEmail');
-                var detailPhone = document.getElementById('detailPhone');
-                var detailRegNo = document.getElementById('detailRegNo');
-                var detailGender = document.getElementById('detailGender');
-                
-                if (detailFullName) detailFullName.textContent = fullName;
-                if (detailEmail) detailEmail.textContent = user.email || '-';
-                if (detailPhone) detailPhone.textContent = user.phone || user.phoneNumber || '-';
-                if (detailRegNo) detailRegNo.textContent = user.regNo || user.registrationNumber || '-';
-                if (detailGender) detailGender.textContent = user.gender || '-';
-                
-                // Update bottom nav to show Settings
-                updateBottomNav(true);
-            } else {
-                if (notLoggedInSection) notLoggedInSection.style.display = 'block';
-                if (loggedInSection) loggedInSection.style.display = 'none';
-                if (settingsSection) settingsSection.style.display = 'none';
-                if (pageTitle) pageTitle.textContent = 'Join Our Community';
-                
-                // Update bottom nav to show Join
-                updateBottomNav(false);
-            }
-        }
-        
-        // Update bottom navigation
-        function updateBottomNav(isLoggedIn) {
-            var bottomNavItems = document.querySelectorAll('.bottom-nav .nav-item');
-            bottomNavItems.forEach(function(item) {
-                var span = item.querySelector('span');
-                var icon = item.querySelector('i');
-                if (span && (span.textContent === 'Join' || span.textContent === 'Settings')) {
-                    if (isLoggedIn) {
-                        span.textContent = 'Settings';
-                        if (icon) icon.className = 'fas fa-cog';
-                    } else {
-                        span.textContent = 'Join';
-                        if (icon) icon.className = 'fas fa-user-plus';
-                    }
-                }
-            });
-        }
-        
-        // Initialize on page load
-        window.addEventListener('DOMContentLoaded', function() {
-            updateJoinPageUI();
-            
-            // Check if URL has signup parameter to auto-open signup modal
-            var urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('action') === 'signup') {
-                setTimeout(function() { openSignupModal(); }, 500);
-            } else if (urlParams.get('action') === 'login') {
-                setTimeout(function() { openLoginModal(); }, 500);
-            }
-        });
-        
-        // Once Firebase loads, listen for auth state changes to auto-update UI
-        function setupAuthListener() {
-            if (typeof firebase !== 'undefined' && firebase.auth) {
-                firebase.auth().onAuthStateChanged(function() {
-                    updateJoinPageUI();
-                });
-            } else {
-                setTimeout(setupAuthListener, 300);
-            }
-        }
-        setupAuthListener();
-        
-        // Listen for storage changes (login/logout from other tabs)
-        window.addEventListener('storage', function(e) {
-            if (e.key === 'userData') {
-                updateJoinPageUI();
-            }
-        });
-    </script>
 
     <!-- Floating Did You Know Button -->
     <div class="floating-dyk-btn" onclick="showDykModal()">
