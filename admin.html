@@ -4340,8 +4340,10 @@
 
         async function deleteNotification(id) {
             if (!confirm('Delete this notification?')) return;
-            // Update local state immediately
-            const list = getStoredNotifications().filter(n => n.id !== id);
+            // Find the notification before removing so we can match duplicates
+            const allNotifs = getStoredNotifications();
+            const toDelete = allNotifs.find(n => n.id === id);
+            const list = allNotifs.filter(n => n.id !== id);
             currentNotifications = list;
             saveNotificationsToStorage(list);
             renderAdminNotificationsList();
@@ -4349,12 +4351,42 @@
             try {
                 if (useFirestoreNotifications) {
                     await deleteNotificationFromFirestore(id);
+                    // Also clean up any duplicate entries (created by old Cloudflare Worker bug)
+                    if (toDelete) {
+                        await cleanupDuplicateNotifications(toDelete.title, toDelete.message);
+                    }
                 }
                 if (useGitHubNotifications) {
                     await saveNotificationsToGitHub(list, { showStatusMessage: false });
                 }
             } catch(e) { console.warn('Remote delete error:', e); }
             showStatus('notificationStatus', 'Notification removed.', 'success');
+        }
+
+        async function cleanupDuplicateNotifications(title, message) {
+            if (!title) return;
+            const collection = getFirestoreNotificationsCollection();
+            if (!collection) return;
+            try {
+                const snapshot = await collection.where('title', '==', title).get();
+                const batch = firebase.firestore().batch();
+                let count = 0;
+                snapshot.forEach(function(doc) {
+                    const data = doc.data();
+                    // Match by title and message/body — these are worker-created duplicates
+                    if ((data.message || data.body || '') === (message || '') ||
+                        (data.body || '') === (message || '')) {
+                        batch.delete(doc.ref);
+                        count++;
+                    }
+                });
+                if (count > 0) {
+                    await batch.commit();
+                    console.log('Cleaned up', count, 'duplicate notification(s)');
+                }
+            } catch(e) {
+                console.warn('Duplicate cleanup failed:', e);
+            }
         }
 
         function clearAllNotifications() {

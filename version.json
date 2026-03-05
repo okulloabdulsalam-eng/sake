@@ -1,6 +1,6 @@
 {
-  "version": "2.1.0",
-  "build": "2026-02-21",
+  "version": "2.2.0",
+  "build": "2026-03-05",
   "minAppVersion": "1.0.0",
-  "changelog": "Smart upload routing with 10GB auto-rotation, in-app downloads, no external download links"
+  "changelog": "Fix external links (WhatsApp, tel:), fix notification deletion persistence, PDF viewer fix, faster media previews"
 }

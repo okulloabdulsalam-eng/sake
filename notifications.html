@@ -171,21 +171,23 @@
                             });
                         });
 
-                        // Online (from server): always use latest so "recent" stays after update
-                        // Offline (from cache): only keep cached list if snapshot is empty
+                        // Server snapshots are authoritative — always use them.
+                        // Cache snapshots may contain stale/deleted data, so only use
+                        // them when we have NO localStorage data yet.
                         var fromCache = snapshot.metadata && snapshot.metadata.fromCache;
                         var filtered = removeLegacyOldNotifications(firestoreNotifs);
                         if (!fromCache) {
+                            // Server snapshot — authoritative, always apply
                             currentNotifications = filtered;
                             localStorage.setItem('notificationsData', JSON.stringify(currentNotifications));
-                        } else if (filtered.length > 0) {
+                        } else if (currentNotifications.length === 0 && filtered.length > 0) {
+                            // Cache snapshot, but only use if we have nothing yet
                             currentNotifications = filtered;
                             localStorage.setItem('notificationsData', JSON.stringify(currentNotifications));
-                        } else if (currentNotifications.length > 0) {
-                            return;
                         } else {
-                            currentNotifications = [];
-                            localStorage.setItem('notificationsData', '[]');
+                            // Cache snapshot but we already have localStorage data — skip
+                            // This prevents deleted notifications from reappearing
+                            return;
                         }
                         renderNotificationList();
                     }, function(error) {
