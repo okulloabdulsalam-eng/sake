@@ -1,5 +1,5 @@
-/**
- * KiumaBridge — in-app bridge for KIUMA APK wrapper.
+﻿/**
+ * KiumaBridge - in-app bridge for KIUMA APK wrapper.
  * Communicates with the parent Capacitor shell (www/index.html) via postMessage.
  * Provides: isInApp(), saveFileToDevice(), saveToPublicDownloads(),
  *           startMediaSession(), stopMediaSession(), deleteFile()
@@ -11,6 +11,9 @@
 
     var _pendingRequests = {};
     var _reqId = 0;
+
+    // Save real window.open BEFORE any override for fallback use
+    var _realWindowOpen = window.open;
 
     function sendToParent(type, data) {
         return new Promise(function(resolve, reject) {
@@ -121,6 +124,21 @@
         return false;
     }
 
+    // Try to open an external URL using multiple methods for robustness
+    function openExternalUrl(href) {
+        console.log('[KiumaBridge] Opening external URL:', href);
+        // Method 1: Send to parent bridge (native Intent via Capacitor plugin)
+        sendToParent('OPEN_EXTERNAL', { url: href });
+        // Method 2: Fallback after 600ms - try real window.open if bridge didn't handle it
+        setTimeout(function() {
+            try {
+                _realWindowOpen.call(window, href, '_system');
+            } catch(ex) {
+                try { _realWindowOpen.call(window, href, '_blank'); } catch(ex2) {}
+            }
+        }, 600);
+    }
+
     document.addEventListener('click', function(e) {
         var link = e.target.closest ? e.target.closest('a[href]') : null;
         if (!link) {
@@ -137,19 +155,18 @@
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
-            sendToParent('OPEN_EXTERNAL', { url: href });
+            openExternalUrl(href);
             return false;
         }
     }, true);
 
-    // Also override window.open to catch target="_blank" links that bypass the click handler
-    var _origOpen = window.open;
+    // Override window.open to catch target="_blank" links that bypass the click handler
     window.open = function(url, target, features) {
         if (url && isExternalUrl(url)) {
-            sendToParent('OPEN_EXTERNAL', { url: url });
+            openExternalUrl(url);
             return null;
         }
-        return _origOpen.call(window, url, target, features);
+        return _realWindowOpen.call(window, url, target, features);
     };
 
     console.log('[KiumaBridge] App bridge initialized (in-app mode)');
