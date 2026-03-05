@@ -557,9 +557,10 @@
 
             let bgContent;
             if (isVid) {
-                bgContent = '<video class="hero-bg" src="'+item.url+'" preload="metadata" muted playsinline onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"></video><div class="hero-placeholder" style="display:none;background:'+grad+'"><i class="fas fa-video"></i></div>';
+                // Use placeholder instead of loading video for faster rendering on mobile
+                bgContent = '<div class="hero-placeholder" style="background:'+grad+'"><i class="fas fa-video" style="font-size:48px;"></i></div>';
             } else if (isImg) {
-                bgContent = '<img class="hero-bg" src="'+item.url+'" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="hero-placeholder" style="display:none;background:'+grad+'"><i class="fas fa-image"></i></div>';
+                bgContent = '<img class="hero-bg" src="'+item.url+'" loading="eager" decoding="async" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="hero-placeholder" style="display:none;background:'+grad+'"><i class="fas fa-image"></i></div>';
             } else {
                 bgContent = '<div class="hero-placeholder" style="background:'+grad+'"><i class="fas fa-music"></i></div>';
             }
@@ -592,9 +593,10 @@
                 const ico = icons[media.type] || 'fa-file';
                 let thumb;
                 if (isVid) {
-                    thumb = '<video src="'+media.url+'" preload="metadata" muted playsinline style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"></video><div class="thumb-placeholder" style="display:none;background:'+grad+'"><i class="fas '+ico+'"></i></div><div class="video-play-overlay"><i class="fas fa-play-circle"></i></div>';
+                    // Use placeholder instead of loading video metadata (much faster on mobile WebView)
+                    thumb = '<div class="thumb-placeholder" style="background:'+grad+'"><i class="fas fa-video"></i></div><div class="video-play-overlay"><i class="fas fa-play-circle"></i></div>';
                 } else if (isImg) {
-                    thumb = '<img src="'+media.url+'" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="thumb-placeholder" style="display:none;background:'+grad+'"><i class="fas '+ico+'"></i></div>';
+                    thumb = '<img src="'+media.url+'" loading="lazy" decoding="async" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="thumb-placeholder" style="display:none;background:'+grad+'"><i class="fas '+ico+'"></i></div>';
                 } else {
                     thumb = '<div class="thumb-placeholder" style="background:'+grad+'"><i class="fas '+ico+'"></i></div>';
                 }
@@ -1082,7 +1084,15 @@
             } else if (type === 'image') {
                 content.innerHTML = '<img src="'+playUrl+'" loading="lazy" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:4px;" onclick="closeMediaViewer()">';
             } else {
-                content.innerHTML = '<iframe src="'+playUrl+'" style="width:100%;height:100%;border:none;border-radius:8px;background:#fff;"></iframe>';
+                // PDFs don't render in Android WebView iframes — use Google Docs Viewer
+                var isBlob = playUrl.startsWith('blob:');
+                var isPdf = /\.pdf(\?|$)/i.test(url) || type === 'pdf' || type === 'document';
+                if (isPdf && !isBlob) {
+                    var gdocsUrl = 'https://docs.google.com/gview?embedded=true&url=' + encodeURIComponent(playUrl);
+                    content.innerHTML = '<iframe src="'+gdocsUrl+'" style="width:100%;height:100%;border:none;border-radius:8px;background:#fff;" loading="eager"></iframe>';
+                } else {
+                    content.innerHTML = '<iframe src="'+playUrl+'" style="width:100%;height:100%;border:none;border-radius:8px;background:#fff;"></iframe>';
+                }
             }
             modal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
