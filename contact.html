@@ -188,6 +188,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js" defer></script>
     <script src="firebase-config.js" defer></script>
+    <script src="js/app-bridge.js" defer></script>
     <script src="script.min.js" defer></script>
     <script>
         // Amir Fahad Kiwuuwa WhatsApp number
@@ -212,7 +213,12 @@
             // Encode and open WhatsApp
             const encodedMessage = encodeURIComponent(whatsappMessage);
             const whatsappUrl = `https://wa.me/${AMIR_CONTACT_WHATSAPP}?text=${encodedMessage}`;
-            window.open(whatsappUrl, '_blank');
+            // Use native bridge if inside the APK iframe, otherwise open normally
+            if (window !== window.parent) {
+                window.parent.postMessage({ type: 'OPEN_EXTERNAL', url: whatsappUrl }, '*');
+            } else {
+                window.open(whatsappUrl, '_blank');
+            }
 
             // Reset form
             document.getElementById('contactForm').reset();

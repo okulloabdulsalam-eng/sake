@@ -107,5 +107,38 @@
     // Also expose as KiumaApp for legacy compat
     window.KiumaApp = window.KiumaBridge;
 
+    // Intercept external link clicks and open them via the native bridge
+    // This handles wa.me, tel:, mailto:, and any non-sake links
+    function isExternalUrl(href) {
+        if (!href) return false;
+        if (/^(tel:|mailto:|sms:|whatsapp:|intent:|market:|geo:)/i.test(href)) return true;
+        if (/wa\.me|chat\.whatsapp\.com|t\.me|youtube\.com|youtu\.be|play\.google\.com|facebook\.com|instagram\.com|twitter\.com|x\.com/i.test(href)) return true;
+        try {
+            var u = new URL(href, location.href);
+            var own = location.hostname;
+            if (u.hostname && u.hostname !== own && u.hostname !== 'okulloabdulsalam-eng.github.io') return true;
+        } catch(e) {}
+        return false;
+    }
+
+    document.addEventListener('click', function(e) {
+        var link = e.target.closest ? e.target.closest('a[href]') : null;
+        if (!link) {
+            // Walk up for older browsers
+            var el = e.target;
+            while (el && el !== document) {
+                if (el.tagName === 'A' && el.href) { link = el; break; }
+                el = el.parentElement;
+            }
+        }
+        if (!link || !link.href) return;
+        var href = link.href;
+        if (isExternalUrl(href)) {
+            e.preventDefault();
+            e.stopPropagation();
+            sendToParent('OPEN_EXTERNAL', { url: href });
+        }
+    }, true);
+
     console.log('[KiumaBridge] App bridge initialized (in-app mode)');
 })();
