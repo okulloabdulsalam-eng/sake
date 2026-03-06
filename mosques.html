@@ -1429,11 +1429,24 @@
             }
         }
 
+        var _compassEventReceived = false;
+        var _compassCheckTimer = null;
+
         function startCompass() {
+            _compassEventReceived = false;
             window.addEventListener('deviceorientationabsolute', handleOrientation, true);
             window.addEventListener('deviceorientation', handleOrientation, true);
-            hasCompass = true;
-            updateCompassStatus('Compass active - rotate your device', 'success');
+            updateCompassStatus('Waiting for compass data...', 'info');
+            
+            // Check after 3 seconds if we actually got any events
+            if (_compassCheckTimer) clearTimeout(_compassCheckTimer);
+            _compassCheckTimer = setTimeout(function() {
+                if (!_compassEventReceived) {
+                    hasCompass = false;
+                    updateCompassStatus('Compass sensor not available. Arrow shows static Qibla direction from North.', 'error');
+                    updateQiblaArrow();
+                }
+            }, 3000);
         }
 
         function handleOrientation(event) {
@@ -1443,13 +1456,20 @@
                 // iOS
                 heading = event.webkitCompassHeading;
             } else if (event.absolute && event.alpha !== null) {
-                // Android with absolute orientation
+                // Android with absolute orientation (true north)
                 heading = 360 - event.alpha;
             } else if (event.alpha !== null) {
-                // Fallback
+                // Fallback - may not be true north
                 heading = 360 - event.alpha;
             } else {
                 return;
+            }
+            
+            if (!_compassEventReceived) {
+                _compassEventReceived = true;
+                hasCompass = true;
+                if (_compassCheckTimer) { clearTimeout(_compassCheckTimer); _compassCheckTimer = null; }
+                updateCompassStatus('Compass active - rotate your device', 'success');
             }
             
             compassHeading = heading;
