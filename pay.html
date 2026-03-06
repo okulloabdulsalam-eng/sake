@@ -486,7 +486,12 @@
                 });
             } catch (err) {
                 var msg = (err && err.message) ? String(err.message) : '';
-                if (/FCM|token-subscribe|messaging\/|OAuth 2 access token|authentication credential/i.test(msg)) {
+                if (/INTERNAL|internal|UNAVAILABLE|NOT_FOUND|functions\/internal|Could not reach|Failed to fetch|NetworkError|ERR_/i.test(msg)) {
+                    msg = 'Online payment is temporarily unavailable. Please use the mobile money codes below to pay manually.';
+                    // Show manual payment codes
+                    var payUsingCodeGroup = document.getElementById('payUsingCodeGroup');
+                    if (payUsingCodeGroup) payUsingCodeGroup.style.display = 'block';
+                } else if (/FCM|token-subscribe|messaging\/|OAuth 2 access token|authentication credential/i.test(msg)) {
                     msg = 'Payment could not be started. Please try again.';
                 }
                 alert(msg || 'Payment could not be started. Try again.');
