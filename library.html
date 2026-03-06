@@ -1044,31 +1044,68 @@
         }
 
         // Render first page of a PDF as a canvas thumbnail in the given cover element
-        async function renderPdfCover(url, coverId) {
+        // Uses lazy loading (IntersectionObserver) + concurrency limit to prevent memory crashes
+        var _pdfRenderQueue = [];
+        var _pdfRenderActive = 0;
+        var _pdfRenderMax = 2;
+        var _pdfCoverObserver = null;
+
+        function _processRenderQueue() {
+            while (_pdfRenderActive < _pdfRenderMax && _pdfRenderQueue.length > 0) {
+                var item = _pdfRenderQueue.shift();
+                _pdfRenderActive++;
+                _doRenderPdfCover(item.url, item.coverId).finally(function() {
+                    _pdfRenderActive--;
+                    _processRenderQueue();
+                });
+            }
+        }
+
+        function renderPdfCover(url, coverId) {
+            var el = document.getElementById(coverId);
+            if (!el) return;
+            el.dataset.pdfUrl = url;
+            el.dataset.pdfCoverId = coverId;
+            if (!_pdfCoverObserver) {
+                _pdfCoverObserver = new IntersectionObserver(function(entries) {
+                    entries.forEach(function(entry) {
+                        if (entry.isIntersecting) {
+                            var target = entry.target;
+                            _pdfCoverObserver.unobserve(target);
+                            _pdfRenderQueue.push({ url: target.dataset.pdfUrl, coverId: target.dataset.pdfCoverId });
+                            _processRenderQueue();
+                        }
+                    });
+                }, { rootMargin: '200px' });
+            }
+            _pdfCoverObserver.observe(el);
+        }
+
+        async function _doRenderPdfCover(url, coverId) {
+            var pdf;
             try {
-                const pdf = await pdfjsLib.getDocument({ url: url, disableAutoFetch: true, disableStream: true }).promise;
-                const page = await pdf.getPage(1);
-                const scale = 1;
-                const viewport = page.getViewport({ scale: scale });
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                // Fit to cover size
-                const coverEl = document.getElementById(coverId);
-                if (!coverEl) return;
-                const coverW = coverEl.offsetWidth || 180;
-                const coverH = coverEl.offsetHeight || 140;
-                const fitScale = Math.max(coverW / viewport.width, coverH / viewport.height);
-                const fitViewport = page.getViewport({ scale: fitScale });
+                pdf = await pdfjsLib.getDocument({ url: url, disableAutoFetch: true, disableStream: true }).promise;
+                var page = await pdf.getPage(1);
+                var coverEl = document.getElementById(coverId);
+                if (!coverEl) { pdf.destroy(); return; }
+                var coverW = coverEl.offsetWidth || 180;
+                var coverH = coverEl.offsetHeight || 140;
+                var viewport = page.getViewport({ scale: 1 });
+                var fitScale = Math.max(coverW / viewport.width, coverH / viewport.height);
+                var fitViewport = page.getViewport({ scale: fitScale });
+                var canvas = document.createElement('canvas');
                 canvas.width = fitViewport.width;
                 canvas.height = fitViewport.height;
+                var ctx = canvas.getContext('2d');
                 await page.render({ canvasContext: ctx, viewport: fitViewport }).promise;
-                // Replace placeholder with canvas
-                const placeholder = coverEl.querySelector('.cover-placeholder');
+                var placeholder = coverEl.querySelector('.cover-placeholder');
                 if (placeholder) placeholder.style.display = 'none';
                 coverEl.insertBefore(canvas, coverEl.firstChild);
+                page.cleanup();
+                pdf.destroy();
             } catch(e) {
-                // Silently fail — keep the gradient placeholder
                 console.log('PDF cover render skipped:', e.message);
+                if (pdf) try { pdf.destroy(); } catch(ex) {}
             }
         }
 
