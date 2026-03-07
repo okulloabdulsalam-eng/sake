@@ -369,10 +369,7 @@
             };
             localStorage.setItem('userData', JSON.stringify(userData));
 
-            setTimeout(() => {
-                alert('Thank you, ' + name + '!\n\nYour enrollment details for ' + selectedCourses.length + ' course(s) have been prepared.\n\nRegistration Number: ' + regNo + '\n\nPlease send the message that opens to complete your enrollment.');
-                document.getElementById('programForm').reset();
-            }, 500);
+            document.getElementById('programForm').reset();
         }
     </script>
 

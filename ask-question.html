@@ -211,8 +211,6 @@
             // Send via email
             window.location.href = `mailto:aworshibah2006@gmail.com?subject=${subject}&body=${body}`;
             
-            // Show confirmation
-            alert('Opening your email client to send the question. Please confirm to send.');
             document.getElementById('questionForm').reset();
         }
         
@@ -267,8 +265,7 @@ Jazakallahu Khairan`;
             window.location.href = `whatsapp://send?phone=${whatsappNumber}&text=${encodedMessage}`;
             setTimeout(function(){ window.location.href = whatsappUrl; }, 500);
             
-            // Show confirmation
-            alert('Opening WhatsApp to send your question. Please click send in WhatsApp to complete the submission.');
+            // Form submitted via WhatsApp
         }
     </script>
 
