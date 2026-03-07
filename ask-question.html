@@ -264,7 +264,8 @@ Jazakallahu Khairan`;
             const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
             
             // Open WhatsApp
-            window.open(whatsappUrl, '_blank');
+            window.location.href = `whatsapp://send?phone=${whatsappNumber}&text=${encodedMessage}`;
+            setTimeout(function(){ window.location.href = whatsappUrl; }, 500);
             
             // Show confirmation
             alert('Opening WhatsApp to send your question. Please click send in WhatsApp to complete the submission.');

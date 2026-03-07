@@ -756,8 +756,8 @@
         // Function to open WhatsApp
         function openWhatsApp(phoneNumber) {
             const cleanNumber = phoneNumber.replace(/[^\d]/g, '');
-            const whatsappUrl = `https://wa.me/${cleanNumber}`;
-            window.open(whatsappUrl, '_blank');
+            window.location.href = 'whatsapp://send?phone=' + cleanNumber;
+            setTimeout(function(){ window.location.href = 'https://wa.me/' + cleanNumber; }, 500);
         }
 
         // Select Quran Class from card click
@@ -797,7 +797,8 @@
             const encodedMessage = encodeURIComponent(message);
             const whatsappUrl = `https://wa.me/256777351331?text=${encodedMessage}`;
             
-            window.open(whatsappUrl, '_blank');
+            window.location.href = `whatsapp://send?phone=256777351331&text=${encodedMessage}`;
+            setTimeout(function(){ window.location.href = whatsappUrl; }, 500);
             
             // Reset form
             document.getElementById('quickEnrollForm').reset();
@@ -834,7 +835,7 @@
                             <i class="fab fa-whatsapp"></i>
                             <span>
                                 <strong>WhatsApp:</strong> 
-                                <a href="https://wa.me/${teacher.whatsapp.replace(/[^\d]/g, '')}" target="_blank" onclick="event.stopPropagation(); openWhatsApp('${teacher.whatsapp}'); return false;">
+                                <a href="whatsapp://send?phone=${teacher.whatsapp.replace(/[^\d]/g, '')}" onclick="setTimeout(function(){window.location.href='https://wa.me/${teacher.whatsapp.replace(/[^\d]/g, '')}';},500);" target="_blank" rel="noopener noreferrer" class="whatsapp-link">
                                     ${teacher.whatsapp}
                                 </a>
                             </span>
@@ -847,7 +848,7 @@
                             <i class="fas fa-envelope"></i>
                             <span>
                                 <strong>Email:</strong> 
-                                <a href="mailto:${teacher.email}">${teacher.email}</a>
+                                <a href="mailto:${teacher.email}?subject=Quran%20Class%20Inquiry" target="_blank" rel="noopener noreferrer" class="email-link">${teacher.email}</a>
                             </span>
                         </div>
                     </div>
@@ -928,7 +929,8 @@
             const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
             
             // Open WhatsApp
-            window.open(whatsappUrl, '_blank');
+            window.location.href = `whatsapp://send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`;
+            setTimeout(function(){ window.location.href = whatsappUrl; }, 500);
             
             // Show success message
             document.getElementById('successMessage').classList.add('show');

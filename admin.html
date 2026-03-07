@@ -787,7 +787,7 @@
                             <label>Personal Access Token <small style="color: #888;">(with repo permissions)</small></label>
                             <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxx">
                             <small style="color: #888; display: block; margin-top: 5px;">
-                                <a href="https://github.com/settings/tokens/new" target="_blank">Generate a token</a> with 'repo' scope
+                                <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener noreferrer">Generate a token</a> with 'repo' scope
                             </small>
                         </div>
                         
@@ -3458,7 +3458,7 @@
                         </div>
                         <div class="file-actions">
                             <button class="btn-icon btn-primary" onclick="event.stopPropagation();openEditModal('${editData}')" title="Edit"><i class="fas fa-pen"></i></button>
-                            <a href="${item.downloadUrl}" target="_blank" class="btn-icon btn-primary" onclick="event.stopPropagation()" title="Download"><i class="fas fa-download"></i></a>
+                            <a href="${item.downloadUrl}" target="_blank" rel="noopener noreferrer" class="btn-icon btn-primary" onclick="event.stopPropagation()" title="Download"><i class="fas fa-download"></i></a>
                             ${deleteBtn}
                         </div>
                     </div>`;
@@ -3489,7 +3489,7 @@
                         </div>
                         <div class="file-actions">
                             <button class="btn-icon btn-primary" onclick="event.stopPropagation();openEditModal('${editData}')" title="Edit"><i class="fas fa-pen"></i></button>
-                            <a href="${item.downloadUrl}" target="_blank" class="btn-icon btn-primary" onclick="event.stopPropagation()" title="Download"><i class="fas fa-download"></i></a>
+                            <a href="${item.downloadUrl}" target="_blank" rel="noopener noreferrer" class="btn-icon btn-primary" onclick="event.stopPropagation()" title="Download"><i class="fas fa-download"></i></a>
                             ${deleteBtn}
                         </div>
                     </div>`;

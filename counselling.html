@@ -926,9 +926,11 @@
             }
             
             const message = formatPersonalCounsellingMessage(formData);
-            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+            const encodedMsg = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMsg}`;
             
-            window.open(whatsappUrl, '_blank');
+            window.location.href = `whatsapp://send?phone=${whatsappNumber}&text=${encodedMsg}`;
+            setTimeout(function(){ window.location.href = whatsappUrl; }, 500);
             
             document.getElementById('personalSuccess').classList.add('show');
             this.reset();
@@ -976,9 +978,11 @@
             }
             
             const message = formatBrotherSisterMessage(formData);
-            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+            const encodedMsg = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMsg}`;
             
-            window.open(whatsappUrl, '_blank');
+            window.location.href = `whatsapp://send?phone=${whatsappNumber}&text=${encodedMsg}`;
+            setTimeout(function(){ window.location.href = whatsappUrl; }, 500);
             
             document.getElementById('brotherSisterSuccess').classList.add('show');
             this.reset();
@@ -1030,9 +1034,11 @@
             }
             
             const message = formatMarriageCounsellingMessage(formData);
-            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+            const encodedMsg = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMsg}`;
             
-            window.open(whatsappUrl, '_blank');
+            window.location.href = `whatsapp://send?phone=${whatsappNumber}&text=${encodedMsg}`;
+            setTimeout(function(){ window.location.href = whatsappUrl; }, 500);
             
             document.getElementById('marriageSuccess').classList.add('show');
             this.reset();
@@ -1088,9 +1094,11 @@
             }
             
             const message = formatAcademicCounsellingMessage(formData);
-            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+            const encodedMsg = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMsg}`;
             
-            window.open(whatsappUrl, '_blank');
+            window.location.href = `whatsapp://send?phone=${whatsappNumber}&text=${encodedMsg}`;
+            setTimeout(function(){ window.location.href = whatsappUrl; }, 500);
             
             document.getElementById('academicSuccess').classList.add('show');
             this.reset();

@@ -16,7 +16,7 @@
             </p>
         </div>
         
-        <a id="whatsappJoinLink" href="#" 
+        <a id="whatsappJoinLink" href="#" target="_blank" rel="noopener noreferrer" class="whatsapp-link"
            style="display: inline-block; background: #25D366; color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-size: 18px; font-weight: bold; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);">
             <i class="fab fa-whatsapp" style="margin-right: 8px;"></i> Open WhatsApp & Join
         </a>
@@ -48,11 +48,12 @@ function showWhatsAppJoinModal(whatsappNumber) {
     // Set the link
     const link = document.getElementById('whatsappJoinLink');
     if (link) {
-        link.href = whatsappUrl;
+        link.href = 'whatsapp://send?phone=14155238886&text=' + encodeURIComponent(joinMessage);
         link.onclick = function() {
             // Track that user clicked join link
             localStorage.setItem('whatsappJoinClicked', 'true');
             localStorage.setItem('whatsappJoinTime', new Date().toISOString());
+            setTimeout(function(){ window.location.href = whatsappUrl; }, 500);
         };
     }
     

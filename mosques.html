@@ -1318,9 +1318,9 @@
 
         function getDirections(lat, lng) {
             if (userLat && userLng) {
-                window.open(`https://www.google.com/maps/dir/${userLat},${userLng}/${lat},${lng}/@${userLat},${userLng},14z/data=!3m1!4b1!4m2!4m1!3e2`, '_blank');
+                window.location.href = `https://www.google.com/maps/dir/${userLat},${userLng}/${lat},${lng}/@${userLat},${userLng},14z/data=!3m1!4b1!4m2!4m1!3e2`;
             } else {
-                window.open(`https://www.google.com/maps/dir//${lat},${lng}`, '_blank');
+                window.location.href = `https://www.google.com/maps/dir//${lat},${lng}`;
             }
         }
 
@@ -1351,7 +1351,7 @@
                 }
             }
             // Fallback: open Google Maps search
-            window.open(`https://www.google.com/maps/search/mosque+${encodeURIComponent(query)}`, '_blank');
+            window.location.href = `https://www.google.com/maps/search/mosque+${encodeURIComponent(query)}`;
         }
 
         document.getElementById('searchInput').addEventListener('keypress', (e) => {
@@ -1531,7 +1531,7 @@
                                 <i class="fas fa-walking"></i> Walk
                             </a>
                             <a href="https://www.google.com/maps/dir/${userLat},${userLng}/${mosque.lat},${mosque.lng}" 
-                               target="_blank" class="popup-directions-btn">
+                               target="_blank" rel="noopener noreferrer" class="popup-directions-btn">
                                 <i class="fas fa-directions"></i> Maps
                             </a>
                         </div>

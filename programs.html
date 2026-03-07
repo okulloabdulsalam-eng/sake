@@ -524,8 +524,10 @@ Assalaamu Alaikum, I would like to enroll in the ${classInfo.name} class. Please
 
 Jazakallahu Khairan`;
 
-            const whatsappLink = `https://wa.me/256777351331?text=${encodeURIComponent(message)}`;
-            window.open(whatsappLink, '_blank');
+            const encodedMsg = encodeURIComponent(message);
+            const whatsappLink = `https://wa.me/256777351331?text=${encodedMsg}`;
+            window.location.href = `whatsapp://send?phone=256777351331&text=${encodedMsg}`;
+            setTimeout(function(){ window.location.href = whatsappLink; }, 500);
             closeQuranModal();
             alert('Enrollment sent! Please complete sending the WhatsApp message.');
         }
