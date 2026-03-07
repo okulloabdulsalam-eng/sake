@@ -1,6 +1,6 @@
 {
-  "version": "2.2.0",
-  "build": "2026-03-05",
+  "version": "2.3.0",
+  "build": "2026-03-07",
   "minAppVersion": "1.0.0",
-  "changelog": "Fix external links (WhatsApp, tel:), fix notification deletion persistence, PDF viewer fix, faster media previews"
+  "changelog": "Fix notification sync and offline PDF access issues - Notifications now appear in app list when sent from admin panel, downloaded PDFs accessible offline without webpage errors, better offline experience and sync reliability"
 }
