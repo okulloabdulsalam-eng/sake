@@ -426,8 +426,7 @@
             const whatsappUrl = `https://wa.me/${AMIR_FINANCE_WHATSAPP}?text=${encodedMessage}`;
 
             // Open WhatsApp
-            window.location.href = `whatsapp://send?phone=${AMIR_FINANCE_WHATSAPP}&text=${encodedMessage}`;
-            setTimeout(function(){ window.location.href = whatsappUrl; }, 500);
+            window.open(whatsappUrl, '_blank');
         });
 
         // Initialize

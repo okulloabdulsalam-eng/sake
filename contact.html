@@ -90,7 +90,7 @@
                     <h3><i class="fas fa-phone"></i> Phone</h3>
                     <p>General Inquiries: <a href="tel:+256768829144" target="_blank" style="color: var(--primary-green);" class="phone-link">+256 768 829 144</a><br>
                     Emergency: <a href="tel:+256768829144" target="_blank" style="color: var(--primary-green);" class="phone-link">+256 768 829 144</a><br>
-                    WhatsApp: <a href="whatsapp://send?phone=256768829144" onclick="setTimeout(function(){window.location.href='https://wa.me/256768829144';},500);" target="_blank" rel="noopener noreferrer" style="color: #25D366; display: inline-flex; align-items: center; gap: 5px;" class="whatsapp-link"><i class="fab fa-whatsapp"></i> +256 768 829 144 @kiumasupport</a></p>
+                    WhatsApp: <a href="https://wa.me/256768829144" target="_blank" rel="noopener noreferrer" style="color: #25D366; display: inline-flex; align-items: center; gap: 5px;" class="whatsapp-link"><i class="fab fa-whatsapp"></i> +256 768 829 144 @kiumasupport</a></p>
                 </div>
 
                 <div class="info-card">
@@ -149,11 +149,11 @@
                     <h3><i class="fas fa-code"></i> Contact Developers</h3>
                     <p style="margin-bottom: 15px;">Need technical support or want to report a bug? Contact our developers directly:</p>
                     <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <a href="whatsapp://send?phone=256703268522" onclick="setTimeout(function(){window.location.href='https://wa.me/256703268522';},500);" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; background: #25D366; color: white; text-decoration: none; border-radius: 10px; font-weight: 600; transition: all 0.3s ease;" class="whatsapp-link">
+                        <a href="https://wa.me/256703268522" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; background: #25D366; color: white; text-decoration: none; border-radius: 10px; font-weight: 600; transition: all 0.3s ease;" class="whatsapp-link">
                             <i class="fab fa-whatsapp" style="font-size: 20px;"></i>
                             <span>Developer 1</span>
                         </a>
-                        <a href="whatsapp://send?phone=256744950690" onclick="setTimeout(function(){window.location.href='https://wa.me/256744950690';},500);" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; background: #25D366; color: white; text-decoration: none; border-radius: 10px; font-weight: 600; transition: all 0.3s ease;" class="whatsapp-link">
+                        <a href="https://wa.me/256744950690" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; background: #25D366; color: white; text-decoration: none; border-radius: 10px; font-weight: 600; transition: all 0.3s ease;" class="whatsapp-link">
                             <i class="fab fa-whatsapp" style="font-size: 20px;"></i>
                             <span>Developer 2</span>
                         </a>
@@ -214,8 +214,7 @@
             const encodedMessage = encodeURIComponent(whatsappMessage);
             const whatsappUrl = `https://wa.me/${AMIR_CONTACT_WHATSAPP}?text=${encodedMessage}`;
             // Use native bridge if inside the APK iframe, otherwise open normally
-            window.location.href = 'whatsapp://send?phone=' + AMIR_CONTACT_WHATSAPP + '&text=' + encodedMessage;
-            setTimeout(function(){ window.location.href = whatsappUrl; }, 500);
+            window.open(whatsappUrl, '_blank');
 
             // Reset form
             document.getElementById('contactForm').reset();

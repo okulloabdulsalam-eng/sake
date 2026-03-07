@@ -2456,8 +2456,7 @@ window.contactTuition = function() {
             if (u.regNo || u.registrationNumber) msg += '\nReg No: ' + (u.regNo || u.registrationNumber);
         }
     } catch (e) {}
-    window.location.href = 'whatsapp://send?phone=256768829144&text=' + encodeURIComponent(msg);
-    setTimeout(function(){ window.location.href = 'https://wa.me/256768829144?text=' + encodeURIComponent(msg); }, 500);
+    window.open('https://wa.me/256768829144?text=' + encodeURIComponent(msg), '_blank');
 };
 
 document.addEventListener('DOMContentLoaded', () => {

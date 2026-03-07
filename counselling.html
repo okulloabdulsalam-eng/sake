@@ -929,8 +929,7 @@
             const encodedMsg = encodeURIComponent(message);
             const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMsg}`;
             
-            window.location.href = `whatsapp://send?phone=${whatsappNumber}&text=${encodedMsg}`;
-            setTimeout(function(){ window.location.href = whatsappUrl; }, 500);
+            window.open(whatsappUrl, '_blank');
             
             document.getElementById('personalSuccess').classList.add('show');
             this.reset();
@@ -981,8 +980,7 @@
             const encodedMsg = encodeURIComponent(message);
             const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMsg}`;
             
-            window.location.href = `whatsapp://send?phone=${whatsappNumber}&text=${encodedMsg}`;
-            setTimeout(function(){ window.location.href = whatsappUrl; }, 500);
+            window.open(whatsappUrl, '_blank');
             
             document.getElementById('brotherSisterSuccess').classList.add('show');
             this.reset();
@@ -1037,8 +1035,7 @@
             const encodedMsg = encodeURIComponent(message);
             const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMsg}`;
             
-            window.location.href = `whatsapp://send?phone=${whatsappNumber}&text=${encodedMsg}`;
-            setTimeout(function(){ window.location.href = whatsappUrl; }, 500);
+            window.open(whatsappUrl, '_blank');
             
             document.getElementById('marriageSuccess').classList.add('show');
             this.reset();
@@ -1097,8 +1094,7 @@
             const encodedMsg = encodeURIComponent(message);
             const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMsg}`;
             
-            window.location.href = `whatsapp://send?phone=${whatsappNumber}&text=${encodedMsg}`;
-            setTimeout(function(){ window.location.href = whatsappUrl; }, 500);
+            window.open(whatsappUrl, '_blank');
             
             document.getElementById('academicSuccess').classList.add('show');
             this.reset();

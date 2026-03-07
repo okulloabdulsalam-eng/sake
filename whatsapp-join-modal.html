@@ -48,12 +48,11 @@ function showWhatsAppJoinModal(whatsappNumber) {
     // Set the link
     const link = document.getElementById('whatsappJoinLink');
     if (link) {
-        link.href = 'whatsapp://send?phone=14155238886&text=' + encodeURIComponent(joinMessage);
+        link.href = whatsappUrl;
         link.onclick = function() {
             // Track that user clicked join link
             localStorage.setItem('whatsappJoinClicked', 'true');
             localStorage.setItem('whatsappJoinTime', new Date().toISOString());
-            setTimeout(function(){ window.location.href = whatsappUrl; }, 500);
         };
     }
     
