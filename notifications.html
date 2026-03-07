@@ -148,6 +148,23 @@
 
         function startFirestoreListener() {
             try {
+                // Enable Firestore persistence for offline access
+                if (window.firebase && window.firebase.firestore) {
+                    window.firebase.firestore().enablePersistence()
+                        .then(() => {
+                            console.log('Firestore persistence enabled - notifications available offline');
+                        })
+                        .catch(err => {
+                            if (err.code === 'failed-precondition') {
+                                console.warn('Firestore persistence failed - multiple tabs open');
+                            } else if (err.code === 'unavailable') {
+                                console.warn('Firestore persistence unavailable - using cache');
+                            } else {
+                                console.warn('Firestore persistence error:', err);
+                            }
+                        });
+                }
+
                 if (!window.firebaseDb) {
                     console.warn('Firebase not available, using cached notifications');
                     return;
@@ -187,6 +204,10 @@
                             });
                             currentNotifications = filtered.concat(localOnly);
                             localStorage.setItem('notificationsData', JSON.stringify(currentNotifications));
+                            // Update notification badge when new notifications arrive
+                            if (typeof updateNotificationBadge === 'function') {
+                                updateNotificationBadge();
+                            }
                         } else if (currentNotifications.length === 0 && filtered.length > 0) {
                             // Cache snapshot, but only use if we have nothing yet
                             currentNotifications = filtered;

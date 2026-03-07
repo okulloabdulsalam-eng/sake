@@ -181,7 +181,8 @@ self.addEventListener('fetch', (event) => {
 
     if (url.protocol === 'blob:') return;
     const path = url.pathname.toLowerCase();
-    const mediaExt = /\.(mp4|webm|ogg|mov|avi|mp3|wav|flac|aac|m4a|pdf)(\?|$)/i;
+    const mediaExt = /\.(mp4|webm|ogg|mov|avi|mp3|wav|flac|aac|m4a)(\?|$)/i;
+    // Allow PDFs to be cached for offline viewing, but exclude other media
     if (mediaExt.test(path) || path.includes('/file/') || url.hostname.includes('workers.dev')) return;
 
     if (url.hostname.includes('firebaseio.com') ||
