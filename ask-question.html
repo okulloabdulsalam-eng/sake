@@ -131,6 +131,17 @@
                     <button type="button" class="btn" onclick="sendViaWhatsApp()" style="background: #25D366; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; color: white; border: none;">
                         <i class="fab fa-whatsapp"></i> Send via WhatsApp (0768829144 @kiumasupport)
                     </button>
+
+                    <p style="margin-top: 12px;">
+                        <a href="whatsapp://send?phone=256768829144"
+                           onclick="setTimeout(function(){window.location.href='https://wa.me/256768829144';},500);"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="whatsapp-link"
+                           style="display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 10px 18px; background: #25D366; color: white; border-radius: 8px; text-decoration: none; font-weight: 600; width: 100%;">
+                            <i class="fab fa-whatsapp"></i> WhatsApp Support
+                        </a>
+                    </p>
                     
                     <p style="text-align: center; font-size: 12px; color: var(--text-gray); margin-top: 10px;">
                         Your question will be sent via email. You can also use WhatsApp as an alternative.
@@ -257,14 +268,14 @@ Jazakallahu Khairan`;
             // Encode message for URL
             const encodedMessage = encodeURIComponent(message);
             
-            // WhatsApp number: 0768829144 (Uganda format, add country code 256)
-            const whatsappNumber = '256768829144'; // @kiumasupport
-            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
-            
-            // Open WhatsApp
-            window.open(whatsappUrl, '_blank');
-            
-            // Form submitted via WhatsApp
+            const whatsappNumber = '256768829144'; // 0768829144 @kiumasupport
+            const whatsappUrl = 'https://wa.me/' + whatsappNumber + '?text=' + encodedMessage;
+            const appLink = 'whatsapp://send?phone=' + whatsappNumber + '&text=' + encodedMessage;
+
+            window.location.href = appLink;
+            setTimeout(function() {
+                window.location.href = whatsappUrl;
+            }, 500);
         }
     </script>
 
