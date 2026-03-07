@@ -200,7 +200,7 @@
                     </div>
 
                     <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); border: none;">
-                        <i class="fas fa-paper-plane"></i> Submit Enrollment
+                        <i class="fas fa-paper-plane"></i> Submit Enrollment (0768829144 @kiumasupport)
                     </button>
                 </form>
 
@@ -209,6 +209,12 @@
                         <i class="fas fa-info-circle"></i> After registration, you'll receive a confirmation email with program details and schedule. Some programs may have fees - check the Programs page for details.
                     </p>
                 </div>
+
+                <p style="margin-top: 12px;">
+                    <button type="button" class="btn btn-primary" onclick="openWhatsAppSupport()" style="background: #25D366; border: none;">
+                        <i class="fab fa-whatsapp"></i> WhatsApp Support
+                    </button>
+                </p>
             </section>
         </main>
 
@@ -351,8 +357,8 @@
                 `Assalaamu Alaikum, I would like to enroll in the above courses. Please confirm my enrollment.\n\n` +
                 `Jazakallahu Khairan`;
 
-            const amirDaawaNumber = '256777351331';
-            const whatsappLink = 'https://wa.me/' + amirDaawaNumber + '?text=' + encodeURIComponent(message);
+            const supportNumber = '256768829144'; // 0768829144 @kiumasupport
+            const whatsappLink = 'https://wa.me/' + supportNumber + '?text=' + encodeURIComponent(message);
             window.open(whatsappLink, '_blank');
 
             // Save user data for future auto-fill
@@ -371,6 +377,21 @@
                 alert('Thank you, ' + name + '!\n\nYour enrollment details for ' + selectedCourses.length + ' course(s) have been prepared.\n\nRegistration Number: ' + regNo + '\n\nPlease send the message that opens to complete your enrollment.');
                 document.getElementById('programForm').reset();
             }, 500);
+        }
+
+        function openWhatsAppSupport() {
+            const supportNumber = '256768829144';
+            const message = "Hello I need support";
+            const encodedMsg = encodeURIComponent(message);
+
+            const appLink = 'whatsapp://send?phone=' + supportNumber + '&text=' + encodedMsg;
+            const webLink = 'https://wa.me/' + supportNumber + '?text=' + encodedMsg;
+
+            window.location.href = appLink;
+
+            setTimeout(function() {
+                window.location.href = webLink;
+            }, 800);
         }
     </script>
 
