@@ -200,7 +200,7 @@
                     </div>
 
                     <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); border: none;">
-                        <i class="fas fa-paper-plane"></i> Submit Enrollment (0768829144 @kiumasupport)
+                        <i class="fas fa-paper-plane"></i> Submit Enrollment
                     </button>
                 </form>
 
@@ -351,9 +351,8 @@
                 `Assalaamu Alaikum, I would like to enroll in the above courses. Please confirm my enrollment.\n\n` +
                 `Jazakallahu Khairan`;
 
-            const amirDaawaNumber = '256768829144';
-            const encodedMsg = encodeURIComponent(message);
-            const whatsappLink = `https://wa.me/${amirDaawaNumber}?text=${encodedMsg}`;
+            const amirDaawaNumber = '256777351331';
+            const whatsappLink = `https://wa.me/${amirDaawaNumber}?text=${encodeURIComponent(message)}`;
             window.open(whatsappLink, '_blank');
 
             // Save user data for future auto-fill
@@ -368,49 +367,11 @@
             };
             localStorage.setItem('userData', JSON.stringify(userData));
 
-            document.getElementById('programForm').reset();
+            setTimeout(() => {
+                alert('Thank you, ' + name + '!\n\nYour enrollment details for ' + selectedCourses.length + ' course(s) have been prepared.\n\nRegistration Number: ' + regNo + '\n\nPlease send the message that opens to complete your enrollment.');
+                document.getElementById('programForm').reset();
+            }, 500);
         }
-    </script>
-
-    <!-- Floating Did You Know Button -->
-    <div class="floating-dyk-btn" onclick="showDykModal()">
-        <i class="fas fa-lightbulb"></i>
-        <span>Did You Know?</span>
-    </div>
-    <div class="modal-overlay" id="dykModal" style="display: none;">
-        <div class="modal-content activities-modal">
-            <div class="modal-header" style="background: linear-gradient(135deg, #1565C0, #0D47A1);">
-                <h3><i class="fas fa-lightbulb"></i> Did You Know?</h3>
-                <button class="modal-close" onclick="closeDykModal()"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="activities-modal-list">
-                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-tongue'" style="border-left: 4px solid #C62828;">
-                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #C62828, #B71C1C);"><i class="fas fa-comment-slash"></i></div>
-                    <div class="activity-modal-text"><h4 style="color: #C62828;">Backbiting & The Tongue</h4><p>Terrifying hadiths about gheebah, slander & idle talk</p></div>
-                    <i class="fas fa-chevron-right" style="color: #C62828;"></i>
-                </div>
-                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-dress'" style="border-left: 4px solid #6A1B9A;">
-                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #6A1B9A, #4A148C);"><i class="fas fa-user-shield"></i></div>
-                    <div class="activity-modal-text"><h4 style="color: #6A1B9A;">Dress, Hair & Modesty</h4><p>What Islam says about hair, hijab & clothing</p></div>
-                    <i class="fas fa-chevron-right" style="color: #6A1B9A;"></i>
-                </div>
-                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-warnings'" style="border-left: 4px solid #E65100;">
-                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #E65100, #BF360C);"><i class="fas fa-exclamation-triangle"></i></div>
-                    <div class="activity-modal-text"><h4 style="color: #E65100;">Warnings People Ignore</h4><p>Lying, hypocrisy, arrogance, riba & more</p></div>
-                    <i class="fas fa-chevron-right" style="color: #E65100;"></i>
-                </div>
-                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html'" style="border-left: 4px solid #1565C0;">
-                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #1565C0, #0D47A1);"><i class="fas fa-book-open"></i></div>
-                    <div class="activity-modal-text"><h4 style="color: #1565C0;">View All Sections</h4><p>Deeds, character, worship & more authentic knowledge</p></div>
-                    <i class="fas fa-chevron-right" style="color: #1565C0;"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <script>
-    function showDykModal(){document.getElementById('dykModal').style.display='flex';}
-    function closeDykModal(){document.getElementById('dykModal').style.display='none';}
-    document.addEventListener('DOMContentLoaded',function(){var o=document.getElementById('dykModal');if(o)o.addEventListener('click',function(e){if(e.target===this)closeDykModal();});});
     </script>
 
     <!-- Floating Hot Events Button -->
@@ -440,8 +401,8 @@
                         <i class="fas fa-heart"></i>
                     </div>
                     <div class="activity-modal-text">
-                        <h4 style="color: #2e7d32;">Kizumu Tahfiz Visit — Ongoing</h4>
-                        <p>JazakAllahu Khairan! Program continues individually & in communities.</p>
+                        <h4 style="color: #e74c3c;">Kizumu Tahfiz Visit — FINISHED</h4>
+                        <p>Thank you for your support! Results and media released soon.</p>
                     </div>
                     <i class="fas fa-chevron-right" style="color: #e74c3c;"></i>
                 </div>
@@ -457,20 +418,20 @@
                     <i class="fas fa-chevron-right" style="color: #9c27b0;"></i>
                 </div>
                 
-                <div class="activity-modal-item" onclick="contactTuition()">
+                <div class="activity-modal-item" onclick="window.location.href='pay.html?type=charity&donation=tuition-brothers'">
                     <div class="activity-modal-icon" style="background: var(--primary-green);">
                         <i class="fas fa-graduation-cap"></i>
                     </div>
                     <div class="activity-modal-text">
-                        <h4>Tuition Brothers & Sisters</h4>
-                        <p>Support brothers' and sisters' education</p>
+                        <h4>Tuition for Brothers</h4>
+                        <p>Support brothers' education and learning</p>
                     </div>
-                    <i class="fab fa-whatsapp" style="color: #25D366; font-size: 18px;"></i>
+                    <i class="fas fa-chevron-right"></i>
                 </div>
             </div>
         </div>
     </div>
-<script src="js/app-bridge.js" defer></script></body>
+</body>
 </html>
 
 
