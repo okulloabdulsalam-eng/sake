@@ -1496,8 +1496,8 @@
                 // For real streaming, we'll use HLS instead of WebRTC for better compatibility
                 console.log('🔄 Using HLS streaming for better compatibility');
                 
-                // Show message to user
-                this.showError('Connecting to live stream...');
+                // Show loading message
+                this.showSuccess('Connecting to live stream...');
                 
                 // Get real HLS URL from Firebase
                 this.loadRealStreamURL(streamId);
@@ -1510,28 +1510,21 @@
                     const streamData = streamDoc.data();
                     
                     if (streamData && streamData.streamUrl) {
-                        console.log('� Loading real HLS stream:', streamData.streamUrl);
+                        console.log('📡 Loading real HLS stream:', streamData.streamUrl);
                         
                         // Load the real HLS stream
                         if (this.hls) {
                             this.hls.loadSource(streamData.streamUrl);
+                            this.hls.attachMedia(this.video);
                         } else {
                             this.video.src = streamData.streamUrl;
                         }
                         
-                        this.attemptPlay();
+                        // Show success message instead of error
+                        this.showSuccess('Live stream connected!');
                         
-                        // Update message to show real stream is loading
-                        setTimeout(() => {
-                            const errorDiv = document.querySelector('.error-message');
-                            if (errorDiv) {
-                                errorDiv.innerHTML = `
-                                    <i class="fas fa-check-circle" style="font-size: 48px; margin-bottom: 15px; color: #28a745;"></i>
-                                    <h3>Live Stream Connected!</h3>
-                                    <p>You are now watching the live stream in real-time.</p>
-                                `;
-                            }
-                        }, 1000);
+                        // Try to play
+                        this.attemptPlay();
                         
                     } else {
                         throw new Error('No stream URL found');
@@ -1549,17 +1542,81 @@
             }
 
             showError(message) {
+                console.log('📢 Stream error:', message);
+                
+                // Create error overlay instead of replacing video container
                 const videoContainer = document.querySelector('.video-container');
-                videoContainer.innerHTML = `
+                
+                // Remove existing error overlay if present
+                const existingOverlay = videoContainer.querySelector('.error-overlay');
+                if (existingOverlay) {
+                    existingOverlay.remove();
+                }
+                
+                // Create error overlay that doesn't replace video
+                const errorOverlay = document.createElement('div');
+                errorOverlay.className = 'error-overlay';
+                errorOverlay.innerHTML = `
                     <div class="error-message">
                         <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px;"></i>
-                        <h3>Stream Error</h3>
-                        <p>${message}</p>
+                        <h3>${message}</h3>
                         <button onclick="location.reload()" style="background: var(--primary-green); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-top: 15px;">
                             <i class="fas fa-redo"></i> Try Again
                         </button>
                     </div>
                 `;
+                errorOverlay.style.cssText = `
+                    position: absolute; top: 0; left: 0; right: 0; bottom: 0; 
+                    background: rgba(0,0,0,0.9); display: flex; align-items: center; 
+                    justify-content: center; z-index: 20; border-radius: 12px;
+                `;
+                
+                // Add overlay to video container (doesn't replace video)
+                videoContainer.appendChild(errorOverlay);
+                
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    if (errorOverlay.parentNode) {
+                        errorOverlay.remove();
+                    }
+                }, 5000);
+            }
+
+            showSuccess(message) {
+                console.log('✅ Stream success:', message);
+                
+                // Create success overlay
+                const videoContainer = document.querySelector('.video-container');
+                
+                // Remove existing overlay if present
+                const existingOverlay = videoContainer.querySelector('.error-overlay');
+                if (existingOverlay) {
+                    existingOverlay.remove();
+                }
+                
+                const successOverlay = document.createElement('div');
+                successOverlay.className = 'success-overlay';
+                successOverlay.innerHTML = `
+                    <div class="success-message">
+                        <i class="fas fa-check-circle" style="font-size: 48px; margin-bottom: 15px; color: #28a745;"></i>
+                        <h3 style="color: white;">${message}</h3>
+                    </div>
+                `;
+                successOverlay.style.cssText = `
+                    position: absolute; top: 20px; right: 20px; 
+                    background: rgba(40,167,69,0.9); padding: 15px 20px; 
+                    border-radius: 8px; z-index: 15; color: white;
+                    text-align: center; min-width: 200px;
+                `;
+                
+                videoContainer.appendChild(successOverlay);
+                
+                // Auto-hide after 3 seconds
+                setTimeout(() => {
+                    if (successOverlay.parentNode) {
+                        successOverlay.remove();
+                    }
+                }, 3000);
             }
         }
 
