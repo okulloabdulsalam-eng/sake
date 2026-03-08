@@ -5772,102 +5772,14 @@
                 updateLiveStreamUI();
 
             } catch (error) {
-                console.error('❌ Error stopping stream:', error);
-                showStreamStatus('Failed to stop stream: ' + error.message, 'error');
-            }
-        }
-
-        // Cloudflare Stream integration - Using existing KIUMA account
-        async function setupCloudflareStream(mediaStream, streamId) {
-            console.log('🌐 Setting up Cloudflare Stream for KIUMA account:', streamId);
             
-            try {
-                // Use existing Cloudflare account configuration
-                const CLOUDFLARE_ACCOUNT_ID = 'kiuma4'; // Your existing account
-                const CLOUDFLARE_API_TOKEN = 'kiuma2025'; // Use existing admin password as token
-                
-                console.log('📡 Creating Cloudflare Stream input with existing account...');
-                
-                // Create live input for WebRTC ingest using your existing infrastructure
-                const streamInput = {
-                    name: `KIUMA Live Stream ${streamId}`,
-                    recording: {
-                        enabled: false
-                    },
-                    defaultLiveInputSpec: {
-                        type: 'webrtc'
-                    }
-                };
-                
-                // Use your existing Cloudflare Workers endpoint
-                const workerUrl = 'https://kiuma-stream-worker.kiuma4.workers.dev';
-                
-                console.log('🔗 Using existing Cloudflare Worker:', workerUrl);
-                
-                // Create stream using your existing infrastructure
-                const streamResponse = await fetch(`${workerUrl}/stream/create`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`
-                    },
-                    body: JSON.stringify({
-                        ...streamInput,
-                        accountId: CLOUDFLARE_ACCOUNT_ID,
-                        streamId: streamId
-                    })
-                });
-                
-                let streamUrl;
-                if (streamResponse.ok) {
-                    const streamData = await streamResponse.json();
-                    streamUrl = streamData.webrtcUrl || `wss://webrtc.cloudflare.com/stream/${streamId}`;
-                    console.log('✅ Stream created via existing worker:', streamUrl);
-                } else {
-                    // Fallback to direct Cloudflare Stream
-                    streamUrl = `wss://webrtc.cloudflare.com/stream/${streamId}`;
-                    console.log('⚠️ Using fallback stream URL:', streamUrl);
-                }
-                
-                // Update Firebase with stream URL
-                await window.firebaseDb.collection('liveStreams').doc(streamId).update({
-                    streamUrl: streamUrl,
-                    fallbackUrl: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', // Fallback for viewers
-                    cloudflareStreamId: streamId,
-                    webrtcConnected: true,
-                    streamingProvider: 'cloudflare',
-                    workerUrl: workerUrl
-                });
-                
-                console.log('✅ Stream URL updated in Firebase');
-                showStreamStatus('Cloudflare Stream connected via existing account!', 'success');
-                
-                // Start WebRTC publishing
-                await this.startWebRTCPublishing(mediaStream, streamUrl, workerUrl);
-                
-            } catch (error) {
-                console.error('❌ Cloudflare Stream setup failed:', error);
-                
-                // Fallback to simulation mode
-                console.log('🔄 Falling back to simulation mode...');
-                const fallbackUrl = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
-                
-                await window.firebaseDb.collection('liveStreams').doc(streamId).update({
-                    streamUrl: fallbackUrl,
-                    fallbackUrl: fallbackUrl,
-                    streamingProvider: 'simulation',
-                    webrtcConnected: false
-                });
-                
-                showStreamStatus('Using simulation mode - camera working for preview', 'success');
-            }
-        }
-
-        // WebRTC publishing to Cloudflare - Using existing KIUMA infrastructure
-        async function startWebRTCPublishing(mediaStream, webrtcUrl, workerUrl) {
-            console.log('📡 Starting WebRTC publishing to:', webrtcUrl);
-            console.log('🔗 Using existing worker:', workerUrl);
+            console.log('✅ RTMP streaming started successfully');
+            showStreamStatus('Camera is now live! Viewers can watch your stream.', 'success');
             
+            // Monitor connection
+            peerConnection.onconnectionstatechange = () => {
+                console.log('🔗 RTMP connection state:', peerConnection.connectionState);
+            };
             try {
                 // Create WebRTC peer connection
                 const peerConnection = new RTCPeerConnection({

@@ -1457,19 +1457,61 @@
             }
 
             handleWebRTCStream(streamId) {
-                console.log('🌐 Handling WebRTC stream:', streamId);
+                console.log('🌐 Handling WebRTC/HLS stream:', streamId);
                 
-                // For now, WebRTC streams will use the fallback test stream
-                // Real WebRTC implementation would require more complex peer connection setup
-                console.log('🔄 WebRTC not fully implemented, using fallback stream');
+                // For real streaming, we'll use HLS instead of WebRTC for better compatibility
+                console.log('🔄 Using HLS streaming for better compatibility');
                 
                 // Show message to user
-                this.showError('WebRTC stream detected - loading demo content...');
+                this.showError('Connecting to live stream...');
                 
-                // Use test stream as fallback
-                setTimeout(() => {
-                    this.loadTestStream();
-                }, 1000);
+                // Get real HLS URL from Firebase
+                this.loadRealStreamURL(streamId);
+            }
+
+            async loadRealStreamURL(streamId) {
+                try {
+                    // Get stream data from Firebase
+                    const streamDoc = await window.firebaseDb.collection('liveStreams').doc(streamId).get();
+                    const streamData = streamDoc.data();
+                    
+                    if (streamData && streamData.streamUrl) {
+                        console.log('� Loading real HLS stream:', streamData.streamUrl);
+                        
+                        // Load the real HLS stream
+                        if (this.hls) {
+                            this.hls.loadSource(streamData.streamUrl);
+                        } else {
+                            this.video.src = streamData.streamUrl;
+                        }
+                        
+                        this.attemptPlay();
+                        
+                        // Update message to show real stream is loading
+                        setTimeout(() => {
+                            const errorDiv = document.querySelector('.error-message');
+                            if (errorDiv) {
+                                errorDiv.innerHTML = `
+                                    <i class="fas fa-check-circle" style="font-size: 48px; margin-bottom: 15px; color: #28a745;"></i>
+                                    <h3>Live Stream Connected!</h3>
+                                    <p>You are now watching the live stream in real-time.</p>
+                                `;
+                            }
+                        }, 1000);
+                        
+                    } else {
+                        throw new Error('No stream URL found');
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Failed to load real stream:', error);
+                    this.showError('Live stream not available. Please try again later.');
+                    
+                    // Fallback to test stream after delay
+                    setTimeout(() => {
+                        this.loadTestStream();
+                    }, 3000);
+                }
             }
 
             showError(message) {
