@@ -211,6 +211,40 @@
             background: #ffebee;
             color: #f44336;
         }
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .login-overlay.hidden {
+            display: none;
+        }
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .login-box h2 {
+            color: var(--primary-green);
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        .login-box p {
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
         .alert {
             padding: 12px 16px;
             border-radius: 8px;
@@ -1266,10 +1300,135 @@
     <script src="services/githubStorageService.js" type="module"></script>
     <script>
         const ADMIN_PASSWORD = 'kiuma2025'; // Should match server config
-        let isLoggedIn = true; // Always logged in - no password required
+        let isLoggedIn = false; // Require login by default
         let notificationManagerInitialized = false;
         let mediaPickerInitialized = false;
         let editingNotificationId = null;
+
+        // Login function
+        function attemptLogin() {
+            const password = document.getElementById('adminPasswordInput').value;
+            const alert = document.getElementById('loginAlert');
+            
+            console.log('🔐 Attempting login with password:', password);
+            
+            if (password === ADMIN_PASSWORD) {
+                isLoggedIn = true;
+                sessionStorage.setItem('adminLoggedIn', 'true');
+                sessionStorage.setItem('adminPassword', password);
+                document.getElementById('loginOverlay').classList.add('hidden');
+                alert.className = 'alert success';
+                alert.textContent = 'Login successful! Redirecting...';
+                
+                console.log('✅ Login successful, initializing admin panel');
+                
+                setTimeout(() => {
+                    initializeAdmin();
+                    alert.style.display = 'none';
+                }, 1000);
+            } else {
+                alert.className = 'alert error';
+                alert.textContent = 'Invalid password. Please try again.';
+                document.getElementById('adminPasswordInput').value = '';
+                document.getElementById('adminPasswordInput').focus();
+                
+                console.log('❌ Login failed: Invalid password');
+            }
+        }
+
+        // Logout function
+        function logout() {
+            isLoggedIn = false;
+            sessionStorage.removeItem('adminLoggedIn');
+            sessionStorage.removeItem('adminPassword');
+            document.getElementById('loginOverlay').classList.remove('hidden');
+            document.getElementById('adminPasswordInput').value = '';
+            document.getElementById('loginAlert').className = 'alert';
+            document.getElementById('loginAlert').style.display = 'none';
+            
+            console.log('🚪 Logged out successfully');
+        }
+
+        // Check login status on page load
+        function checkLoginStatus() {
+            const loggedIn = sessionStorage.getItem('adminLoggedIn') === 'true';
+            const storedPassword = sessionStorage.getItem('adminPassword');
+            
+            console.log('🔍 Checking login status:', { loggedIn, hasPassword: !!storedPassword });
+            
+            if (loggedIn && storedPassword === ADMIN_PASSWORD) {
+                isLoggedIn = true;
+                document.getElementById('loginOverlay').classList.add('hidden');
+                initializeAdmin();
+                console.log('✅ User already logged in, initializing admin panel');
+            } else {
+                // Show login overlay
+                document.getElementById('loginOverlay').classList.remove('hidden');
+                document.getElementById('adminPasswordInput').focus();
+                console.log('🔒 Login required, showing login overlay');
+            }
+        }
+
+        // Initialize admin panel
+        function initializeAdmin() {
+            console.log('🚀 Initializing admin panel...');
+            
+            // Set page title
+            const titleElement = document.getElementById('heroNavPageTitle');
+            if (titleElement) {
+                titleElement.textContent = 'Admin Panel';
+            }
+            
+            // Initialize stats
+            updateAdminStats();
+            
+            // Load initial data
+            loadAdminData();
+            
+            // Setup periodic updates
+            setInterval(updateAdminStats, 30000); // Update stats every 30 seconds
+            
+            console.log('✅ Admin panel initialized successfully');
+        }
+
+        // Update admin statistics
+        function updateAdminStats() {
+            // Update media count
+            const mediaFiles = JSON.parse(localStorage.getItem('kiuma_mediaFiles') || '[]');
+            document.getElementById('mediaCount').textContent = mediaFiles.length;
+            
+            // Update library count
+            const libraryFiles = JSON.parse(localStorage.getItem('kiuma_libraryFiles') || '[]');
+            document.getElementById('libraryCount').textContent = libraryFiles.length;
+            
+            // Update storage status
+            const storageStatus = checkStorageStatus();
+            document.getElementById('storageStatus').textContent = storageStatus;
+        }
+
+        // Check storage status
+        function checkStorageStatus() {
+            // This is a placeholder - implement actual storage checking
+            return 'Good';
+        }
+
+        // Load admin data
+        function loadAdminData() {
+            // Load media files
+            if (typeof renderMediaFileList === 'function') {
+                renderMediaFileList();
+            }
+            
+            // Load library files
+            if (typeof renderLibraryFileList === 'function') {
+                renderLibraryFileList();
+            }
+            
+            // Load notifications
+            if (typeof renderAdminNotificationsList === 'function') {
+                renderAdminNotificationsList();
+            }
+        }
 
         function setupMediaPickerListeners() {
             if (mediaPickerInitialized) return;
@@ -6018,10 +6177,10 @@
         // Auto-check for live streams
         setTimeout(checkExistingLiveStream, 2000);
         
-        // Initialize admin panel immediately (no login required)
+        // Initialize admin panel with login check
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('🚀 Admin panel initializing - no login required');
-            initializeAdmin();
+            console.log('🚀 Admin panel loading - checking login status');
+            checkLoginStatus();
         });
     </script>
 </body>
