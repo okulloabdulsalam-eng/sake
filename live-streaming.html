@@ -1041,10 +1041,9 @@
 
                 upcomingStreams.innerHTML = html;
                 
-                // Auto-load the first live stream into the video player
-                if (streams.length > 0 && streams[0].streamUrl) {
-                    this.loadLiveStream(streams[0].streamUrl, streams[0].id);
-                }
+                // Don't auto-load streams on page load to avoid autoplay issues
+                // Users must click to watch streams
+                console.log('📺 Live streams loaded, waiting for user interaction');
             }
 
             renderNoLiveStreams() {
@@ -1090,23 +1089,64 @@
                         this.video.src = streamUrl;
                         console.log('📡 Loading video src:', streamUrl);
                     }
-                    this.video.play().catch(error => {
-                        console.error('❌ Failed to play stream:', error);
-                        this.showError('Failed to play stream: ' + error.message);
-                    });
+                    // Try to play with user interaction
+                    this.attemptPlay();
                 } else if (streamUrl && streamUrl.startsWith('http')) {
                     // Direct HTTP video URL
                     this.video.src = streamUrl;
                     console.log('📡 Loading direct video:', streamUrl);
-                    this.video.play().catch(error => {
-                        console.error('❌ Failed to play stream:', error);
-                        this.showError('Failed to play stream: ' + error.message);
-                    });
+                    // Try to play with user interaction
+                    this.attemptPlay();
                 } else {
                     // Invalid or no URL - use test stream
                     console.log('⚠️ Invalid stream URL, using test stream');
                     this.loadTestStream();
                 }
+            }
+
+            attemptPlay() {
+                // Try to play the video - this should work after user click
+                this.video.play().then(() => {
+                    console.log('✅ Stream playing successfully');
+                }).catch(error => {
+                    console.error('❌ Failed to play stream:', error);
+                    if (error.name === 'NotAllowedError') {
+                        // Autoplay was blocked - show user a message
+                        this.showPlayButton();
+                    } else {
+                        this.showError('Failed to play stream: ' + error.message);
+                    }
+                });
+            }
+
+            showPlayButton() {
+                // Show a play button overlay for user to click
+                const videoContainer = document.querySelector('.video-container');
+                const playOverlay = document.createElement('div');
+                playOverlay.className = 'play-overlay';
+                playOverlay.innerHTML = `
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 100;">
+                        <button onclick="streamPlayer.forcePlay()" style="background: var(--primary-green); color: white; border: none; padding: 15px 30px; border-radius: 50px; cursor: pointer; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+                            <i class="fas fa-play"></i> Click to Play Stream
+                        </button>
+                        <p style="color: white; margin-top: 10px; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">Browser requires user interaction to play</p>
+                    </div>
+                `;
+                playOverlay.style.cssText = `
+                    position: absolute; top: 0; left: 0; right: 0; bottom: 0; 
+                    background: rgba(0,0,0,0.7); display: flex; align-items: center; 
+                    justify-content: center; z-index: 99;
+                `;
+                videoContainer.appendChild(playOverlay);
+            }
+
+            forcePlay() {
+                // Remove play overlay and attempt to play
+                const overlay = document.querySelector('.play-overlay');
+                if (overlay) {
+                    overlay.remove();
+                }
+                this.attemptPlay();
             }
 
             loadTestStream() {
@@ -1119,10 +1159,8 @@
                     this.video.src = testUrl;
                 }
                 
-                this.video.play().catch(error => {
-                    console.error('❌ Failed to play test stream:', error);
-                    this.showError('Failed to play test stream: ' + error.message);
-                });
+                // Use the same attempt play method
+                this.attemptPlay();
             }
 
             handleWebRTCStream(streamId) {
@@ -1130,7 +1168,7 @@
                 
                 // For now, WebRTC streams will use the fallback test stream
                 // Real WebRTC implementation would require more complex peer connection setup
-                console.log('� WebRTC not fully implemented, using fallback stream');
+                console.log('🔄 WebRTC not fully implemented, using fallback stream');
                 
                 // Show message to user
                 this.showError('WebRTC stream detected - loading demo content...');
