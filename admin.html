@@ -5514,26 +5514,71 @@
 
         // Load stream requests when admin panel is shown
         function switchTab(tabName) {
-            // Hide all panels
-            document.querySelectorAll('.admin-panel').forEach(panel => {
-                panel.classList.remove('active');
-            });
+            console.log('🔄 Switching to tab:', tabName);
             
-            // Remove active class from all tabs
-            document.querySelectorAll('.admin-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            // Show selected panel
-            document.getElementById(tabName + 'Panel').classList.add('active');
-            
-            // Add active class to clicked tab
-            event.target.classList.add('active');
-            
-            // Load data for specific tabs
-            if (tabName === 'streamRequests') {
-                loadStreamRequests();
-                loadApprovedStreams();
+            try {
+                // Hide all panels
+                document.querySelectorAll('.admin-panel').forEach(panel => {
+                    panel.classList.remove('active');
+                });
+                
+                // Remove active class from all tabs
+                document.querySelectorAll('.admin-tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                
+                // Show selected panel (with validation)
+                const selectedPanel = document.getElementById(tabName + 'Panel');
+                if (selectedPanel) {
+                    selectedPanel.classList.add('active');
+                    console.log('✅ Panel shown:', tabName + 'Panel');
+                } else {
+                    console.warn('⚠️ Panel not found:', tabName + 'Panel');
+                }
+                
+                // Add active class to clicked tab (with validation)
+                if (event && event.target) {
+                    event.target.classList.add('active');
+                    console.log('✅ Tab activated:', event.target);
+                } else {
+                    console.warn('⚠️ Event target not available');
+                    // Fallback: find tab by onclick attribute
+                    const tabs = document.querySelectorAll('.admin-tab');
+                    tabs.forEach(tab => {
+                        const onclick = tab.getAttribute('onclick');
+                        if (onclick && onclick.includes("switchTab('" + tabName + "'")) {
+                            tab.classList.add('active');
+                            console.log('✅ Tab activated via fallback:', tab);
+                        }
+                    });
+                }
+                
+                // Load data for specific tabs (with validation)
+                if (tabName === 'streamRequests') {
+                    if (typeof loadStreamRequests === 'function') {
+                        loadStreamRequests();
+                        console.log('✅ Stream requests loaded');
+                    } else {
+                        console.warn('⚠️ loadStreamRequests function not found');
+                    }
+                    if (typeof loadApprovedStreams === 'function') {
+                        loadApprovedStreams();
+                        console.log('✅ Approved streams loaded');
+                    } else {
+                        console.warn('⚠️ loadApprovedStreams function not found');
+                    }
+                }
+                
+                console.log('🎉 Tab switch completed:', tabName);
+                
+            } catch (error) {
+                console.error('❌ Error switching tab:', error);
+                console.error('Error details:', {
+                    tabName: tabName,
+                    event: event,
+                    error: error.message,
+                    stack: error.stack
+                });
             }
         }
 
