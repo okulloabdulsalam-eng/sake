@@ -275,6 +275,228 @@
             margin: 20px 0;
         }
         
+        .host-controls {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+        }
+        
+        .host-controls h2 {
+            color: var(--primary-green);
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        
+        .host-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .host-tab {
+            background: none;
+            border: none;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-gray);
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .host-tab:hover {
+            color: var(--primary-green);
+            background: rgba(76,175,80,0.1);
+        }
+        
+        .host-tab.active {
+            color: var(--primary-green);
+            border-bottom-color: var(--primary-green);
+        }
+        
+        .host-tab-content {
+            display: block;
+        }
+        
+        .stream-request-form {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary-green);
+        }
+        
+        .stream-request-form h3 {
+            color: var(--dark-gray);
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark-gray);
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-green);
+        }
+        
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .submit-btn {
+            background: var(--primary-green);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .submit-btn:hover {
+            background: #2E7D32;
+            transform: translateY(-2px);
+        }
+        
+        .stream-request-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary-green);
+            transition: transform 0.3s ease;
+        }
+        
+        .stream-request-card:hover {
+            transform: translateX(5px);
+        }
+        
+        .stream-request-card h4 {
+            color: var(--dark-gray);
+            margin-bottom: 10px;
+        }
+        
+        .stream-request-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 10px;
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+        
+        .stream-request-meta span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .stream-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .stream-status.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .stream-status.approved {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .stream-status.denied {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .stream-status.active {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .action-btn {
+            background: var(--primary-green);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+        }
+        
+        .action-btn:hover {
+            background: #2E7D32;
+        }
+        
+        .action-btn.danger {
+            background: #dc3545;
+        }
+        
+        .action-btn.danger:hover {
+            background: #c82333;
+        }
+        
+        .action-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        @media (max-width: 768px) {
+            .host-tabs {
+                flex-wrap: wrap;
+            }
+            
+            .host-tab {
+                flex: 1;
+                min-width: 120px;
+                text-align: center;
+            }
+            
+            .stream-request-meta {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+        
         @media (max-width: 768px) {
             .stream-hero h1 {
                 font-size: 2rem;
@@ -378,6 +600,97 @@
                 <div class="loading-spinner">
                     <i class="fas fa-spinner fa-spin"></i>
                     <p>Loading upcoming streams...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Host Stream Controls -->
+        <div class="host-controls" id="hostControls">
+            <h2><i class="fas fa-video"></i> Stream Hosting</h2>
+            <div class="host-tabs">
+                <button class="host-tab active" onclick="showHostTab('request')">Request Stream</button>
+                <button class="host-tab" onclick="showHostTab('myStreams')">My Streams</button>
+                <button class="host-tab" onclick="showHostTab('start')">Start Streaming</button>
+            </div>
+            
+            <!-- Stream Request Form -->
+            <div class="host-tab-content" id="requestTab">
+                <div class="stream-request-form">
+                    <h3><i class="fas fa-plus-circle"></i> Request New Stream</h3>
+                    <form id="streamRequestForm">
+                        <div class="form-group">
+                            <label for="streamTitle">Stream Title *</label>
+                            <input type="text" id="streamTitle" name="title" required placeholder="e.g., Friday Lecture - Islamic Ethics">
+                        </div>
+                        <div class="form-group">
+                            <label for="streamDescription">Description *</label>
+                            <textarea id="streamDescription" name="description" required placeholder="Describe what your stream will be about..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="streamCategory">Category *</label>
+                            <select id="streamCategory" name="category" required>
+                                <option value="">Select Category</option>
+                                <option value="lecture">Islamic Lecture</option>
+                                <option value="quran">Quran Recitation</option>
+                                <option value="dhikr">Dhikr Session</option>
+                                <option value="event">Community Event</option>
+                                <option value="workshop">Workshop</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="streamTime">Scheduled Time *</label>
+                            <input type="datetime-local" id="streamTime" name="scheduledTime" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="streamDuration">Expected Duration</label>
+                            <select id="streamDuration" name="duration">
+                                <option value="30">30 minutes</option>
+                                <option value="60">1 hour</option>
+                                <option value="90">1.5 hours</option>
+                                <option value="120">2 hours</option>
+                                <option value="180">3 hours</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="streamQuality">Preferred Quality</label>
+                            <select id="streamQuality" name="quality">
+                                <option value="auto">Auto (Recommended)</option>
+                                <option value="1080">1080p (Full HD)</option>
+                                <option value="720">720p (HD)</option>
+                                <option value="480">480p (SD)</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="submit-btn">
+                            <i class="fas fa-paper-plane"></i> Submit Request
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- My Streams -->
+            <div class="host-tab-content" id="myStreamsTab" style="display: none;">
+                <div class="my-streams">
+                    <h3><i class="fas fa-list"></i> My Stream Requests</h3>
+                    <div id="myStreamRequests">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading your stream requests...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Start Streaming -->
+            <div class="host-tab-content" id="startTab" style="display: none;">
+                <div class="start-streaming">
+                    <h3><i class="fas fa-broadcast-tower"></i> Start Approved Stream</h3>
+                    <div id="approvedStreams">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading approved streams...</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -717,12 +1030,481 @@
         // Initialize live streaming when page loads
         document.addEventListener('DOMContentLoaded', () => {
             new AdaptiveLiveStream();
+            new StreamRequestSystem();
         });
 
         // Navigation functionality
         function navigateTo(page) {
             window.location.href = page;
         }
+
+        // Stream Request System
+        class StreamRequestSystem {
+            constructor() {
+                this.currentUser = null;
+                this.streamRequests = [];
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.loadCurrentUser();
+                this.loadStreamRequests();
+                this.loadApprovedStreams();
+            }
+
+            setupEventListeners() {
+                // Stream request form
+                const form = document.getElementById('streamRequestForm');
+                if (form) {
+                    form.addEventListener('submit', (e) => this.handleStreamRequest(e));
+                }
+
+                // Set minimum datetime to now
+                const datetimeInput = document.getElementById('streamTime');
+                if (datetimeInput) {
+                    const now = new Date();
+                    const offset = now.getTimezoneOffset() * 60000;
+                    const localISOTime = new Date(now - offset).toISOString().slice(0, 16);
+                    datetimeInput.min = localISOTime;
+                }
+            }
+
+            async loadCurrentUser() {
+                try {
+                    // Get current user from Firebase Auth
+                    if (window.firebase && window.firebase.auth) {
+                        const user = window.firebase.auth().currentUser;
+                        if (user) {
+                            this.currentUser = {
+                                uid: user.uid,
+                                email: user.email,
+                                displayName: user.displayName || user.email
+                            };
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading current user:', error);
+                }
+            }
+
+            async loadStreamRequests() {
+                try {
+                    if (!window.firebaseDb) return;
+
+                    const snapshot = await window.firebaseDb
+                        .collection('streamRequests')
+                        .where('hostId', '==', this.currentUser?.uid || 'anonymous')
+                        .orderBy('requestedAt', 'desc')
+                        .get();
+
+                    this.streamRequests = [];
+                    snapshot.forEach(doc => {
+                        this.streamRequests.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+
+                    this.renderMyStreamRequests();
+                } catch (error) {
+                    console.error('Error loading stream requests:', error);
+                    this.renderMyStreamRequestsError();
+                }
+            }
+
+            async loadApprovedStreams() {
+                try {
+                    if (!window.firebaseDb) return;
+
+                    const snapshot = await window.firebaseDb
+                        .collection('streamRequests')
+                        .where('hostId', '==', this.currentUser?.uid || 'anonymous')
+                        .where('status', '==', 'approved')
+                        .orderBy('scheduledTime', 'desc')
+                        .get();
+
+                    const approvedStreams = [];
+                    snapshot.forEach(doc => {
+                        approvedStreams.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+
+                    this.renderApprovedStreams(approvedStreams);
+                } catch (error) {
+                    console.error('Error loading approved streams:', error);
+                    this.renderApprovedStreamsError();
+                }
+            }
+
+            async handleStreamRequest(event) {
+                event.preventDefault();
+                
+                if (!this.currentUser) {
+                    alert('Please sign in to request a stream.');
+                    return;
+                }
+
+                const formData = new FormData(event.target);
+                const streamData = {
+                    hostId: this.currentUser.uid,
+                    hostEmail: this.currentUser.email,
+                    hostName: this.currentUser.displayName,
+                    title: formData.get('title'),
+                    description: formData.get('description'),
+                    category: formData.get('category'),
+                    scheduledTime: new Date(formData.get('scheduledTime')).toISOString(),
+                    duration: parseInt(formData.get('duration')) || 60,
+                    quality: formData.get('quality'),
+                    status: 'pending',
+                    requestedAt: new Date().toISOString(),
+                    approvedAt: null,
+                    approvedBy: null,
+                    denialReason: null,
+                    viewerCount: 0,
+                    isActive: false
+                };
+
+                try {
+                    // Save to Firebase
+                    const docRef = await window.firebaseDb.collection('streamRequests').add(streamData);
+                    
+                    // Send notification to admins
+                    await this.notifyAdmins(streamData);
+                    
+                    // Reset form
+                    event.target.reset();
+                    
+                    // Show success message
+                    this.showSuccessMessage('Stream request submitted successfully! Admins will review your request shortly.');
+                    
+                    // Reload requests
+                    await this.loadStreamRequests();
+                    
+                } catch (error) {
+                    console.error('Error submitting stream request:', error);
+                    this.showErrorMessage('Failed to submit stream request. Please try again.');
+                }
+            }
+
+            async notifyAdmins(streamData) {
+                try {
+                    // Create notification for admins
+                    const notification = {
+                        title: 'New Stream Request',
+                        message: `${streamData.hostName} requested to stream: "${streamData.title}"`,
+                        category: 'stream_request',
+                        icon: 'fas fa-video',
+                        status: 'unread',
+                        createdAt: new Date(),
+                        data: {
+                            requestId: streamData.id || 'pending',
+                            hostId: streamData.hostId,
+                            title: streamData.title
+                        }
+                    };
+
+                    await window.firebaseDb.collection('notifications').add(notification);
+                } catch (error) {
+                    console.error('Error notifying admins:', error);
+                }
+            }
+
+            renderMyStreamRequests() {
+                const container = document.getElementById('myStreamRequests');
+                if (!container) return;
+
+                if (this.streamRequests.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: var(--text-gray);">
+                            <i class="fas fa-video-slash" style="font-size: 48px; margin-bottom: 15px;"></i>
+                            <p>You haven't requested any streams yet.</p>
+                            <button onclick="showHostTab('request')" class="action-btn" style="margin-top: 15px;">
+                                <i class="fas fa-plus"></i> Request Your First Stream
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const html = this.streamRequests.map(request => this.renderStreamRequestCard(request)).join('');
+                container.innerHTML = html;
+            }
+
+            renderStreamRequestCard(request) {
+                const scheduledTime = new Date(request.scheduledTime);
+                const formattedTime = scheduledTime.toLocaleString();
+                
+                return `
+                    <div class="stream-request-card">
+                        <h4>${request.title}</h4>
+                        <p>${request.description}</p>
+                        <div class="stream-request-meta">
+                            <span><i class="fas fa-calendar"></i> ${formattedTime}</span>
+                            <span><i class="fas fa-clock"></i> ${request.duration} minutes</span>
+                            <span><i class="fas fa-tag"></i> ${request.category}</span>
+                            <span><i class="fas fa-video"></i> ${request.quality}</span>
+                        </div>
+                        <div class="stream-request-meta">
+                            <span class="stream-status ${request.status}">${request.status}</span>
+                            ${request.approvedAt ? `<span><i class="fas fa-check"></i> Approved ${new Date(request.approvedAt).toLocaleDateString()}</span>` : ''}
+                            ${request.denialReason ? `<span style="color: #dc3545;"><i class="fas fa-times"></i> ${request.denialReason}</span>` : ''}
+                        </div>
+                        ${request.status === 'approved' ? `
+                            <div style="margin-top: 15px;">
+                                <button class="action-btn" onclick="startStream('${request.id}')">
+                                    <i class="fas fa-play"></i> Start Stream
+                                </button>
+                                <button class="action-btn danger" onclick="cancelStreamRequest('${request.id}')">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
+                            </div>
+                        ` : ''}
+                        ${request.status === 'pending' ? `
+                            <div style="margin-top: 15px;">
+                                <button class="action-btn danger" onclick="cancelStreamRequest('${request.id}')">
+                                    <i class="fas fa-times"></i> Cancel Request
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+
+            renderApprovedStreams(approvedStreams) {
+                const container = document.getElementById('approvedStreams');
+                if (!container) return;
+
+                if (approvedStreams.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: var(--text-gray);">
+                            <i class="fas fa-video-slash" style="font-size: 48px; margin-bottom: 15px;"></i>
+                            <p>You don't have any approved streams yet.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const html = approvedStreams.map(request => this.renderApprovedStreamCard(request)).join('');
+                container.innerHTML = html;
+            }
+
+            renderApprovedStreamCard(request) {
+                const scheduledTime = new Date(request.scheduledTime);
+                const isNow = Date.now() >= scheduledTime.getTime() - 30 * 60 * 1000; // 30 minutes before
+                const isPast = Date.now() > scheduledTime.getTime() + parseInt(request.duration) * 60 * 1000;
+                
+                return `
+                    <div class="stream-request-card">
+                        <h4>${request.title}</h4>
+                        <p>${request.description}</p>
+                        <div class="stream-request-meta">
+                            <span><i class="fas fa-calendar"></i> ${scheduledTime.toLocaleString()}</span>
+                            <span><i class="fas fa-clock"></i> ${request.duration} minutes</span>
+                            <span><i class="fas fa-tag"></i> ${request.category}</span>
+                        </div>
+                        <div class="stream-request-meta">
+                            <span class="stream-status ${request.isActive ? 'active' : 'approved'}">
+                                ${request.isActive ? 'Live Now' : 'Approved'}
+                            </span>
+                        </div>
+                        <div style="margin-top: 15px;">
+                            ${!request.isActive && !isPast && isNow ? `
+                                <button class="action-btn" onclick="startStream('${request.id}')">
+                                    <i class="fas fa-play"></i> Start Stream Now
+                                </button>
+                            ` : ''}
+                            ${request.isActive ? `
+                                <button class="action-btn danger" onclick="stopStream('${request.id}')">
+                                    <i class="fas fa-stop"></i> Stop Stream
+                                </button>
+                            ` : ''}
+                            <button class="action-btn" onclick="editStream('${request.id}')">
+                                <i class="fas fa-edit"></i> Edit Details
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderMyStreamRequestsError() {
+                const container = document.getElementById('myStreamRequests');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>Failed to load your stream requests. Please refresh the page.</p>
+                        </div>
+                    `;
+                }
+            }
+
+            renderApprovedStreamsError() {
+                const container = document.getElementById('approvedStreams');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>Failed to load approved streams. Please refresh the page.</p>
+                        </div>
+                    `;
+                }
+            }
+
+            showSuccessMessage(message) {
+                // Create success notification
+                const notification = document.createElement('div');
+                notification.className = 'success-notification';
+                notification.innerHTML = `
+                    <i class="fas fa-check-circle"></i>
+                    <span>${message}</span>
+                `;
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: #d4edda;
+                    color: #155724;
+                    padding: 15px 20px;
+                    border-radius: 8px;
+                    border-left: 4px solid #28a745;
+                    z-index: 1000;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                `;
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.remove();
+                }, 5000);
+            }
+
+            showErrorMessage(message) {
+                // Create error notification
+                const notification = document.createElement('div');
+                notification.className = 'error-notification';
+                notification.innerHTML = `
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>${message}</span>
+                `;
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: #f8d7da;
+                    color: #721c24;
+                    padding: 15px 20px;
+                    border-radius: 8px;
+                    border-left: 4px solid #dc3545;
+                    z-index: 1000;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                `;
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.remove();
+                }, 5000);
+            }
+        }
+
+        // Tab switching functionality
+        function showHostTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.host-tab-content').forEach(tab => {
+                tab.style.display = 'none';
+            });
+            
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.host-tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + 'Tab').style.display = 'block';
+            
+            // Add active class to clicked tab button
+            event.target.classList.add('active');
+        }
+
+        // Stream control functions
+        async function startStream(requestId) {
+            try {
+                await window.firebaseDb.collection('streamRequests').doc(requestId).update({
+                    isActive: true,
+                    startedAt: new Date().toISOString()
+                });
+                
+                alert('Stream started! Your stream is now live.');
+                
+                // Reload the approved streams
+                if (window.streamRequestSystem) {
+                    await window.streamRequestSystem.loadApprovedStreams();
+                }
+            } catch (error) {
+                console.error('Error starting stream:', error);
+                alert('Failed to start stream. Please try again.');
+            }
+        }
+
+        async function stopStream(requestId) {
+            try {
+                await window.firebaseDb.collection('streamRequests').doc(requestId).update({
+                    isActive: false,
+                    stoppedAt: new Date().toISOString()
+                });
+                
+                alert('Stream stopped.');
+                
+                // Reload the approved streams
+                if (window.streamRequestSystem) {
+                    await window.streamRequestSystem.loadApprovedStreams();
+                }
+            } catch (error) {
+                console.error('Error stopping stream:', error);
+                alert('Failed to stop stream. Please try again.');
+            }
+        }
+
+        async function cancelStreamRequest(requestId) {
+            if (!confirm('Are you sure you want to cancel this stream request?')) {
+                return;
+            }
+            
+            try {
+                await window.firebaseDb.collection('streamRequests').doc(requestId).delete();
+                
+                alert('Stream request cancelled.');
+                
+                // Reload the requests
+                if (window.streamRequestSystem) {
+                    await window.streamRequestSystem.loadStreamRequests();
+                    await window.streamRequestSystem.loadApprovedStreams();
+                }
+            } catch (error) {
+                console.error('Error cancelling stream request:', error);
+                alert('Failed to cancel stream request. Please try again.');
+            }
+        }
+
+        function editStream(requestId) {
+            // TODO: Implement edit functionality
+            alert('Edit functionality coming soon!');
+        }
+
+        // Make stream request system globally accessible
+        window.streamRequestSystem = null;
+        document.addEventListener('DOMContentLoaded', () => {
+            window.streamRequestSystem = new StreamRequestSystem();
+        });
     </script>
 </body>
 </html>

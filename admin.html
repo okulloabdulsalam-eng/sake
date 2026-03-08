@@ -444,6 +444,9 @@
                     <button class="admin-tab" onclick="switchTab('liveTracker')">
                         <i class="fas fa-chart-line"></i> Live Tracker
                     </button>
+                    <button class="admin-tab" onclick="switchTab('streamRequests')">
+                        <i class="fas fa-video"></i> Stream Requests
+                    </button>
                     <button class="admin-tab" onclick="switchTab('payments')">
                         <i class="fas fa-receipt"></i> Payments
                     </button>
@@ -1177,6 +1180,32 @@
                     </div>
                     <div id="adminTrackersList" class="file-list" style="margin-top:15px;">
                         <p style="text-align:center;color:#888;padding:20px;">No trackers yet</p>
+                    </div>
+                </div>
+
+                <!-- Stream Requests Panel -->
+                <div class="admin-panel" id="streamRequestsPanel">
+                    <h3><i class="fas fa-video"></i> Stream Requests</h3>
+                    <p style="color: #666; margin-bottom: 20px;">Review and approve live streaming requests from community members. Approved streams will appear in the live streaming section.</p>
+                    
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:20px;">
+                        <h4 style="margin:0;"><i class="fas fa-list"></i> Pending Requests</h4>
+                        <button class="btn btn-outline" onclick="loadStreamRequests()"><i class="fas fa-sync"></i> Refresh</button>
+                    </div>
+                    
+                    <div id="streamRequestsList" class="file-list" style="margin-bottom:25px;">
+                        <p style="text-align:center;color:#888;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Loading stream requests...</p>
+                    </div>
+
+                    <hr style="margin:25px 0;border:none;border-top:1px solid #eee;">
+                    
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:20px;">
+                        <h4 style="margin:0;"><i class="fas fa-check-circle"></i> Approved Streams</h4>
+                        <button class="btn btn-outline" onclick="loadApprovedStreams()"><i class="fas fa-sync"></i> Refresh</button>
+                    </div>
+                    
+                    <div id="approvedStreamsList" class="file-list">
+                        <p style="text-align:center;color:#888;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Loading approved streams...</p>
                     </div>
                 </div>
 
@@ -5161,6 +5190,369 @@
                 console.warn('Tracker notification failed:', e);
             }
         }
+
+        // ==============================
+        // STREAM REQUESTS MANAGEMENT
+        // ==============================
+        let streamRequests = [];
+        let approvedStreams = [];
+
+        async function loadStreamRequests() {
+            const container = document.getElementById('streamRequestsList');
+            if (!container) return;
+            
+            container.innerHTML = '<p style="text-align:center;color:#888;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Loading stream requests...</p>';
+            
+            try {
+                if (!window.firebaseDb) {
+                    container.innerHTML = '<p style="text-align:center;color:#f44336;">Firebase not connected. Check firebase-config.js and reload.</p>';
+                    return;
+                }
+                
+                const snapshot = await window.firebaseDb
+                    .collection('streamRequests')
+                    .where('status', '==', 'pending')
+                    .orderBy('requestedAt', 'desc')
+                    .get();
+                
+                streamRequests = [];
+                snapshot.forEach(doc => {
+                    streamRequests.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                renderStreamRequestsList();
+            } catch (error) {
+                console.error('Error loading stream requests:', error);
+                container.innerHTML = '<p style="text-align:center;color:#f44336;">Error loading stream requests: ' + error.message + '</p>';
+            }
+        }
+
+        async function loadApprovedStreams() {
+            const container = document.getElementById('approvedStreamsList');
+            if (!container) return;
+            
+            container.innerHTML = '<p style="text-align:center;color:#888;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Loading approved streams...</p>';
+            
+            try {
+                if (!window.firebaseDb) {
+                    container.innerHTML = '<p style="text-align:center;color:#f44336;">Firebase not connected. Check firebase-config.js and reload.</p>';
+                    return;
+                }
+                
+                const snapshot = await window.firebaseDb
+                    .collection('streamRequests')
+                    .where('status', '==', 'approved')
+                    .orderBy('approvedAt', 'desc')
+                    .get();
+                
+                approvedStreams = [];
+                snapshot.forEach(doc => {
+                    approvedStreams.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                renderApprovedStreamsList();
+            } catch (error) {
+                console.error('Error loading approved streams:', error);
+                container.innerHTML = '<p style="text-align:center;color:#f44336;">Error loading approved streams: ' + error.message + '</p>';
+            }
+        }
+
+        function renderStreamRequestsList() {
+            const container = document.getElementById('streamRequestsList');
+            if (!container) return;
+            
+            if (streamRequests.length === 0) {
+                container.innerHTML = '<p style="text-align:center;color:#888;padding:20px;">No pending stream requests</p>';
+                return;
+            }
+            
+            const html = streamRequests.map(request => renderStreamRequestCard(request)).join('');
+            container.innerHTML = html;
+        }
+
+        function renderApprovedStreamsList() {
+            const container = document.getElementById('approvedStreamsList');
+            if (!container) return;
+            
+            if (approvedStreams.length === 0) {
+                container.innerHTML = '<p style="text-align:center;color:#888;padding:20px;">No approved streams</p>';
+                return;
+            }
+            
+            const html = approvedStreams.map(request => renderApprovedStreamCard(request)).join('');
+            container.innerHTML = html;
+        }
+
+        function renderStreamRequestCard(request) {
+            const scheduledTime = new Date(request.scheduledTime);
+            const formattedTime = scheduledTime.toLocaleString();
+            const requestedAgo = getTimeAgo(new Date(request.requestedAt));
+            
+            return `
+                <div class="file-item" style="border-left: 4px solid #ffc107;">
+                    <i class="file-icon fas fa-video" style="color:#ffc107;"></i>
+                    <div class="file-info">
+                        <div class="file-name">${escapeHtml(request.title)}</div>
+                        <div class="file-meta">
+                            <span><i class="fas fa-user"></i> ${escapeHtml(request.hostName || request.hostEmail)}</span>
+                            <span><i class="fas fa-calendar"></i> ${formattedTime}</span>
+                            <span><i class="fas fa-clock"></i> ${request.duration} minutes</span>
+                            <span><i class="fas fa-tag"></i> ${request.category}</span>
+                            <span><i class="fas fa-video"></i> ${request.quality}</span>
+                        </div>
+                        <div class="file-meta" style="margin-top:5px;">
+                            <span style="color:#888;"><i class="fas fa-clock"></i> Requested ${requestedAgo}</span>
+                        </div>
+                        <p style="margin:8px 0 0;color:#666;font-size:13px;">${escapeHtml(request.description)}</p>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn-icon btn-primary" onclick="approveStreamRequest('${request.id}')" title="Approve">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button class="btn-icon btn-danger" onclick="denyStreamRequest('${request.id}')" title="Deny">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderApprovedStreamCard(request) {
+            const scheduledTime = new Date(request.scheduledTime);
+            const formattedTime = scheduledTime.toLocaleString();
+            const approvedAgo = getTimeAgo(new Date(request.approvedAt));
+            const isNow = Date.now() >= scheduledTime.getTime() - 30 * 60 * 1000;
+            const isPast = Date.now() > scheduledTime.getTime() + parseInt(request.duration) * 60 * 1000;
+            
+            return `
+                <div class="file-item" style="border-left: 4px solid #28a745;">
+                    <i class="file-icon fas fa-video" style="color:#28a745;"></i>
+                    <div class="file-info">
+                        <div class="file-name">${escapeHtml(request.title)} ${request.isActive ? '<span style="color:#28a745;font-size:11px;">(LIVE)</span>' : isPast ? '<span style="color:#888;font-size:11px;">(ENDED)</span>' : isNow ? '<span style="color:#17a2b8;font-size:11px;">(SCHEDULED NOW)</span>' : ''}</div>
+                        <div class="file-meta">
+                            <span><i class="fas fa-user"></i> ${escapeHtml(request.hostName || request.hostEmail)}</span>
+                            <span><i class="fas fa-calendar"></i> ${formattedTime}</span>
+                            <span><i class="fas fa-clock"></i> ${request.duration} minutes</span>
+                            <span><i class="fas fa-tag"></i> ${request.category}</span>
+                        </div>
+                        <div class="file-meta" style="margin-top:5px;">
+                            <span style="color:#28a745;"><i class="fas fa-check"></i> Approved ${approvedAgo}</span>
+                            ${request.viewerCount ? `<span><i class="fas fa-eye"></i> ${request.viewerCount} viewers</span>` : ''}
+                        </div>
+                        <p style="margin:8px 0 0;color:#666;font-size:13px;">${escapeHtml(request.description)}</p>
+                    </div>
+                    <div class="file-actions">
+                        ${request.isActive ? `
+                            <button class="btn-icon btn-danger" onclick="stopStream('${request.id}')" title="Stop Stream">
+                                <i class="fas fa-stop"></i>
+                            </button>
+                        ` : ''}
+                        <button class="btn-icon btn-danger" onclick="revokeStreamApproval('${request.id}')" title="Revoke Approval">
+                            <i class="fas fa-ban"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function approveStreamRequest(requestId) {
+            if (!confirm('Approve this stream request? The host will be notified and can start streaming.')) return;
+            
+            try {
+                await window.firebaseDb.collection('streamRequests').doc(requestId).update({
+                    status: 'approved',
+                    approvedAt: new Date().toISOString(),
+                    approvedBy: 'admin'
+                });
+                
+                // Send notification to host
+                const request = streamRequests.find(r => r.id === requestId);
+                if (request) {
+                    await notifyHostApproval(request);
+                }
+                
+                alert('Stream request approved!');
+                loadStreamRequests();
+                loadApprovedStreams();
+            } catch (error) {
+                console.error('Error approving stream request:', error);
+                alert('Failed to approve stream request: ' + error.message);
+            }
+        }
+
+        async function denyStreamRequest(requestId) {
+            const reason = prompt('Reason for denial (optional):');
+            
+            try {
+                await window.firebaseDb.collection('streamRequests').doc(requestId).update({
+                    status: 'denied',
+                    denialReason: reason || 'Not approved',
+                    approvedAt: new Date().toISOString(),
+                    approvedBy: 'admin'
+                });
+                
+                // Send notification to host
+                const request = streamRequests.find(r => r.id === requestId);
+                if (request) {
+                    await notifyHostDenial(request, reason);
+                }
+                
+                alert('Stream request denied.');
+                loadStreamRequests();
+            } catch (error) {
+                console.error('Error denying stream request:', error);
+                alert('Failed to deny stream request: ' + error.message);
+            }
+        }
+
+        async function revokeStreamApproval(requestId) {
+            if (!confirm('Revoke approval for this stream? The host will no longer be able to stream.')) return;
+            
+            try {
+                await window.firebaseDb.collection('streamRequests').doc(requestId).update({
+                    status: 'denied',
+                    denialReason: 'Approval revoked by admin',
+                    approvedAt: new Date().toISOString(),
+                    approvedBy: 'admin'
+                });
+                
+                alert('Stream approval revoked.');
+                loadApprovedStreams();
+            } catch (error) {
+                console.error('Error revoking stream approval:', error);
+                alert('Failed to revoke stream approval: ' + error.message);
+            }
+        }
+
+        async function stopStream(requestId) {
+            if (!confirm('Stop this stream? This will end the live broadcast.')) return;
+            
+            try {
+                await window.firebaseDb.collection('streamRequests').doc(requestId).update({
+                    isActive: false,
+                    stoppedAt: new Date().toISOString()
+                });
+                
+                alert('Stream stopped.');
+                loadApprovedStreams();
+            } catch (error) {
+                console.error('Error stopping stream:', error);
+                alert('Failed to stop stream: ' + error.message);
+            }
+        }
+
+        async function notifyHostApproval(request) {
+            try {
+                const notification = {
+                    title: 'Stream Request Approved!',
+                    message: `Your stream "${request.title}" has been approved. You can start streaming at the scheduled time.`,
+                    category: 'stream_approved',
+                    icon: 'fas fa-video',
+                    status: 'unread',
+                    createdAt: new Date(),
+                    data: {
+                        requestId: request.id,
+                        streamTitle: request.title,
+                        scheduledTime: request.scheduledTime
+                    }
+                };
+                
+                await window.firebaseDb.collection('notifications').add(notification);
+            } catch (error) {
+                console.error('Error notifying host of approval:', error);
+            }
+        }
+
+        async function notifyHostDenial(request, reason) {
+            try {
+                const notification = {
+                    title: 'Stream Request Denied',
+                    message: `Your stream "${request.title}" was not approved.${reason ? ' Reason: ' + reason : ''}`,
+                    category: 'stream_denied',
+                    icon: 'fas fa-times-circle',
+                    status: 'unread',
+                    createdAt: new Date(),
+                    data: {
+                        requestId: request.id,
+                        streamTitle: request.title,
+                        denialReason: reason
+                    }
+                };
+                
+                await window.firebaseDb.collection('notifications').add(notification);
+            } catch (error) {
+                console.error('Error notifying host of denial:', error);
+            }
+        }
+
+        function getTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            
+            let interval = Math.floor(seconds / 31536000);
+            if (interval > 1) return interval + " years ago";
+            if (interval === 1) return "1 year ago";
+            
+            interval = Math.floor(seconds / 2592000);
+            if (interval > 1) return interval + " months ago";
+            if (interval === 1) return "1 month ago";
+            
+            interval = Math.floor(seconds / 86400);
+            if (interval > 1) return interval + " days ago";
+            if (interval === 1) return "1 day ago";
+            
+            interval = Math.floor(seconds / 3600);
+            if (interval > 1) return interval + " hours ago";
+            if (interval === 1) return "1 hour ago";
+            
+            interval = Math.floor(seconds / 60);
+            if (interval > 1) return interval + " minutes ago";
+            if (interval === 1) return "1 minute ago";
+            
+            return "Just now";
+        }
+
+        // Load stream requests when admin panel is shown
+        function switchTab(tabName) {
+            // Hide all panels
+            document.querySelectorAll('.admin-panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.admin-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected panel
+            document.getElementById(tabName + 'Panel').classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+            
+            // Load data for specific tabs
+            if (tabName === 'streamRequests') {
+                loadStreamRequests();
+                loadApprovedStreams();
+            }
+        }
+
+        // Auto-load stream requests when page loads
+        setTimeout(() => {
+            const activeTab = document.querySelector('.admin-tab.active');
+            if (activeTab && activeTab.onclick) {
+                const tabName = activeTab.getAttribute('onclick').match(/switchTab\('([^']+)'\)/);
+                if (tabName && tabName[1] === 'streamRequests') {
+                    loadStreamRequests();
+                    loadApprovedStreams();
+                }
+            }
+        }, 1000);
     </script>
 </body>
 </html>
