@@ -1032,7 +1032,8 @@
                             <span><i class="fas fa-eye"></i> ${stream.viewerCount || 0} watching</span>
                         </div>
                         <div style="margin-top:10px;text-align:center;">
-                            <button class="btn btn-primary" style="font-size:12px;padding:5px 15px;">
+                            <button class="btn btn-primary" style="font-size:12px;padding:5px 15px;" 
+                                    onclick="streamPlayer.loadLiveStream('${stream.streamUrl}', '${stream.id}')">
                                 <i class="fas fa-play"></i> Watch Now
                             </button>
                         </div>
@@ -1060,7 +1061,7 @@
             }
 
             loadLiveStream(streamUrl, streamId) {
-                console.log('🎥 Loading live stream:', streamId, streamUrl);
+                console.log('🎥 loadLiveStream called with:', { streamUrl, streamId });
                 
                 // Remove active class from all stream cards
                 document.querySelectorAll('.clickable-stream').forEach(card => {
@@ -1073,6 +1074,9 @@
                 if (activeCard) {
                     activeCard.style.background = '#f8f9fa';
                     activeCard.style.transform = 'scale(1.02)';
+                    console.log('✅ Active stream card highlighted:', streamId);
+                } else {
+                    console.warn('⚠️ Stream card not found for ID:', streamId);
                 }
                 
                 // Handle different stream types
@@ -1099,7 +1103,7 @@
                     this.attemptPlay();
                 } else {
                     // Invalid or no URL - use test stream
-                    console.log('⚠️ Invalid stream URL, using test stream');
+                    console.log('⚠️ Invalid stream URL, using test stream. URL was:', streamUrl);
                     this.loadTestStream();
                 }
             }
