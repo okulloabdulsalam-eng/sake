@@ -386,45 +386,46 @@
 
                 <!-- Tabs -->
                 <div class="admin-tabs">
-                    <button class="admin-tab active" onclick="switchTab('media')">
+                    <button class="admin-tab" onclick="switchTab('media', this)">
                         <i class="fas fa-photo-video"></i> Media
                     </button>
-                    <button class="admin-tab" onclick="switchTab('library')">
+                    <button class="admin-tab" onclick="switchTab('library', this)">
                         <i class="fas fa-book"></i> Library
                     </button>
-                    <button class="admin-tab" onclick="switchTab('playlists')">
+                    <button class="admin-tab" onclick="switchTab('playlists', this)">
                         <i class="fas fa-list-ol"></i> Playlists
                     </button>
-                    <button class="admin-tab" onclick="switchTab('settings')">
+                    <button class="admin-tab" onclick="switchTab('settings', this)">
                         <i class="fas fa-cog"></i> Settings
                     </button>
-                    <button class="admin-tab" onclick="switchTab('notifications')">
+                    <button class="admin-tab" onclick="switchTab('notifications', this)">
                         <i class="fas fa-bell"></i> Notifications
                     </button>
-                    <button class="admin-tab" onclick="switchTab('mosques')">
+                    <button class="admin-tab" onclick="switchTab('mosques', this)">
                         <i class="fas fa-mosque"></i> Mosques
                     </button>
-                    <button class="admin-tab" onclick="switchTab('prayerTimes')">
+                    <button class="admin-tab" onclick="switchTab('prayerTimes', this)">
                         <i class="fas fa-clock"></i> Prayer Times
                     </button>
-                    <button class="admin-tab" onclick="switchTab('events')">
+                    <button class="admin-tab" onclick="switchTab('events', this)">
                         <i class="fas fa-calendar-alt"></i> Events
                     </button>
-                    <button class="admin-tab" onclick="switchTab('announcement')">
+                    <button class="admin-tab" onclick="switchTab('announcement', this)">
                         <i class="fas fa-bullhorn"></i> Announce
                     </button>
-                    <button class="admin-tab" onclick="switchTab('liveTracker')">
+                    <button class="admin-tab" onclick="switchTab('liveTracker', this)">
                         <i class="fas fa-chart-line"></i> Live Tracker
                     </button>
-                    <button class="admin-tab" onclick="switchTab('streamRequests')">
+                    <button class="admin-tab" onclick="switchTab('streamRequests', this)">
                         <i class="fas fa-video"></i> Stream Requests
                     </button>
-                    <button class="admin-tab" onclick="switchTab('payments')">
+                    <button class="admin-tab" onclick="switchTab('payments', this)">
                         <i class="fas fa-receipt"></i> Payments
                     </button>
                 </div>
 
                 <!-- Media Panel -->
+                <div class="admin-panel" id="mediaPanel">
                 <div class="admin-panel active" id="mediaPanel">
                     <h3><i class="fas fa-upload"></i> Upload Media</h3>
                     <p style="color: #666; margin-bottom: 20px;">Upload videos, audio files, and images to GitHub storage</p>
@@ -5513,7 +5514,7 @@
         }
 
         // Load stream requests when admin panel is shown
-        function switchTab(tabName) {
+        function switchTab(tabName, tabElement) {
             console.log('🔄 Switching to tab:', tabName);
             
             try {
@@ -5537,11 +5538,14 @@
                 }
                 
                 // Add active class to clicked tab (with validation)
-                if (event && event.target) {
+                if (tabElement) {
+                    tabElement.classList.add('active');
+                    console.log('✅ Tab activated via parameter:', tabElement);
+                } else if (event && event.target) {
                     event.target.classList.add('active');
-                    console.log('✅ Tab activated:', event.target);
+                    console.log('✅ Tab activated via event:', event.target);
                 } else {
-                    console.warn('⚠️ Event target not available');
+                    console.warn('⚠️ Tab element not available, using fallback');
                     // Fallback: find tab by onclick attribute
                     const tabs = document.querySelectorAll('.admin-tab');
                     tabs.forEach(tab => {
@@ -5575,6 +5579,7 @@
                 console.error('❌ Error switching tab:', error);
                 console.error('Error details:', {
                     tabName: tabName,
+                    tabElement: tabElement,
                     event: event,
                     error: error.message,
                     stack: error.stack
