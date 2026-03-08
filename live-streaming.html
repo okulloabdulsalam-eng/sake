@@ -582,17 +582,6 @@
             </div>
         </div>
 
-        <!-- Stream Information -->
-        <div class="stream-info">
-            <h2><i class="fas fa-info-circle"></i> Current Stream</h2>
-            <div id="currentStreamInfo">
-                <div class="loading-spinner">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <p>Loading stream information...</p>
-                </div>
-            </div>
-        </div>
-
         <!-- Upcoming Streams -->
         <div class="upcoming-streams">
             <h2><i class="fas fa-calendar"></i> Upcoming Live Streams</h2>
@@ -720,7 +709,6 @@
                 this.setupControls();
                 this.setupNetworkMonitoring();
                 this.loadStream();
-                this.loadStreamInfo();
                 this.loadUpcomingStreams();
             }
 
@@ -955,31 +943,8 @@
                 }
             }
 
-            loadStreamInfo() {
-                // Simulate loading current stream information
-                setTimeout(() => {
-                    const streamInfo = document.getElementById('currentStreamInfo');
-                    streamInfo.innerHTML = `
-                        <div class="stream-details">
-                            <div class="detail-card">
-                                <h3><i class="fas fa-microphone"></i> Current Lecture</h3>
-                                <p>Friday Tafsir Session with Sheikh Abdul Rahman</p>
-                            </div>
-                            <div class="detail-card">
-                                <h3><i class="fas fa-clock"></i> Duration</h3>
-                                <p>Started 30 minutes ago</p>
-                            </div>
-                            <div class="detail-card">
-                                <h3><i class="fas fa-users"></i> Viewers</h3>
-                                <p>${Math.floor(Math.random() * 500) + 100} watching</p>
-                            </div>
-                            <div class="detail-card">
-                                <h3><i class="fas fa-globe"></i> Quality</h3>
-                                <p>Adaptive (${this.currentQuality === 'auto' ? 'Auto' : this.currentQuality + 'p'})</p>
-                            </div>
-                        </div>
-                    `;
-                }, 2000);
+            loadCurrentStream() {
+                // Current stream section removed - no placeholder needed
             }
 
             loadUpcomingStreams() {
@@ -1048,7 +1013,6 @@
 
             init() {
                 this.setupEventListeners();
-                this.loadCurrentUser();
                 this.loadStreamRequests();
                 this.loadApprovedStreams();
             }
@@ -1142,16 +1106,11 @@
             async handleStreamRequest(event) {
                 event.preventDefault();
                 
-                if (!this.currentUser) {
-                    alert('Please sign in to request a stream.');
-                    return;
-                }
-
                 const formData = new FormData(event.target);
                 const streamData = {
-                    hostId: this.currentUser.uid,
-                    hostEmail: this.currentUser.email,
-                    hostName: this.currentUser.displayName,
+                    hostId: this.currentUser?.uid || 'anonymous',
+                    hostEmail: this.currentUser?.email || 'anonymous@example.com',
+                    hostName: this.currentUser?.displayName || 'Anonymous User',
                     title: formData.get('title'),
                     description: formData.get('description'),
                     category: formData.get('category'),
