@@ -1722,8 +1722,14 @@
 
         // Make stream request system globally accessible
         window.streamRequestSystem = null;
+        
+        // Create global streamPlayer instance
+        window.streamPlayer = null;
+        
         document.addEventListener('DOMContentLoaded', () => {
             window.streamRequestSystem = new StreamRequestSystem();
+            window.streamPlayer = new AdaptiveLiveStream();
+            console.log('✅ streamPlayer initialized:', window.streamPlayer);
         });
     </script>
 </body>
