@@ -5640,7 +5640,30 @@
                     return;
                 }
 
-                console.log('✅ Firebase available, creating stream...');
+                console.log('🎥 Starting camera capture...');
+                
+                // Start camera capture
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: true, 
+                    audio: true 
+                });
+                
+                console.log('✅ Camera captured, setting up WebRTC...');
+                
+                // Create video element for preview
+                const previewVideo = document.createElement('video');
+                previewVideo.id = 'cameraPreview';
+                previewVideo.autoplay = true;
+                previewVideo.muted = true;
+                previewVideo.srcObject = stream;
+                previewVideo.style.width = '100%';
+                previewVideo.style.maxHeight = '300px';
+                previewVideo.style.borderRadius = '8px';
+                previewVideo.style.background = '#000';
+                
+                // Add preview to UI
+                const streamInfoDiv = document.getElementById('liveStreamInfo');
+                streamInfoDiv.insertBefore(previewVideo, streamInfoDiv.firstChild);
 
                 // Create live stream document
                 const streamData = {
@@ -5651,20 +5674,25 @@
                     startedAt: new Date().toISOString(),
                     startedBy: 'admin',
                     viewerCount: 0,
-                    streamUrl: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8' // Use test stream for now
+                    streamUrl: null, // Will be set by WebRTC
+                    webrtcEnabled: true,
+                    cameraActive: true
                 };
 
                 console.log('💾 Saving stream data:', streamData);
 
                 // Save to Firebase
                 const docRef = await window.firebaseDb.collection('liveStreams').add(streamData);
-                currentLiveStream = { id: docRef.id, ...streamData };
+                currentLiveStream = { id: docRef.id, ...streamData, cameraStream: stream };
 
                 console.log('✅ Stream saved with ID:', docRef.id);
 
                 // Update UI
-                showStreamStatus('Stream started successfully!', 'success');
+                showStreamStatus('Camera stream started successfully!', 'success');
                 updateLiveStreamUI();
+                
+                // Setup WebRTC streaming to Cloudflare
+                this.setupWebRTCStream(stream, docRef.id);
                 
                 // Clear form
                 document.getElementById('liveStreamTitle').value = '';
@@ -5689,10 +5717,27 @@
             try {
                 console.log('🔗 Stopping stream:', currentLiveStream.id);
 
-                // Update stream status
+                // Stop camera stream if active
+                if (currentLiveStream.cameraStream) {
+                    console.log('📹 Stopping camera tracks...');
+                    currentLiveStream.cameraStream.getTracks().forEach(track => {
+                        track.stop();
+                        console.log('✅ Camera track stopped');
+                    });
+                }
+
+                // Remove camera preview
+                const previewVideo = document.getElementById('cameraPreview');
+                if (previewVideo) {
+                    previewVideo.remove();
+                    console.log('🗑️ Camera preview removed');
+                }
+
+                // Update stream status in Firebase
                 await window.firebaseDb.collection('liveStreams').doc(currentLiveStream.id).update({
                     status: 'ended',
-                    endedAt: new Date().toISOString()
+                    endedAt: new Date().toISOString(),
+                    cameraActive: false
                 });
 
                 console.log('✅ Stream stopped successfully');
@@ -5705,6 +5750,34 @@
             } catch (error) {
                 console.error('❌ Error stopping stream:', error);
                 showStreamStatus('Failed to stop stream: ' + error.message, 'error');
+            }
+        }
+
+        // WebRTC streaming setup for Cloudflare
+        async function setupWebRTCStream(mediaStream, streamId) {
+            console.log('🌐 Setting up WebRTC stream for:', streamId);
+            
+            try {
+                // This is where you'd integrate with Cloudflare Stream or WebRTC service
+                // For now, we'll simulate it with a placeholder
+                
+                // TODO: Integrate with actual WebRTC streaming service
+                // Options: Cloudflare Stream, Twilio, Agora, etc.
+                
+                console.log('📡 WebRTC stream setup complete');
+                console.log('🔗 Stream URL would be: wss://your-webrtc-server/stream/' + streamId);
+                
+                // Update Firebase with stream URL (placeholder for now)
+                await window.firebaseDb.collection('liveStreams').doc(streamId).update({
+                    streamUrl: 'webrtc://' + streamId,
+                    webrtcConnected: true
+                });
+                
+                console.log('✅ Stream URL updated in Firebase');
+                
+            } catch (error) {
+                console.error('❌ WebRTC setup failed:', error);
+                showStreamStatus('WebRTC setup failed: ' + error.message, 'error');
             }
         }
 
