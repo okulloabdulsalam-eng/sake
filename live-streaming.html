@@ -856,12 +856,15 @@
                 this.setupVideoPlayer();
                 this.setupControls();
                 this.setupNetworkMonitoring();
-                this.loadStream();
+                // Don't auto-load stream - wait for user to click
                 this.loadUpcomingStreams();
             }
 
             setupVideoPlayer() {
-                // Check if HLS.js is supported
+                // Don't auto-load any content - wait for user selection
+                console.log('📺 Video player ready - waiting for stream selection');
+                
+                // Setup HLS.js but don't load source yet
                 if (Hls.isSupported()) {
                     this.hls = new Hls({
                         enableWorker: true,
@@ -873,14 +876,7 @@
                         maxBufferHole: 0.5
                     });
 
-                    this.hls.loadSource(this.streamSources.auto);
-                    this.hls.attachMedia(this.video);
-
-                    // Handle quality changes
-                    this.hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
-                        this.updateQualityButtons(data.levels);
-                    });
-
+                    // Setup error handling
                     this.hls.on(Hls.Events.ERROR, (event, data) => {
                         if (data.fatal) {
                             switch(data.type) {
@@ -899,12 +895,41 @@
                             }
                         }
                     });
+                }
+                
+                // Show placeholder in video player
+                this.showVideoPlaceholder();
+            }
 
-                } else if (this.video.canPlayType('application/vnd.apple.mpegurl')) {
-                    // Native HLS support (Safari)
-                    this.video.src = this.streamSources.auto;
-                } else {
-                    this.showError('Your browser does not support live streaming.');
+            showVideoPlaceholder() {
+                // Add placeholder overlay to video
+                const videoContainer = document.querySelector('.video-container');
+                const placeholder = document.createElement('div');
+                placeholder.className = 'video-placeholder';
+                placeholder.innerHTML = `
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: white; z-index: 10;">
+                        <i class="fas fa-video" style="font-size: 48px; margin-bottom: 15px; opacity: 0.7;"></i>
+                        <h3 style="margin: 0 0 10px 0;">Select a Live Stream</h3>
+                        <p style="margin: 0; opacity: 0.7;">Choose a stream from the list below to start watching</p>
+                    </div>
+                `;
+                placeholder.style.cssText = `
+                    position: absolute; top: 0; left: 0; right: 0; bottom: 0; 
+                    background: rgba(0,0,0,0.8); display: flex; align-items: center; 
+                    justify-content: center; z-index: 5; border-radius: 12px;
+                `;
+                
+                // Insert before video controls
+                const videoControls = document.querySelector('.video-controls');
+                if (videoControls) {
+                    videoContainer.insertBefore(placeholder, videoControls);
+                }
+            }
+
+            hideVideoPlaceholder() {
+                const placeholder = document.querySelector('.video-placeholder');
+                if (placeholder) {
+                    placeholder.remove();
                 }
             }
 
@@ -1185,6 +1210,9 @@
             loadLiveStream(streamUrl, streamId) {
                 console.log('🎥 loadLiveStream called with:', { streamUrl, streamId });
                 
+                // Hide placeholder when loading stream
+                this.hideVideoPlaceholder();
+                
                 // Remove active class from all stream cards
                 document.querySelectorAll('.clickable-stream').forEach(card => {
                     card.style.background = '';
@@ -1211,19 +1239,24 @@
                     this.handleWebRTCStream(streamId);
                 } else if (streamUrl && (streamUrl.includes('.m3u8') || streamUrl.includes('mux.dev'))) {
                     // HLS stream
+                    console.log('📡 Loading HLS stream:', streamUrl);
                     if (this.hls) {
                         this.hls.loadSource(streamUrl);
-                        console.log('📡 Loading HLS stream:', streamUrl);
+                        this.hls.attachMedia(this.video);
                     } else {
                         this.video.src = streamUrl;
-                        console.log('📡 Loading video src:', streamUrl);
                     }
                     // Try to play with user interaction
                     this.attemptPlay();
                 } else if (streamUrl && streamUrl.startsWith('http')) {
                     // Direct HTTP video URL
-                    this.video.src = streamUrl;
                     console.log('📡 Loading direct video:', streamUrl);
+                    if (this.hls) {
+                        this.hls.loadSource(streamUrl);
+                        this.hls.attachMedia(this.video);
+                    } else {
+                        this.video.src = streamUrl;
+                    }
                     // Try to play with user interaction
                     this.attemptPlay();
                 } else {
@@ -1448,6 +1481,7 @@
                 
                 if (this.hls) {
                     this.hls.loadSource(testUrl);
+                    this.hls.attachMedia(this.video);
                 } else {
                     this.video.src = testUrl;
                 }
