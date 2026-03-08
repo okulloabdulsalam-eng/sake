@@ -227,11 +227,27 @@
             padding: 20px;
             margin-bottom: 15px;
             border-left: 4px solid var(--primary-green);
-            transition: transform 0.3s ease;
+            transition: transform 0.3s ease, background 0.3s ease;
         }
         
         .stream-card:hover {
             transform: translateX(5px);
+            background: #f0f1f2;
+        }
+        
+        .clickable-stream {
+            cursor: pointer;
+        }
+        
+        .clickable-stream:hover {
+            transform: translateX(8px) scale(1.02);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .clickable-stream.active {
+            background: #e8f5e8;
+            transform: translateX(8px) scale(1.02);
+            box-shadow: 0 4px 12px rgba(40,167,69,0.2);
         }
         
         .stream-card h3 {
@@ -582,13 +598,13 @@
             </div>
         </div>
 
-        <!-- Upcoming Streams -->
+        <!-- Ongoing Live Streams -->
         <div class="upcoming-streams">
-            <h2><i class="fas fa-calendar"></i> Upcoming Live Streams</h2>
+            <h2><i class="fas fa-video"></i> Ongoing Live Streams</h2>
             <div id="upcomingStreams">
                 <div class="loading-spinner">
                     <i class="fas fa-spinner fa-spin"></i>
-                    <p>Loading upcoming streams...</p>
+                    <p>Loading live streams...</p>
                 </div>
             </div>
         </div>
@@ -1000,7 +1016,9 @@
                 }
 
                 const html = streams.map(stream => `
-                    <div class="stream-card" style="border-left: 4px solid #28a745;">
+                    <div class="stream-card clickable-stream" style="border-left: 4px solid #28a745; cursor: pointer; transition: transform 0.2s;" 
+                         onclick="streamPlayer.loadLiveStream('${stream.streamUrl}', '${stream.id}')"
+                         data-stream-id="${stream.id}">
                         <h3><i class="fas fa-video"></i> ${stream.title}</h3>
                         <div class="stream-time">
                             <span style="background:#28a745;color:white;padding:2px 8px;border-radius:12px;font-size:11px;">
@@ -1013,6 +1031,11 @@
                             <span><i class="fas fa-tag"></i> ${stream.category}</span>
                             <span><i class="fas fa-eye"></i> ${stream.viewerCount || 0} watching</span>
                         </div>
+                        <div style="margin-top:10px;text-align:center;">
+                            <button class="btn btn-primary" style="font-size:12px;padding:5px 15px;">
+                                <i class="fas fa-play"></i> Watch Now
+                            </button>
+                        </div>
                     </div>
                 `).join('');
 
@@ -1020,7 +1043,7 @@
                 
                 // Auto-load the first live stream into the video player
                 if (streams.length > 0 && streams[0].streamUrl) {
-                    this.loadLiveStream(streams[0].streamUrl);
+                    this.loadLiveStream(streams[0].streamUrl, streams[0].id);
                 }
             }
 
@@ -1037,13 +1060,102 @@
                 `;
             }
 
-            loadLiveStream(streamUrl) {
-                if (this.hls) {
-                    this.hls.loadSource(streamUrl);
-                } else {
-                    this.video.src = streamUrl;
+            loadLiveStream(streamUrl, streamId) {
+                console.log('🎥 Loading live stream:', streamId, streamUrl);
+                
+                // Remove active class from all stream cards
+                document.querySelectorAll('.clickable-stream').forEach(card => {
+                    card.style.background = '';
+                    card.style.transform = '';
+                });
+                
+                // Add active class to clicked stream card
+                const activeCard = document.querySelector(`[data-stream-id="${streamId}"]`);
+                if (activeCard) {
+                    activeCard.style.background = '#f8f9fa';
+                    activeCard.style.transform = 'scale(1.02)';
                 }
-                this.video.play();
+                
+                // Handle different stream types
+                if (streamUrl && streamUrl.includes('webrtc://')) {
+                    // WebRTC stream - need to handle differently
+                    this.handleWebRTCStream(streamId);
+                } else if (streamUrl && (streamUrl.includes('.m3u8') || streamUrl.includes('mux.dev'))) {
+                    // HLS stream
+                    if (this.hls) {
+                        this.hls.loadSource(streamUrl);
+                        console.log('📡 Loading HLS stream:', streamUrl);
+                    } else {
+                        this.video.src = streamUrl;
+                        console.log('📡 Loading video src:', streamUrl);
+                    }
+                    this.video.play().catch(error => {
+                        console.error('❌ Failed to play stream:', error);
+                        this.showError('Failed to play stream: ' + error.message);
+                    });
+                } else {
+                    // Direct video URL or simulation
+                    this.video.src = streamUrl;
+                    console.log('📡 Loading direct video:', streamUrl);
+                    this.video.play().catch(error => {
+                        console.error('❌ Failed to play stream:', error);
+                        this.showError('Failed to play stream: ' + error.message);
+                    });
+                }
+            }
+
+            handleWebRTCStream(streamId) {
+                console.log('🌐 Handling WebRTC stream:', streamId);
+                
+                // For WebRTC streams, we need to establish a peer connection
+                // This is a simplified version - in production you'd need full WebRTC implementation
+                
+                try {
+                    // Create WebRTC peer connection for viewer
+                    const peerConnection = new RTCPeerConnection({
+                        iceServers: [
+                            { urls: 'stun:stun.cloudflare.com:3478' },
+                            { urls: 'stun:stun.l.google.com:19302' }
+                        ]
+                    });
+                    
+                    console.log('🔗 WebRTC peer connection created for viewer');
+                    
+                    // Connect to your Cloudflare Worker for WebRTC signaling
+                    fetch(`https://kiuma-stream-worker.kiuma4.workers.dev/stream/webrtc`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            action: 'watch',
+                            streamId: streamId
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(answer => {
+                        console.log('📡 Received WebRTC answer:', answer);
+                        // In production, you'd handle the SDP exchange here
+                        // For now, show a message that WebRTC is being set up
+                        this.showError('WebRTC stream connection in progress...');
+                    })
+                    .catch(error => {
+                        console.error('❌ WebRTC connection failed:', error);
+                        this.showError('WebRTC connection failed. Using simulation mode...');
+                        
+                        // Fallback to simulation
+                        setTimeout(() => {
+                            this.loadLiveStream('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', streamId);
+                        }, 1000);
+                    });
+                    
+                } catch (error) {
+                    console.error('❌ WebRTC setup failed:', error);
+                    this.showError('WebRTC not supported. Using fallback stream...');
+                    
+                    // Fallback to test stream
+                    this.loadLiveStream('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', streamId);
+                }
             }
 
             showError(message) {
