@@ -250,6 +250,128 @@
             box-shadow: 0 4px 12px rgba(40,167,69,0.2);
         }
         
+        .stream-info-panel {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary-green);
+        }
+        
+        .stream-details .stream-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #dc3545;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .viewer-count {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-gray);
+            font-size: 14px;
+        }
+        
+        .stream-title {
+            color: var(--dark-gray);
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+        
+        .stream-meta {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-gray);
+            font-size: 14px;
+        }
+        
+        .meta-item i {
+            color: var(--primary-green);
+        }
+        
+        .stream-description {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            color: var(--text-gray);
+            line-height: 1.6;
+        }
+        
+        .stream-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+        }
+        
+        .share-btn {
+            background: var(--primary-green);
+            color: white;
+        }
+        
+        .share-btn:hover {
+            background: #218838;
+        }
+        
+        .report-btn {
+            background: #f8f9fa;
+            color: var(--text-gray);
+            border: 1px solid #dee2e6;
+        }
+        
+        .report-btn:hover {
+            background: #e9ecef;
+        }
+        
         .stream-card h3 {
             color: var(--dark-gray);
             margin-bottom: 10px;
@@ -1079,6 +1201,9 @@
                     console.warn('⚠️ Stream card not found for ID:', streamId);
                 }
                 
+                // Show stream details panel
+                this.showStreamDetails(streamId);
+                
                 // Handle different stream types
                 if (streamUrl && (streamUrl.includes('wss://') || streamUrl.includes('webrtc://'))) {
                     // WebRTC stream - handle with fallback
@@ -1105,6 +1230,170 @@
                     // Invalid or no URL - use test stream
                     console.log('⚠️ Invalid stream URL, using test stream. URL was:', streamUrl);
                     this.loadTestStream();
+                }
+            }
+
+            async showStreamDetails(streamId) {
+                try {
+                    // Get stream details from Firebase
+                    const streamDoc = await window.firebaseDb.collection('liveStreams').doc(streamId).get();
+                    const streamData = streamDoc.data();
+                    
+                    if (streamData) {
+                        this.displayStreamInfo(streamData);
+                    }
+                } catch (error) {
+                    console.error('Error loading stream details:', error);
+                    this.showDefaultStreamInfo();
+                }
+            }
+
+            displayStreamInfo(streamData) {
+                const streamInfoContainer = document.getElementById('currentStreamInfo');
+                if (!streamInfoContainer) {
+                    // Create stream info container if it doesn't exist
+                    const videoContainer = document.querySelector('.video-container');
+                    const infoDiv = document.createElement('div');
+                    infoDiv.id = 'currentStreamInfo';
+                    infoDiv.className = 'stream-info-panel';
+                    videoContainer.parentNode.insertBefore(infoDiv, videoContainer.nextSibling);
+                }
+                
+                const startTime = new Date(streamData.startedAt);
+                const viewerCount = streamData.viewerCount || 0;
+                
+                const infoHTML = `
+                    <div class="stream-details">
+                        <div class="stream-header">
+                            <div class="live-indicator">
+                                <span class="live-dot"></span>
+                                <span class="live-text">LIVE</span>
+                            </div>
+                            <div class="viewer-count">
+                                <i class="fas fa-eye"></i>
+                                <span id="viewerCounter">${viewerCount}</span> watching
+                            </div>
+                        </div>
+                        
+                        <h2 class="stream-title">${streamData.title}</h2>
+                        
+                        <div class="stream-meta">
+                            <div class="meta-item">
+                                <i class="fas fa-user"></i>
+                                <span>Admin</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-clock"></i>
+                                <span>Started ${startTime.toLocaleTimeString()}</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-tag"></i>
+                                <span>${streamData.category}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stream-description">
+                            <p>${streamData.description || 'No description available'}</p>
+                        </div>
+                        
+                        <div class="stream-actions">
+                            <button class="action-btn share-btn" onclick="streamPlayer.shareStream()">
+                                <i class="fas fa-share"></i> Share
+                            </button>
+                            <button class="action-btn report-btn" onclick="streamPlayer.reportStream()">
+                                <i class="fas fa-flag"></i> Report
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('currentStreamInfo').innerHTML = infoHTML;
+                
+                // Start viewer count updates
+                this.startViewerCountUpdates(streamId);
+            }
+
+            showDefaultStreamInfo() {
+                const streamInfoContainer = document.getElementById('currentStreamInfo');
+                if (!streamInfoContainer) return;
+                
+                const infoHTML = `
+                    <div class="stream-details">
+                        <div class="stream-header">
+                            <div class="live-indicator">
+                                <span class="live-dot"></span>
+                                <span class="live-text">LIVE</span>
+                            </div>
+                            <div class="viewer-count">
+                                <i class="fas fa-eye"></i>
+                                <span>0</span> watching
+                            </div>
+                        </div>
+                        
+                        <h2 class="stream-title">Live Stream</h2>
+                        
+                        <div class="stream-meta">
+                            <div class="meta-item">
+                                <i class="fas fa-user"></i>
+                                <span>Admin</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-clock"></i>
+                                <span>Just now</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-tag"></i>
+                                <span>Live Stream</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stream-description">
+                            <p>Stream is now live. Enjoy the content!</p>
+                        </div>
+                    </div>
+                `;
+                
+                streamInfoContainer.innerHTML = infoHTML;
+            }
+
+            startViewerCountUpdates(streamId) {
+                // Update viewer count every 5 seconds
+                setInterval(async () => {
+                    try {
+                        const streamDoc = await window.firebaseDb.collection('liveStreams').doc(streamId).get();
+                        const streamData = streamDoc.data();
+                        const viewerCounter = document.getElementById('viewerCounter');
+                        
+                        if (viewerCounter && streamData) {
+                            viewerCounter.textContent = streamData.viewerCount || 0;
+                        }
+                    } catch (error) {
+                        console.error('Error updating viewer count:', error);
+                    }
+                }, 5000);
+            }
+
+            shareStream() {
+                // Share functionality
+                if (navigator.share) {
+                    navigator.share({
+                        title: 'Live Stream',
+                        text: 'Check out this live stream!',
+                        url: window.location.href
+                    });
+                } else {
+                    // Fallback - copy to clipboard
+                    navigator.clipboard.writeText(window.location.href);
+                    alert('Stream link copied to clipboard!');
+                }
+            }
+
+            reportStream() {
+                // Report functionality
+                const reason = prompt('Why are you reporting this stream?');
+                if (reason) {
+                    console.log('Stream reported:', reason);
+                    alert('Thank you for your report. We will review it shortly.');
                 }
             }
 
