@@ -1796,63 +1796,6 @@
             }
         });
 
-        function attemptLogin() {
-            const password = document.getElementById('adminPasswordInput').value;
-            const alert = document.getElementById('loginAlert');
-            
-            if (password === ADMIN_PASSWORD) {
-                isLoggedIn = true;
-                sessionStorage.setItem('adminLoggedIn', 'true');
-                sessionStorage.setItem('adminPassword', password);
-                document.getElementById('loginOverlay').classList.add('hidden');
-                alert.className = 'alert';
-                initializeAdmin();
-            } else {
-                alert.className = 'alert error';
-                alert.textContent = 'Invalid password. Please try again.';
-            }
-        }
-
-        function logout() {
-            isLoggedIn = false;
-            sessionStorage.removeItem('adminLoggedIn');
-            sessionStorage.removeItem('adminPassword');
-            document.getElementById('loginOverlay').classList.remove('hidden');
-            document.getElementById('adminPasswordInput').value = '';
-        }
-
-        async function initializeAdmin() {
-            // Auto-load GitHub token from cloud config if not present locally
-            await autoLoadGitHubToken();
-            loadMediaList();
-            loadLibraryList();
-        }
-
-        function attemptLogin() {
-            const password = document.getElementById('adminPasswordInput').value;
-            const alert = document.getElementById('loginAlert');
-            
-            if (password === ADMIN_PASSWORD) {
-                isLoggedIn = true;
-                sessionStorage.setItem('adminLoggedIn', 'true');
-                sessionStorage.setItem('adminPassword', password);
-                document.getElementById('loginOverlay').classList.add('hidden');
-                alert.className = 'alert';
-                initializeAdmin();
-            } else {
-                alert.className = 'alert error';
-                alert.textContent = 'Invalid password. Please try again.';
-            }
-        }
-
-        function logout() {
-            isLoggedIn = false;
-            sessionStorage.removeItem('adminLoggedIn');
-            sessionStorage.removeItem('adminPassword');
-            document.getElementById('loginOverlay').classList.remove('hidden');
-            document.getElementById('adminPasswordInput').value = '';
-        }
-
         // Tab switching functionality
         function switchTab(tabName) {
             // Hide all panels
@@ -6057,6 +6000,85 @@
         // LOGIN SYSTEM INITIALIZATION
         // ==============================
         
+        // Define attemptLogin function with proper logging and global access
+        function attemptLogin() {
+            console.log('🔐 Login attempt triggered');
+            
+            const password = document.getElementById('adminPasswordInput').value;
+            const alert = document.getElementById('loginAlert');
+            
+            console.log('🔑 Password entered:', password ? '***' : 'empty');
+            
+            if (password === ADMIN_PASSWORD) {
+                console.log('✅ Login successful');
+                isLoggedIn = true;
+                sessionStorage.setItem('adminLoggedIn', 'true');
+                sessionStorage.setItem('adminPassword', password);
+                
+                // Hide login overlay
+                const loginOverlay = document.getElementById('loginOverlay');
+                if (loginOverlay) {
+                    loginOverlay.classList.add('hidden');
+                    console.log('✅ Login overlay hidden');
+                }
+                
+                // Clear alert
+                if (alert) {
+                    alert.className = 'alert';
+                    alert.textContent = '';
+                }
+                
+                // Initialize admin panel
+                console.log('🚀 Initializing admin panel...');
+                initializeAdmin();
+                
+            } else {
+                console.log('❌ Login failed - wrong password');
+                if (alert) {
+                    alert.className = 'alert error';
+                    alert.textContent = 'Invalid password. Please try again.';
+                }
+                
+                // Clear password field
+                const passwordInput = document.getElementById('adminPasswordInput');
+                if (passwordInput) {
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                }
+            }
+        }
+        
+        // Make attemptLogin globally accessible
+        window.attemptLogin = attemptLogin;
+        
+        // Define logout function
+        function logout() {
+            isLoggedIn = false;
+            sessionStorage.removeItem('adminLoggedIn');
+            sessionStorage.removeItem('adminPassword');
+            const loginOverlay = document.getElementById('loginOverlay');
+            if (loginOverlay) {
+                loginOverlay.classList.remove('hidden');
+            }
+            const passwordInput = document.getElementById('adminPasswordInput');
+            if (passwordInput) {
+                passwordInput.value = '';
+            }
+        }
+        
+        // Make logout globally accessible
+        window.logout = logout;
+        
+        // Define initializeAdmin function
+        async function initializeAdmin() {
+            console.log('🔧 Initializing admin panel...');
+            // Auto-load GitHub token from cloud config if not present locally
+            await autoLoadGitHubToken();
+            loadMediaList();
+            loadLibraryList();
+            console.log('✅ Admin panel initialized');
+        }
+        
         // Check login status on page load
         document.addEventListener('DOMContentLoaded', () => {
             console.log('🔐 Checking admin login status...');
@@ -6068,12 +6090,18 @@
             if (loggedIn === 'true' && storedPassword === ADMIN_PASSWORD) {
                 console.log('✅ Admin already logged in');
                 isLoggedIn = true;
-                document.getElementById('loginOverlay').classList.add('hidden');
+                const loginOverlay = document.getElementById('loginOverlay');
+                if (loginOverlay) {
+                    loginOverlay.classList.add('hidden');
+                }
                 initializeAdmin();
             } else {
                 console.log('🔒 Admin not logged in, showing login overlay');
                 isLoggedIn = false;
-                document.getElementById('loginOverlay').classList.remove('hidden');
+                const loginOverlay = document.getElementById('loginOverlay');
+                if (loginOverlay) {
+                    loginOverlay.classList.remove('hidden');
+                }
             }
         });
         
