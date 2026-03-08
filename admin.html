@@ -5832,6 +5832,7 @@
                 // Update Firebase with stream URL
                 await window.firebaseDb.collection('liveStreams').doc(streamId).update({
                     streamUrl: streamUrl,
+                    fallbackUrl: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', // Fallback for viewers
                     cloudflareStreamId: streamId,
                     webrtcConnected: true,
                     streamingProvider: 'cloudflare',
@@ -5849,10 +5850,11 @@
                 
                 // Fallback to simulation mode
                 console.log('🔄 Falling back to simulation mode...');
-                const fallbackUrl = `https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8`;
+                const fallbackUrl = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
                 
                 await window.firebaseDb.collection('liveStreams').doc(streamId).update({
                     streamUrl: fallbackUrl,
+                    fallbackUrl: fallbackUrl,
                     streamingProvider: 'simulation',
                     webrtcConnected: false
                 });

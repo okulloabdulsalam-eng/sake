@@ -1077,8 +1077,9 @@
                 }
                 
                 // Handle different stream types
-                if (streamUrl && streamUrl.includes('webrtc://')) {
-                    // WebRTC stream - need to handle differently
+                if (streamUrl && (streamUrl.includes('wss://') || streamUrl.includes('webrtc://'))) {
+                    // WebRTC stream - handle with fallback
+                    console.log('🌐 WebRTC stream detected, using fallback URL');
                     this.handleWebRTCStream(streamId);
                 } else if (streamUrl && (streamUrl.includes('.m3u8') || streamUrl.includes('mux.dev'))) {
                     // HLS stream
@@ -1093,69 +1094,51 @@
                         console.error('❌ Failed to play stream:', error);
                         this.showError('Failed to play stream: ' + error.message);
                     });
-                } else {
-                    // Direct video URL or simulation
+                } else if (streamUrl && streamUrl.startsWith('http')) {
+                    // Direct HTTP video URL
                     this.video.src = streamUrl;
                     console.log('📡 Loading direct video:', streamUrl);
                     this.video.play().catch(error => {
                         console.error('❌ Failed to play stream:', error);
                         this.showError('Failed to play stream: ' + error.message);
                     });
+                } else {
+                    // Invalid or no URL - use test stream
+                    console.log('⚠️ Invalid stream URL, using test stream');
+                    this.loadTestStream();
                 }
+            }
+
+            loadTestStream() {
+                const testUrl = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
+                console.log('📡 Loading test stream:', testUrl);
+                
+                if (this.hls) {
+                    this.hls.loadSource(testUrl);
+                } else {
+                    this.video.src = testUrl;
+                }
+                
+                this.video.play().catch(error => {
+                    console.error('❌ Failed to play test stream:', error);
+                    this.showError('Failed to play test stream: ' + error.message);
+                });
             }
 
             handleWebRTCStream(streamId) {
                 console.log('🌐 Handling WebRTC stream:', streamId);
                 
-                // For WebRTC streams, we need to establish a peer connection
-                // This is a simplified version - in production you'd need full WebRTC implementation
+                // For now, WebRTC streams will use the fallback test stream
+                // Real WebRTC implementation would require more complex peer connection setup
+                console.log('� WebRTC not fully implemented, using fallback stream');
                 
-                try {
-                    // Create WebRTC peer connection for viewer
-                    const peerConnection = new RTCPeerConnection({
-                        iceServers: [
-                            { urls: 'stun:stun.cloudflare.com:3478' },
-                            { urls: 'stun:stun.l.google.com:19302' }
-                        ]
-                    });
-                    
-                    console.log('🔗 WebRTC peer connection created for viewer');
-                    
-                    // Connect to your Cloudflare Worker for WebRTC signaling
-                    fetch(`https://kiuma-stream-worker.kiuma4.workers.dev/stream/webrtc`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            action: 'watch',
-                            streamId: streamId
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(answer => {
-                        console.log('📡 Received WebRTC answer:', answer);
-                        // In production, you'd handle the SDP exchange here
-                        // For now, show a message that WebRTC is being set up
-                        this.showError('WebRTC stream connection in progress...');
-                    })
-                    .catch(error => {
-                        console.error('❌ WebRTC connection failed:', error);
-                        this.showError('WebRTC connection failed. Using simulation mode...');
-                        
-                        // Fallback to simulation
-                        setTimeout(() => {
-                            this.loadLiveStream('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', streamId);
-                        }, 1000);
-                    });
-                    
-                } catch (error) {
-                    console.error('❌ WebRTC setup failed:', error);
-                    this.showError('WebRTC not supported. Using fallback stream...');
-                    
-                    // Fallback to test stream
-                    this.loadLiveStream('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', streamId);
-                }
+                // Show message to user
+                this.showError('WebRTC stream detected - loading demo content...');
+                
+                // Use test stream as fallback
+                setTimeout(() => {
+                    this.loadTestStream();
+                }, 1000);
             }
 
             showError(message) {
