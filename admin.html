@@ -1293,62 +1293,11 @@
     <script src="services/githubStorageService.js" type="module"></script>
     <script>
         const ADMIN_PASSWORD = 'kiuma2025'; // Should match server config
-        let isLoggedIn = false;
+        let isLoggedIn = true; // Always logged in - no password required
         let notificationManagerInitialized = false;
         let mediaPickerInitialized = false;
         let editingNotificationId = null;
 
-        // Define attemptLogin function immediately at the top
-        function attemptLogin() {
-            console.log('🔐 Login attempt triggered');
-            
-            const password = document.getElementById('adminPasswordInput').value;
-            const alert = document.getElementById('loginAlert');
-            
-            console.log('🔑 Password entered:', password ? '***' : 'empty');
-            
-            if (password === ADMIN_PASSWORD) {
-                console.log('✅ Login successful');
-                isLoggedIn = true;
-                sessionStorage.setItem('adminLoggedIn', 'true');
-                sessionStorage.setItem('adminPassword', password);
-                
-                // Hide login overlay
-                const loginOverlay = document.getElementById('loginOverlay');
-                if (loginOverlay) {
-                    loginOverlay.classList.add('hidden');
-                    console.log('✅ Login overlay hidden');
-                }
-                
-                // Clear alert
-                if (alert) {
-                    alert.className = 'alert';
-                    alert.textContent = '';
-                }
-                
-                // Initialize admin panel
-                console.log('🚀 Initializing admin panel...');
-                initializeAdmin();
-                
-            } else {
-                console.log('❌ Login failed - wrong password');
-                if (alert) {
-                    alert.className = 'alert error';
-                    alert.textContent = 'Invalid password. Please try again.';
-                }
-                
-                // Clear password field
-                const passwordInput = document.getElementById('adminPasswordInput');
-                if (passwordInput) {
-                    passwordInput.value = '';
-                    passwordInput.focus();
-                }
-            }
-        }
-        
-        // Make attemptLogin globally accessible immediately
-        window.attemptLogin = attemptLogin;
-        
         function setupMediaPickerListeners() {
             if (mediaPickerInitialized) return;
             mediaPickerInitialized = true;
@@ -6047,155 +5996,11 @@
         // Auto-check for live streams
         setTimeout(checkExistingLiveStream, 2000);
         
-        // ==============================
-        // LOGIN SYSTEM INITIALIZATION
-        // ==============================
-        
-        // Check login status on page load
+        // Initialize admin panel immediately (no login required)
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('🔐 Checking admin login status...');
-            
-            // Check if already logged in
-            const loggedIn = sessionStorage.getItem('adminLoggedIn');
-            const storedPassword = sessionStorage.getItem('adminPassword');
-            
-            if (loggedIn === 'true' && storedPassword === ADMIN_PASSWORD) {
-                console.log('✅ Admin already logged in');
-                isLoggedIn = true;
-                const loginOverlay = document.getElementById('loginOverlay');
-                if (loginOverlay) {
-                    loginOverlay.classList.add('hidden');
-                }
-                initializeAdmin();
-            } else {
-                console.log('🔒 Admin not logged in, showing login overlay');
-                isLoggedIn = false;
-                const loginOverlay = document.getElementById('loginOverlay');
-                if (loginOverlay) {
-                    loginOverlay.classList.remove('hidden');
-                }
-            }
+            console.log('🚀 Admin panel initializing - no login required');
+            initializeAdmin();
         });
-        
-        // Add login overlay to HTML if not exists
-        const loginOverlayHTML = `
-            <div class="login-overlay" id="loginOverlay">
-                <div class="login-box">
-                    <h2><i class="fas fa-shield-alt"></i> Admin Access</h2>
-                    <p>Enter admin password to continue</p>
-                    <div id="loginAlert" class="alert"></div>
-                    <div class="form-group">
-                        <input type="password" id="adminPasswordInput" placeholder="Enter admin password" onkeypress="if(event.key==='Enter')attemptLogin()">
-                    </div>
-                    <button class="btn btn-primary" style="width: 100%; padding: 14px;" onclick="attemptLogin()">
-                        <i class="fas fa-sign-in-alt"></i> Login
-                    </button>
-                </div>
-            </div>
-        `;
-        
-        // Add login overlay styles
-        const loginStyles = `
-            <style>
-                .login-overlay {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: rgba(0,0,0,0.8);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    z-index: 1000;
-                }
-                .login-overlay.hidden {
-                    display: none;
-                }
-                .login-box {
-                    background: white;
-                    padding: 40px;
-                    border-radius: 15px;
-                    width: 90%;
-                    max-width: 400px;
-                    text-align: center;
-                    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-                }
-                .login-box h2 {
-                    color: var(--primary-green);
-                    margin-bottom: 10px;
-                }
-                .login-box p {
-                    color: #666;
-                    margin-bottom: 25px;
-                }
-                .login-box .form-group {
-                    margin-bottom: 20px;
-                }
-                .login-box input {
-                    width: 100%;
-                    padding: 12px;
-                    border: 2px solid #e0e0e0;
-                    border-radius: 8px;
-                    font-size: 16px;
-                }
-                .login-box input:focus {
-                    outline: none;
-                    border-color: var(--primary-green);
-                }
-                .login-box .btn {
-                    width: 100%;
-                    padding: 12px;
-                    background: var(--primary-green);
-                    color: white;
-                    border: none;
-                    border-radius: 8px;
-                    font-size: 16px;
-                    cursor: pointer;
-                    margin-bottom: 15px;
-                }
-                .login-box .btn:hover {
-                    background: #218838;
-                }
-            </style>
-        `;
-        
-        // Add login styles to head
-        document.head.insertAdjacentHTML('beforeend', loginStyles);
-        
-        // Add login overlay to body
-        document.body.insertAdjacentHTML('afterbegin', loginOverlayHTML);
-        
-        // Add event listeners after DOM is ready
-        setTimeout(() => {
-            const passwordInput = document.getElementById('adminPasswordInput');
-            const loginOverlay = document.getElementById('loginOverlay');
-            
-            // Since the button uses onclick="attemptLogin()", we don't need to add event listener
-            // Just verify elements exist and add Enter key support
-            if (passwordInput) {
-                // The onkeypress is already in the HTML, but let's add a backup listener
-                passwordInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        attemptLogin();
-                    }
-                });
-                console.log('✅ Password input event listener added');
-            }
-            
-            if (loginOverlay) {
-                console.log('✅ Login overlay found and ready');
-            } else {
-                console.error('❌ Login overlay not found');
-            }
-            
-            // Verify attemptLogin is globally accessible
-            if (typeof attemptLogin === 'function') {
-                console.log('✅ attemptLogin function is globally accessible');
-            } else {
-                console.error('❌ attemptLogin function is not accessible');
-            }
-        }, 100);
     </script>
 </body>
 </html>
