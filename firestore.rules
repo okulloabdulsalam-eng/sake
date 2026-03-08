@@ -90,8 +90,22 @@ service cloud.firestore {
     // Push queue - queued push notifications
     match /push_queue/{pushId} {
       allow read: if true;
-      allow create: if true;
-      allow update, delete: if true;
+      allow create, update, delete: if true;
+    }
+
+    // Stream Requests collection - Live streaming approval system
+    match /streamRequests/{requestId} {
+      // Anyone can read stream requests (for public viewing)
+      allow read: if true;
+      
+      // Authenticated users can create requests
+      allow create: if isAuthenticated();
+      
+      // Only admin or the request owner can update
+      allow update: if isAuthenticated() && (isOwner(resource.data.hostId) || isFromCloudFunction());
+      
+      // Only admin or the request owner can delete
+      allow delete: if isAuthenticated() && (isOwner(resource.data.hostId) || isFromCloudFunction());
     }
 
     // Default: Deny all other collections

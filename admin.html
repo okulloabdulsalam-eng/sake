@@ -468,17 +468,17 @@
                     
                     <div class="form-group">
                         <label>Title/Description</label>
-                        <input type="text" id="mediaTitle" placeholder="Enter title or description">
+                        <input type="text" id="mediaTitle" placeholder="Title or description">
                     </div>
                     
                     <div class="form-group">
                         <label>Author (optional)</label>
-                        <input type="text" id="mediaAuthor" placeholder="Enter author or creator name">
+                        <input type="text" id="mediaAuthor" placeholder="Author or creator name">
                     </div>
 
                     <div class="form-group">
                         <label>Category / Playlist</label>
-                        <input type="text" id="mediaCategory" list="mediaCategoryList" placeholder="e.g. Lectures, Nasheeds, Ramadan, Friday Khutbah">
+                        <input type="text" id="mediaCategory" list="mediaCategoryList" placeholder="Category or playlist">
                         <datalist id="mediaCategoryList"></datalist>
                         <p style="margin:4px 0 0;font-size:11px;color:#999;">Type a new category or pick from recent ones. Used for sorting & playlists.</p>
                     </div>
@@ -997,11 +997,11 @@
                         </div>
                         <div class="form-group">
                             <label>Venue / Location</label>
-                            <input type="text" id="eventVenue" placeholder="e.g., KIU Main Hall">
+                            <input type="text" id="eventVenue" placeholder="Event venue">
                         </div>
                         <div class="form-group">
                             <label>Description</label>
-                            <textarea id="eventDescription" rows="3" placeholder="Brief event description..."></textarea>
+                            <textarea id="eventDescription" rows="3" placeholder="Event description..."></textarea>
                         </div>
                         <div class="form-group">
                             <label>Category</label>
@@ -1038,11 +1038,11 @@
                     <div class="config-card">
                         <div class="form-group">
                             <label>Announcement Title</label>
-                            <input type="text" id="announcementTitle" placeholder="e.g., Ramadan Schedule Change">
+                            <input type="text" id="announcementTitle" placeholder="Announcement title">
                         </div>
                         <div class="form-group">
                             <label>Message</label>
-                            <textarea id="announcementMessage" rows="3" placeholder="e.g., Starting next Monday, Tarawih will be at 8:30 PM..."></textarea>
+                            <textarea id="announcementMessage" rows="3" placeholder="Announcement message..."></textarea>
                         </div>
                         <div style="display:flex;gap:15px;flex-wrap:wrap;">
                             <div class="form-group" style="flex:1;min-width:180px;">
@@ -1105,18 +1105,18 @@
                         </div>
                         <div class="form-group">
                             <label>Title</label>
-                            <input type="text" id="trackerTitle" placeholder="e.g., Quran Competition 2026 Results">
+                            <input type="text" id="trackerTitle" placeholder="Tracker title">
                         </div>
                         <div class="form-group">
                             <label>Description (optional)</label>
-                            <textarea id="trackerDescription" rows="2" placeholder="Brief description or context..."></textarea>
+                            <textarea id="trackerDescription" rows="2" placeholder="Description or context..."></textarea>
                         </div>
 
                         <!-- Competition Results Fields -->
                         <div id="trackerResultsFields">
                             <div class="form-group">
                                 <label>Results <span style="color:#888;font-weight:400;font-size:12px;">(one per line: Rank. Name - Details)</span></label>
-                                <textarea id="trackerResultsText" rows="6" placeholder="1. Ahmad Ibrahim - 1st Place, Surah Al-Baqarah&#10;2. Fatimah Ali - 2nd Place, Surah Yasin&#10;3. Omar Hassan - 3rd Place, Surah Ar-Rahman"></textarea>
+                                <textarea id="trackerResultsText" rows="6" placeholder="1. Name - Details&#10;2. Name - Details&#10;3. Name - Details"></textarea>
                             </div>
                         </div>
 
@@ -1125,20 +1125,20 @@
                             <div style="display:flex;gap:15px;flex-wrap:wrap;">
                                 <div class="form-group" style="flex:1;min-width:140px;">
                                     <label>Goal Amount (UGX)</label>
-                                    <input type="number" id="trackerGoalAmount" placeholder="e.g., 5000000" min="0">
+                                    <input type="number" id="trackerGoalAmount" placeholder="Goal amount" min="0">
                                 </div>
                                 <div class="form-group" style="flex:1;min-width:140px;">
                                     <label>Current Amount (UGX)</label>
-                                    <input type="number" id="trackerCurrentAmount" placeholder="e.g., 1200000" min="0">
+                                    <input type="number" id="trackerCurrentAmount" placeholder="Current amount" min="0">
                                 </div>
                             </div>
                             <div class="form-group">
                                 <label>Purpose / What it's for</label>
-                                <input type="text" id="trackerPurpose" placeholder="e.g., Building new prayer hall">
+                                <input type="text" id="trackerPurpose" placeholder="Purpose or goal">
                             </div>
                             <div class="form-group">
                                 <label>Donation Link (optional)</label>
-                                <input type="text" id="trackerDonationLink" placeholder="e.g., pay.html?type=charity&donation=prayer-hall">
+                                <input type="text" id="trackerDonationLink" placeholder="Donation link">
                             </div>
                         </div>
 
