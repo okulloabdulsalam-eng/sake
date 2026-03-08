@@ -6084,9 +6084,9 @@
                     <h2><i class="fas fa-lock"></i> Admin Login</h2>
                     <p>Enter admin password to access admin panel</p>
                     <div class="form-group">
-                        <input type="password" id="adminPasswordInput" placeholder="Enter password" onkeypress="if(event.key==='Enter') attemptLogin()">
+                        <input type="password" id="adminPasswordInput" placeholder="Enter password">
                     </div>
-                    <button onclick="attemptLogin()" class="btn btn-primary">
+                    <button id="loginBtn" class="btn btn-primary">
                         <i class="fas fa-sign-in-alt"></i> Login
                     </button>
                     <div id="loginAlert" class="alert"></div>
@@ -6165,6 +6165,33 @@
         
         // Add login overlay to body
         document.body.insertAdjacentHTML('afterbegin', loginOverlayHTML);
+        
+        // Add event listeners after DOM is ready
+        setTimeout(() => {
+            const loginBtn = document.getElementById('loginBtn');
+            const passwordInput = document.getElementById('adminPasswordInput');
+            const loginOverlay = document.getElementById('loginOverlay');
+            
+            if (loginBtn) {
+                loginBtn.addEventListener('click', attemptLogin);
+                console.log('✅ Login button event listener added');
+            }
+            
+            if (passwordInput) {
+                passwordInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        attemptLogin();
+                    }
+                });
+                console.log('✅ Password input event listener added');
+            }
+            
+            if (loginOverlay) {
+                console.log('✅ Login overlay found and ready');
+            } else {
+                console.error('❌ Login overlay not found');
+            }
+        }, 100);
     </script>
 </body>
 </html>
