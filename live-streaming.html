@@ -1533,21 +1533,27 @@
                     const streamData = streamDoc.data();
                     
                     if (streamData && streamData.streamUrl) {
-                        console.log('📡 Loading real HLS stream:', streamData.streamUrl);
+                        console.log('📡 Loading real stream from:', streamData.streamUrl);
                         
-                        // Load the real HLS stream
-                        if (this.hls) {
-                            this.hls.loadSource(streamData.streamUrl);
-                            this.hls.attachMedia(this.video);
+                        // Check if it's a WebRTC stream
+                        if (streamData.streamUrl.startsWith('webrtc://')) {
+                            // Handle WebRTC peer connection as viewer
+                            console.log('🌐 Setting up WebRTC viewer connection');
+                            await this.connectToWebRTCStream(streamId, streamData);
                         } else {
-                            this.video.src = streamData.streamUrl;
+                            // Handle as HLS stream
+                            console.log('📡 Loading HLS stream:', streamData.streamUrl);
+                            if (this.hls) {
+                                this.hls.loadSource(streamData.streamUrl);
+                                this.hls.attachMedia(this.video);
+                            } else {
+                                this.video.src = streamData.streamUrl;
+                            }
+                            this.attemptPlay();
                         }
                         
-                        // Show success message instead of error
-                        this.showSuccess('Live stream connected!');
-                        
-                        // Try to play
-                        this.attemptPlay();
+                        // Show success message
+                        this.showSuccess('Connected to live stream!');
                         
                     } else {
                         throw new Error('No stream URL found');
@@ -1562,6 +1568,90 @@
                         this.loadTestStream();
                     }, 3000);
                 }
+            }
+
+            async connectToWebRTCStream(streamId, streamData) {
+                console.log('🔗 Setting up WebRTC viewer connection to:', streamId);
+                
+                try {
+                    // Create WebRTC peer connection for viewer
+                    const peerConnection = new RTCPeerConnection({
+                        iceServers: [
+                            { urls: 'stun:stun.cloudflare.com:3478' },
+                            { urls: 'stun: stun.l.google.com:19302' }
+                        ]
+                    });
+                    
+                    console.log('🔗 Viewer WebRTC peer connection created');
+                    
+                    // Handle ICE candidates from admin
+                    this.setupViewerICECandidates(peerConnection, streamId);
+                    
+                    // Create offer for viewer
+                    const offer = await peerConnection.createOffer();
+                    await peerConnection.setLocalDescription(offer);
+                    
+                    console.log('📡 Viewer WebRTC offer created');
+                    
+                    // Get admin's SDP offer from Firebase
+                    const adminDoc = await window.firebaseDb.collection('liveStreams').doc(streamId).get();
+                    const adminData = adminDoc.data();
+                    
+                    if (adminData && adminData.sdpOffer) {
+                        // Use admin's SDP as answer
+                        const answer = {
+                            type: 'answer',
+                            sdp: adminData.sdpOffer
+                        };
+                        
+                        await peerConnection.setRemoteDescription(answer);
+                        
+                        console.log('✅ WebRTC connection established');
+                        
+                        // Monitor connection
+                        peerConnection.onconnectionstatechange = () => {
+                            console.log('🔗 WebRTC connection state:', peerConnection.connectionState);
+                            if (peerConnection.connectionState === 'connected') {
+                                this.showSuccess('Connected to admin camera!');
+                                
+                                // Add video tracks from peer connection
+                                const remoteStream = peerConnection.getRemoteStreams()[0];
+                                if (remoteStream) {
+                                    this.video.srcObject = remoteStream;
+                                    this.video.play();
+                                }
+                            } else if (peerConnection.connectionState === 'failed') {
+                                this.showError('WebRTC connection failed');
+                            }
+                        };
+                        
+                    } else {
+                        throw new Error('Admin SDP not found');
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ WebRTC viewer connection failed:', error);
+                    this.showError('Failed to connect to stream. Please try again.');
+                    
+                    // Fallback to test stream
+                    setTimeout(() => {
+                        this.loadTestStream();
+                    }, 3000);
+                }
+            }
+
+            setupViewerICECandidates(peerConnection, streamId) {
+                // Listen for ICE candidates from Firebase
+                window.firebaseDb.collection('liveStreams').doc(streamId).onSnapshot((doc) => {
+                    const data = doc.data();
+                    
+                    if (data && data.iceCandidates && data.iceCandidates.length > 0) {
+                        data.iceCandidates.forEach(candidate => {
+                            peerConnection.addIceCandidate(candidate);
+                            console.log('🧊 Added ICE candidate from admin');
+                        });
+                    }
+                });
             }
 
             showError(message) {

@@ -5731,6 +5731,96 @@
             }
         }
 
+        async function setupCloudflareStream(mediaStream, streamId) {
+            console.log('🌐 Setting up direct WebRTC streaming for:', streamId);
+            
+            try {
+                // Create WebRTC peer connection for admin (broadcaster)
+                const peerConnection = new RTCPeerConnection({
+                    iceServers: [
+                        { urls: 'stun:stun.cloudflare.com:3478' },
+                        { urls: 'stun:stun.l.google.com:19302' }
+                    ]
+                });
+                
+                console.log('🔗 Admin WebRTC peer connection created');
+                
+                // Add camera tracks
+                mediaStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, mediaStream);
+                    console.log('📹 Added track to WebRTC:', track.kind);
+                });
+                
+                // Create offer
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                
+                console.log('📡 WebRTC offer created');
+                
+                // Save peer connection for later use
+                currentLiveStream.peerConnection = peerConnection;
+                
+                // Update Firebase with WebRTC session info
+                await window.firebaseDb.collection('liveStreams').doc(streamId).update({
+                    streamUrl: 'webrtc://' + streamId, // WebRTC identifier
+                    fallbackUrl: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m33u8',
+                    cloudflareStreamId: streamId,
+                    webrtcConnected: true,
+                    streamingProvider: 'webrtc',
+                    workerUrl: 'https://kiuma-stream-worker.kiuma4.workers.dev',
+                    streamType: 'webrtc',
+                    sdpOffer: offer.sdp
+                });
+                
+                console.log('✅ WebRTC session saved to Firebase');
+                showStreamStatus('WebRTC streaming ready - viewers can now connect!', 'success');
+                
+                // Start ICE candidate handling
+                this.handleICECandidates(peerConnection);
+                
+            } catch (error) {
+                console.error('❌ WebRTC setup failed:', error);
+                showStreamStatus('WebRTC setup failed. Using simulation mode.', 'warning');
+                
+                // Fallback to simulation mode
+                const fallbackUrl = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
+                
+                await window.firebaseDb.collection('liveStreams').doc(streamId).update({
+                    streamUrl: fallbackUrl,
+                    fallbackUrl: fallbackUrl,
+                    streamingProvider: 'simulation',
+                    webrtcConnected: false
+                });
+                
+                showStreamStatus('Using simulation mode - camera preview only', 'warning');
+            }
+        }
+
+        handleICECandidates(peerConnection) {
+            // Handle ICE candidates for WebRTC
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    console.log('🧊 ICE candidate:', event.candidate);
+                    
+                    // Save ICE candidate to Firebase for viewers
+                    if (currentLiveStream && currentLiveStream.id) {
+                        window.firebaseDb.collection('liveStreams').doc(currentLiveStream.id).update({
+                            iceCandidates: firebase.firestore.FieldValue.arrayUnion([event.candidate])
+                        });
+                    }
+                }
+            };
+            
+            peerConnection.oniceconnectionstatechange = () => {
+                console.log('🔗 WebRTC connection state:', peerConnection.connectionState);
+                if (peerConnection.connectionState === 'connected') {
+                    showStreamStatus('WebRTC streaming active!', 'success');
+                } else if (peerConnection.connectionState === 'failed') {
+                    showStreamStatus('WebRTC connection failed', 'error');
+                }
+            };
+        }
+
         async function stopLiveStream() {
             console.log('🛑 stopLiveStream() called');
             
@@ -5772,72 +5862,8 @@
                 updateLiveStreamUI();
 
             } catch (error) {
-            
-            console.log('✅ RTMP streaming started successfully');
-            showStreamStatus('Camera is now live! Viewers can watch your stream.', 'success');
-            
-            // Monitor connection
-            peerConnection.onconnectionstatechange = () => {
-                console.log('🔗 RTMP connection state:', peerConnection.connectionState);
-            };
-            try {
-                // Create WebRTC peer connection
-                const peerConnection = new RTCPeerConnection({
-                    iceServers: [
-                        { urls: 'stun:stun.cloudflare.com:3478' },
-                        { urls: 'stun:stun.l.google.com:19302' }
-                    ]
-                });
-                
-                console.log('🔗 WebRTC peer connection created');
-                
-                // Add media stream tracks
-                mediaStream.getTracks().forEach(track => {
-                    peerConnection.addTrack(track, mediaStream);
-                    console.log('📹 Added track:', track.kind);
-                });
-                
-                // Create offer
-                const offer = await peerConnection.createOffer();
-                await peerConnection.setLocalDescription(offer);
-                
-                console.log('📡 WebRTC offer created');
-                
-                // Send offer to your Cloudflare Worker
-                const response = await fetch(`${workerUrl}/stream/webrtc`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        sdp: offer,
-                        streamId: currentLiveStream.id
-                    })
-                });
-                
-                if (response.ok) {
-                    const answer = await response.json();
-                    await peerConnection.setRemoteDescription(answer);
-                    
-                    console.log('✅ WebRTC connection established');
-                    showStreamStatus('Stream is now live on Cloudflare!', 'success');
-                    
-                    // Handle ICE candidates
-                    peerConnection.onicecandidate = (event) => {
-                        if (event.candidate) {
-                            console.log('🧊 ICE candidate:', event.candidate);
-                        }
-                    };
-                    
-                    // Monitor connection
-                    peerConnection.onconnectionstatechange = () => {
-                        console.log('🔗 Connection state:', peerConnection.connectionState);
-                        if (peerConnection.connectionState === 'connected') {
-                            showStreamStatus('Stream successfully connected!', 'success');
-                        } else if (peerConnection.connectionState === 'failed') {
-                            showStreamStatus('Stream connection failed', 'error');
-                        }
-                    };
+                console.error('❌ Error stopping stream:', error);
+                showStreamStatus('Failed to stop stream: ' + error.message, 'error');
                     
                 } else {
                     throw new Error('Failed to get WebRTC answer from worker');
