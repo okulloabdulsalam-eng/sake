@@ -98,8 +98,8 @@ service cloud.firestore {
       // Anyone can read stream requests (for public viewing)
       allow read: if true;
       
-      // Authenticated users can create requests
-      allow create: if isAuthenticated();
+      // Authenticated or anonymous users can create requests
+      allow create: if true;
       
       // Only admin or the request owner can update
       allow update: if isAuthenticated() && (isOwner(resource.data.hostId) || isFromCloudFunction());
