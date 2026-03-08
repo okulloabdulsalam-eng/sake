@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Deploy KIUMA Stream Worker</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .step { background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 8px; }
+        .step h3 { color: #4CAF50; margin-top: 0; }
+        .step p { margin: 10px 0; }
+        .highlight { background: #fff3cd; padding: 10px; border-radius: 4px; border-left: 4px solid #ffc107; }
+        .success { background: #d4edda; border-left: 4px solid #28a745; padding: 10px; }
+        button { background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #45a049; }
+        .code { background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Deploy KIUMA Stream Worker</h1>
+    
+    <div class="highlight">
+        <strong>⚡ Quick Deploy:</strong> Follow these 6 simple steps to enable real WebRTC streaming!
+    </div>
+
+    <div class="step">
+        <h3>Step 1: Open Cloudflare Workers</h3>
+        <p>Click this link: <a href="https://dash.cloudflare.com/workers" target="_blank">https://dash.cloudflare.com/workers</a></p>
+        <p>Login with your existing KIUMA account</p>
+    </div>
+
+    <div class="step">
+        <h3>Step 2: Create Worker</h3>
+        <p>Click the big "Create Worker" button</p>
+        <p>Enter name: <code>kiuma-stream-worker</code></p>
+        <p>Click "Deploy"</p>
+    </div>
+
+    <div class="step">
+        <h3>Step 3: Edit Code</h3>
+        <p>Click "Edit code" button</p>
+        <p>Delete all existing code</p>
+        <p>Copy the entire content from: <code>cloudflare-stream-worker.js</code></p>
+        <p>Paste it into the editor</p>
+        <p>Click "Save and Deploy"</p>
+    </div>
+
+    <div class="step">
+        <h3>Step 4: Add Route</h3>
+        <p>Click "Add route" button</p>
+        <p>Enter route: <code>kiuma-storage-kiuma4.kiuma4.workers.dev/*</code></p>
+        <p>Zone: Select your kiuma4 domain</p>
+        <p>Click "Save"</p>
+    </div>
+
+    <div class="step">
+        <h3>Step 5: Test Worker</h3>
+        <p>Click on your worker name</p>
+        <p>Click "Preview" tab</p>
+        <p>Send test request to verify it's working</p>
+    </div>
+
+    <div class="step">
+        <h3>Step 6: Test Streaming</h3>
+        <p>Go to your admin panel</p>
+        <p>Click "Start Streaming"</p>
+        <p>Watch console for WebRTC connection logs!</p>
+    </div>
+
+    <div class="success">
+        <h3>✅ Success!</h3>
+        <p>Once deployed, you'll have real WebRTC streaming using your existing KIUMA infrastructure!</p>
+        <p>The worker handles WebRTC signaling and stream management automatically.</p>
+    </div>
+
+    <div class="highlight">
+        <strong>🔧 What the Worker Does:</strong>
+        <ul>
+            <li>Handles WebRTC signaling between admin and viewers</li>
+            <li>Manages stream creation and metadata</li>
+            <li>Provides fallback to simulation mode</li>
+            <li>Works with your existing Cloudflare account</li>
+        </ul>
+    </div>
+
+    <button onclick="window.open('https://dash.cloudflare.com/workers', '_blank')">
+        🚀 Open Cloudflare Workers Now
+    </button>
+
+</body>
+</html>
