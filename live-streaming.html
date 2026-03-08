@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="KIUMA Live Streaming - Watch live Islamic lectures and events with adaptive video quality">
+    <title>Live Streaming - KIUMA</title>
+    <link rel="icon" href="logo.png" type="image/png">
+    <script>
+        // Immediately set theme before CSS renders to prevent dark-mode flash
+        (function() {
+            var t;
+            try { t = localStorage.getItem('themePreference'); } catch(e) {}
+            if (t === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else if (t === 'system' || !t) {
+                document.documentElement.setAttribute('data-theme', 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="styles.min.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="fonts/fontawesome.min.css">
+    <!-- HLS.js for adaptive streaming -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        .live-streaming-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .stream-hero {
+            background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 50%, #1B5E20 100%);
+            color: white;
+            padding: 30px 20px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .stream-hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #D4AF37;
+        }
+        
+        .stream-hero p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #ff4444;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            animation: pulse 2s infinite;
+            margin: 10px 0;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .video-container {
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        #videoPlayer {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .video-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .video-container:hover .video-controls {
+            opacity: 1;
+        }
+        
+        .control-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .control-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.1);
+        }
+        
+        .quality-selector {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .quality-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .quality-btn.active {
+            background: var(--primary-green);
+        }
+        
+        .quality-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .network-status {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .network-status.good { background: rgba(76,175,80,0.7); }
+        .network-status.medium { background: rgba(255,152,0,0.7); }
+        .network-status.poor { background: rgba(244,67,54,0.7); }
+        
+        .stream-info {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+        }
+        
+        .stream-info h2 {
+            color: var(--primary-green);
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+        
+        .stream-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .detail-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary-green);
+        }
+        
+        .detail-card h3 {
+            color: var(--dark-gray);
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+        
+        .detail-card p {
+            color: var(--text-gray);
+            font-size: 0.9rem;
+        }
+        
+        .upcoming-streams {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+        }
+        
+        .upcoming-streams h2 {
+            color: var(--primary-green);
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        
+        .stream-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary-green);
+            transition: transform 0.3s ease;
+        }
+        
+        .stream-card:hover {
+            transform: translateX(5px);
+        }
+        
+        .stream-card h3 {
+            color: var(--dark-gray);
+            margin-bottom: 10px;
+        }
+        
+        .stream-card .stream-time {
+            color: var(--primary-green);
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .stream-card .stream-description {
+            color: var(--text-gray);
+            font-size: 0.9rem;
+        }
+        
+        .loading-spinner {
+            text-align: center;
+            padding: 40px;
+            color: var(--primary-green);
+        }
+        
+        .loading-spinner i {
+            font-size: 48px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        @media (max-width: 768px) {
+            .stream-hero h1 {
+                font-size: 2rem;
+            }
+            
+            .video-controls {
+                padding: 15px;
+                gap: 10px;
+            }
+            
+            .quality-selector {
+                display: none;
+            }
+            
+            .stream-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <picture>
+                    <source srcset="logo.webp" type="image/webp">
+                    <img src="logo.png" alt="KIUMA" style="height: 40px;">
+                </picture>
+                <span>KIUMA</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="index.html"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="live-streaming.html" class="active"><i class="fas fa-broadcast-tower"></i> Live</a></li>
+                <li><a href="media.html"><i class="fas fa-photo-video"></i> Media</a></li>
+                <li><a href="library.html"><i class="fas fa-book"></i> Library</a></li>
+                <li><a href="about.html"><i class="fas fa-info-circle"></i> About</a></li>
+            </ul>
+            <div class="nav-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </nav>
+
+    <div class="live-streaming-container">
+        <!-- Hero Section -->
+        <div class="stream-hero">
+            <h1><i class="fas fa-broadcast-tower"></i> Live Streaming</h1>
+            <p>Watch live Islamic lectures, events, and programs with adaptive video quality</p>
+            <div class="live-badge">
+                <i class="fas fa-circle"></i>
+                <span>LIVE NOW</span>
+            </div>
+        </div>
+
+        <!-- Video Player -->
+        <div class="video-container">
+            <video id="videoPlayer" controls></video>
+            
+            <div class="video-controls">
+                <button class="control-btn" id="playPauseBtn">
+                    <i class="fas fa-play"></i>
+                </button>
+                <button class="control-btn" id="muteBtn">
+                    <i class="fas fa-volume-up"></i>
+                </button>
+                <button class="control-btn" id="fullscreenBtn">
+                    <i class="fas fa-expand"></i>
+                </button>
+                <div class="quality-selector">
+                    <span style="color: white; font-size: 12px;">Quality:</span>
+                    <button class="quality-btn" data-quality="auto">Auto</button>
+                    <button class="quality-btn" data-quality="1080">1080p</button>
+                    <button class="quality-btn" data-quality="720">720p</button>
+                    <button class="quality-btn" data-quality="480">480p</button>
+                    <button class="quality-btn" data-quality="360">360p</button>
+                </div>
+            </div>
+            
+            <div class="network-status" id="networkStatus">
+                <i class="fas fa-wifi"></i>
+                <span id="networkSpeed">Checking...</span>
+            </div>
+        </div>
+
+        <!-- Stream Information -->
+        <div class="stream-info">
+            <h2><i class="fas fa-info-circle"></i> Current Stream</h2>
+            <div id="currentStreamInfo">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading stream information...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Streams -->
+        <div class="upcoming-streams">
+            <h2><i class="fas fa-calendar"></i> Upcoming Live Streams</h2>
+            <div id="upcomingStreams">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading upcoming streams...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Live streaming functionality with adaptive quality
+        class AdaptiveLiveStream {
+            constructor() {
+                this.video = document.getElementById('videoPlayer');
+                this.hls = null;
+                this.currentQuality = 'auto';
+                this.networkSpeed = 0;
+                this.streamSources = {
+                    auto: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.m3u8',
+                    1080: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.m3u8',
+                    720: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.m3u8',
+                    480: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.m3u8',
+                    360: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.m3u8'
+                };
+                
+                this.init();
+            }
+
+            init() {
+                this.setupVideoPlayer();
+                this.setupControls();
+                this.setupNetworkMonitoring();
+                this.loadStream();
+                this.loadStreamInfo();
+                this.loadUpcomingStreams();
+            }
+
+            setupVideoPlayer() {
+                // Check if HLS.js is supported
+                if (Hls.isSupported()) {
+                    this.hls = new Hls({
+                        enableWorker: true,
+                        lowLatencyMode: true,
+                        backBufferLength: 90,
+                        maxBufferLength: 30,
+                        maxMaxBufferLength: 600,
+                        maxBufferSize: 60 * 1000 * 1000,
+                        maxBufferHole: 0.5
+                    });
+
+                    this.hls.loadSource(this.streamSources.auto);
+                    this.hls.attachMedia(this.video);
+
+                    // Handle quality changes
+                    this.hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+                        this.updateQualityButtons(data.levels);
+                    });
+
+                    this.hls.on(Hls.Events.ERROR, (event, data) => {
+                        if (data.fatal) {
+                            switch(data.type) {
+                                case Hls.ErrorTypes.NETWORK_ERROR:
+                                    console.error('Network error, trying to recover...');
+                                    this.hls.startLoad();
+                                    break;
+                                case Hls.ErrorTypes.MEDIA_ERROR:
+                                    console.error('Media error, trying to recover...');
+                                    this.hls.recoverMediaError();
+                                    break;
+                                default:
+                                    console.error('Fatal error:', data);
+                                    this.showError('Stream loading failed. Please try again.');
+                                    break;
+                            }
+                        }
+                    });
+
+                } else if (this.video.canPlayType('application/vnd.apple.mpegurl')) {
+                    // Native HLS support (Safari)
+                    this.video.src = this.streamSources.auto;
+                } else {
+                    this.showError('Your browser does not support live streaming.');
+                }
+            }
+
+            setupControls() {
+                const playPauseBtn = document.getElementById('playPauseBtn');
+                const muteBtn = document.getElementById('muteBtn');
+                const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+                // Play/Pause
+                playPauseBtn.addEventListener('click', () => {
+                    if (this.video.paused) {
+                        this.video.play();
+                        playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    } else {
+                        this.video.pause();
+                        playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    }
+                });
+
+                // Mute/Unmute
+                muteBtn.addEventListener('click', () => {
+                    this.video.muted = !this.video.muted;
+                    muteBtn.innerHTML = this.video.muted ? 
+                        '<i class="fas fa-volume-mute"></i>' : 
+                        '<i class="fas fa-volume-up"></i>';
+                });
+
+                // Fullscreen
+                fullscreenBtn.addEventListener('click', () => {
+                    if (this.video.requestFullscreen) {
+                        this.video.requestFullscreen();
+                    } else if (this.video.webkitRequestFullscreen) {
+                        this.video.webkitRequestFullscreen();
+                    } else if (this.video.msRequestFullscreen) {
+                        this.video.msRequestFullscreen();
+                    }
+                });
+
+                // Quality buttons
+                document.querySelectorAll('.quality-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const quality = btn.dataset.quality;
+                        this.setQuality(quality);
+                    });
+                });
+
+                // Update play/pause button
+                this.video.addEventListener('play', () => {
+                    playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                });
+
+                this.video.addEventListener('pause', () => {
+                    playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                });
+            }
+
+            setupNetworkMonitoring() {
+                // Monitor network speed
+                this.measureNetworkSpeed();
+                setInterval(() => this.measureNetworkSpeed(), 10000);
+
+                // Listen for network changes
+                navigator.connection?.addEventListener('change', () => {
+                    this.measureNetworkSpeed();
+                    this.adjustQualityBasedOnNetwork();
+                });
+            }
+
+            async measureNetworkSpeed() {
+                try {
+                    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+                    if (connection) {
+                        this.networkSpeed = connection.downlink || 0;
+                        this.updateNetworkStatus();
+                    } else {
+                        // Fallback: measure by downloading a small file
+                        const startTime = Date.now();
+                        const response = await fetch('https://httpbin.org/bytes/100000');
+                        const endTime = Date.now();
+                        const duration = (endTime - startTime) / 1000;
+                        const size = 100000 * 8; // bits
+                        this.networkSpeed = size / duration / 1000000; // Mbps
+                        this.updateNetworkStatus();
+                    }
+                } catch (error) {
+                    console.error('Network speed measurement failed:', error);
+                    this.updateNetworkStatus('unknown');
+                }
+            }
+
+            updateNetworkStatus(status = null) {
+                const networkStatus = document.getElementById('networkStatus');
+                const networkSpeed = document.getElementById('networkSpeed');
+                
+                const speed = status !== null ? status : this.networkSpeed;
+                
+                networkStatus.className = 'network-status';
+                
+                if (speed === 'unknown') {
+                    networkSpeed.textContent = 'Unknown';
+                } else if (speed > 5) {
+                    networkStatus.classList.add('good');
+                    networkSpeed.textContent = `${speed.toFixed(1)} Mbps`;
+                } else if (speed > 1) {
+                    networkStatus.classList.add('medium');
+                    networkSpeed.textContent = `${speed.toFixed(1)} Mbps`;
+                } else {
+                    networkStatus.classList.add('poor');
+                    networkSpeed.textContent = `${speed.toFixed(1)} Mbps`;
+                }
+            }
+
+            adjustQualityBasedOnNetwork() {
+                if (this.currentQuality !== 'auto') return;
+
+                const speed = this.networkSpeed;
+                let recommendedQuality = 'auto';
+
+                if (speed > 8) {
+                    recommendedQuality = '1080';
+                } else if (speed > 4) {
+                    recommendedQuality = '720';
+                } else if (speed > 2) {
+                    recommendedQuality = '480';
+                } else if (speed > 0.5) {
+                    recommendedQuality = '360';
+                } else {
+                    recommendedQuality = 'auto';
+                }
+
+                this.setQuality(recommendedQuality);
+            }
+
+            setQuality(quality) {
+                this.currentQuality = quality;
+                
+                // Update button states
+                document.querySelectorAll('.quality-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.dataset.quality === quality) {
+                        btn.classList.add('active');
+                    }
+                });
+
+                // Change stream source
+                if (this.hls) {
+                    if (quality === 'auto') {
+                        this.hls.currentLevel = -1; // Auto
+                    } else {
+                        const level = parseInt(quality);
+                        const levels = this.hls.levels;
+                        const targetLevel = levels.findIndex(l => l.height === level);
+                        if (targetLevel !== -1) {
+                            this.hls.currentLevel = targetLevel;
+                        }
+                    }
+                } else {
+                    this.video.src = this.streamSources[quality];
+                }
+            }
+
+            updateQualityButtons(levels) {
+                // Update quality buttons based on available levels
+                const qualities = ['auto', '1080', '720', '480', '360'];
+                qualities.forEach(quality => {
+                    const btn = document.querySelector(`[data-quality="${quality}"]`);
+                    if (btn) {
+                        if (quality === 'auto') {
+                            btn.style.display = 'inline-block';
+                        } else {
+                            const level = levels.find(l => l.height === parseInt(quality));
+                            btn.style.display = level ? 'inline-block' : 'none';
+                        }
+                    }
+                });
+            }
+
+            loadStream() {
+                // Load the default stream
+                if (this.hls) {
+                    this.hls.loadSource(this.streamSources.auto);
+                } else {
+                    this.video.src = this.streamSources.auto;
+                }
+            }
+
+            loadStreamInfo() {
+                // Simulate loading current stream information
+                setTimeout(() => {
+                    const streamInfo = document.getElementById('currentStreamInfo');
+                    streamInfo.innerHTML = `
+                        <div class="stream-details">
+                            <div class="detail-card">
+                                <h3><i class="fas fa-microphone"></i> Current Lecture</h3>
+                                <p>Friday Tafsir Session with Sheikh Abdul Rahman</p>
+                            </div>
+                            <div class="detail-card">
+                                <h3><i class="fas fa-clock"></i> Duration</h3>
+                                <p>Started 30 minutes ago</p>
+                            </div>
+                            <div class="detail-card">
+                                <h3><i class="fas fa-users"></i> Viewers</h3>
+                                <p>${Math.floor(Math.random() * 500) + 100} watching</p>
+                            </div>
+                            <div class="detail-card">
+                                <h3><i class="fas fa-globe"></i> Quality</h3>
+                                <p>Adaptive (${this.currentQuality === 'auto' ? 'Auto' : this.currentQuality + 'p'})</p>
+                            </div>
+                        </div>
+                    `;
+                }, 2000);
+            }
+
+            loadUpcomingStreams() {
+                // Simulate loading upcoming streams
+                setTimeout(() => {
+                    const upcomingStreams = document.getElementById('upcomingStreams');
+                    upcomingStreams.innerHTML = `
+                        <div class="stream-card">
+                            <h3><i class="fas fa-quran"></i> Quran Recitation Competition</h3>
+                            <div class="stream-time">Tomorrow, 2:00 PM</div>
+                            <div class="stream-description">
+                                Live coverage of the annual Quran recitation competition finals
+                            </div>
+                        </div>
+                        <div class="stream-card">
+                            <h3><i class="fas fa-graduation-cap"></i> Islamic Lecture Series</h3>
+                            <div class="stream-time">Saturday, 6:00 PM</div>
+                            <div class="stream-description">
+                                Weekly lecture on Islamic ethics and morality by visiting scholars
+                            </div>
+                        </div>
+                        <div class="stream-card">
+                            <h3><i class="fas fa-hands-helping"></i> Charity Fundraising Event</h3>
+                            <div class="stream-time">Sunday, 4:00 PM</div>
+                            <div class="stream-description">
+                                Live fundraising event for community development projects
+                            </div>
+                        </div>
+                    `;
+                }, 2500);
+            }
+
+            showError(message) {
+                const videoContainer = document.querySelector('.video-container');
+                videoContainer.innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px;"></i>
+                        <h3>Stream Error</h3>
+                        <p>${message}</p>
+                        <button onclick="location.reload()" style="background: var(--primary-green); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-top: 15px;">
+                            <i class="fas fa-redo"></i> Try Again
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize live streaming when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new AdaptiveLiveStream();
+        });
+
+        // Navigation functionality
+        function navigateTo(page) {
+            window.location.href = page;
+        }
+    </script>
+</body>
+</html>
