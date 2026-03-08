@@ -6052,6 +6052,119 @@
 
         // Auto-check for live streams
         setTimeout(checkExistingLiveStream, 2000);
+        
+        // ==============================
+        // LOGIN SYSTEM INITIALIZATION
+        // ==============================
+        
+        // Check login status on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🔐 Checking admin login status...');
+            
+            // Check if already logged in
+            const loggedIn = sessionStorage.getItem('adminLoggedIn');
+            const storedPassword = sessionStorage.getItem('adminPassword');
+            
+            if (loggedIn === 'true' && storedPassword === ADMIN_PASSWORD) {
+                console.log('✅ Admin already logged in');
+                isLoggedIn = true;
+                document.getElementById('loginOverlay').classList.add('hidden');
+                initializeAdmin();
+            } else {
+                console.log('🔒 Admin not logged in, showing login overlay');
+                isLoggedIn = false;
+                document.getElementById('loginOverlay').classList.remove('hidden');
+            }
+        });
+        
+        // Add login overlay to HTML if not exists
+        const loginOverlayHTML = `
+            <div class="login-overlay" id="loginOverlay">
+                <div class="login-box">
+                    <h2><i class="fas fa-lock"></i> Admin Login</h2>
+                    <p>Enter admin password to access admin panel</p>
+                    <div class="form-group">
+                        <input type="password" id="adminPasswordInput" placeholder="Enter password" onkeypress="if(event.key==='Enter') attemptLogin()">
+                    </div>
+                    <button onclick="attemptLogin()" class="btn btn-primary">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                    <div id="loginAlert" class="alert"></div>
+                </div>
+            </div>
+        `;
+        
+        // Add login overlay styles
+        const loginStyles = `
+            <style>
+                .login-overlay {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0,0,0,0.8);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 1000;
+                }
+                .login-overlay.hidden {
+                    display: none;
+                }
+                .login-box {
+                    background: white;
+                    padding: 40px;
+                    border-radius: 15px;
+                    width: 90%;
+                    max-width: 400px;
+                    text-align: center;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                }
+                .login-box h2 {
+                    color: var(--primary-green);
+                    margin-bottom: 10px;
+                }
+                .login-box p {
+                    color: #666;
+                    margin-bottom: 25px;
+                }
+                .login-box .form-group {
+                    margin-bottom: 20px;
+                }
+                .login-box input {
+                    width: 100%;
+                    padding: 12px;
+                    border: 2px solid #e0e0e0;
+                    border-radius: 8px;
+                    font-size: 16px;
+                }
+                .login-box input:focus {
+                    outline: none;
+                    border-color: var(--primary-green);
+                }
+                .login-box .btn {
+                    width: 100%;
+                    padding: 12px;
+                    background: var(--primary-green);
+                    color: white;
+                    border: none;
+                    border-radius: 8px;
+                    font-size: 16px;
+                    cursor: pointer;
+                    margin-bottom: 15px;
+                }
+                .login-box .btn:hover {
+                    background: #218838;
+                }
+            </style>
+        `;
+        
+        // Add login styles to head
+        document.head.insertAdjacentHTML('beforeend', loginStyles);
+        
+        // Add login overlay to body
+        document.body.insertAdjacentHTML('afterbegin', loginOverlayHTML);
     </script>
 </body>
 </html>
