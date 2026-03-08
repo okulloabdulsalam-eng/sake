@@ -958,33 +958,92 @@
             }
 
             loadUpcomingStreams() {
-                // Simulate loading upcoming streams
-                setTimeout(() => {
-                    const upcomingStreams = document.getElementById('upcomingStreams');
-                    upcomingStreams.innerHTML = `
-                        <div class="stream-card">
-                            <h3><i class="fas fa-quran"></i> Quran Recitation Competition</h3>
-                            <div class="stream-time">Tomorrow, 2:00 PM</div>
-                            <div class="stream-description">
-                                Live coverage of the annual Quran recitation competition finals
-                            </div>
+                // Load live streams from Firebase
+                this.loadLiveStreams();
+            }
+
+            async loadLiveStreams() {
+                try {
+                    if (!window.firebaseDb) {
+                        console.warn('Firebase not available for live streams');
+                        return;
+                    }
+
+                    const snapshot = await window.firebaseDb
+                        .collection('liveStreams')
+                        .where('status', '==', 'live')
+                        .limit(10)
+                        .get();
+
+                    const liveStreams = [];
+                    snapshot.forEach(doc => {
+                        liveStreams.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+
+                    this.renderLiveStreams(liveStreams);
+                } catch (error) {
+                    console.error('Error loading live streams:', error);
+                    this.renderNoLiveStreams();
+                }
+            }
+
+            renderLiveStreams(streams) {
+                const upcomingStreams = document.getElementById('upcomingStreams');
+                if (!upcomingStreams) return;
+
+                if (streams.length === 0) {
+                    this.renderNoLiveStreams();
+                    return;
+                }
+
+                const html = streams.map(stream => `
+                    <div class="stream-card" style="border-left: 4px solid #28a745;">
+                        <h3><i class="fas fa-video"></i> ${stream.title}</h3>
+                        <div class="stream-time">
+                            <span style="background:#28a745;color:white;padding:2px 8px;border-radius:12px;font-size:11px;">
+                                <i class="fas fa-circle"></i> LIVE NOW
+                            </span>
+                            Started ${new Date(stream.startedAt).toLocaleTimeString()}
                         </div>
-                        <div class="stream-card">
-                            <h3><i class="fas fa-graduation-cap"></i> Islamic Lecture Series</h3>
-                            <div class="stream-time">Saturday, 6:00 PM</div>
-                            <div class="stream-description">
-                                Weekly lecture on Islamic ethics and morality by visiting scholars
-                            </div>
+                        <div class="stream-description">${stream.description}</div>
+                        <div style="margin-top:10px;font-size:12px;color:#666;">
+                            <span><i class="fas fa-tag"></i> ${stream.category}</span>
+                            <span><i class="fas fa-eye"></i> ${stream.viewerCount || 0} watching</span>
                         </div>
-                        <div class="stream-card">
-                            <h3><i class="fas fa-hands-helping"></i> Charity Fundraising Event</h3>
-                            <div class="stream-time">Sunday, 4:00 PM</div>
-                            <div class="stream-description">
-                                Live fundraising event for community development projects
-                            </div>
-                        </div>
-                    `;
-                }, 2500);
+                    </div>
+                `).join('');
+
+                upcomingStreams.innerHTML = html;
+                
+                // Auto-load the first live stream into the video player
+                if (streams.length > 0 && streams[0].streamUrl) {
+                    this.loadLiveStream(streams[0].streamUrl);
+                }
+            }
+
+            renderNoLiveStreams() {
+                const upcomingStreams = document.getElementById('upcomingStreams');
+                if (!upcomingStreams) return;
+
+                upcomingStreams.innerHTML = `
+                    <div style="text-align:center;padding:40px;color:#666;">
+                        <i class="fas fa-video-slash" style="font-size:48px;margin-bottom:15px;"></i>
+                        <h3>No Live Streams</h3>
+                        <p>There are no live streams at the moment. Check back later!</p>
+                    </div>
+                `;
+            }
+
+            loadLiveStream(streamUrl) {
+                if (this.hls) {
+                    this.hls.loadSource(streamUrl);
+                } else {
+                    this.video.src = streamUrl;
+                }
+                this.video.play();
             }
 
             showError(message) {

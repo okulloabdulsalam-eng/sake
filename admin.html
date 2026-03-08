@@ -1183,29 +1183,54 @@
                     </div>
                 </div>
 
-                <!-- Stream Requests Panel -->
+                <!-- Live Streaming Panel -->
                 <div class="admin-panel" id="streamRequestsPanel">
-                    <h3><i class="fas fa-video"></i> Stream Requests</h3>
-                    <p style="color: #666; margin-bottom: 20px;">Review and approve live streaming requests from community members. Approved streams will appear in the live streaming section.</p>
+                    <h3><i class="fas fa-video"></i> Live Streaming</h3>
+                    <p style="color: #666; margin-bottom: 20px;">Start a live stream that will be immediately visible to all users on the live streaming page.</p>
                     
-                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:20px;">
-                        <h4 style="margin:0;"><i class="fas fa-list"></i> Pending Requests</h4>
-                        <button class="btn btn-outline" onclick="loadStreamRequests()"><i class="fas fa-sync"></i> Refresh</button>
+                    <div class="config-card">
+                        <h4><i class="fas fa-broadcast-tower"></i> Start Live Stream</h4>
+                        
+                        <div class="form-group">
+                            <label>Stream Title</label>
+                            <input type="text" id="liveStreamTitle" placeholder="Enter stream title">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="liveStreamDescription" rows="3" placeholder="Describe what you're streaming..."></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="liveStreamCategory">
+                                <option value="lecture">Islamic Lecture</option>
+                                <option value="quran">Quran Recitation</option>
+                                <option value="dhikr">Dhikr Session</option>
+                                <option value="event">Community Event</option>
+                                <option value="workshop">Workshop</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                            <button class="btn btn-primary" onclick="startLiveStream()">
+                                <i class="fas fa-play"></i> Start Streaming
+                            </button>
+                            <button class="btn btn-danger" onclick="stopLiveStream()" id="stopStreamBtn" style="display:none;">
+                                <i class="fas fa-stop"></i> Stop Streaming
+                            </button>
+                        </div>
+                        
+                        <div id="streamStatus" class="alert" style="margin-top:15px;"></div>
                     </div>
                     
-                    <div id="streamRequestsList" class="file-list" style="margin-bottom:25px;">
-                        <p style="text-align:center;color:#888;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Loading stream requests...</p>
-                    </div>
-
-                    <hr style="margin:25px 0;border:none;border-top:1px solid #eee;">
-                    
-                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:20px;">
-                        <h4 style="margin:0;"><i class="fas fa-check-circle"></i> Approved Streams</h4>
-                        <button class="btn btn-outline" onclick="loadApprovedStreams()"><i class="fas fa-sync"></i> Refresh</button>
-                    </div>
-                    
-                    <div id="approvedStreamsList" class="file-list">
-                        <p style="text-align:center;color:#888;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Loading approved streams...</p>
+                    <div id="currentLiveStream" style="display:none;">
+                        <hr style="margin:25px 0;border:none;border-top:1px solid #eee;">
+                        <h4><i class="fas fa-eye"></i> Current Live Stream</h4>
+                        <div id="liveStreamInfo" style="padding:15px;background:#f8f9fa;border-radius:8px;">
+                            <!-- Live stream info will be displayed here -->
+                        </div>
                     </div>
                 </div>
 
@@ -1777,23 +1802,54 @@
             await autoLoadGitHubToken();
             loadMediaList();
             loadLibraryList();
-            updateStats();
-            checkGitHubStatus();
-            loadR2SettingsUI();
-            initNotificationManager();
-            // Auto-check storage usage in background
-            setTimeout(() => { checkAllR2Storage(); }, 1500);
         }
 
-        function switchTab(tabName) {
-            // Update tab buttons
-            document.querySelectorAll('.admin-tab').forEach(tab => tab.classList.remove('active'));
-            event.target.closest('.admin-tab').classList.add('active');
+        function attemptLogin() {
+            const password = document.getElementById('adminPasswordInput').value;
+            const alert = document.getElementById('loginAlert');
             
-            // Update panels
-            document.querySelectorAll('.admin-panel').forEach(panel => panel.classList.remove('active'));
-            document.getElementById(tabName + 'Panel').classList.add('active');
+            if (password === ADMIN_PASSWORD) {
+                isLoggedIn = true;
+                sessionStorage.setItem('adminLoggedIn', 'true');
+                sessionStorage.setItem('adminPassword', password);
+                document.getElementById('loginOverlay').classList.add('hidden');
+                alert.className = 'alert';
+                initializeAdmin();
+            } else {
+                alert.className = 'alert error';
+                alert.textContent = 'Invalid password. Please try again.';
+            }
+        }
 
+        function logout() {
+            isLoggedIn = false;
+            sessionStorage.removeItem('adminLoggedIn');
+            sessionStorage.removeItem('adminPassword');
+            document.getElementById('loginOverlay').classList.remove('hidden');
+            document.getElementById('adminPasswordInput').value = '';
+        }
+
+        // Tab switching functionality
+        function switchTab(tabName) {
+            // Hide all panels
+            document.querySelectorAll('.admin-panel').forEach(panel => panel.classList.remove('active'));
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.admin-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected panel
+            document.getElementById(tabName + 'Panel').classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+            
+            // Load data for specific tabs
+            if (tabName === 'streamRequests') {
+                // No need to load requests for direct streaming
+            }
+            
             // Auto-load data for Firestore-dependent tabs
             if (tabName === 'prayerTimes') loadPrayerTimesAdmin();
             if (tabName === 'events') loadEventsAdmin();

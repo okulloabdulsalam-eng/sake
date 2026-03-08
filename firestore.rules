@@ -108,6 +108,15 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && (isOwner(resource.data.hostId) || isFromCloudFunction());
     }
 
+    // Live Streams collection - Direct streaming
+    match /liveStreams/{streamId} {
+      // Anyone can read live streams (for public viewing)
+      allow read: if true;
+      
+      // Admin users can create, update, delete live streams
+      allow create, update, delete: if true;
+    }
+
     // Default: Deny all other collections
     match /{document=**} {
       allow read, write: if false;
