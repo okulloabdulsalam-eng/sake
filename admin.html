@@ -5817,11 +5817,15 @@
 
                 console.log('🎥 Starting camera capture...');
                 
-                // Start camera capture
+                // Start camera capture with adaptive quality
+                const netSpeed = navigator.connection ? navigator.connection.downlink : 5;
+                const vw = netSpeed > 3 ? 1280 : netSpeed > 1 ? 640 : 320;
+                const vh = netSpeed > 3 ? 720 : netSpeed > 1 ? 480 : 240;
                 const stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { 
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 },
+                        width: { ideal: vw, max: 1280 },
+                        height: { ideal: vh, max: 720 },
+                        frameRate: { ideal: netSpeed > 2 ? 30 : 15 },
                         facingMode: 'user'
                     }, 
                     audio: true 
@@ -5889,9 +5893,11 @@
                 // Create WebRTC peer connection for admin (broadcaster)
                 const peerConnection = new RTCPeerConnection({
                     iceServers: [
-                        { urls: 'stun:stun.cloudflare.com:3478' },
                         { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' }
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+                        { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+                        { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
                     ]
                 });
                 
