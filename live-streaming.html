@@ -223,7 +223,6 @@
             margin-bottom: 12px;
             border: 1px solid rgba(76,175,80,0.12);
             transition: all 0.25s ease;
-            cursor: pointer;
         }
         .stream-card:hover {
             transform: translateY(-2px);
@@ -432,19 +431,9 @@
     <!-- Navigation -->
     <nav class="navbar">
         <div class="nav-container">
-            <div class="nav-brand">
-                <span style="font-weight:700;color:#D4AF37;font-size:1.1rem;">Live Stream</span>
-            </div>
-            <ul class="nav-menu">
-                <li><a href="index.html"><i class="fas fa-home"></i> Home</a></li>
-                <li><a href="live-streaming.html" class="active"><i class="fas fa-broadcast-tower"></i> Live</a></li>
-                <li><a href="media.html"><i class="fas fa-photo-video"></i> Media</a></li>
-                <li><a href="library.html"><i class="fas fa-book"></i> Library</a></li>
-                <li><a href="about.html"><i class="fas fa-info-circle"></i> About</a></li>
-            </ul>
-            <div class="nav-toggle">
-                <i class="fas fa-bars"></i>
-            </div>
+            <a href="index.html" style="display:flex;align-items:center;gap:8px;color:#D4AF37;text-decoration:none;font-weight:600;font-size:1rem;">
+                <i class="fas fa-arrow-left" style="font-size:18px;"></i>
+            </a>
         </div>
     </nav>
 
@@ -842,8 +831,7 @@
                 }
 
                 const html = streams.map(stream => `
-                    <div class="stream-card clickable-stream" data-stream-id="${stream.id}"
-                         onclick="streamPlayer.loadLiveStream('${stream.streamUrl}', '${stream.id}')">
+                    <div class="stream-card" data-stream-id="${stream.id}">
                         <div style="display:flex;align-items:flex-start;gap:14px;">
                             <div style="flex-shrink:0;width:56px;height:56px;background:linear-gradient(135deg,#e53935,#ff5722);border-radius:14px;display:flex;align-items:center;justify-content:center;">
                                 <i class="fas fa-broadcast-tower" style="color:white;font-size:22px;"></i>
@@ -861,7 +849,7 @@
                                 </div>
                             </div>
                         </div>
-                        <button class="watch-btn" onclick="event.stopPropagation();streamPlayer.loadLiveStream('${stream.streamUrl}', '${stream.id}')">
+                        <button class="watch-btn" onclick="streamPlayer.watchStream('${stream.id}')">
                             <i class="fas fa-play-circle"></i> Watch Now
                         </button>
                     </div>
@@ -887,63 +875,35 @@
                 `;
             }
 
+            // New simple entry point — always uses WebRTC
+            watchStream(streamId) {
+                console.log('🎥 watchStream called for:', streamId);
+                
+                // Close any existing peer connection
+                if (this._currentPC) {
+                    try { this._currentPC.close(); } catch(e) {}
+                    this._currentPC = null;
+                }
+                
+                // Clear video
+                this.video.srcObject = null;
+                
+                // Force remove ALL placeholder overlays
+                document.querySelectorAll('.video-placeholder').forEach(el => el.remove());
+                
+                // Remove any existing connection toasts
+                document.querySelectorAll('.connection-toast').forEach(el => el.remove());
+                
+                // Scroll to video player
+                document.querySelector('.video-container').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // Connect via WebRTC
+                this.handleWebRTCStream(streamId);
+            }
+
             loadLiveStream(streamUrl, streamId) {
-                console.log('🎥 loadLiveStream called with:', { streamUrl, streamId });
-                
-                // Hide placeholder when loading stream
-                this.hideVideoPlaceholder();
-                
-                // Remove active class from all stream cards
-                document.querySelectorAll('.clickable-stream').forEach(card => {
-                    card.style.background = '';
-                    card.style.transform = '';
-                });
-                
-                // Add active class to clicked stream card
-                const activeCard = document.querySelector(`[data-stream-id="${streamId}"]`);
-                if (activeCard) {
-                    activeCard.style.background = '#f8f9fa';
-                    activeCard.style.transform = 'scale(1.02)';
-                    console.log('✅ Active stream card highlighted:', streamId);
-                } else {
-                    console.warn('⚠️ Stream card not found for ID:', streamId);
-                }
-                
-                // Show stream details panel
-                this.showStreamDetails(streamId);
-                
-                // Handle different stream types
-                if (streamUrl && (streamUrl.includes('wss://') || streamUrl.includes('webrtc://'))) {
-                    // WebRTC stream - handle with fallback to HLS
-                    console.log('🌐 WebRTC stream detected, using HLS fallback');
-                    this.handleWebRTCStream(streamId);
-                } else if (streamUrl && (streamUrl.includes('.m3u8') || streamUrl.includes('mux.dev'))) {
-                    // HLS stream
-                    console.log('📡 Loading HLS stream:', streamUrl);
-                    if (this.hls) {
-                        this.hls.loadSource(streamUrl);
-                        this.hls.attachMedia(this.video);
-                    } else {
-                        this.video.src = streamUrl;
-                    }
-                    // Try to play with user interaction
-                    this.attemptPlay();
-                } else if (streamUrl && streamUrl.startsWith('http')) {
-                    // Direct HTTP video URL
-                    console.log('📡 Loading direct video:', streamUrl);
-                    if (this.hls) {
-                        this.hls.loadSource(streamUrl);
-                        this.hls.attachMedia(this.video);
-                    } else {
-                        this.video.src = streamUrl;
-                    }
-                    // Try to play with user interaction
-                    this.attemptPlay();
-                } else {
-                    // Invalid or no URL - use test stream
-                    console.log('⚠️ Invalid stream URL, using test stream. URL was:', streamUrl);
-                    this.loadTestStream();
-                }
+                // Redirect to watchStream
+                this.watchStream(streamId);
             }
 
             async showStreamDetails(streamId) {
