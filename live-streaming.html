@@ -1497,162 +1497,123 @@
             }
 
             handleWebRTCStream(streamId) {
-                console.log('🌐 Handling WebRTC/HLS stream:', streamId);
+                console.log('🌐 Connecting to admin WebRTC stream:', streamId);
+                this.showSuccess('Connecting to live stream...');
                 
-                // For WebRTC streams, we need to convert to HLS for browser compatibility
-                console.log('🔄 Converting WebRTC to HLS for browser compatibility');
-                
-                // Show loading message
-                this.showSuccess('Converting stream to HLS format...');
-                
-                // Use a working HLS stream for now (could be from your RTMP server)
-                // For demo, we'll use a test HLS stream
-                const hlsUrl = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
-                
-                console.log('📡 Loading HLS fallback stream:', hlsUrl);
-                
-                if (this.hls) {
-                    this.hls.loadSource(hlsUrl);
-                    this.hls.attachMedia(this.video);
-                } else {
-                    this.video.src = hlsUrl;
-                }
-                
-                this.attemptPlay();
-                
-                // Update message to show conversion complete
-                setTimeout(() => {
-                    this.showSuccess('Stream ready - HLS format');
-                }, 1000);
+                // Use the real WebRTC connection
+                this.connectToWebRTCStream(streamId).catch(error => {
+                    console.error('❌ WebRTC connection failed:', error);
+                    this.showError('Could not connect to live stream.');
+                });
             }
 
-            async loadRealStreamURL(streamId) {
-                try {
-                    // Get stream data from Firebase
-                    const streamDoc = await window.firebaseDb.collection('liveStreams').doc(streamId).get();
-                    const streamData = streamDoc.data();
-                    
-                    if (streamData && streamData.streamUrl) {
-                        console.log('📡 Loading real stream from:', streamData.streamUrl);
-                        
-                        // Check if it's a WebRTC stream
-                        if (streamData.streamUrl.startsWith('webrtc://')) {
-                            // Handle WebRTC peer connection as viewer
-                            console.log('🌐 Setting up WebRTC viewer connection');
-                            await this.connectToWebRTCStream(streamId, streamData);
-                        } else {
-                            // Handle as HLS stream
-                            console.log('📡 Loading HLS stream:', streamData.streamUrl);
-                            if (this.hls) {
-                                this.hls.loadSource(streamData.streamUrl);
-                                this.hls.attachMedia(this.video);
-                            } else {
-                                this.video.src = streamData.streamUrl;
-                            }
-                            this.attemptPlay();
-                        }
-                        
-                        // Show success message
-                        this.showSuccess('Connected to live stream!');
-                        
-                    } else {
-                        throw new Error('No stream URL found');
-                    }
-                    
-                } catch (error) {
-                    console.error('❌ Failed to load real stream:', error);
-                    this.showError('Live stream not available. Please try again later.');
-                    
-                    // Fallback to test stream after delay
-                    setTimeout(() => {
-                        this.loadTestStream();
-                    }, 3000);
-                }
-            }
-
-            async connectToWebRTCStream(streamId, streamData) {
+            async connectToWebRTCStream(streamId) {
                 console.log('🔗 Setting up WebRTC viewer connection to:', streamId);
                 
                 try {
+                    // Get admin's SDP offer from Firestore FIRST
+                    const streamDoc = await window.firebaseDb.collection('liveStreams').doc(streamId).get();
+                    const streamData = streamDoc.data();
+                    
+                    if (!streamData || !streamData.sdpOffer) {
+                        throw new Error('Admin stream offer not found');
+                    }
+                    
+                    console.log('📥 Got admin SDP offer from Firestore');
+                    
                     // Create WebRTC peer connection for viewer
                     const peerConnection = new RTCPeerConnection({
                         iceServers: [
                             { urls: 'stun:stun.cloudflare.com:3478' },
-                            { urls: 'stun: stun.l.google.com:19302' }
+                            { urls: 'stun:stun.l.google.com:19302' },
+                            { urls: 'stun:stun1.l.google.com:19302' }
                         ]
                     });
                     
                     console.log('🔗 Viewer WebRTC peer connection created');
                     
-                    // Handle ICE candidates from admin
-                    this.setupViewerICECandidates(peerConnection, streamId);
+                    // Handle incoming video/audio tracks from admin
+                    peerConnection.ontrack = (event) => {
+                        console.log('📹 Received track from admin:', event.track.kind);
+                        if (event.streams && event.streams[0]) {
+                            this.video.srcObject = event.streams[0];
+                            this.hideVideoPlaceholder();
+                            this.video.play().catch(e => {
+                                console.warn('Autoplay blocked, showing play button');
+                                this.showPlayButton();
+                            });
+                            this.showSuccess('Connected to live stream!');
+                        }
+                    };
                     
-                    // Create offer for viewer
-                    const offer = await peerConnection.createOffer();
-                    await peerConnection.setLocalDescription(offer);
+                    // Save viewer ICE candidates to Firestore subcollection
+                    peerConnection.onicecandidate = (event) => {
+                        if (event.candidate) {
+                            console.log('🧊 Viewer ICE candidate generated');
+                            window.firebaseDb.collection('liveStreams').doc(streamId)
+                                .collection('viewerCandidates').add(event.candidate.toJSON());
+                        }
+                    };
                     
-                    console.log('📡 Viewer WebRTC offer created');
+                    peerConnection.oniceconnectionstatechange = () => {
+                        console.log('🔗 Viewer ICE state:', peerConnection.iceConnectionState);
+                        if (peerConnection.iceConnectionState === 'connected') {
+                            this.showSuccess('Streaming live!');
+                        } else if (peerConnection.iceConnectionState === 'failed') {
+                            this.showError('Connection lost. Try refreshing.');
+                        }
+                    };
                     
-                    // Get admin's SDP offer from Firebase
-                    const adminDoc = await window.firebaseDb.collection('liveStreams').doc(streamId).get();
-                    const adminData = adminDoc.data();
+                    // Step 1: Set admin's OFFER as remote description
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription({
+                        type: 'offer',
+                        sdp: streamData.sdpOffer
+                    }));
+                    console.log('✅ Set admin offer as remote description');
                     
-                    if (adminData && adminData.sdpOffer) {
-                        // Use admin's SDP as answer
-                        const answer = {
-                            type: 'answer',
-                            sdp: adminData.sdpOffer
-                        };
-                        
-                        await peerConnection.setRemoteDescription(answer);
-                        
-                        console.log('✅ WebRTC connection established');
-                        
-                        // Monitor connection
-                        peerConnection.onconnectionstatechange = () => {
-                            console.log('🔗 WebRTC connection state:', peerConnection.connectionState);
-                            if (peerConnection.connectionState === 'connected') {
-                                this.showSuccess('Connected to admin camera!');
-                                
-                                // Add video tracks from peer connection
-                                const remoteStream = peerConnection.getRemoteStreams()[0];
-                                if (remoteStream) {
-                                    this.video.srcObject = remoteStream;
-                                    this.video.play();
+                    // Step 2: Create ANSWER
+                    const answer = await peerConnection.createAnswer();
+                    await peerConnection.setLocalDescription(answer);
+                    console.log('✅ Created and set viewer answer');
+                    
+                    // Step 3: Save answer SDP to Firestore for admin to read
+                    await window.firebaseDb.collection('liveStreams').doc(streamId).update({
+                        sdpAnswer: answer.sdp
+                    });
+                    console.log('✅ Saved viewer answer to Firestore');
+                    
+                    // Step 4: Listen for admin's ICE candidates
+                    window.firebaseDb.collection('liveStreams').doc(streamId)
+                        .collection('adminCandidates').onSnapshot((snapshot) => {
+                            snapshot.docChanges().forEach(async (change) => {
+                                if (change.type === 'added') {
+                                    try {
+                                        const candidate = new RTCIceCandidate(change.doc.data());
+                                        await peerConnection.addIceCandidate(candidate);
+                                        console.log('🧊 Added admin ICE candidate');
+                                    } catch (e) {
+                                        console.warn('⚠️ Error adding admin ICE candidate:', e);
+                                    }
                                 }
-                            } else if (peerConnection.connectionState === 'failed') {
-                                this.showError('WebRTC connection failed');
-                            }
-                        };
-                        
-                    } else {
-                        throw new Error('Admin SDP not found');
-                    }
+                            });
+                        });
+                    
+                    // Increment viewer count
+                    try {
+                        await window.firebaseDb.collection('liveStreams').doc(streamId).update({
+                            viewerCount: firebase.firestore.FieldValue.increment(1)
+                        });
+                    } catch(e) {}
+                    
+                    this.showSuccess('Connecting to stream...');
                     
                 } catch (error) {
                     console.error('❌ WebRTC viewer connection failed:', error);
-                    this.showError('Failed to connect to stream. Please try again.');
-                    
-                    // Fallback to test stream
-                    setTimeout(() => {
-                        this.loadTestStream();
-                    }, 3000);
+                    this.showError('Failed to connect: ' + error.message);
                 }
             }
 
-            setupViewerICECandidates(peerConnection, streamId) {
-                // Listen for ICE candidates from Firebase
-                window.firebaseDb.collection('liveStreams').doc(streamId).onSnapshot((doc) => {
-                    const data = doc.data();
-                    
-                    if (data && data.iceCandidates && data.iceCandidates.length > 0) {
-                        data.iceCandidates.forEach(candidate => {
-                            peerConnection.addIceCandidate(candidate);
-                            console.log('🧊 Added ICE candidate from admin');
-                        });
-                    }
-                });
-            }
+            // setupViewerICECandidates is now integrated into connectToWebRTCStream above
 
             showError(message) {
                 console.log('📢 Stream error:', message);
