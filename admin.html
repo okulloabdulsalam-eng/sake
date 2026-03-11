@@ -459,7 +459,6 @@
                 </div>
 
                 <!-- Media Panel -->
-                <div class="admin-panel" id="mediaPanel">
                 <div class="admin-panel active" id="mediaPanel">
                     <h3><i class="fas fa-upload"></i> Upload Media</h3>
                     <p style="color: #666; margin-bottom: 20px;">Upload videos, audio files, and images to GitHub storage</p>
@@ -669,8 +668,8 @@
                     </div>
 
                     <div class="pl-type-toggle">
-                        <button class="pl-type-btn active" onclick="switchPlaylistType('media')"><i class="fas fa-photo-video" style="margin-right:4px;"></i> Media</button>
-                        <button class="pl-type-btn" onclick="switchPlaylistType('library')"><i class="fas fa-book" style="margin-right:4px;"></i> Reading Lists</button>
+                        <button class="pl-type-btn active" onclick="switchPlaylistType('media',this)"><i class="fas fa-photo-video" style="margin-right:4px;"></i> Media</button>
+                        <button class="pl-type-btn" onclick="switchPlaylistType('library',this)"><i class="fas fa-book" style="margin-right:4px;"></i> Reading Lists</button>
                     </div>
 
                     <div class="pl-create-form">
@@ -1297,6 +1296,8 @@
     <script src="js/app-bridge.js" defer></script>
     <script src="js/router-bridge.js" defer></script>
     <script src="script.min.js" defer></script>
+    <script src="js/admin-functions.js" defer></script>
+    <script src="js/admin-functions2.js" defer></script>
     <script src="services/githubStorageService.js" type="module"></script>
     <script>
         const ADMIN_PASSWORD = 'kiuma2025'; // Should match server config
@@ -1929,7 +1930,7 @@
         });
 
         // Tab switching functionality
-        function switchTab(tabName) {
+        function switchTab(tabName, btnEl) {
             // Hide all panels
             document.querySelectorAll('.admin-panel').forEach(panel => panel.classList.remove('active'));
             
@@ -1939,10 +1940,12 @@
             });
             
             // Show selected panel
-            document.getElementById(tabName + 'Panel').classList.add('active');
+            const panel = document.getElementById(tabName + 'Panel');
+            if (panel) panel.classList.add('active');
             
-            // Add active class to clicked tab
-            event.target.classList.add('active');
+            // Add active class to clicked tab (use passed element or event.target fallback)
+            const tab = btnEl ? (btnEl.closest ? btnEl.closest('.admin-tab') || btnEl : btnEl) : (event && event.target ? event.target.closest('.admin-tab') : null);
+            if (tab) tab.classList.add('active');
             
             // Load data for specific tabs
             if (tabName === 'streamRequests') {
@@ -2038,10 +2041,11 @@
             } catch(e) {}
         }
 
-        function switchPlaylistType(type) {
+        function switchPlaylistType(type, btnEl) {
             currentPlType = type;
             document.querySelectorAll('.pl-type-btn').forEach(b => b.classList.remove('active'));
-            event.target.closest('.pl-type-btn').classList.add('active');
+            const target = btnEl ? (btnEl.closest ? btnEl.closest('.pl-type-btn') || btnEl : btnEl) : (event && event.target ? event.target.closest('.pl-type-btn') : null);
+            if (target) target.classList.add('active');
             const label = document.getElementById('plCreateLabel');
             if (label) label.textContent = type === 'media' ? 'Playlist' : 'Reading List';
             renderPlaylistsAdmin();
