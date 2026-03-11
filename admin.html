@@ -5810,7 +5810,7 @@
                 document.getElementById('cameraPreviewSection').style.display = 'block';
                 
                 // Start stream timer
-                this.startStreamTimer();
+                startStreamTimer();
                 
                 console.log('🎨 Camera preview setup complete');
 
@@ -5841,7 +5841,7 @@
                 updateLiveStreamUI();
                 
                 // Setup Cloudflare Stream
-                await this.setupCloudflareStream(stream, docRef.id);
+                await setupCloudflareStream(stream, docRef.id);
                 
                 // Clear form
                 document.getElementById('liveStreamTitle').value = '';
@@ -5900,7 +5900,7 @@
                 showStreamStatus('WebRTC streaming ready - viewers can now connect!', 'success');
                 
                 // Start ICE candidate handling
-                this.handleICECandidates(peerConnection);
+                handleICECandidates(peerConnection);
                 
             } catch (error) {
                 console.error('❌ WebRTC setup failed:', error);
@@ -5920,7 +5920,7 @@
             }
         }
 
-        handleICECandidates(peerConnection) {
+        function handleICECandidates(peerConnection) {
             // Handle ICE candidates for WebRTC
             peerConnection.onicecandidate = (event) => {
                 if (event.candidate) {
@@ -5969,7 +5969,7 @@
                 document.getElementById('cameraPreviewSection').style.display = 'none';
                 
                 // Stop stream timer
-                this.stopStreamTimer();
+                stopStreamTimer();
 
                 // Update stream status in Firebase
                 await window.firebaseDb.collection('liveStreams').doc(currentLiveStream.id).update({
@@ -5988,20 +5988,6 @@
             } catch (error) {
                 console.error('❌ Error stopping stream:', error);
                 showStreamStatus('Failed to stop stream: ' + error.message, 'error');
-                    
-                } else {
-                    throw new Error('Failed to get WebRTC answer from worker');
-                }
-                
-            } catch (error) {
-                console.error('❌ WebRTC publishing failed:', error);
-                
-                // Fallback to simulation mode
-                console.log('🔄 Using simulation mode for WebRTC...');
-                setTimeout(() => {
-                    console.log('✅ Simulation mode active - camera preview working');
-                    showStreamStatus('Camera preview active - simulation mode', 'success');
-                }, 1000);
             }
         }
 
