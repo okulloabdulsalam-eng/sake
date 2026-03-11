@@ -1133,10 +1133,64 @@
             handleWebRTCStream(streamId) {
                 console.log('🌐 Connecting to live stream:', streamId);
                 this.showSuccess('Connecting to live stream...');
+                this._currentStreamId = streamId;
+                this._retryCount = 0;
+                this._maxRetries = 5;
                 this.connectToWebRTCStream(streamId).catch(error => {
                     console.error('❌ Stream connection failed:', error);
                     this.showError('Could not connect: ' + error.message);
+                    this._scheduleReconnect(streamId);
                 });
+                
+                // Listen for SDP offer changes (admin camera switch / re-signal)
+                this._setupOfferListener(streamId);
+            }
+            
+            _setupOfferListener(streamId) {
+                // Stop previous listener
+                if (this._offerUnsubscribe) {
+                    this._offerUnsubscribe();
+                }
+                
+                let lastOffer = null;
+                this._offerUnsubscribe = window.firebaseDb.collection('liveStreams').doc(streamId)
+                    .onSnapshot((doc) => {
+                        const data = doc.data();
+                        if (!data) return;
+                        
+                        // If stream ended, stop listening
+                        if (data.status === 'ended') {
+                            this.showError('Stream has ended.');
+                            if (this._offerUnsubscribe) this._offerUnsubscribe();
+                            return;
+                        }
+                        
+                        // If SDP offer changed (admin re-signaled), auto-reconnect
+                        if (data.sdpOffer && lastOffer && data.sdpOffer !== lastOffer) {
+                            console.log('📡 Admin re-signaled — auto-reconnecting...');
+                            this._retryCount = 0;
+                            this.watchStream(streamId);
+                        }
+                        lastOffer = data.sdpOffer;
+                    });
+            }
+            
+            _scheduleReconnect(streamId) {
+                if (this._retryCount >= this._maxRetries) {
+                    this.showError('Connection failed after multiple attempts. Tap Watch again.');
+                    return;
+                }
+                this._retryCount++;
+                console.log(`🔄 Auto-reconnect attempt ${this._retryCount}/${this._maxRetries} in 3s...`);
+                this.showSuccess(`Reconnecting... (${this._retryCount}/${this._maxRetries})`);
+                
+                clearTimeout(this._reconnectTimer);
+                this._reconnectTimer = setTimeout(() => {
+                    this.connectToWebRTCStream(streamId).catch(error => {
+                        console.error('❌ Reconnect failed:', error);
+                        this._scheduleReconnect(streamId);
+                    });
+                }, 3000);
             }
 
             async connectToWebRTCStream(streamId) {
@@ -1148,7 +1202,16 @@
                     throw new Error('Stream not found or not ready');
                 }
                 
+                if (streamData.status === 'ended') {
+                    throw new Error('Stream has ended');
+                }
+                
                 console.log('📥 Got admin SDP offer from Firestore');
+                
+                // Close old connection
+                if (this._currentPC) {
+                    try { this._currentPC.close(); } catch(e) {}
+                }
                 
                 // 2. Create peer connection with same STUN servers
                 const pc = new RTCPeerConnection({
@@ -1160,6 +1223,7 @@
                         { urls: 'stun:stun4.l.google.com:19302' }
                     ]
                 });
+                this._currentPC = pc;
                 
                 // Handle incoming video/audio tracks
                 pc.ontrack = (event) => {
@@ -1175,15 +1239,25 @@
                         s.addTrack(event.track);
                     }
                     this.video.play().catch(() => {});
+                    this._retryCount = 0; // Reset retries on success
                     this.showSuccess('🔴 Watching live stream!');
                 };
                 
                 pc.oniceconnectionstatechange = () => {
                     console.log('🔗 Viewer ICE state:', pc.iceConnectionState);
                     if (pc.iceConnectionState === 'connected') {
+                        this._retryCount = 0;
                         this.showSuccess('🔴 Connected — streaming live!');
+                    } else if (pc.iceConnectionState === 'disconnected') {
+                        this.showSuccess('Reconnecting...');
+                        // Wait briefly — disconnected often recovers
+                        setTimeout(() => {
+                            if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
+                                this._scheduleReconnect(streamId);
+                            }
+                        }, 3000);
                     } else if (pc.iceConnectionState === 'failed') {
-                        this.showError('Connection lost. Try refreshing.');
+                        this._scheduleReconnect(streamId);
                     }
                 };
                 
@@ -1226,12 +1300,14 @@
                 });
                 console.log('✅ Full answer saved to Firestore');
                 
-                // Increment viewer count
-                try {
-                    await window.firebaseDb.collection('liveStreams').doc(streamId).update({
-                        viewerCount: firebase.firestore.FieldValue.increment(1)
-                    });
-                } catch(e) {}
+                // Increment viewer count (only on first connect)
+                if (this._retryCount === 0) {
+                    try {
+                        await window.firebaseDb.collection('liveStreams').doc(streamId).update({
+                            viewerCount: firebase.firestore.FieldValue.increment(1)
+                        });
+                    } catch(e) {}
+                }
                 
                 this.showSuccess('Connecting to stream...');
             }

@@ -6099,7 +6099,7 @@
             if (!currentLiveStream || !currentLiveStream.cameraStream) return;
             
             try {
-                // Stop current stream
+                // Stop current camera tracks
                 currentLiveStream.cameraStream.getTracks().forEach(track => track.stop());
                 
                 // Switch facing mode
@@ -6111,14 +6111,46 @@
                     audio: true
                 });
                 
-                // Update video element
+                // Update video preview
                 const previewVideo = document.getElementById('cameraPreview');
                 previewVideo.srcObject = newStream;
-                
-                // Update current stream
                 currentLiveStream.cameraStream = newStream;
                 
-                console.log('🔄 Camera switched to:', currentFacingMode);
+                // Replace tracks in WebRTC peer connection
+                const pc = currentLiveStream.peerConnection;
+                if (pc) {
+                    const senders = pc.getSenders();
+                    for (const sender of senders) {
+                        const newTrack = newStream.getTracks().find(t => t.kind === sender.track?.kind);
+                        if (newTrack) {
+                            await sender.replaceTrack(newTrack);
+                            console.log('🔄 Replaced', sender.track?.kind, 'track in peer connection');
+                        }
+                    }
+                    
+                    // Re-negotiate SDP offer so viewers can reconnect
+                    const offer = await pc.createOffer();
+                    await pc.setLocalDescription(offer);
+                    
+                    // Wait for ICE gathering
+                    const fullOffer = await new Promise((resolve) => {
+                        const timeout = setTimeout(() => resolve(pc.localDescription), 5000);
+                        if (pc.iceGatheringState === 'complete') { clearTimeout(timeout); resolve(pc.localDescription); return; }
+                        pc.onicegatheringstatechange = () => {
+                            if (pc.iceGatheringState === 'complete') { clearTimeout(timeout); resolve(pc.localDescription); }
+                        };
+                    });
+                    
+                    // Update Firestore with new offer and clear old answer
+                    await window.firebaseDb.collection('liveStreams').doc(currentLiveStream.id).update({
+                        sdpOffer: fullOffer.sdp,
+                        sdpAnswer: firebase.firestore.FieldValue.delete(),
+                        lastUpdated: new Date().toISOString()
+                    });
+                    
+                    console.log('✅ Camera switched, SDP re-negotiated');
+                }
+                
                 showStreamStatus('Camera switched successfully', 'success');
                 
             } catch (error) {
