@@ -6095,19 +6095,36 @@
             }
         }
 
+        let videoDevices = [];
+        let currentDeviceIndex = 0;
+
         async function switchCamera() {
             if (!currentLiveStream || !currentLiveStream.cameraStream) return;
             
             try {
+                // Enumerate all video input devices
+                if (videoDevices.length === 0) {
+                    const devices = await navigator.mediaDevices.enumerateDevices();
+                    videoDevices = devices.filter(d => d.kind === 'videoinput');
+                    console.log('📹 Found', videoDevices.length, 'cameras:', videoDevices.map(d => d.label));
+                }
+                
+                if (videoDevices.length < 2) {
+                    showStreamStatus('Only one camera available', 'error');
+                    return;
+                }
+                
                 // Stop current camera tracks
                 currentLiveStream.cameraStream.getTracks().forEach(track => track.stop());
                 
-                // Switch facing mode
-                currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+                // Cycle to next camera
+                currentDeviceIndex = (currentDeviceIndex + 1) % videoDevices.length;
+                const nextDevice = videoDevices[currentDeviceIndex];
+                console.log('🔄 Switching to camera:', nextDevice.label || ('Camera ' + (currentDeviceIndex + 1)));
                 
-                // Get new stream with different camera
+                // Get new stream using exact deviceId
                 const newStream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: currentFacingMode },
+                    video: { deviceId: { exact: nextDevice.deviceId } },
                     audio: true
                 });
                 
