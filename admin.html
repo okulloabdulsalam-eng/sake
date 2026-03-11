@@ -5886,108 +5886,107 @@
             }
         }
 
-        // Stream relay worker URL — update this after deploying the worker
-        const STREAM_RELAY_URL = localStorage.getItem('kiuma_streamRelayUrl') || 'https://kiuma-stream-relay.kiuma4.workers.dev';
-
         async function setupCloudflareStream(mediaStream, streamId) {
-            console.log('🌐 Setting up Cloudflare Calls streaming for:', streamId);
-            showStreamStatus('Connecting to Cloudflare...', 'success');
+            console.log('🌐 Setting up WebRTC streaming for:', streamId);
+            showStreamStatus('Setting up stream...', 'success');
             
             try {
-                // 1. Create a Cloudflare Calls session via the relay worker
-                const sessionRes = await fetch(STREAM_RELAY_URL + '/session/new', { method: 'POST' });
-                if (!sessionRes.ok) throw new Error('Failed to create stream session (Worker returned ' + sessionRes.status + ')');
-                const sessionData = await sessionRes.json();
-                const callsSessionId = sessionData.sessionId;
-                console.log('✅ Cloudflare Calls session created:', callsSessionId);
-                
-                // 2. Create peer connection (Cloudflare provides its own ICE)
+                // Create peer connection with multiple STUN servers
                 const pc = new RTCPeerConnection({
-                    iceServers: [{ urls: 'stun:stun.cloudflare.com:3478' }],
-                    bundlePolicy: 'max-bundle'
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun2.l.google.com:19302' },
+                        { urls: 'stun:stun3.l.google.com:19302' },
+                        { urls: 'stun:stun4.l.google.com:19302' }
+                    ]
                 });
                 
-                // 3. Add camera tracks
-                const trackNames = [];
-                mediaStream.getTracks().forEach((track, i) => {
+                // Add camera tracks
+                mediaStream.getTracks().forEach(track => {
                     pc.addTrack(track, mediaStream);
-                    const trackName = track.kind + '-' + streamId;
-                    trackNames.push({ location: 'local', trackName, mid: String(i) });
-                    console.log('📹 Added track:', track.kind, 'as', trackName);
+                    console.log('📹 Added track:', track.kind);
                 });
                 
-                // 4. Create offer and wait for ICE gathering
-                const offer = await pc.createOffer();
-                await pc.setLocalDescription(offer);
-                
-                // Wait for ICE gathering (with timeout)
-                await new Promise((resolve, reject) => {
-                    const timer = setTimeout(() => resolve(), 3000);
-                    if (pc.iceGatheringState === 'complete') { clearTimeout(timer); resolve(); return; }
-                    pc.onicegatheringstatechange = () => {
-                        if (pc.iceGatheringState === 'complete') { clearTimeout(timer); resolve(); }
-                    };
-                });
-                
-                console.log('📡 SDP offer ready, sending to Cloudflare...');
-                
-                // 5. Push tracks to Cloudflare Calls
-                const pushRes = await fetch(STREAM_RELAY_URL + '/session/' + callsSessionId + '/tracks/new', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        sessionDescription: {
-                            type: 'offer',
-                            sdp: pc.localDescription.sdp
-                        },
-                        tracks: trackNames
-                    })
-                });
-                
-                if (!pushRes.ok) throw new Error('Failed to push tracks to Cloudflare');
-                const pushData = await pushRes.json();
-                
-                // 6. Set Cloudflare's answer
-                if (pushData.sessionDescription) {
-                    await pc.setRemoteDescription(new RTCSessionDescription(pushData.sessionDescription));
-                    console.log('✅ Cloudflare answer set — streaming live!');
-                } else if (pushData.errorDescription) {
-                    throw new Error(pushData.errorDescription);
-                }
-                
-                // 7. Monitor connection
-                pc.onconnectionstatechange = () => {
-                    console.log('🔗 Connection state:', pc.connectionState);
-                    if (pc.connectionState === 'connected') {
-                        showStreamStatus('🔴 Streaming live via Cloudflare!', 'success');
-                    } else if (pc.connectionState === 'failed') {
-                        showStreamStatus('Connection to Cloudflare lost.', 'error');
+                // Monitor connection state
+                pc.oniceconnectionstatechange = () => {
+                    console.log('🔗 ICE state:', pc.iceConnectionState);
+                    if (pc.iceConnectionState === 'connected') {
+                        showStreamStatus('🔴 Viewer connected! Streaming live.', 'success');
+                    } else if (pc.iceConnectionState === 'failed') {
+                        showStreamStatus('Connection failed. Restarting ICE...', 'error');
+                        pc.restartIce();
                     }
                 };
                 
-                // 8. Save session info to Firestore so viewers can connect
-                await window.firebaseDb.collection('liveStreams').doc(streamId).update({
-                    streamType: 'cloudflare-calls',
-                    callsSessionId: callsSessionId,
-                    streamRelayUrl: STREAM_RELAY_URL,
-                    trackNames: trackNames.map(t => t.trackName),
-                    webrtcConnected: true,
-                    streamUrl: 'cf://' + callsSessionId
+                // Create offer
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                
+                // CRITICAL: Wait for ALL ICE candidates to be gathered
+                // This embeds candidates directly in the SDP so no trickle-ICE timing issues
+                const fullOffer = await new Promise((resolve) => {
+                    const timeout = setTimeout(() => {
+                        console.log('⏱️ ICE gathering timeout, using current SDP');
+                        resolve(pc.localDescription);
+                    }, 5000);
+                    
+                    if (pc.iceGatheringState === 'complete') {
+                        clearTimeout(timeout);
+                        resolve(pc.localDescription);
+                        return;
+                    }
+                    
+                    pc.onicegatheringstatechange = () => {
+                        if (pc.iceGatheringState === 'complete') {
+                            clearTimeout(timeout);
+                            console.log('✅ ICE gathering complete');
+                            resolve(pc.localDescription);
+                        }
+                    };
                 });
+                
+                console.log('📡 Full SDP offer with ICE candidates ready');
+                
+                // Save the COMPLETE offer (with all ICE candidates embedded) to Firestore
+                await window.firebaseDb.collection('liveStreams').doc(streamId).update({
+                    sdpOffer: fullOffer.sdp,
+                    streamType: 'webrtc',
+                    webrtcConnected: true,
+                    streamUrl: 'webrtc://' + streamId
+                });
+                
+                console.log('✅ Full SDP offer saved to Firestore');
+                showStreamStatus('🔴 Live! Waiting for viewers...', 'success');
                 
                 // Save peer connection
                 currentLiveStream.peerConnection = pc;
-                currentLiveStream.callsSessionId = callsSessionId;
                 
-                showStreamStatus('🔴 Live via Cloudflare — viewers can connect!', 'success');
+                // Listen for viewer's answer
+                window.firebaseDb.collection('liveStreams').doc(streamId)
+                    .onSnapshot(async (doc) => {
+                        const data = doc.data();
+                        if (data && data.sdpAnswer && pc.signalingState === 'have-local-offer') {
+                            try {
+                                console.log('📥 Got viewer answer, setting remote description');
+                                await pc.setRemoteDescription(new RTCSessionDescription({
+                                    type: 'answer',
+                                    sdp: data.sdpAnswer
+                                }));
+                                console.log('✅ Remote description set — connection establishing');
+                            } catch (e) {
+                                console.warn('⚠️ Error setting answer:', e);
+                            }
+                        }
+                    });
                 
             } catch (error) {
-                console.error('❌ Cloudflare Calls setup failed:', error);
-                showStreamStatus('Streaming error: ' + error.message, 'error');
+                console.error('❌ Stream setup failed:', error);
+                showStreamStatus('Stream error: ' + error.message, 'error');
             }
         }
 
-        // handleICECandidates is now handled by Cloudflare Calls
+        // ICE candidates are embedded in the SDP (no trickle ICE)
 
         async function stopLiveStream() {
             console.log('🛑 stopLiveStream() called');

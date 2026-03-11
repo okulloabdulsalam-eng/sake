@@ -1270,119 +1270,102 @@
             }
 
             handleWebRTCStream(streamId) {
-                console.log('🌐 Connecting to Cloudflare stream:', streamId);
+                console.log('🌐 Connecting to live stream:', streamId);
                 this.showSuccess('Connecting to live stream...');
-                this.connectToCloudflareStream(streamId).catch(error => {
+                this.connectToWebRTCStream(streamId).catch(error => {
                     console.error('❌ Stream connection failed:', error);
                     this.showError('Could not connect: ' + error.message);
                 });
             }
 
-            async connectToCloudflareStream(streamId) {
-                // 1. Get stream info from Firestore
+            async connectToWebRTCStream(streamId) {
+                // 1. Get admin's complete SDP offer from Firestore
                 const streamDoc = await window.firebaseDb.collection('liveStreams').doc(streamId).get();
                 const streamData = streamDoc.data();
                 
-                if (!streamData || !streamData.callsSessionId) {
-                    throw new Error('Stream session not found');
+                if (!streamData || !streamData.sdpOffer) {
+                    throw new Error('Stream not found or not ready');
                 }
                 
-                const relayUrl = streamData.streamRelayUrl;
-                const adminSessionId = streamData.callsSessionId;
-                const trackNames = streamData.trackNames || [];
+                console.log('📥 Got admin SDP offer from Firestore');
                 
-                console.log('📡 Admin session:', adminSessionId, 'Tracks:', trackNames);
-                
-                // 2. Create a viewer session on Cloudflare
-                const sessionRes = await fetch(relayUrl + '/session/new', { method: 'POST' });
-                if (!sessionRes.ok) throw new Error('Failed to create viewer session');
-                const viewerSession = await sessionRes.json();
-                console.log('✅ Viewer session created:', viewerSession.sessionId);
-                
-                // 3. Create peer connection
+                // 2. Create peer connection with same STUN servers
                 const pc = new RTCPeerConnection({
-                    iceServers: [{ urls: 'stun:stun.cloudflare.com:3478' }],
-                    bundlePolicy: 'max-bundle'
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun2.l.google.com:19302' },
+                        { urls: 'stun:stun3.l.google.com:19302' },
+                        { urls: 'stun:stun4.l.google.com:19302' }
+                    ]
                 });
                 
-                // Handle incoming tracks
+                // Handle incoming video/audio tracks
                 pc.ontrack = (event) => {
                     console.log('📹 Received track:', event.track.kind);
                     if (event.streams && event.streams[0]) {
                         this.video.srcObject = event.streams[0];
                     } else {
-                        // Create stream from track if no associated stream
-                        let existingStream = this.video.srcObject;
-                        if (!existingStream || !(existingStream instanceof MediaStream)) {
-                            existingStream = new MediaStream();
-                            this.video.srcObject = existingStream;
+                        let s = this.video.srcObject;
+                        if (!s || !(s instanceof MediaStream)) {
+                            s = new MediaStream();
+                            this.video.srcObject = s;
                         }
-                        existingStream.addTrack(event.track);
+                        s.addTrack(event.track);
                     }
                     this.video.play().catch(() => {});
                     this.showSuccess('🔴 Watching live stream!');
                 };
                 
-                pc.onconnectionstatechange = () => {
-                    console.log('🔗 Viewer connection:', pc.connectionState);
-                    if (pc.connectionState === 'connected') {
+                pc.oniceconnectionstatechange = () => {
+                    console.log('🔗 Viewer ICE state:', pc.iceConnectionState);
+                    if (pc.iceConnectionState === 'connected') {
                         this.showSuccess('🔴 Connected — streaming live!');
-                    } else if (pc.connectionState === 'failed') {
+                    } else if (pc.iceConnectionState === 'failed') {
                         this.showError('Connection lost. Try refreshing.');
                     }
                 };
                 
-                // 4. Add transceivers for receiving (one per track)
-                trackNames.forEach(() => {
-                    pc.addTransceiver('video', { direction: 'recvonly' });
-                    pc.addTransceiver('audio', { direction: 'recvonly' });
-                });
+                // 3. Set admin's offer as remote description
+                await pc.setRemoteDescription(new RTCSessionDescription({
+                    type: 'offer',
+                    sdp: streamData.sdpOffer
+                }));
+                console.log('✅ Admin offer set as remote description');
                 
-                // 5. Create offer
-                const offer = await pc.createOffer();
-                await pc.setLocalDescription(offer);
+                // 4. Create answer
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
                 
-                // Wait for ICE gathering
-                await new Promise(resolve => {
-                    const timer = setTimeout(() => resolve(), 3000);
-                    if (pc.iceGatheringState === 'complete') { clearTimeout(timer); resolve(); return; }
+                // 5. Wait for ALL ICE candidates to be gathered (no trickle)
+                const fullAnswer = await new Promise((resolve) => {
+                    const timeout = setTimeout(() => {
+                        console.log('⏱️ ICE gathering timeout, using current SDP');
+                        resolve(pc.localDescription);
+                    }, 5000);
+                    
+                    if (pc.iceGatheringState === 'complete') {
+                        clearTimeout(timeout);
+                        resolve(pc.localDescription);
+                        return;
+                    }
+                    
                     pc.onicegatheringstatechange = () => {
-                        if (pc.iceGatheringState === 'complete') { clearTimeout(timer); resolve(); }
+                        if (pc.iceGatheringState === 'complete') {
+                            clearTimeout(timeout);
+                            console.log('✅ Viewer ICE gathering complete');
+                            resolve(pc.localDescription);
+                        }
                     };
                 });
                 
-                // 6. Pull tracks from Cloudflare (reference admin's session + tracks)
-                const pullTracks = trackNames.map((tn, i) => ({
-                    location: 'remote',
-                    trackName: tn,
-                    sessionId: adminSessionId,
-                    mid: String(i)
-                }));
-                
-                const pullRes = await fetch(relayUrl + '/session/' + viewerSession.sessionId + '/tracks/new', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        sessionDescription: {
-                            type: 'offer',
-                            sdp: pc.localDescription.sdp
-                        },
-                        tracks: pullTracks
-                    })
+                // 6. Save complete answer SDP to Firestore
+                await window.firebaseDb.collection('liveStreams').doc(streamId).update({
+                    sdpAnswer: fullAnswer.sdp
                 });
+                console.log('✅ Full answer saved to Firestore');
                 
-                if (!pullRes.ok) throw new Error('Failed to pull stream from Cloudflare');
-                const pullData = await pullRes.json();
-                
-                // 7. Set Cloudflare's answer
-                if (pullData.sessionDescription) {
-                    await pc.setRemoteDescription(new RTCSessionDescription(pullData.sessionDescription));
-                    console.log('✅ Viewer connected to Cloudflare stream!');
-                } else if (pullData.errorDescription) {
-                    throw new Error(pullData.errorDescription);
-                }
-                
-                // Update viewer count
+                // Increment viewer count
                 try {
                     await window.firebaseDb.collection('liveStreams').doc(streamId).update({
                         viewerCount: firebase.firestore.FieldValue.increment(1)
@@ -1390,11 +1373,6 @@
                 } catch(e) {}
                 
                 this.showSuccess('Connecting to stream...');
-            }
-
-            // Legacy connectToWebRTCStream removed — now using Cloudflare Calls
-            async connectToWebRTCStream(streamId) {
-                return this.connectToCloudflareStream(streamId);
             }
 
             showError(message) {
