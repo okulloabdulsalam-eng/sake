@@ -223,6 +223,7 @@ async function loadMediaList() {
     window._mediaFiles = files;
     renderMediaFileList(files);
     if (document.getElementById('mediaCount')) document.getElementById('mediaCount').textContent = files.length;
+    if (typeof updateAdminStats === 'function') updateAdminStats();
 }
 
 function renderMediaFileList(files) {
@@ -295,6 +296,7 @@ async function loadLibraryList() {
     window._libraryFiles = files;
     renderLibraryFileList(files);
     if (document.getElementById('libraryCount')) document.getElementById('libraryCount').textContent = files.length;
+    if (typeof updateAdminStats === 'function') updateAdminStats();
 }
 
 function renderLibraryFileList(files) {

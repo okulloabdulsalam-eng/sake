@@ -1394,23 +1394,46 @@
 
         // Update admin statistics
         function updateAdminStats() {
-            // Update media count
-            const mediaFiles = JSON.parse(localStorage.getItem('kiuma_mediaFiles') || '[]');
-            document.getElementById('mediaCount').textContent = mediaFiles.length;
+            // Update media count from loaded files
+            const mediaFiles = window._mediaFiles || [];
+            const mediaCountEl = document.getElementById('mediaCount');
+            if (mediaCountEl) mediaCountEl.textContent = mediaFiles.length;
             
-            // Update library count
-            const libraryFiles = JSON.parse(localStorage.getItem('kiuma_libraryFiles') || '[]');
-            document.getElementById('libraryCount').textContent = libraryFiles.length;
+            // Update library count from loaded files
+            const libraryFiles = window._libraryFiles || [];
+            const libraryCountEl = document.getElementById('libraryCount');
+            if (libraryCountEl) libraryCountEl.textContent = libraryFiles.length;
             
             // Update storage status
-            const storageStatus = checkStorageStatus();
-            document.getElementById('storageStatus').textContent = storageStatus;
+            checkStorageStatus().then(status => {
+                const storageEl = document.getElementById('storageStatus');
+                if (storageEl) storageEl.textContent = status;
+            });
         }
 
-        // Check storage status
-        function checkStorageStatus() {
-            // This is a placeholder - implement actual storage checking
-            return 'Good';
+        // Check storage status from R2
+        async function checkStorageStatus() {
+            try {
+                const mc = typeof getR2MultiConfig === 'function' ? getR2MultiConfig() : null;
+                if (!mc) return 'N/A';
+                let totalGB = 0;
+                const accounts = [...(mc.video || []), ...(mc.audio ? [mc.audio] : []), ...(mc.library ? [mc.library] : [])];
+                for (const acct of accounts) {
+                    if (!acct.workerUrl) continue;
+                    try {
+                        const res = await fetch(acct.workerUrl + '/storage', { cache: 'no-store' });
+                        if (res.ok) {
+                            const data = await res.json();
+                            totalGB += (data.totalBytes || 0) / (1024 * 1024 * 1024);
+                        }
+                    } catch (e) {}
+                }
+                if (totalGB > 8) return totalGB.toFixed(1) + ' GB ⚠️';
+                if (totalGB > 0) return totalGB.toFixed(1) + ' GB ✅';
+                return 'Good';
+            } catch (e) {
+                return 'Good';
+            }
         }
 
         // Load admin data
