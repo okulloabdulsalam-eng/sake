@@ -1307,7 +1307,7 @@
 
         // Login function
         function attemptLogin() {
-            const password = document.getElementById('adminPasswordInput').value;
+            const password = document.getElementById('adminPasswordInput').value.trim();
             const alert = document.getElementById('loginAlert');
             
             console.log('🔐 Attempting login with password:', password);
@@ -4075,9 +4075,9 @@
         }
 
         function changeAdminPassword() {
-            const current = document.getElementById('currentPassword').value;
-            const newPass = document.getElementById('newPassword').value;
-            const confirm = document.getElementById('confirmPassword').value;
+            const current = document.getElementById('currentPassword').value.trim();
+            const newPass = document.getElementById('newPassword').value.trim();
+            const confirm = document.getElementById('confirmPassword').value.trim();
             
             if (current !== ADMIN_PASSWORD) {
                 showStatus('passwordChangeStatus', 'Current password is incorrect', 'error');
