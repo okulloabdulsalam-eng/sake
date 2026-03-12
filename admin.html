@@ -6362,7 +6362,6 @@
         function updateLiveStreamUI() {
             console.log('🎨 Updating live stream UI');
             
-            const startBtn = document.querySelector('button[onclick="startLiveStream()"]');
             const stopBtn = document.getElementById('stopStreamBtn');
             const currentStreamDiv = document.getElementById('currentLiveStream');
             const streamInfoDiv = document.getElementById('liveStreamInfo');
@@ -6370,39 +6369,35 @@
             if (currentLiveStream) {
                 console.log('🟢 Stream is live, showing stop button');
                 
-                // Stream is live
-                startBtn.style.display = 'none';
-                stopBtn.style.display = 'inline-block';
-                currentStreamDiv.style.display = 'block';
+                if (stopBtn) stopBtn.style.display = 'inline-block';
+                if (currentStreamDiv) currentStreamDiv.style.display = 'block';
                 
-                streamInfoDiv.innerHTML = `
+                if (streamInfoDiv) streamInfoDiv.innerHTML = `
                     <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
                         <span style="background:#28a745;color:white;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">
                             <i class="fas fa-circle"></i> LIVE NOW
                         </span>
-                        <span style="font-weight:600;">${currentLiveStream.title}</span>
+                        <span style="font-weight:600;">${currentLiveStream.title || ''}</span>
                     </div>
-                    <p style="margin:5px 0;color:#666;">${currentLiveStream.description}</p>
+                    <p style="margin:5px 0;color:#666;">${currentLiveStream.description || ''}</p>
                     <div style="display:flex;gap:15px;font-size:14px;color:#888;">
-                        <span><i class="fas fa-tag"></i> ${currentLiveStream.category}</span>
-                        <span><i class="fas fa-eye"></i> ${currentLiveStream.viewerCount} viewers</span>
-                        <span><i class="fas fa-clock"></i> Started ${new Date(currentLiveStream.startedAt).toLocaleTimeString()}</span>
+                        <span><i class="fas fa-tag"></i> ${currentLiveStream.category || ''}</span>
+                        <span><i class="fas fa-eye"></i> ${currentLiveStream.viewerCount || 0} viewers</span>
+                        <span><i class="fas fa-clock"></i> Started ${currentLiveStream.startedAt ? new Date(currentLiveStream.startedAt).toLocaleTimeString() : ''}</span>
                     </div>
                 `;
             } else {
-                console.log('🔴 No live stream, showing start button');
+                console.log('🔴 No live stream');
                 
-                // No active stream
-                startBtn.style.display = 'inline-block';
-                stopBtn.style.display = 'none';
-                currentStreamDiv.style.display = 'none';
+                if (stopBtn) stopBtn.style.display = 'none';
+                if (currentStreamDiv) currentStreamDiv.style.display = 'none';
             }
         }
 
         // Check for existing live streams on page load
         async function checkExistingLiveStream() {
             console.log('🔍 Checking for existing live streams...');
-            
+            if (!window.firebaseDb) { console.warn('Firebase not ready for stream check'); return; }
             try {
                 const snapshot = await window.firebaseDb.collection('liveStreams')
                     .where('status', '==', 'live')
