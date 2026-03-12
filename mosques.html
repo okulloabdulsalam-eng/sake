@@ -182,7 +182,7 @@
             position: absolute;
             bottom: 14px;
             right: 14px;
-            z-index: 10;
+            z-index: 1000;
             width: 40px;
             height: 40px;
             border-radius: 50%;
@@ -1043,6 +1043,8 @@
             try { showMap(); } catch(e) { console.error('[Mosques] Map error:', e); }
             loadAllMosques();
             calculateQibla();
+            // Auto-zoom to user area after a short delay
+            setTimeout(function() { if (map) map.setView([userLat, userLng], 15); }, 1500);
         }
 
         async function loadAllMosques() {
