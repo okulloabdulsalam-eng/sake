@@ -1413,6 +1413,8 @@
                 }
             };
 
+            showConnecting('Waiting for stream...');
+
             // Set remote offer
             await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: sdpOffer }));
 
@@ -1437,7 +1439,18 @@
             }
             console.log('[LIVE] Answer saved to Firestore');
 
-            showConnecting('Waiting for stream...');
+            // Safety: if ICE already connected during SDP exchange, hide overlay
+            if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
+                hideConnecting();
+            }
+            // Timeout: if still stuck after 15s, hide and retry
+            setTimeout(() => {
+                if (connState.classList.contains('visible') && connText.textContent === 'Waiting for stream...') {
+                    if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
+                        hideConnecting();
+                    }
+                }
+            }, 15000);
 
             // Keep listening for ICE restart offers from broadcaster
             if (!isLegacy) {

@@ -1202,6 +1202,9 @@
                             <a href="broadcast.html" class="btn btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:8px;">
                                 <i class="fas fa-video"></i> Open Broadcast Studio
                             </a>
+                            <button class="btn btn-outline" onclick="cleanupStuckStreams()" style="display:inline-flex;align-items:center;gap:8px;">
+                                <i class="fas fa-broom"></i> Clean Stuck Streams
+                            </button>
                         </div>
                         
                         <div id="streamStatus" class="alert" style="margin-top:15px;"></div>
@@ -5728,6 +5731,31 @@
                         console.warn('⚠️ loadApprovedStreams function not found');
                     }
                 }
+                if (tabName === 'notifications' && typeof initNotificationManager === 'function') {
+                    initNotificationManager();
+                }
+                if (tabName === 'prayerTimes' && typeof loadPrayerTimesAdmin === 'function') {
+                    loadPrayerTimesAdmin();
+                }
+                if (tabName === 'events' && typeof loadEventsAdmin === 'function') {
+                    loadEventsAdmin();
+                }
+                if (tabName === 'announcement' && typeof loadAnnouncementAdmin === 'function') {
+                    loadAnnouncementAdmin();
+                }
+                if (tabName === 'liveTracker' && typeof loadTrackersAdmin === 'function') {
+                    loadTrackersAdmin();
+                }
+                if (tabName === 'payments' && typeof loadPaymentsReceiptBook === 'function') {
+                    loadPaymentsReceiptBook();
+                }
+                if (tabName === 'playlists' && typeof renderPlaylistsAdmin === 'function') {
+                    renderPlaylistsAdmin();
+                }
+                if (tabName === 'settings') {
+                    if (typeof loadR2SettingsUI === 'function') loadR2SettingsUI();
+                    if (typeof checkAllR2Storage === 'function') checkAllR2Storage();
+                }
                 
                 console.log('🎉 Tab switch completed:', tabName);
                 
@@ -6376,6 +6404,39 @@
                 }
             } catch (error) {
                 console.error('❌ Error checking live streams:', error);
+            }
+        }
+
+        // Force-end all stuck live streams
+        async function cleanupStuckStreams() {
+            if (!window.firebaseDb) { alert('Firebase not ready'); return; }
+            try {
+                const snap = await window.firebaseDb.collection('liveStreams')
+                    .where('status', '==', 'live').get();
+                if (snap.empty) { alert('No stuck streams found.'); return; }
+                const batch = window.firebaseDb.batch();
+                let count = 0;
+                for (const doc of snap.docs) {
+                    batch.update(doc.ref, {
+                        status: 'ended',
+                        endedAt: new Date().toISOString(),
+                        cameraActive: false,
+                        viewerCount: 0
+                    });
+                    // Delete viewer subcollection docs
+                    try {
+                        const viewers = await doc.ref.collection('viewers').get();
+                        viewers.forEach(v => batch.delete(v.ref));
+                    } catch(e) {}
+                    count++;
+                }
+                await batch.commit();
+                alert(`Cleaned up ${count} stuck stream(s).`);
+                currentLiveStream = null;
+                updateLiveStreamUI();
+            } catch(e) {
+                console.error('Cleanup error:', e);
+                alert('Cleanup failed: ' + e.message);
             }
         }
 

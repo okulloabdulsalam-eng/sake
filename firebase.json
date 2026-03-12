@@ -1,22 +1,22 @@
-{
+﻿{
   "firestore": {
     "rules": "firestore.rules"
   },
   "hosting": {
-    "public": ".",
+    "public": "firebase-public",
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**",
-      "functions/**",
-      "**/*.bat",
-      "**/*.cmd",
-      "**/*.sh",
-      "**/*.ps1",
-      "**/*.exe",
-      "**/*.dll",
-      "**/*.msi",
-      "cloudflare/**"
+      "**/node_modules/**"
+    ],
+    "headers": [
+      {
+        "source": "**/*.apk",
+        "headers": [
+          { "key": "Content-Type", "value": "application/vnd.android.package-archive" },
+          { "key": "Content-Disposition", "value": "attachment" }
+        ]
+      }
     ]
   }
 }
