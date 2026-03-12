@@ -1253,11 +1253,31 @@
         }
 
         // --- Load admin-managed data from Firestore (with localStorage fallback) ---
+        // Wait for Firebase to be ready before loading
+        async function waitForFirebase(maxWait) {
+            if (window.firebaseDb) return true;
+            var start = Date.now();
+            return new Promise(function(resolve) {
+                var iv = setInterval(function() {
+                    if (window.firebaseDb) { clearInterval(iv); resolve(true); }
+                    else if (Date.now() - start > (maxWait || 8000)) { clearInterval(iv); resolve(false); }
+                }, 300);
+            });
+        }
         async function loadAdminData() {
+            // Load from localStorage instantly
             loadAdminPrayerTimes();
             loadAdminAnnouncement();
             loadAdminEvents();
             loadAdminTrackers();
+            // Then wait for Firebase and reload from Firestore
+            var ready = await waitForFirebase(8000);
+            if (ready) {
+                loadAdminPrayerTimes();
+                loadAdminAnnouncement();
+                loadAdminEvents();
+                loadAdminTrackers();
+            }
         }
 
         function applyPrayerTimesData(data) {
@@ -1272,16 +1292,23 @@
             });
         }
 
+        var _prayerTimesListenerActive = false;
         async function loadAdminPrayerTimes() {
             // Load from localStorage first (instant)
             try { var local = JSON.parse(localStorage.getItem('kiuma_prayerTimes') || 'null'); if (local) applyPrayerTimesData(local); } catch(e) {}
             if (typeof loadPrayerTimes === 'function') loadPrayerTimes();
             if (typeof updateDates === 'function') updateDates();
-            // Try Firestore in background
+            // Set up real-time Firestore listener (once)
             try {
-                if (window.firebaseDb) {
-                    var doc = await window.firebaseDb.collection('appData').doc('prayerTimes').get();
-                    if (doc.exists) { applyPrayerTimesData(doc.data()); localStorage.setItem('kiuma_prayerTimes', JSON.stringify(doc.data())); if (typeof loadPrayerTimes === 'function') loadPrayerTimes(); }
+                if (window.firebaseDb && !_prayerTimesListenerActive) {
+                    _prayerTimesListenerActive = true;
+                    window.firebaseDb.collection('appData').doc('prayerTimes').onSnapshot(function(doc) {
+                        if (doc.exists) {
+                            applyPrayerTimesData(doc.data());
+                            localStorage.setItem('kiuma_prayerTimes', JSON.stringify(doc.data()));
+                            if (typeof loadPrayerTimes === 'function') loadPrayerTimes();
+                        }
+                    }, function(err) { console.warn('Prayer times listener error:', err); });
                 }
             } catch(e) { /* silent */ }
         }
