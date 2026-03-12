@@ -115,6 +115,18 @@ service cloud.firestore {
       
       // Admin users can create, update, delete live streams
       allow create, update, delete: if true;
+
+      // Viewers subcollection — per-viewer WebRTC signaling
+      match /viewers/{viewerId} {
+        // Anyone can read viewer docs (admin needs to read answers)
+        allow read: if true;
+        
+        // Any viewer can create/update their own doc (join + write SDP answer)
+        allow create, update: if true;
+        
+        // Viewer or admin can delete (cleanup on leave or stream end)
+        allow delete: if true;
+      }
     }
 
     // Default: Deny all other collections

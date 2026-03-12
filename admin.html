@@ -5890,65 +5890,42 @@
             console.log('🌐 Setting up WebRTC streaming for:', streamId);
             showStreamStatus('Setting up stream...', 'success');
             
+            const ICE_SERVERS = [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' },
+                { urls: 'stun:stun3.l.google.com:19302' },
+                { urls: 'stun:stun4.l.google.com:19302' }
+            ];
+
+            // Track all viewer peer connections for cleanup
+            if (!currentLiveStream.viewerPCs) currentLiveStream.viewerPCs = {};
+            
             try {
-                // Create peer connection with multiple STUN servers
-                const pc = new RTCPeerConnection({
-                    iceServers: [
-                        { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' },
-                        { urls: 'stun:stun2.l.google.com:19302' },
-                        { urls: 'stun:stun3.l.google.com:19302' },
-                        { urls: 'stun:stun4.l.google.com:19302' }
-                    ]
-                });
+                // ---- Legacy single-viewer path (backward compat) ----
+                // Create one PC for legacy viewers that use the parent-doc sdpAnswer
+                const legacyPC = new RTCPeerConnection({ iceServers: ICE_SERVERS });
                 
-                // Add camera tracks
                 mediaStream.getTracks().forEach(track => {
-                    pc.addTrack(track, mediaStream);
+                    legacyPC.addTrack(track, mediaStream);
                     console.log('📹 Added track:', track.kind);
                 });
                 
-                // Monitor connection state
-                pc.oniceconnectionstatechange = () => {
-                    console.log('🔗 ICE state:', pc.iceConnectionState);
-                    if (pc.iceConnectionState === 'connected') {
+                legacyPC.oniceconnectionstatechange = () => {
+                    console.log('🔗 Legacy ICE state:', legacyPC.iceConnectionState);
+                    if (legacyPC.iceConnectionState === 'connected') {
                         showStreamStatus('🔴 Viewer connected! Streaming live.', 'success');
-                    } else if (pc.iceConnectionState === 'failed') {
-                        showStreamStatus('Connection failed. Restarting ICE...', 'error');
-                        pc.restartIce();
+                    } else if (legacyPC.iceConnectionState === 'failed') {
+                        legacyPC.restartIce();
                     }
                 };
                 
-                // Create offer
-                const offer = await pc.createOffer();
-                await pc.setLocalDescription(offer);
+                const offer = await legacyPC.createOffer();
+                await legacyPC.setLocalDescription(offer);
                 
-                // CRITICAL: Wait for ALL ICE candidates to be gathered
-                // This embeds candidates directly in the SDP so no trickle-ICE timing issues
-                const fullOffer = await new Promise((resolve) => {
-                    const timeout = setTimeout(() => {
-                        console.log('⏱️ ICE gathering timeout, using current SDP');
-                        resolve(pc.localDescription);
-                    }, 5000);
-                    
-                    if (pc.iceGatheringState === 'complete') {
-                        clearTimeout(timeout);
-                        resolve(pc.localDescription);
-                        return;
-                    }
-                    
-                    pc.onicegatheringstatechange = () => {
-                        if (pc.iceGatheringState === 'complete') {
-                            clearTimeout(timeout);
-                            console.log('✅ ICE gathering complete');
-                            resolve(pc.localDescription);
-                        }
-                    };
-                });
+                const fullOffer = await waitForICE(legacyPC);
                 
-                console.log('📡 Full SDP offer with ICE candidates ready');
-                
-                // Save the COMPLETE offer (with all ICE candidates embedded) to Firestore
+                // Save offer to parent doc (legacy viewers read this)
                 await window.firebaseDb.collection('liveStreams').doc(streamId).update({
                     sdpOffer: fullOffer.sdp,
                     streamType: 'webrtc',
@@ -5956,34 +5933,163 @@
                     streamUrl: 'webrtc://' + streamId
                 });
                 
-                console.log('✅ Full SDP offer saved to Firestore');
+                console.log('✅ Legacy SDP offer saved to Firestore');
                 showStreamStatus('🔴 Live! Waiting for viewers...', 'success');
                 
-                // Save peer connection
-                currentLiveStream.peerConnection = pc;
+                currentLiveStream.peerConnection = legacyPC;
                 
-                // Listen for viewer's answer
-                window.firebaseDb.collection('liveStreams').doc(streamId)
+                // Listen for legacy viewer answer on parent doc
+                currentLiveStream._legacyUnsub = window.firebaseDb.collection('liveStreams').doc(streamId)
                     .onSnapshot(async (doc) => {
                         const data = doc.data();
-                        if (data && data.sdpAnswer && pc.signalingState === 'have-local-offer') {
+                        if (data && data.sdpAnswer && legacyPC.signalingState === 'have-local-offer') {
                             try {
-                                console.log('📥 Got viewer answer, setting remote description');
-                                await pc.setRemoteDescription(new RTCSessionDescription({
+                                console.log('📥 Got legacy viewer answer');
+                                await legacyPC.setRemoteDescription(new RTCSessionDescription({
                                     type: 'answer',
                                     sdp: data.sdpAnswer
                                 }));
-                                console.log('✅ Remote description set — connection establishing');
+                                console.log('✅ Legacy connection establishing');
                             } catch (e) {
-                                console.warn('⚠️ Error setting answer:', e);
+                                console.warn('⚠️ Error setting legacy answer:', e);
                             }
                         }
+                    });
+
+                // ---- Multi-viewer path: listen for new viewers in subcollection ----
+                console.log('👥 Listening for viewer subcollection...');
+                currentLiveStream._viewersUnsub = window.firebaseDb.collection('liveStreams').doc(streamId)
+                    .collection('viewers')
+                    .onSnapshot((snapshot) => {
+                        snapshot.docChanges().forEach(async (change) => {
+                            if (change.type === 'added') {
+                                const viewerId = change.doc.id;
+                                const viewerData = change.doc.data();
+                                
+                                // Only handle new viewers that don't have an offer yet
+                                if (viewerData.sdpOffer || viewerData.status === 'connected') return;
+                                if (currentLiveStream.viewerPCs[viewerId]) return;
+                                
+                                console.log('👤 New viewer joined:', viewerId);
+                                await handleNewViewer(streamId, viewerId, mediaStream, ICE_SERVERS);
+                            }
+                            
+                            if (change.type === 'removed') {
+                                const viewerId = change.doc.id;
+                                console.log('👤 Viewer left:', viewerId);
+                                // Close the viewer's peer connection
+                                if (currentLiveStream.viewerPCs[viewerId]) {
+                                    try { currentLiveStream.viewerPCs[viewerId].pc.close(); } catch(e) {}
+                                    if (currentLiveStream.viewerPCs[viewerId].unsub) {
+                                        currentLiveStream.viewerPCs[viewerId].unsub();
+                                    }
+                                    delete currentLiveStream.viewerPCs[viewerId];
+                                }
+                            }
+                        });
                     });
                 
             } catch (error) {
                 console.error('❌ Stream setup failed:', error);
                 showStreamStatus('Stream error: ' + error.message, 'error');
             }
+        }
+
+        // Handle a new viewer — create per-viewer PeerConnection
+        async function handleNewViewer(streamId, viewerId, mediaStream, iceServers) {
+            try {
+                const viewerRef = window.firebaseDb.collection('liveStreams').doc(streamId)
+                    .collection('viewers').doc(viewerId);
+                
+                const pc = new RTCPeerConnection({ iceServers });
+                
+                // Add all camera tracks to this viewer's PC
+                mediaStream.getTracks().forEach(track => {
+                    pc.addTrack(track, mediaStream);
+                });
+                
+                pc.oniceconnectionstatechange = () => {
+                    const state = pc.iceConnectionState;
+                    console.log(`🔗 Viewer ${viewerId.substr(0,8)} ICE: ${state}`);
+                    if (state === 'connected') {
+                        const count = Object.keys(currentLiveStream.viewerPCs).length;
+                        showStreamStatus(`🔴 ${count} viewer(s) connected!`, 'success');
+                    } else if (state === 'failed') {
+                        pc.restartIce();
+                    } else if (state === 'closed' || state === 'disconnected') {
+                        // Viewer may have left — clean up after a delay
+                        setTimeout(() => {
+                            if (pc.iceConnectionState === 'closed' || pc.iceConnectionState === 'disconnected') {
+                                if (currentLiveStream && currentLiveStream.viewerPCs[viewerId]) {
+                                    try { pc.close(); } catch(e) {}
+                                    if (currentLiveStream.viewerPCs[viewerId].unsub) {
+                                        currentLiveStream.viewerPCs[viewerId].unsub();
+                                    }
+                                    delete currentLiveStream.viewerPCs[viewerId];
+                                }
+                            }
+                        }, 5000);
+                    }
+                };
+                
+                // Create offer for this viewer
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                const fullOffer = await waitForICE(pc);
+                
+                // Write offer to viewer's doc
+                await viewerRef.update({
+                    sdpOffer: fullOffer.sdp,
+                    status: 'offered'
+                });
+                console.log(`📡 Offer sent to viewer ${viewerId.substr(0,8)}`);
+                
+                // Listen for this viewer's answer
+                const unsub = viewerRef.onSnapshot(async (doc) => {
+                    const vd = doc.data();
+                    if (vd && vd.sdpAnswer && pc.signalingState === 'have-local-offer') {
+                        try {
+                            await pc.setRemoteDescription(new RTCSessionDescription({
+                                type: 'answer',
+                                sdp: vd.sdpAnswer
+                            }));
+                            console.log(`✅ Viewer ${viewerId.substr(0,8)} connected`);
+                        } catch(e) {
+                            console.warn(`⚠️ Error setting viewer answer:`, e);
+                        }
+                    }
+                });
+                
+                // Track this viewer's PC and listener
+                currentLiveStream.viewerPCs[viewerId] = { pc, unsub };
+                
+            } catch(error) {
+                console.error(`❌ Failed to handle viewer ${viewerId}:`, error);
+            }
+        }
+
+        // Utility: wait for ICE gathering to complete (used by both legacy and multi-viewer)
+        function waitForICE(pc) {
+            return new Promise((resolve) => {
+                const timeout = setTimeout(() => {
+                    console.log('⏱️ ICE gathering timeout, using current SDP');
+                    resolve(pc.localDescription);
+                }, 5000);
+                
+                if (pc.iceGatheringState === 'complete') {
+                    clearTimeout(timeout);
+                    resolve(pc.localDescription);
+                    return;
+                }
+                
+                pc.onicegatheringstatechange = () => {
+                    if (pc.iceGatheringState === 'complete') {
+                        clearTimeout(timeout);
+                        console.log('✅ ICE gathering complete');
+                        resolve(pc.localDescription);
+                    }
+                };
+            });
         }
 
         // ICE candidates are embedded in the SDP (no trickle ICE)
@@ -6008,17 +6114,57 @@
                     });
                 }
 
+                // Close all viewer PeerConnections
+                if (currentLiveStream.viewerPCs) {
+                    Object.keys(currentLiveStream.viewerPCs).forEach(viewerId => {
+                        try {
+                            currentLiveStream.viewerPCs[viewerId].pc.close();
+                            if (currentLiveStream.viewerPCs[viewerId].unsub) {
+                                currentLiveStream.viewerPCs[viewerId].unsub();
+                            }
+                        } catch(e) {}
+                    });
+                    currentLiveStream.viewerPCs = {};
+                    console.log('✅ All viewer connections closed');
+                }
+
+                // Close legacy PC
+                if (currentLiveStream.peerConnection) {
+                    try { currentLiveStream.peerConnection.close(); } catch(e) {}
+                }
+
+                // Unsubscribe Firestore listeners
+                if (currentLiveStream._legacyUnsub) {
+                    try { currentLiveStream._legacyUnsub(); } catch(e) {}
+                }
+                if (currentLiveStream._viewersUnsub) {
+                    try { currentLiveStream._viewersUnsub(); } catch(e) {}
+                }
+
                 // Hide camera preview section
                 document.getElementById('cameraPreviewSection').style.display = 'none';
                 
                 // Stop stream timer
                 stopStreamTimer();
 
+                // Delete all viewer subcollection docs (best-effort)
+                try {
+                    const viewersSnap = await window.firebaseDb.collection('liveStreams')
+                        .doc(currentLiveStream.id).collection('viewers').get();
+                    const batch = window.firebaseDb.batch();
+                    viewersSnap.forEach(doc => batch.delete(doc.ref));
+                    await batch.commit();
+                    console.log('✅ Viewer docs cleaned up');
+                } catch(e) {
+                    console.warn('⚠️ Could not clean viewer docs:', e);
+                }
+
                 // Update stream status in Firebase
                 await window.firebaseDb.collection('liveStreams').doc(currentLiveStream.id).update({
                     status: 'ended',
                     endedAt: new Date().toISOString(),
-                    cameraActive: false
+                    cameraActive: false,
+                    viewerCount: 0
                 });
 
                 console.log('✅ Stream stopped successfully');
@@ -6133,7 +6279,7 @@
                 previewVideo.srcObject = newStream;
                 currentLiveStream.cameraStream = newStream;
                 
-                // Replace tracks in WebRTC peer connection
+                // Replace tracks in WebRTC peer connection (legacy)
                 const pc = currentLiveStream.peerConnection;
                 if (pc) {
                     const senders = pc.getSenders();
@@ -6141,22 +6287,14 @@
                         const newTrack = newStream.getTracks().find(t => t.kind === sender.track?.kind);
                         if (newTrack) {
                             await sender.replaceTrack(newTrack);
-                            console.log('🔄 Replaced', sender.track?.kind, 'track in peer connection');
+                            console.log('🔄 Replaced', sender.track?.kind, 'track in legacy PC');
                         }
                     }
                     
-                    // Re-negotiate SDP offer so viewers can reconnect
+                    // Re-negotiate SDP offer so legacy viewers can reconnect
                     const offer = await pc.createOffer();
                     await pc.setLocalDescription(offer);
-                    
-                    // Wait for ICE gathering
-                    const fullOffer = await new Promise((resolve) => {
-                        const timeout = setTimeout(() => resolve(pc.localDescription), 5000);
-                        if (pc.iceGatheringState === 'complete') { clearTimeout(timeout); resolve(pc.localDescription); return; }
-                        pc.onicegatheringstatechange = () => {
-                            if (pc.iceGatheringState === 'complete') { clearTimeout(timeout); resolve(pc.localDescription); }
-                        };
-                    });
+                    const fullOffer = await waitForICE(pc);
                     
                     // Update Firestore with new offer and clear old answer
                     await window.firebaseDb.collection('liveStreams').doc(currentLiveStream.id).update({
@@ -6165,7 +6303,26 @@
                         lastUpdated: new Date().toISOString()
                     });
                     
-                    console.log('✅ Camera switched, SDP re-negotiated');
+                    console.log('✅ Legacy SDP re-negotiated');
+                }
+
+                // Replace tracks in all multi-viewer PeerConnections
+                if (currentLiveStream.viewerPCs) {
+                    for (const [viewerId, entry] of Object.entries(currentLiveStream.viewerPCs)) {
+                        try {
+                            const vPC = entry.pc;
+                            const senders = vPC.getSenders();
+                            for (const sender of senders) {
+                                const newTrack = newStream.getTracks().find(t => t.kind === sender.track?.kind);
+                                if (newTrack) {
+                                    await sender.replaceTrack(newTrack);
+                                }
+                            }
+                            console.log(`🔄 Replaced tracks for viewer ${viewerId.substr(0,8)}`);
+                        } catch(e) {
+                            console.warn(`⚠️ Could not replace tracks for viewer ${viewerId}:`, e);
+                        }
+                    }
                 }
                 
                 showStreamStatus('Camera switched successfully', 'success');
