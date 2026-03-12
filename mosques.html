@@ -986,6 +986,8 @@
         }
 
         function requestLocation() {
+            userLat = null;
+            userLng = null;
             updateLocationStatus('Detecting location...', 'pending');
             console.log('[Mosques] Requesting location... (inApp:', isInAppWebView(), ')');
 
@@ -1020,21 +1022,9 @@
                 return;
             }
 
-            // Skip permissions API in WebView — it can falsely report 'denied'
-            if (!isInAppWebView() && navigator.permissions && navigator.permissions.query) {
-                navigator.permissions.query({ name: 'geolocation' }).then(function(result) {
-                    console.log('[Mosques] Permission state:', result.state);
-                    if (result.state === 'denied') {
-                        tryIPFallback('Location permission denied. Please enable Location in browser settings and reload.');
-                        return;
-                    }
-                    doGeolocationRequest();
-                }).catch(function() {
-                    doGeolocationRequest();
-                });
-            } else {
-                doGeolocationRequest();
-            }
+            // Always call geolocation API to trigger the browser's permission prompt
+            // This ensures web browser users are always asked to allow location access
+            doGeolocationRequest();
         }
 
         function doGeolocationRequest() {
@@ -1045,7 +1035,12 @@
                 },
                 function(error) {
                     console.warn('[Mosques] High accuracy failed:', error.code, error.message);
-                    // Retry with lower accuracy
+                    // Permission denied — show a clear prompt, don't silently fall back to IP
+                    if (error.code === 1) {
+                        showLocationPermissionPrompt();
+                        return;
+                    }
+                    // Retry with lower accuracy for non-permission errors
                     navigator.geolocation.getCurrentPosition(
                         function(pos) {
                             onLocationSuccess(pos);
@@ -1053,13 +1048,40 @@
                         },
                         function(error2) {
                             console.error('[Mosques] Low accuracy also failed:', error2.code, error2.message);
-                            tryIPFallback(getLocationErrorMessage(error2));
+                            if (error2.code === 1) {
+                                showLocationPermissionPrompt();
+                            } else {
+                                tryIPFallback(getLocationErrorMessage(error2));
+                            }
                         },
                         { enableHighAccuracy: false, timeout: 20000, maximumAge: 600000 }
                     );
                 },
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
             );
+        }
+
+        function showLocationPermissionPrompt() {
+            updateLocationStatus('Location permission required', 'error');
+            document.getElementById('mosquesList').innerHTML = `
+                <div style="text-align:center;padding:30px 15px;">
+                    <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--lighter-green),var(--white));display:flex;align-items:center;justify-content:center;margin:0 auto 15px;">
+                        <i class="fas fa-location-crosshairs" style="font-size:36px;color:var(--primary-green);"></i>
+                    </div>
+                    <h3 style="color:var(--dark-gray);margin-bottom:8px;font-size:17px;">Location Permission Required</h3>
+                    <p style="color:var(--text-gray);font-size:14px;margin-bottom:6px;">To find mosques near you, we need access to your location.</p>
+                    <p style="color:var(--text-gray);font-size:13px;margin-bottom:20px;">Please allow location access when your browser asks, or enable it in your browser settings.</p>
+                    <button onclick="requestLocation()" style="padding:14px 30px;background:linear-gradient(135deg,var(--primary-green),var(--dark-green));color:white;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:12px;width:100%;">
+                        <i class="fas fa-location-crosshairs"></i> Allow Location Access
+                    </button>
+                    <div style="background:var(--gray);border-radius:10px;padding:14px;margin-top:10px;text-align:left;">
+                        <p style="font-size:13px;font-weight:600;color:var(--dark-gray);margin-bottom:8px;"><i class="fas fa-info-circle" style="color:var(--primary-green);margin-right:6px;"></i> How to enable location:</p>
+                        <p style="font-size:12px;color:var(--text-gray);margin-bottom:4px;"><b>Chrome:</b> Tap the lock icon in the address bar → Site settings → Location → Allow</p>
+                        <p style="font-size:12px;color:var(--text-gray);margin-bottom:4px;"><b>Safari:</b> Settings → Safari → Location Services → Allow</p>
+                        <p style="font-size:12px;color:var(--text-gray);"><b>Firefox:</b> Tap the lock icon → Permissions → Location → Allow</p>
+                    </div>
+                </div>
+            `;
         }
 
         // Continuous location tracking — updates map without page refresh
