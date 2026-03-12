@@ -398,7 +398,8 @@
                         </div>
                         <span class="grid-label">Events</span>
                     </div>
-                    <div class="grid-item" onclick="navigateTo('live-streaming.html')" style="background: linear-gradient(135deg, #ff4444, #cc0000);">
+                    <div class="grid-item" id="liveStreamGridItem" onclick="navigateTo('live-streaming.html')" style="position:relative;">
+                        <span id="liveDot" style="display:none;position:absolute;top:8px;right:8px;width:10px;height:10px;background:#ff4444;border-radius:50%;box-shadow:0 0 6px rgba(255,68,68,0.7);animation:livePulse 1.5s infinite;"></span>
                         <div class="grid-icon">
                             <i class="fas fa-broadcast-tower"></i>
                         </div>
@@ -1535,6 +1536,35 @@
         // Check 3s after load to avoid blocking startup
         if (document.readyState === 'complete') { setTimeout(checkForUpdates, 3000); }
         else { window.addEventListener('load', function(){ setTimeout(checkForUpdates, 3000); }); }
+    })();
+    </script>
+    <style>@keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.3)}}</style>
+    <script>
+    // Show red dot on Live Stream grid item when there's an active stream
+    (function(){
+        function checkLiveStreams(){
+            if(!window.firebaseDb) return;
+            try{
+                window.firebaseDb.collection('liveStreams')
+                    .where('status','==','live').limit(1)
+                    .onSnapshot(function(snap){
+                        var dot=document.getElementById('liveDot');
+                        if(dot) dot.style.display=snap.empty?'none':'block';
+                    },function(){});
+            }catch(e){}
+        }
+        // Wait for Firebase
+        function init(){
+            if(window.firebaseDb){checkLiveStreams();return;}
+            var tries=0;
+            var iv=setInterval(function(){
+                tries++;
+                if(window.firebaseDb){clearInterval(iv);checkLiveStreams();}
+                else if(tries>20){clearInterval(iv);}
+            },500);
+        }
+        if(document.readyState==='complete') init();
+        else window.addEventListener('load',init);
     })();
     </script>
 </body>

@@ -4229,6 +4229,21 @@
                 if (docs.length === 0 && currentNotifications.length > 0 && fromCache) {
                     return;
                 }
+                if (docs.length === 0) {
+                    // Firestore empty — merge with localStorage instead of wiping it
+                    var localAdmin = [];
+                    var localLegacy = [];
+                    try { localAdmin = JSON.parse(localStorage.getItem(ADMIN_NOTIFICATION_STORAGE_KEY) || '[]'); } catch(e){}
+                    try { localLegacy = JSON.parse(localStorage.getItem(LEGACY_NOTIFICATION_STORAGE_KEY) || '[]'); } catch(e){}
+                    var merged = mergeNotifications(localAdmin, localLegacy);
+                    if (merged.length > 0) {
+                        currentNotifications = merged;
+                        // Auto-sync local notifications to Firestore so they persist
+                        merged.forEach(function(n) { upsertNotificationInFirestore(n); });
+                        renderAdminNotificationsList();
+                        return;
+                    }
+                }
                 currentNotifications = docs;
                 saveNotificationsToStorage(currentNotifications);
                 renderAdminNotificationsList();
