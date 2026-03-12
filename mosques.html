@@ -950,10 +950,22 @@
         let routeLayer = null;
         let allMosques = [];
         let activeRouteId = null;
+        let locationWatchId = null;
+        let firestoreUnsub = null;
+        let mosquesLoaded = false;
 
         // Kaaba coordinates
         const KAABA_LAT = 21.4225;
         const KAABA_LNG = 39.8262;
+
+        // Detect Capacitor WebView (APK)
+        function isCapacitorApp() {
+            return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+        }
+        function isInAppWebView() {
+            var ua = navigator.userAgent || '';
+            return isCapacitorApp() || /wv\)|WebView/i.test(ua) || (window.KiumaBridge && window.KiumaBridge.isInApp && window.KiumaBridge.isInApp());
+        }
 
         document.addEventListener('DOMContentLoaded', function() {
             requestLocation();
@@ -975,27 +987,45 @@
 
         function requestLocation() {
             updateLocationStatus('Detecting location...', 'pending');
-            console.log('[Mosques] Requesting location...');
+            console.log('[Mosques] Requesting location... (inApp:', isInAppWebView(), ')');
 
-            // Try KiumaBridge (APK) first for more reliable location in iframe
-            if (window.KiumaBridge && window.KiumaBridge.isInApp && window.KiumaBridge.isInApp()) {
-                try {
-                    window.parent.postMessage({ type: 'GET_LOCATION', requestId: 'mosques_loc_' + Date.now() }, '*');
-                    // Also try native geolocation as fallback
-                } catch(e) {}
-            }
-            
-            if (!navigator.geolocation) {
-                showLocationError('Geolocation not supported by browser');
+            // Strategy 1: Try Capacitor Geolocation plugin (APK)
+            if (isCapacitorApp() && window.Capacitor.Plugins && window.Capacitor.Plugins.Geolocation) {
+                console.log('[Mosques] Trying Capacitor Geolocation plugin');
+                window.Capacitor.Plugins.Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 15000 })
+                    .then(function(pos) {
+                        onLocationSuccess({ coords: { latitude: pos.coords.latitude, longitude: pos.coords.longitude } });
+                        startLocationWatch();
+                    })
+                    .catch(function(e) {
+                        console.warn('[Mosques] Capacitor geo failed:', e);
+                        tryBrowserGeolocation();
+                    });
                 return;
             }
 
-            // Check permission state first (if Permissions API available)
-            if (navigator.permissions && navigator.permissions.query) {
+            // Strategy 2: Try KiumaBridge (APK iframe mode)
+            if (window.KiumaBridge && window.KiumaBridge.isInApp && window.KiumaBridge.isInApp()) {
+                try {
+                    window.parent.postMessage({ type: 'GET_LOCATION', requestId: 'mosques_loc_' + Date.now() }, '*');
+                } catch(e) {}
+            }
+
+            tryBrowserGeolocation();
+        }
+
+        function tryBrowserGeolocation() {
+            if (!navigator.geolocation) {
+                tryIPFallback('Geolocation not supported by browser');
+                return;
+            }
+
+            // Skip permissions API in WebView — it can falsely report 'denied'
+            if (!isInAppWebView() && navigator.permissions && navigator.permissions.query) {
                 navigator.permissions.query({ name: 'geolocation' }).then(function(result) {
-                    console.log('[Mosques] Geolocation permission state:', result.state);
+                    console.log('[Mosques] Permission state:', result.state);
                     if (result.state === 'denied') {
-                        showLocationError('Location permission was denied. Please enable it in your browser settings (tap the lock/info icon in the address bar) and reload the page.');
+                        tryIPFallback('Location permission denied. Please enable Location in browser settings and reload.');
                         return;
                     }
                     doGeolocationRequest();
@@ -1008,20 +1038,71 @@
         }
 
         function doGeolocationRequest() {
-            // Try with high accuracy first, then fall back
             navigator.geolocation.getCurrentPosition(
-                onLocationSuccess,
-                (error) => {
+                function(pos) {
+                    onLocationSuccess(pos);
+                    startLocationWatch();
+                },
+                function(error) {
                     console.warn('[Mosques] High accuracy failed:', error.code, error.message);
-                    // Try again with lower accuracy and longer timeout
+                    // Retry with lower accuracy
                     navigator.geolocation.getCurrentPosition(
-                        onLocationSuccess,
-                        onLocationError,
-                        { enableHighAccuracy: false, timeout: 30000, maximumAge: 600000 }
+                        function(pos) {
+                            onLocationSuccess(pos);
+                            startLocationWatch();
+                        },
+                        function(error2) {
+                            console.error('[Mosques] Low accuracy also failed:', error2.code, error2.message);
+                            tryIPFallback(getLocationErrorMessage(error2));
+                        },
+                        { enableHighAccuracy: false, timeout: 20000, maximumAge: 600000 }
                     );
                 },
-                { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
             );
+        }
+
+        // Continuous location tracking — updates map without page refresh
+        function startLocationWatch() {
+            if (locationWatchId) return;
+            try {
+                locationWatchId = navigator.geolocation.watchPosition(
+                    function(pos) {
+                        userLat = pos.coords.latitude;
+                        userLng = pos.coords.longitude;
+                        updateUserMarker();
+                    },
+                    function() {},
+                    { enableHighAccuracy: false, maximumAge: 30000 }
+                );
+            } catch(e) {}
+        }
+
+        // IP-based geolocation fallback (rough city-level)
+        function tryIPFallback(originalError) {
+            console.log('[Mosques] Trying IP-based geolocation fallback...');
+            updateLocationStatus('Trying approximate location...', 'pending');
+            fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(8000) })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data && data.latitude && data.longitude) {
+                        console.log('[Mosques] IP location:', data.city, data.latitude, data.longitude);
+                        onLocationSuccess({ coords: { latitude: data.latitude, longitude: data.longitude } });
+                        updateLocationStatus('Approximate location (IP)', 'success');
+                    } else {
+                        throw new Error('No IP location data');
+                    }
+                })
+                .catch(function() {
+                    onLocationError({ code: 0, message: originalError || 'All location methods failed' });
+                });
+        }
+
+        function getLocationErrorMessage(error) {
+            if (error.code === 1) return 'Location permission denied. Please allow location access in your app/browser settings.';
+            if (error.code === 2) return 'Location unavailable. Make sure GPS is enabled in your phone settings.';
+            if (error.code === 3) return 'Location timed out. Check your GPS signal and try again.';
+            return 'Unable to get location';
         }
 
         // Listen for location response from APK bridge
@@ -1034,16 +1115,15 @@
         });
 
         function onLocationSuccess(position) {
-            // Prevent duplicate calls (bridge + native can both succeed)
-            if (userLat && userLng) return;
+            if (userLat && userLng) return; // Prevent duplicate init
             userLat = position.coords.latitude;
             userLng = position.coords.longitude;
             console.log('[Mosques] Location found:', userLat, userLng);
             updateLocationStatus('Location found', 'success');
             try { showMap(); } catch(e) { console.error('[Mosques] Map error:', e); }
             loadAllMosques();
+            startFirestoreListener();
             calculateQibla();
-            // Auto-zoom to user area after a short delay
             setTimeout(function() { if (map) map.setView([userLat, userLng], 15); }, 1500);
         }
 
@@ -1051,13 +1131,16 @@
             const listEl = document.getElementById('mosquesList');
             listEl.innerHTML = '<div class="loading-container"><i class="fas fa-spinner"></i><p>Finding mosques near you...</p></div>';
 
-            // Load OSM + Firestore in parallel
             const [osmMosques, fbMosques] = await Promise.all([
                 fetchOSMMosques().catch(e => { console.warn('OSM error:', e); return []; }),
                 fetchFirestoreMosques().catch(e => { console.warn('Firestore error:', e); return []; })
             ]);
 
-            // Merge and deduplicate (by proximity — within 50m = same mosque)
+            mergeMosquesAndRender(osmMosques, fbMosques);
+            mosquesLoaded = true;
+        }
+
+        function mergeMosquesAndRender(osmMosques, fbMosques) {
             const combined = [...osmMosques];
             fbMosques.forEach(fb => {
                 const isDuplicate = combined.some(m =>
@@ -1066,7 +1149,6 @@
                 if (!isDuplicate) combined.push(fb);
             });
 
-            // Calculate distances and sort
             combined.forEach((m, i) => {
                 m.distance = calculateDistance(userLat, userLng, m.lat, m.lng);
                 m._id = m._id || ('m-' + i);
@@ -1083,13 +1165,42 @@
             }
         }
 
+        // Real-time Firestore listener — updates mosque list live without refresh
+        function startFirestoreListener() {
+            if (firestoreUnsub) return;
+            if (!window.firebaseDb) {
+                // Retry after Firebase loads
+                setTimeout(startFirestoreListener, 2000);
+                return;
+            }
+            firestoreUnsub = window.firebaseDb.collection('mosques')
+                .where('status', '==', 'approved')
+                .onSnapshot(function(snapshot) {
+                    if (!mosquesLoaded) return; // Wait for initial load
+                    console.log('[Mosques] Firestore update — refreshing list live');
+                    const fbMosques = [];
+                    snapshot.forEach(function(doc) {
+                        var d = doc.data();
+                        fbMosques.push({
+                            _id: 'fb-' + doc.id,
+                            name: d.name,
+                            lat: d.latitude,
+                            lng: d.longitude,
+                            address: d.address || '',
+                            source: 'firebase'
+                        });
+                    });
+                    // Re-merge with cached OSM data
+                    var osmCached = allMosques.filter(function(m) { return m.source === 'osm'; });
+                    mergeMosquesAndRender(osmCached, fbMosques);
+                }, function(err) {
+                    console.warn('[Mosques] Firestore listener error:', err);
+                });
+        }
+
         function onLocationError(error) {
             console.error('[Mosques] Location error:', error.code, error.message);
-            let message = 'Unable to get location';
-            if (error.code === 1) message = 'Location permission denied. Please tap the lock/info icon in your browser address bar, allow Location, and reload the page.';
-            else if (error.code === 2) message = 'Location unavailable. Make sure Location/GPS is enabled in your phone settings and try again.';
-            else if (error.code === 3) message = 'Location request timed out. Please check your GPS signal and try again.';
-            showLocationError(message);
+            showLocationError(error.message || getLocationErrorMessage(error));
         }
 
         function updateLocationStatus(text, type) {
