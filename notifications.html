@@ -135,13 +135,29 @@
 
         let firestoreUnsubscribe = null;
 
+        // Wait for Firebase to be ready before loading
+        async function waitForFirebase(maxWait) {
+            if (window.firebaseDb) return true;
+            var start = Date.now();
+            return new Promise(function(resolve) {
+                var iv = setInterval(function() {
+                    if (window.firebaseDb) { clearInterval(iv); resolve(true); }
+                    else if (Date.now() - start > (maxWait || 8000)) { clearInterval(iv); resolve(false); }
+                }, 300);
+            });
+        }
         async function initializeNotifications() {
             // Load from localStorage as instant cache while Firestore connects
             loadNotificationsFromLocalStorage();
             renderNotificationList();
 
-            // Start Firestore real-time listener (primary source)
-            startFirestoreListener();
+            // Wait for Firebase then start real-time listener
+            var ready = await waitForFirebase(8000);
+            if (ready) {
+                startFirestoreListener();
+            } else {
+                console.warn('Firebase not available after timeout, using cached notifications');
+            }
 
             updateActiveFilterButtons();
         }
@@ -165,10 +181,6 @@
                         });
                 }
 
-                if (!window.firebaseDb) {
-                    console.warn('Firebase not available, using cached notifications');
-                    return;
-                }
                 console.log('Starting Firestore notifications listener...');
                 firestoreUnsubscribe = window.firebaseDb.collection('notifications')
                     .orderBy('createdAt', 'desc')
