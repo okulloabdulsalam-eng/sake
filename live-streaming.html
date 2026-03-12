@@ -424,7 +424,13 @@
             position: relative;
             overflow: hidden;
         }
-        .stream-thumb i { font-size: 26px; color: rgba(255,255,255,0.9); }
+        .stream-thumb i { font-size: 26px; color: rgba(255,255,255,0.9); z-index: 1; }
+        .stream-thumb img {
+            position: absolute;
+            inset: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+        }
         .stream-thumb .thumb-live {
             position: absolute;
             bottom: 4px; left: 50%;
@@ -798,7 +804,7 @@
         let controlsVisible = true;
         let hideTimer       = null;
         let retryCount      = 0;
-        const MAX_RETRIES   = 5;
+        const MAX_RETRIES   = 10;
         let offerUnsubscribe = null;
         let viewerDocUnsubscribe = null;
         let reconnectTimer   = null;
@@ -807,6 +813,23 @@
         let toastTimer       = null;
         let isStreamActive   = false;
         let wakeLock         = null;
+        let signalingInProgress = false;
+        let stallCheckInterval = null;
+        let lastVideoTime    = 0;
+        let stallCount       = 0;
+
+        // ICE servers — STUN + TURN (can be overridden from Firestore)
+        const ICE_SERVERS = [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' },
+            { urls: 'stun:stun4.l.google.com:19302' },
+            { urls: 'turn:a.relay.metered.ca:80', username: 'e8dd65b92a0fbc3e0f28a930', credential: '5l3TpsinAr7VECvk' },
+            { urls: 'turn:a.relay.metered.ca:80?transport=tcp', username: 'e8dd65b92a0fbc3e0f28a930', credential: '5l3TpsinAr7VECvk' },
+            { urls: 'turn:a.relay.metered.ca:443', username: 'e8dd65b92a0fbc3e0f28a930', credential: '5l3TpsinAr7VECvk' },
+            { urls: 'turns:a.relay.metered.ca:443?transport=tcp', username: 'e8dd65b92a0fbc3e0f28a930', credential: '5l3TpsinAr7VECvk' }
+        ];
 
         // Generate a persistent viewer ID for this session
         const VIEWER_ID = 'v_' + Math.random().toString(36).substr(2, 12) + '_' + Date.now().toString(36);
@@ -819,6 +842,7 @@
             setupTapToggle();
             setupNetworkMonitor();
             setupLifecycle();
+            loadTURNConfig();
             loadStreams();
 
             // If HLS.js is available, prep it
@@ -1133,7 +1157,7 @@
                 pickerBody.innerHTML = streams.map(s => `
                     <div class="stream-item" data-id="${s.id}">
                         <div class="stream-thumb">
-                            <i class="fas fa-broadcast-tower"></i>
+                            ${s.thumbnail ? `<img src="${s.thumbnail}" alt="">` : '<i class="fas fa-broadcast-tower"></i>'}
                             <span class="thumb-live">LIVE</span>
                         </div>
                         <div class="stream-detail">
@@ -1191,6 +1215,7 @@
             if (viewerDocUnsubscribe) { viewerDocUnsubscribe(); viewerDocUnsubscribe = null; }
             if (viewerInterval) { clearInterval(viewerInterval); viewerInterval = null; }
             if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+            stopStallDetection();
             video.srcObject = null;
             isStreamActive = false;
             releaseWakeLock();
@@ -1228,10 +1253,13 @@
             // Show stream info
             setStreamInfo(streamData);
 
-            // 2. Register this viewer in the subcollection
+            // 2. Clean stale viewer doc (from previous attempt) then register fresh
             currentViewerId = VIEWER_ID;
             const viewerRef = window.firebaseDb.collection('liveStreams').doc(streamId)
                 .collection('viewers').doc(VIEWER_ID);
+
+            // Delete old doc first to clear stale sdpOffer/sdpAnswer from previous connection
+            try { await viewerRef.delete(); } catch(e) {}
 
             await viewerRef.set({
                 status: 'joining',
@@ -1263,6 +1291,8 @@
                 viewerDocUnsubscribe = viewerRef.onSnapshot(async (doc) => {
                     const vd = doc.data();
                     if (!vd || !vd.sdpOffer) return; // Still waiting
+                    if (signalingInProgress) return; // Prevent duplicate calls
+                    signalingInProgress = true;
 
                     clearTimeout(timeout);
                     console.log('[LIVE] Got per-viewer SDP offer from admin');
@@ -1272,6 +1302,8 @@
                         resolve();
                     } catch (err) {
                         reject(err);
+                    } finally {
+                        signalingInProgress = false;
                     }
                 });
             });
@@ -1299,16 +1331,30 @@
             acquireWakeLock();
         }
 
+        // Load custom TURN config from Firestore (overrides defaults)
+        async function loadTURNConfig() {
+            try {
+                let attempts = 0;
+                while (!window.firebaseDb && attempts < 15) {
+                    await new Promise(r => setTimeout(r, 300));
+                    attempts++;
+                }
+                if (!window.firebaseDb) return;
+                const doc = await window.firebaseDb.collection('config').doc('turnServers').get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    if (data.servers && Array.isArray(data.servers)) {
+                        const stunOnly = ICE_SERVERS.filter(s => typeof s.urls === 'string' && s.urls.startsWith('stun:'));
+                        ICE_SERVERS.length = 0;
+                        ICE_SERVERS.push(...stunOnly, ...data.servers);
+                        console.log('[LIVE] Loaded custom TURN config');
+                    }
+                }
+            } catch(e) { console.log('[LIVE] No custom TURN config, using defaults'); }
+        }
+
         // Shared PeerConnection setup — used by both multi-viewer and legacy paths
         async function setupPeerConnection(streamId, sdpOffer, answerRef, isLegacy = false) {
-            const ICE_SERVERS = [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' },
-                { urls: 'stun:stun3.l.google.com:19302' },
-                { urls: 'stun:stun4.l.google.com:19302' }
-            ];
-
             const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
             currentPC = pc;
 
@@ -1346,15 +1392,17 @@
                         livePill.classList.add('visible');
                         viewerCount.classList.add('visible');
                         streamInfo.classList.add('visible');
+                        startStallDetection();
                         break;
                     case 'disconnected':
                         showConnecting('Reconnecting...');
                         showToast('Connection interrupted', 'error');
+                        // Wait 8s — broadcaster may initiate ICE restart in that window
                         setTimeout(() => {
                             if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
                                 scheduleReconnect(streamId);
                             }
-                        }, 3000);
+                        }, 8000);
                         break;
                     case 'failed':
                         scheduleReconnect(streamId);
@@ -1390,11 +1438,59 @@
             console.log('[LIVE] Answer saved to Firestore');
 
             showConnecting('Waiting for stream...');
+
+            // Keep listening for ICE restart offers from broadcaster
+            if (!isLegacy) {
+                setupIceRestartListener(pc, answerRef);
+            }
+        }
+
+        // Listen for broadcaster-initiated ICE restarts on the viewer doc
+        function setupIceRestartListener(pc, viewerRef) {
+            // Re-use viewerDocUnsubscribe — replace previous listener
+            if (viewerDocUnsubscribe) viewerDocUnsubscribe();
+            let lastOfferSdp = null;
+            viewerDocUnsubscribe = viewerRef.onSnapshot(async (doc) => {
+                const vd = doc.data();
+                if (!vd || !vd.sdpOffer || !vd.iceRestart) return;
+                if (vd.sdpOffer === lastOfferSdp) return; // Same offer, ignore
+                if (signalingInProgress) return;
+                if (!currentPC || currentPC !== pc || pc.signalingState === 'closed') return;
+
+                signalingInProgress = true;
+                lastOfferSdp = vd.sdpOffer;
+                console.log('[LIVE] ICE restart offer received from broadcaster');
+                showConnecting('Reconnecting...');
+
+                try {
+                    await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: vd.sdpOffer }));
+                    const answer = await pc.createAnswer();
+                    await pc.setLocalDescription(answer);
+                    const fullAnswer = await new Promise((resolve) => {
+                        const t = setTimeout(() => resolve(pc.localDescription), 5000);
+                        if (pc.iceGatheringState === 'complete') { clearTimeout(t); resolve(pc.localDescription); return; }
+                        pc.onicegatheringstatechange = () => {
+                            if (pc.iceGatheringState === 'complete') { clearTimeout(t); resolve(pc.localDescription); }
+                        };
+                    });
+                    await viewerRef.update({ sdpAnswer: fullAnswer.sdp, status: 'connected', iceRestart: firebase.firestore.FieldValue.delete() });
+                    console.log('[LIVE] ICE restart answer sent');
+                } catch(e) {
+                    console.warn('[LIVE] ICE restart re-negotiation failed:', e);
+                } finally {
+                    signalingInProgress = false;
+                }
+            });
         }
 
         // ============================================================
         //  RECONNECT
         // ============================================================
+        function getBackoffDelay(attempt) {
+            // Exponential backoff: 2s, 4s, 8s, 16s, 30s (capped)
+            return Math.min(2000 * Math.pow(2, attempt - 1), 30000);
+        }
+
         function scheduleReconnect(streamId) {
             if (retryCount >= MAX_RETRIES) {
                 hideConnecting();
@@ -1402,7 +1498,9 @@
                 return;
             }
             retryCount++;
+            const delay = getBackoffDelay(retryCount);
             showConnecting(`Reconnecting (${retryCount}/${MAX_RETRIES})...`);
+            console.log(`[LIVE] Reconnect attempt ${retryCount} in ${delay}ms`);
             clearTimeout(reconnectTimer);
             reconnectTimer = setTimeout(async () => {
                 try {
@@ -1412,7 +1510,42 @@
                     console.error('[LIVE] Reconnect failed:', err);
                     scheduleReconnect(streamId);
                 }
+            }, delay);
+        }
+
+        // ============================================================
+        //  VIDEO STALL DETECTION
+        // ============================================================
+        function startStallDetection() {
+            stopStallDetection();
+            lastVideoTime = video.currentTime;
+            stallCount = 0;
+            stallCheckInterval = setInterval(() => {
+                if (!isStreamActive || !currentPC) return;
+                const iceState = currentPC.iceConnectionState;
+                if (iceState !== 'connected' && iceState !== 'completed') {
+                    // ICE itself isn't connected — other handlers will deal with it
+                    stallCount = 0;
+                    return;
+                }
+                if (video.currentTime === lastVideoTime && !video.paused) {
+                    stallCount++;
+                    if (stallCount >= 2) { // 2 checks × 3s = 6s stalled
+                        console.log('[LIVE] Video stall detected (frozen for 6s while ICE connected)');
+                        showToast('Stream stalled, reconnecting...', 'error');
+                        stallCount = 0;
+                        scheduleReconnect(currentStreamId);
+                    }
+                } else {
+                    stallCount = 0;
+                }
+                lastVideoTime = video.currentTime;
             }, 3000);
+        }
+
+        function stopStallDetection() {
+            if (stallCheckInterval) { clearInterval(stallCheckInterval); stallCheckInterval = null; }
+            stallCount = 0;
         }
 
         // ============================================================
@@ -1420,6 +1553,8 @@
         // ============================================================
         function setupStreamListener(streamId) {
             if (offerUnsubscribe) offerUnsubscribe();
+
+            let heartbeatWarned = false;
 
             offerUnsubscribe = window.firebaseDb.collection('liveStreams').doc(streamId)
                 .onSnapshot((doc) => {
@@ -1440,6 +1575,20 @@
                     // Update viewer count in real-time
                     if (d.viewerCount !== undefined) {
                         viewerNum.textContent = Math.max(0, d.viewerCount);
+                    }
+
+                    // Broadcaster heartbeat check
+                    if (d.lastHeartbeat && isStreamActive) {
+                        const hbAge = (Date.now() - new Date(d.lastHeartbeat).getTime()) / 1000;
+                        if (hbAge > 45 && !heartbeatWarned) {
+                            heartbeatWarned = true;
+                            showToast('Broadcaster may be offline', 'error');
+                            showConnecting('Broadcaster unresponsive...');
+                        } else if (hbAge <= 45 && heartbeatWarned) {
+                            heartbeatWarned = false;
+                            hideConnecting();
+                            showToast('Broadcaster back', 'success');
+                        }
                     }
                 });
         }
@@ -1482,6 +1631,27 @@
             document.addEventListener('visibilitychange', () => {
                 if (document.visibilityState === 'visible' && isStreamActive) {
                     acquireWakeLock();
+                }
+            });
+
+            // Auto-resume when network comes back online
+            window.addEventListener('online', () => {
+                console.log('[LIVE] Network back online');
+                if (currentStreamId && !isStreamActive) {
+                    showToast('Network restored, reconnecting...', 'info');
+                    retryCount = 0; // Reset retries on fresh network
+                    clearTimeout(reconnectTimer);
+                    scheduleReconnect(currentStreamId);
+                }
+            });
+
+            window.addEventListener('offline', () => {
+                console.log('[LIVE] Network offline');
+                if (isStreamActive || currentStreamId) {
+                    showToast('Network offline', 'error');
+                    showConnecting('Waiting for network...');
+                    // Pause retries while offline
+                    clearTimeout(reconnectTimer);
                 }
             });
 

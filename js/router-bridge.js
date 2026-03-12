@@ -9,7 +9,7 @@
     var ORIGIN = location.origin;
 
     // Pages that must full-load so their inline scripts run (avoid incomplete/empty content)
-    var FULL_LOAD_PAGES = ['index.html', 'media.html', 'library.html', 'notifications.html', 'quran-reader.html', 'search.html', 'media-settings.html', 'counselling.html', 'admin.html', 'subscription-form.html', 'zakat-form.html', 'ask-question.html', 'pay.html', 'join-programs.html', 'important-lessons.html', 'mosques.html', 'dhikr.html', 'names-of-allah.html', 'live-streaming.html', 'payment-callback.html', 'whatsapp-join-modal.html'];
+    var FULL_LOAD_PAGES = ['index.html', 'media.html', 'library.html', 'notifications.html', 'quran-reader.html', 'search.html', 'media-settings.html', 'counselling.html', 'admin.html', 'subscription-form.html', 'zakat-form.html', 'ask-question.html', 'pay.html', 'join-programs.html', 'important-lessons.html', 'mosques.html', 'dhikr.html', 'names-of-allah.html', 'live-streaming.html', 'broadcast.html', 'payment-callback.html', 'whatsapp-join-modal.html'];
 
     function isSameOriginSameScope(href) {
         if (!href || href.indexOf('mailto:') === 0 || href.indexOf('tel:') === 0) return false;

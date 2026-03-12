@@ -8,7 +8,15 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**",
-      "functions/**"
+      "functions/**",
+      "**/*.bat",
+      "**/*.cmd",
+      "**/*.sh",
+      "**/*.ps1",
+      "**/*.exe",
+      "**/*.dll",
+      "**/*.msi",
+      "cloudflare/**"
     ]
   }
 }
