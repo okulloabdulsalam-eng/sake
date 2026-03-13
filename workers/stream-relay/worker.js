@@ -251,6 +251,7 @@ async function handleDisconnect(env) {
 }
 
 async function handleCreateBroadcast(env, request) {
+  try {
   const body = await request.json();
   const title = body.title || 'KIUMA Live Stream';
   const description = body.description || 'Live stream from KIUMA';
@@ -305,6 +306,9 @@ async function handleCreateBroadcast(env, request) {
     embedUrl: `https://www.youtube.com/embed/${broadcast.id}`,
     privacy,
   });
+  } catch (e) {
+    return errorResponse('Create broadcast failed: ' + e.message, 500);
+  }
 }
 
 async function handleGoLive(env, request) {
@@ -408,6 +412,7 @@ async function handleActiveBroadcasts(env) {
 
 function callbackHTML(status, message, returnUrl) {
   const isSuccess = status === 'success';
+  const safeMsg = message.replace(/'/g, "\\'").replace(/"/g, '&quot;');
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>YouTube ${isSuccess ? 'Connected' : 'Error'} - KIUMA</title>
 <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#111;color:#fff}
@@ -417,9 +422,16 @@ function callbackHTML(status, message, returnUrl) {
 </style></head><body><div class="card">
 <div class="icon">${isSuccess ? '✅' : '❌'}</div>
 <p class="msg">${message}</p>
-<p style="margin-bottom:16px;font-size:13px;color:rgba(255,255,255,.5)">You can close this window.</p>
+<p id="closeMsg" style="margin-bottom:16px;font-size:13px;color:rgba(255,255,255,.5)">You can close this window.</p>
+${returnUrl ? `<a class="btn" href="${returnUrl}" id="returnBtn" style="display:none;">Return to Admin</a>` : ''}
 <script>
-if(window.opener){window.opener.postMessage({type:'youtube-oauth-${status}',message:'${message.replace(/'/g, "\\'")}'},'*');setTimeout(()=>window.close(),2000);}
+if(window.opener){
+  window.opener.postMessage({type:'youtube-oauth-${status}',message:'${safeMsg}'},'*');
+  setTimeout(()=>window.close(),2000);
+} else {
+  document.getElementById('closeMsg').textContent='Redirecting back...';
+  ${returnUrl ? `document.getElementById('returnBtn').style.display='inline-block';setTimeout(()=>{window.location.href='${returnUrl}';},2000);` : ''}
+}
 </script></div></body></html>`;
 }
 

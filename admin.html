@@ -3389,9 +3389,22 @@
         }
 
         function connectYouTube() {
-            const workerUrl = localStorage.getItem('kiuma_stream_relay_url');
+            const workerUrl = localStorage.getItem('kiuma_stream_relay_url') || 'https://kiuma-stream-relay.kiuma4.workers.dev';
             if (!workerUrl) { showStatus('streamRelaySettingsStatus', 'Save the Worker URL first', 'error'); return; }
-            const popup = window.open(`${workerUrl}/oauth/login`, 'youtube-oauth', 'width=600,height=700,scrollbars=yes');
+
+            // Save URL to localStorage so it persists on this device
+            localStorage.setItem('kiuma_stream_relay_url', workerUrl);
+
+            const oauthUrl = `${workerUrl}/oauth/login?return=${encodeURIComponent(window.location.href)}`;
+
+            // Try popup first, fall back to redirect if blocked
+            const popup = window.open(oauthUrl, 'youtube-oauth', 'width=600,height=700,scrollbars=yes');
+            if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+                // Popup was blocked — redirect the whole page instead
+                window.location.href = oauthUrl;
+                return;
+            }
+
             window.addEventListener('message', function handler(evt) {
                 if (evt.data && (evt.data.type === 'youtube-oauth-success' || evt.data.type === 'youtube-oauth-error')) {
                     window.removeEventListener('message', handler);
