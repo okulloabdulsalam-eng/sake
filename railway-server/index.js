@@ -1,13 +1,18 @@
 /**
  * KIUMA Server - Railway Deployment
  * 
- * Express.js server for Pesapal payment processing.
+ * Express.js server for:
+ *   1. Pesapal payment processing
+ *   2. YouTube Live RTMP relay (WebSocket → FFmpeg → RTMP)
  */
 
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 const crypto = require('crypto');
+const { WebSocketServer } = require('ws');
+const { spawn } = require('child_process');
+const http = require('http');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -411,10 +416,107 @@ app.get('/', (req, res) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`KIUMA Pesapal Server running on port ${PORT}`);
+// ============================================================
+// YouTube Live RTMP Relay (WebSocket → FFmpeg → RTMP)
+// ============================================================
+
+const activeStreams = new Map();
+
+app.get('/api/relay-health', (req, res) => {
+  const ffmpegCheck = spawn('ffmpeg', ['-version']);
+  let found = false;
+  ffmpegCheck.on('close', (code) => {
+    if (!found) { found = true; res.json({ success: true, ffmpegAvailable: code === 0, activeStreams: activeStreams.size, service: 'kiuma-rtmp-relay' }); }
+  });
+  ffmpegCheck.on('error', () => {
+    if (!found) { found = true; res.json({ success: true, ffmpegAvailable: false, activeStreams: activeStreams.size, service: 'kiuma-rtmp-relay' }); }
+  });
+  setTimeout(() => { if (!found) { found = true; res.json({ success: true, ffmpegAvailable: false, activeStreams: activeStreams.size }); } }, 3000);
+});
+
+const server = http.createServer(app);
+const wss = new WebSocketServer({ server, path: '/rtmp-relay' });
+
+wss.on('connection', (ws, req) => {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const streamKey = url.searchParams.get('key');
+  const rtmpUrl = url.searchParams.get('rtmpUrl') || 'rtmp://a.rtmp.youtube.com/live2';
+
+  if (!streamKey) {
+    ws.send(JSON.stringify({ type: 'error', message: 'Stream key required' }));
+    ws.close(1008, 'Stream key required');
+    return;
+  }
+
+  console.log(`[RTMP Relay] New connection, streaming to ${rtmpUrl}/****${streamKey.slice(-4)}`);
+
+  const ffmpeg = spawn('ffmpeg', [
+    '-i', 'pipe:0',
+    '-c:v', 'copy',
+    '-c:a', 'aac', '-ar', '44100', '-b:a', '128k',
+    '-f', 'flv', '-flvflags', 'no_duration_filesize',
+    `${rtmpUrl}/${streamKey}`,
+  ], { stdio: ['pipe', 'pipe', 'pipe'] });
+
+  activeStreams.set(streamKey, { ffmpeg, ws, startTime: Date.now() });
+  ws.send(JSON.stringify({ type: 'connected', message: 'RTMP relay connected' }));
+
+  let ffmpegReady = false;
+  ffmpeg.stderr.on('data', (data) => {
+    const msg = data.toString();
+    if (!ffmpegReady && (msg.includes('Output #0') || msg.includes('Stream mapping'))) {
+      ffmpegReady = true;
+      ws.send(JSON.stringify({ type: 'streaming', message: 'FFmpeg is streaming to YouTube' }));
+    }
+    if (msg.toLowerCase().includes('error') || msg.toLowerCase().includes('fatal')) {
+      ws.send(JSON.stringify({ type: 'ffmpeg-error', message: msg.trim() }));
+    }
+  });
+
+  ffmpeg.on('close', (code) => {
+    activeStreams.delete(streamKey);
+    if (ws.readyState === ws.OPEN) {
+      ws.send(JSON.stringify({ type: 'closed', message: `FFmpeg exited (code: ${code})` }));
+      ws.close(1000);
+    }
+  });
+
+  ffmpeg.on('error', (err) => {
+    activeStreams.delete(streamKey);
+    if (ws.readyState === ws.OPEN) {
+      ws.send(JSON.stringify({ type: 'error', message: `FFmpeg error: ${err.message}` }));
+      ws.close(1011);
+    }
+  });
+
+  ws.on('message', (msg) => {
+    if (Buffer.isBuffer(msg) || msg instanceof ArrayBuffer) {
+      const buffer = Buffer.isBuffer(msg) ? msg : Buffer.from(msg);
+      if (ffmpeg.stdin.writable) ffmpeg.stdin.write(buffer);
+    } else {
+      try {
+        const ctrl = JSON.parse(msg);
+        if (ctrl.type === 'stop' && ffmpeg.stdin.writable) ffmpeg.stdin.end();
+        if (ctrl.type === 'ping') ws.send(JSON.stringify({ type: 'pong' }));
+      } catch(e) {}
+    }
+  });
+
+  ws.on('close', () => {
+    activeStreams.delete(streamKey);
+    if (ffmpeg.stdin.writable) ffmpeg.stdin.end();
+    setTimeout(() => { try { ffmpeg.kill('SIGTERM'); } catch(e) {} }, 2000);
+  });
+
+  ws.on('error', () => {
+    activeStreams.delete(streamKey);
+    try { ffmpeg.kill('SIGTERM'); } catch(e) {}
+  });
+});
+
+server.listen(PORT, () => {
+  console.log(`KIUMA Server running on port ${PORT}`);
   console.log(`  Pesapal enabled: ${process.env.PESAPAL_ENABLED === 'true'}`);
-  console.log(`  Test mode: ${process.env.PESAPAL_TEST_MODE === 'true'}`);
+  console.log(`  RTMP Relay: ws://localhost:${PORT}/rtmp-relay`);
 });
 

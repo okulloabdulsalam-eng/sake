@@ -796,15 +796,9 @@
         const toastText    = $('#toastText');
 
         // ---- State ----
-        let mediaSource      = null;  // MediaSource for MSE playback
-        let sourceBuffer     = null;  // SourceBuffer for appending chunks
+        let ytPlayer         = null;  // YouTube IFrame Player instance
         let currentStreamId  = null;
-        let cfStreamId       = null;  // Cloudflare R2 stream ID
-        let cfWorkerUrl      = null;  // Worker URL for this stream
-        let cfMimeType       = null;  // MIME type for this stream
-        let nextChunk        = 0;     // Next chunk to fetch
-        let chunkPollTimer   = null;  // Interval for polling new chunks
-        let chunkQueue       = [];    // Queued ArrayBuffers to append
+        let currentVideoId   = null;  // YouTube video ID
         let currentQuality   = 'auto';
         let hls              = null;
         let controlsVisible  = true;
@@ -819,9 +813,10 @@
         let isStreamActive   = false;
         let wakeLock         = null;
         let stallCheckInterval = null;
+        let lastPlayerState  = -1;
         let stallCount       = 0;
 
-        // Worker URL
+        // Worker URL (YouTube API proxy)
         function getRelayWorkerUrl() {
             return localStorage.getItem('kiuma_stream_relay_url') || '';
         }
@@ -1207,28 +1202,23 @@
         }
 
         function cleanup() {
-            // Stop chunk polling
-            if (chunkPollTimer) { clearInterval(chunkPollTimer); chunkPollTimer = null; }
-            // Close MediaSource
-            if (mediaSource && mediaSource.readyState === 'open') {
-                try { mediaSource.endOfStream(); } catch(e) {}
+            // Destroy YouTube player
+            if (ytPlayer) {
+                try { ytPlayer.destroy(); } catch(e) {}
+                ytPlayer = null;
             }
-            mediaSource = null;
-            sourceBuffer = null;
-            chunkQueue = [];
-            nextChunk = 0;
-            cfStreamId = null;
-            cfWorkerUrl = null;
-            cfMimeType = null;
-
+            currentVideoId = null;
             if (streamDocUnsubscribe) { streamDocUnsubscribe(); streamDocUnsubscribe = null; }
             if (viewerInterval) { clearInterval(viewerInterval); viewerInterval = null; }
             if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
             stopStallDetection();
-            video.src = '';
             video.srcObject = null;
             isStreamActive = false;
             releaseWakeLock();
+
+            // Remove YouTube player container if exists
+            const ytContainer = document.getElementById('ytPlayerContainer');
+            if (ytContainer) ytContainer.remove();
 
             // Decrement viewer count (non-blocking)
             if (currentStreamId && window.firebaseDb) {
@@ -1241,30 +1231,26 @@
         }
 
         // ============================================================
-        //  CLOUDFLARE R2 MSE CHUNK PLAYBACK
+        //  YOUTUBE LIVE PLAYER CONNECTION
         //
         //  Flow:
-        //  1. Get stream doc from Firestore — contains cfStreamId + workerUrl + mimeType
-        //  2. Create MediaSource + SourceBuffer
-        //  3. Poll Worker for new chunks, fetch and append to SourceBuffer
+        //  1. Get stream doc from Firestore — contains youtubeVideoId
+        //  2. Load YouTube IFrame Player API
+        //  3. Create player with the video ID
+        //  4. Handle player state changes
         // ============================================================
         async function connectToYouTube(streamId) {
-            // 1. Get stream doc — verify it's live and has R2 stream info
             const streamDoc = await window.firebaseDb.collection('liveStreams').doc(streamId).get();
             const streamData = streamDoc.data();
 
             if (!streamData) throw new Error('Stream not found');
             if (streamData.status === 'ended') throw new Error('Stream has ended');
-            if (!streamData.cfStreamId) throw new Error('Stream not ready (no stream ID)');
+            if (!streamData.youtubeVideoId) throw new Error('Stream not ready (no YouTube video ID)');
 
-            // Show stream info
             setStreamInfo(streamData);
-            cfStreamId = streamData.cfStreamId;
-            cfWorkerUrl = streamData.workerUrl || getRelayWorkerUrl();
-            cfMimeType = streamData.mimeType || 'video/webm;codecs=vp8,opus';
-            console.log('[LIVE] Connecting to R2 stream:', cfStreamId);
+            currentVideoId = streamData.youtubeVideoId;
+            console.log('[LIVE] Connecting to YouTube video:', currentVideoId);
 
-            // Increment viewer count
             if (retryCount === 0) {
                 try {
                     await window.firebaseDb.collection('liveStreams').doc(streamId).update({
@@ -1273,131 +1259,100 @@
                 } catch(e) {}
             }
 
-            showConnecting('Loading stream...');
+            showConnecting('Loading YouTube player...');
 
-            // 2. Check if MediaSource is supported
-            if (!window.MediaSource) {
-                throw new Error('Your browser does not support live streaming playback');
+            await loadYouTubeAPI();
+
+            let ytContainer = document.getElementById('ytPlayerContainer');
+            if (!ytContainer) {
+                ytContainer = document.createElement('div');
+                ytContainer.id = 'ytPlayerContainer';
+                ytContainer.style.cssText = 'position:absolute;inset:0;z-index:2;background:#000';
+                video.parentElement.appendChild(ytContainer);
             }
 
-            // Find a supported MSE mime type
-            let mseMime = cfMimeType;
-            if (!MediaSource.isTypeSupported(mseMime)) {
-                // Try common fallbacks
-                const fallbacks = ['video/webm;codecs=vp8,opus', 'video/webm;codecs=vp8', 'video/webm;codecs=vp9,opus', 'video/webm'];
-                mseMime = fallbacks.find(m => MediaSource.isTypeSupported(m)) || 'video/webm';
-            }
-            console.log('[LIVE] MSE using mime:', mseMime);
+            const playerDiv = document.createElement('div');
+            playerDiv.id = 'ytPlayer';
+            ytContainer.innerHTML = '';
+            ytContainer.appendChild(playerDiv);
 
-            // 3. Create MediaSource
-            mediaSource = new MediaSource();
-            video.src = URL.createObjectURL(mediaSource);
+            return new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => reject(new Error('YouTube player load timeout')), 20000);
 
-            await new Promise((resolve, reject) => {
-                const timeout = setTimeout(() => reject(new Error('MediaSource open timeout')), 10000);
-                mediaSource.addEventListener('sourceopen', () => {
-                    clearTimeout(timeout);
-                    try {
-                        sourceBuffer = mediaSource.addSourceBuffer(mseMime);
-                        sourceBuffer.mode = 'sequence';
-                        sourceBuffer.addEventListener('updateend', () => appendNextFromQueue());
-                        console.log('[LIVE] SourceBuffer created');
-                        resolve();
-                    } catch(e) {
-                        reject(new Error('Failed to create SourceBuffer: ' + e.message));
-                    }
-                }, { once: true });
-                mediaSource.addEventListener('error', () => {
-                    clearTimeout(timeout);
-                    reject(new Error('MediaSource error'));
-                }, { once: true });
+                ytPlayer = new YT.Player('ytPlayer', {
+                    videoId: currentVideoId,
+                    width: '100%',
+                    height: '100%',
+                    playerVars: {
+                        autoplay: 1,
+                        playsinline: 1,
+                        controls: 0,
+                        modestbranding: 1,
+                        rel: 0,
+                        fs: 0,
+                        iv_load_policy: 3,
+                        disablekb: 1,
+                    },
+                    events: {
+                        onReady: (event) => {
+                            clearTimeout(timeout);
+                            event.target.playVideo();
+                            retryCount = 0;
+                            isStreamActive = true;
+                            hideConnecting();
+                            showToast('You are watching live', 'success');
+                            startAutoHide();
+                            livePill.classList.add('visible');
+                            viewerCount.classList.add('visible');
+                            streamInfo.classList.add('visible');
+                            startStallDetection();
+                            setupStreamListener(streamId);
+                            startViewerPolling(streamId);
+                            acquireWakeLock();
+                            resolve();
+                        },
+                        onStateChange: (event) => {
+                            lastPlayerState = event.data;
+                            switch (event.data) {
+                                case YT.PlayerState.PLAYING:
+                                    isStreamActive = true; hideConnecting(); stallCount = 0; break;
+                                case YT.PlayerState.BUFFERING:
+                                    showConnecting('Buffering...'); break;
+                                case YT.PlayerState.ENDED:
+                                    isStreamActive = false; showToast('Stream has ended', 'info'); break;
+                                case YT.PlayerState.PAUSED:
+                                    if (isStreamActive) {
+                                        setTimeout(() => {
+                                            if (ytPlayer && lastPlayerState === YT.PlayerState.PAUSED) {
+                                                try { ytPlayer.playVideo(); } catch(e) {}
+                                            }
+                                        }, 2000);
+                                    }
+                                    break;
+                            }
+                        },
+                        onError: (event) => {
+                            clearTimeout(timeout);
+                            const errors = { 2:'Invalid video ID', 5:'Player error', 100:'Video not found', 101:'Embedding blocked', 150:'Embedding blocked' };
+                            const msg = errors[event.data] || `Player error (${event.data})`;
+                            showToast(msg, 'error');
+                            if ([100,101,150].includes(event.data)) reject(new Error(msg));
+                            else scheduleReconnect(currentStreamId);
+                        },
+                    },
+                });
             });
-
-            // 4. Start polling for chunks
-            nextChunk = 0;
-            startChunkPolling();
-
-            // 5. Listen for stream-level changes
-            setupStreamListener(streamId);
-            startViewerPolling(streamId);
-            acquireWakeLock();
         }
 
-        function startChunkPolling() {
-            if (chunkPollTimer) clearInterval(chunkPollTimer);
-            // Poll immediately, then every 2 seconds
-            fetchNewChunks();
-            chunkPollTimer = setInterval(fetchNewChunks, 2000);
-        }
-
-        async function fetchNewChunks() {
-            if (!cfStreamId || !cfWorkerUrl) return;
-
-            try {
-                // Check how many chunks are available
-                const playlistRes = await fetch(`${cfWorkerUrl}/stream/${cfStreamId}/playlist`);
-                if (!playlistRes.ok) return;
-                const playlist = await playlistRes.json();
-
-                if (playlist.status === 'ended' && nextChunk >= playlist.chunkCount) {
-                    // Stream ended and we've fetched all chunks
-                    if (mediaSource && mediaSource.readyState === 'open') {
-                        try { mediaSource.endOfStream(); } catch(e) {}
-                    }
-                    return;
-                }
-
-                // Fetch all new chunks
-                while (nextChunk < playlist.chunkCount) {
-                    const chunkRes = await fetch(`${cfWorkerUrl}/stream/${cfStreamId}/chunk/${nextChunk}`);
-                    if (!chunkRes.ok) break;
-                    const buf = await chunkRes.arrayBuffer();
-
-                    if (buf.byteLength > 0) {
-                        chunkQueue.push(buf);
-                        appendNextFromQueue();
-                    }
-                    nextChunk++;
-
-                    // First chunk received — start playback
-                    if (nextChunk === 1) {
-                        retryCount = 0;
-                        isStreamActive = true;
-                        hideConnecting();
-                        showToast('You are watching live', 'success');
-                        startAutoHide();
-                        livePill.classList.add('visible');
-                        viewerCount.classList.add('visible');
-                        streamInfo.classList.add('visible');
-                        startStallDetection();
-                        video.play().catch(() => {});
-                    }
-                }
-            } catch(e) {
-                console.error('[LIVE] Chunk fetch error:', e);
-            }
-        }
-
-        function appendNextFromQueue() {
-            if (!sourceBuffer || sourceBuffer.updating || chunkQueue.length === 0) return;
-            if (mediaSource && mediaSource.readyState !== 'open') return;
-
-            const buf = chunkQueue.shift();
-            try {
-                sourceBuffer.appendBuffer(buf);
-            } catch(e) {
-                console.error('[LIVE] SourceBuffer append error:', e);
-                // If quota exceeded, remove old data
-                if (e.name === 'QuotaExceededError' && sourceBuffer.buffered.length > 0) {
-                    try {
-                        const start = sourceBuffer.buffered.start(0);
-                        const end = sourceBuffer.buffered.end(0) - 30; // Keep last 30s
-                        if (end > start) sourceBuffer.remove(start, end);
-                    } catch(re) {}
-                    // Re-queue the chunk
-                    chunkQueue.unshift(buf);
-                }
-            }
+        function loadYouTubeAPI() {
+            return new Promise((resolve) => {
+                if (window.YT && window.YT.Player) { resolve(); return; }
+                window.onYouTubeIframeAPIReady = () => resolve();
+                const script = document.createElement('script');
+                script.src = 'https://www.youtube.com/iframe_api';
+                document.head.appendChild(script);
+                setTimeout(resolve, 5000);
+            });
         }
 
         // ============================================================
@@ -1436,22 +1391,22 @@
         function startStallDetection() {
             stopStallDetection();
             stallCount = 0;
-            let lastTime = video.currentTime;
             stallCheckInterval = setInterval(() => {
-                if (!isStreamActive) return;
-                // Check if video playback is stalled
-                if (video.currentTime === lastTime && !video.paused && video.readyState < 3) {
-                    stallCount++;
-                    if (stallCount >= 4) { // 4 checks × 3s = 12s stalled
-                        console.log('[LIVE] Video stalled for 12s');
-                        showToast('Stream stalled, reconnecting...', 'error');
+                if (!isStreamActive || !ytPlayer) return;
+                try {
+                    const state = ytPlayer.getPlayerState();
+                    if (state === YT.PlayerState.BUFFERING) {
+                        stallCount++;
+                        if (stallCount >= 4) { // 4 checks × 3s = 12s buffering
+                            console.log('[LIVE] YouTube player stalled');
+                            showToast('Stream stalled, reconnecting...', 'error');
+                            stallCount = 0;
+                            scheduleReconnect(currentStreamId);
+                        }
+                    } else {
                         stallCount = 0;
-                        scheduleReconnect(currentStreamId);
                     }
-                } else {
-                    stallCount = 0;
-                }
-                lastTime = video.currentTime;
+                } catch(e) {}
             }, 3000);
         }
 
@@ -1576,7 +1531,7 @@
                         });
                     } catch(e) {}
                 }
-                cleanup();
+                if (ytPlayer) { try { ytPlayer.destroy(); } catch(e) {} }
                 releaseWakeLock();
             });
 

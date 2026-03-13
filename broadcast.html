@@ -292,7 +292,10 @@
         let streamId         = null;
         let streamDoc        = null;
         let mediaRecorder    = null;  // MediaRecorder for capturing video
-        let cfStreamId       = null;  // Cloudflare R2 stream ID
+        let relaySocket      = null;  // WebSocket to RTMP relay server
+        let ytBroadcastId    = null;  // YouTube broadcast ID
+        let ytStreamKey      = null;  // YouTube RTMP stream key
+        let ytVideoId        = null;  // YouTube video ID for embed
         let streamDocUnsub   = null;
         let timerInterval    = null;
         let statsInterval    = null;
@@ -306,16 +309,19 @@
         let wakeLock         = null;
         let toastTimer       = null;
         let heartbeatInterval = null;
-        let chunkUploadQueue = [];
-        let isUploading      = false;
-        let chunksSent       = 0;
-        let bytesSentTotal   = 0;
-        let lastBytesSent    = 0;
-        let lastBytesTime    = 0;
+        let relayPingInterval = null;
+        let bytesSentTotal    = 0;
+        let lastBytesSent     = 0;
+        let lastBytesTime     = 0;
 
-        // Worker URL - set in admin panel Settings tab
+        // Worker URL (YouTube API proxy) - set in admin panel Settings tab
         function getRelayWorkerUrl() {
             return localStorage.getItem('kiuma_stream_relay_url') || '';
+        }
+
+        // Railway relay server URL (WebSocket RTMP relay)
+        function getRelayServerUrl() {
+            return localStorage.getItem('kiuma_relay_server_url') || '';
         }
 
         // ============================================================
@@ -410,7 +416,7 @@
                 if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                     try {
                         mediaRecorder.stop();
-                        startMediaRecorder(newStream, pickMimeType());
+                        startMediaRecorder(newStream);
                         console.log('[BROADCAST] MediaRecorder restarted with new stream');
                     } catch(e) { console.warn('[BROADCAST] MediaRecorder restart error:', e); }
                 }
@@ -447,12 +453,17 @@
 
             const workerUrl = getRelayWorkerUrl();
             if (!workerUrl) {
-                showToast('Stream relay not configured. Go to Admin > Settings.', 'error');
+                showToast('Stream relay worker not configured. Go to Admin > Settings.', 'error');
+                return;
+            }
+            const relayServerUrl = getRelayServerUrl();
+            if (!relayServerUrl) {
+                showToast('RTMP relay server not configured. Go to Admin > Settings.', 'error');
                 return;
             }
 
             btnGoLive.disabled = true;
-            btnGoLive.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting stream...';
+            btnGoLive.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating YouTube broadcast...';
 
             try {
                 // Wait for Firebase
@@ -466,27 +477,36 @@
                 // Keep local preview muted to avoid echo
                 cameraFeed.muted = true;
 
-                // 1. Determine MIME type before creating stream
-                const mimeType = pickMimeType();
-
-                // 2. Create R2 stream via Worker
-                const createRes = await fetch(`${workerUrl}/stream/start`, {
+                // 1. Create YouTube broadcast via Worker
+                btnGoLive.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating broadcast...';
+                const createRes = await fetch(`${workerUrl}/api/create-broadcast`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title, mimeType })
+                    body: JSON.stringify({
+                        title: title,
+                        description: inputDesc.value.trim() || 'Live stream from KIUMA',
+                        privacy: 'unlisted'
+                    })
                 });
                 if (!createRes.ok) {
                     const err = await createRes.json().catch(() => ({}));
-                    throw new Error(err.error || 'Failed to create stream');
+                    throw new Error(err.error || 'Failed to create YouTube broadcast');
                 }
-                const streamData = await createRes.json();
-                cfStreamId = streamData.streamId;
-                console.log('[BROADCAST] R2 stream created:', cfStreamId);
+                const broadcastData = await createRes.json();
+                ytBroadcastId = broadcastData.broadcastId;
+                ytStreamKey = broadcastData.streamKey;
+                ytVideoId = broadcastData.videoId;
+                console.log('[BROADCAST] YouTube broadcast created:', ytBroadcastId);
 
-                // 3. Start MediaRecorder and upload chunks
-                startMediaRecorder(mediaStream, mimeType);
+                // 2. Connect WebSocket to RTMP relay server
+                btnGoLive.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting relay...';
+                await connectRelaySocket(relayServerUrl, ytStreamKey, broadcastData.rtmpUrl);
 
-                // 4. Create Firestore doc
+                // 3. Start MediaRecorder and send to relay
+                btnGoLive.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting stream...';
+                startMediaRecorder(mediaStream);
+
+                // 4. Create Firestore doc with YouTube info
                 const data = {
                     title,
                     description: inputDesc.value.trim(),
@@ -495,10 +515,11 @@
                     startedAt: new Date().toISOString(),
                     startedBy: 'admin',
                     viewerCount: 0,
-                    cfStreamId: cfStreamId,
-                    workerUrl: workerUrl,
-                    mimeType: mimeType,
-                    streamType: 'cloudflare-r2',
+                    youtubeVideoId: ytVideoId,
+                    youtubeBroadcastId: ytBroadcastId,
+                    youtubeUrl: broadcastData.youtubeUrl,
+                    embedUrl: broadcastData.embedUrl,
+                    streamType: 'youtube-live',
                     cameraActive: true
                 };
 
@@ -515,7 +536,7 @@
                 topBar.classList.add('visible');
                 bottomBar.classList.add('visible');
                 liveTitle.textContent = title;
-                liveMeta.innerHTML = `<span><i class="fas fa-tag"></i> ${escHtml(inputCategory.value)}</span><span><i class="fas fa-cloud"></i> Cloudflare</span>`;
+                liveMeta.innerHTML = `<span><i class="fas fa-tag"></i> ${escHtml(inputCategory.value)}</span><span><i class="fab fa-youtube" style="color:#ff0000"></i> YouTube Live</span>`;
 
                 // Start timers
                 startTimer();
@@ -523,10 +544,11 @@
                 startThumbnailCapture();
                 startViewerCountPolling();
                 startHeartbeat();
+                startRelayPing();
                 acquireWakeLock();
                 $('#latencyOverlay').classList.add('visible');
 
-                showToast('You are now live!', 'success');
+                showToast('You are now live on YouTube!', 'success');
 
             } catch(err) {
                 console.error('[BROADCAST] Go live error:', err);
@@ -538,43 +560,98 @@
         }
 
         // ============================================================
-        //  CLOUDFLARE R2 CHUNK STREAMING
-        //  Browser → MediaRecorder → HTTP POST chunks → Worker → R2
-        //  Viewers poll Worker for new chunks → MSE playback
+        //  YOUTUBE LIVE RTMP RELAY
+        //  Browser → MediaRecorder → WebSocket → Railway FFmpeg → RTMP → YouTube
         // ============================================================
 
-        function pickMimeType() {
-            // Prefer VP8+Opus for MSE compatibility (works in all browsers)
-            const mimeTypes = [
-                'video/webm;codecs=vp8,opus',
-                'video/webm;codecs=vp8',
-                'video/webm;codecs=vp9,opus',
-                'video/webm;codecs=vp9',
-                'video/webm',
-            ];
-            for (const mt of mimeTypes) {
-                if (MediaRecorder.isTypeSupported(mt)) return mt;
-            }
-            return 'video/webm';
+        function connectRelaySocket(serverUrl, streamKey, rtmpUrl) {
+            return new Promise((resolve, reject) => {
+                const wsProtocol = serverUrl.startsWith('https') ? 'wss' : 'ws';
+                const wsHost = serverUrl.replace(/^https?:\/\//, '');
+                const params = new URLSearchParams({ key: streamKey });
+                if (rtmpUrl) params.set('rtmpUrl', rtmpUrl);
+                const wsUrl = `${wsProtocol}://${wsHost}/rtmp-relay?${params}`;
+
+                console.log('[BROADCAST] Connecting to relay:', wsUrl.replace(streamKey, '****'));
+                relaySocket = new WebSocket(wsUrl);
+                relaySocket.binaryType = 'arraybuffer';
+
+                const timeout = setTimeout(() => { reject(new Error('Relay connection timeout')); relaySocket.close(); }, 15000);
+
+                relaySocket.onopen = () => { clearTimeout(timeout); console.log('[BROADCAST] Relay connected'); resolve(); };
+
+                relaySocket.onmessage = (evt) => {
+                    try {
+                        const msg = JSON.parse(evt.data);
+                        console.log('[BROADCAST] Relay:', msg.type, msg.message);
+                        if (msg.type === 'streaming') { showToast('Streaming to YouTube!', 'success'); transitionToLive(); }
+                        else if (msg.type === 'error' || msg.type === 'ffmpeg-error') { showToast('Relay: ' + msg.message, 'error'); }
+                    } catch(e) {}
+                };
+
+                relaySocket.onclose = () => {
+                    if (streamId) { showToast('Relay lost, reconnecting...', 'error'); setTimeout(() => reconnectRelay(), 3000); }
+                };
+
+                relaySocket.onerror = () => { clearTimeout(timeout); if (!streamId) reject(new Error('Failed to connect to relay')); };
+            });
         }
 
-        function startMediaRecorder(stream, mimeType) {
+        async function reconnectRelay() {
+            if (!streamId || !ytStreamKey) return;
+            const relayServerUrl = getRelayServerUrl();
+            if (!relayServerUrl) return;
+            try {
+                await connectRelaySocket(relayServerUrl, ytStreamKey);
+                if (mediaStream) { startMediaRecorder(mediaStream); showToast('Relay reconnected', 'success'); }
+            } catch(e) {
+                console.error('[BROADCAST] Reconnect failed:', e);
+                setTimeout(() => reconnectRelay(), 10000);
+            }
+        }
+
+        async function transitionToLive() {
+            if (!ytBroadcastId) return;
+            const workerUrl = getRelayWorkerUrl();
+            if (!workerUrl) return;
+            try {
+                await fetch(`${workerUrl}/api/go-live`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ broadcastId: ytBroadcastId })
+                });
+            } catch(e) { console.warn('[BROADCAST] Go-live transition error:', e); }
+        }
+
+        function startMediaRecorder(stream) {
             if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                 try { mediaRecorder.stop(); } catch(e) {}
             }
 
+            // Prefer H.264 for RTMP (copy instead of transcode)
+            const mimeTypes = [
+                'video/webm;codecs=h264,opus',
+                'video/webm;codecs=h264',
+                'video/webm;codecs=vp8,opus',
+                'video/webm;codecs=vp8',
+                'video/webm',
+            ];
+            let mimeType = 'video/webm';
+            for (const mt of mimeTypes) {
+                if (MediaRecorder.isTypeSupported(mt)) { mimeType = mt; break; }
+            }
             console.log('[BROADCAST] MediaRecorder using:', mimeType);
 
             mediaRecorder = new MediaRecorder(stream, {
                 mimeType,
-                videoBitsPerSecond: 1500000, // 1.5 Mbps (good for R2 upload)
+                videoBitsPerSecond: 2500000,
                 audioBitsPerSecond: 128000,
             });
 
             mediaRecorder.ondataavailable = (evt) => {
-                if (evt.data && evt.data.size > 0 && cfStreamId) {
-                    chunkUploadQueue.push(evt.data);
-                    processUploadQueue();
+                if (evt.data && evt.data.size > 0 && relaySocket && relaySocket.readyState === WebSocket.OPEN) {
+                    relaySocket.send(evt.data);
+                    bytesSentTotal += evt.data.size;
                 }
             };
 
@@ -583,52 +660,8 @@
                 showToast('Recording error: ' + (evt.error?.message || 'Unknown'), 'error');
             };
 
-            mediaRecorder.onstop = () => {
-                console.log('[BROADCAST] MediaRecorder stopped');
-            };
-
-            // 2-second chunks for balance between latency and upload efficiency
-            mediaRecorder.start(2000);
-            console.log('[BROADCAST] MediaRecorder started (2s chunks)');
-        }
-
-        async function processUploadQueue() {
-            if (isUploading || chunkUploadQueue.length === 0) return;
-            isUploading = true;
-
-            while (chunkUploadQueue.length > 0) {
-                const chunk = chunkUploadQueue.shift();
-                const workerUrl = getRelayWorkerUrl();
-                if (!workerUrl || !cfStreamId) break;
-
-                try {
-                    const res = await fetch(`${workerUrl}/stream/${cfStreamId}/chunk`, {
-                        method: 'POST',
-                        body: chunk,
-                    });
-                    if (!res.ok) {
-                        const err = await res.json().catch(() => ({}));
-                        console.error('[BROADCAST] Chunk upload failed:', err.error);
-                        // Re-queue on failure (unless stream ended)
-                        if (streamId) chunkUploadQueue.unshift(chunk);
-                        break;
-                    }
-                    chunksSent++;
-                    bytesSentTotal += chunk.size;
-                } catch(e) {
-                    console.error('[BROADCAST] Chunk upload error:', e);
-                    if (streamId) chunkUploadQueue.unshift(chunk);
-                    // Wait before retry
-                    await new Promise(r => setTimeout(r, 1000));
-                    break;
-                }
-            }
-
-            isUploading = false;
-            // If there are more chunks queued, continue processing
-            if (chunkUploadQueue.length > 0) {
-                setTimeout(() => processUploadQueue(), 100);
-            }
+            mediaRecorder.start(1000);
+            console.log('[BROADCAST] MediaRecorder started (1s chunks)');
         }
 
         function cleanupRelay() {
@@ -636,15 +669,26 @@
                 try { mediaRecorder.stop(); } catch(e) {}
             }
             mediaRecorder = null;
-            chunkUploadQueue = [];
-            isUploading = false;
 
-            // Stop R2 stream
-            const workerUrl = getRelayWorkerUrl();
-            if (workerUrl && cfStreamId) {
-                fetch(`${workerUrl}/stream/${cfStreamId}/stop`, { method: 'POST' }).catch(() => {});
+            if (relaySocket) {
+                try { relaySocket.send(JSON.stringify({ type: 'stop' })); } catch(e) {}
+                try { relaySocket.close(); } catch(e) {}
+                relaySocket = null;
             }
-            cfStreamId = null;
+
+            if (relayPingInterval) { clearInterval(relayPingInterval); relayPingInterval = null; }
+            ytBroadcastId = null;
+            ytStreamKey = null;
+            ytVideoId = null;
+        }
+
+        function startRelayPing() {
+            if (relayPingInterval) clearInterval(relayPingInterval);
+            relayPingInterval = setInterval(() => {
+                if (relaySocket && relaySocket.readyState === WebSocket.OPEN) {
+                    try { relaySocket.send(JSON.stringify({ type: 'ping' })); } catch(e) {}
+                }
+            }, 30000);
         }
 
         // ============================================================
@@ -722,7 +766,7 @@
                 // Restart MediaRecorder with new stream
                 if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                     try { mediaRecorder.stop(); } catch(e) {}
-                    startMediaRecorder(newStream, pickMimeType());
+                    startMediaRecorder(newStream);
                 }
 
                 showToast('Camera flipped', 'success');
@@ -763,9 +807,21 @@
                 // Stop camera
                 if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
 
-                // Cleanup relay (MediaRecorder + R2 stream stop)
+                // Cleanup relay (MediaRecorder + WebSocket)
                 cleanupRelay();
                 if (streamDocUnsub) { streamDocUnsub(); streamDocUnsub = null; }
+
+                // End YouTube broadcast
+                const workerUrl = getRelayWorkerUrl();
+                if (workerUrl && ytBroadcastId) {
+                    try {
+                        await fetch(`${workerUrl}/api/end-stream`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ broadcastId: ytBroadcastId })
+                        });
+                    } catch(e) { console.warn('[BROADCAST] End YouTube broadcast error:', e); }
+                }
 
                 // Update Firestore
                 if (streamId && window.firebaseDb) {
@@ -851,16 +907,16 @@
                 lastBytesSent = bytesSentTotal;
                 lastBytesTime = Date.now();
 
-                // Chunk upload status
-                const uploading = cfStreamId && !isUploading || chunkUploadQueue.length === 0;
+                // Relay connection status
+                const relayConnected = relaySocket && relaySocket.readyState === WebSocket.OPEN;
                 const statRttEl = $('#statRtt');
-                statRttEl.textContent = chunksSent + ' chunks';
-                statRttEl.className = 'stat-value good';
+                statRttEl.textContent = relayConnected ? 'Connected' : 'Disconnected';
+                statRttEl.className = 'stat-value' + (relayConnected ? ' good' : ' poor');
                 const latRttEl = $('#latRtt');
-                latRttEl.textContent = chunkUploadQueue.length === 0 ? 'OK' : chunkUploadQueue.length + ' queued';
+                latRttEl.textContent = relayConnected ? 'OK' : 'Down';
                 const latRttPill = $('#latRttPill');
-                latRttPill.className = 'lat-pill' + (chunkUploadQueue.length < 3 ? ' good' : chunkUploadQueue.length < 6 ? ' medium' : ' poor');
-                $('#statLost').textContent = chunkUploadQueue.length;
+                latRttPill.className = 'lat-pill' + (relayConnected ? ' good' : ' poor');
+                $('#statLost').textContent = relayConnected ? '0' : 'N/A';
             }, 3000);
         }
 

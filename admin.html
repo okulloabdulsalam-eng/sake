@@ -831,20 +831,47 @@
                         <div id="passwordChangeStatus" class="alert" style="margin-top: 15px;"></div>
                     </div>
 
-                    <!-- Live Streaming (Cloudflare R2) -->
-                    <div class="config-card" style="border-left: 4px solid #F6821F;">
-                        <h4><i class="fas fa-broadcast-tower" style="color:#F6821F;"></i> Live Streaming
+                    <!-- YouTube Live Streaming -->
+                    <div class="config-card" style="border-left: 4px solid #e53935;">
+                        <h4><i class="fab fa-youtube" style="color:#e53935;"></i> YouTube Live Streaming
                             <span class="status-badge disconnected" id="streamRelayStatusBadge">Not Configured</span>
                         </h4>
                         <p style="color:#888;font-size:13px;margin-bottom:15px;">
-                            Stream live via Cloudflare's global network. Video chunks are stored in R2 and delivered worldwide — free, no extra servers needed.
+                            Stream live to YouTube for free, unlimited international viewers. Requires a YouTube channel with live streaming enabled.
                         </p>
+
+                        <!-- YouTube OAuth Connection -->
+                        <div style="background:rgba(229,57,53,0.05);border:1px solid rgba(229,57,53,0.15);border-radius:8px;padding:15px;margin-bottom:15px;">
+                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                                <i class="fab fa-youtube" style="font-size:24px;color:#e53935;"></i>
+                                <div>
+                                    <div style="font-weight:600;font-size:14px;" id="ytChannelName">YouTube Not Connected</div>
+                                    <div style="font-size:12px;color:#888;" id="ytChannelStatus">Connect your YouTube channel to enable live streaming</div>
+                                </div>
+                            </div>
+                            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                                <button class="btn btn-primary" onclick="connectYouTube()" id="ytConnectBtn" style="background:#e53935;">
+                                    <i class="fab fa-youtube"></i> Connect YouTube
+                                </button>
+                                <button class="btn btn-outline" onclick="disconnectYouTube()" id="ytDisconnectBtn" style="display:none;">
+                                    <i class="fas fa-unlink"></i> Disconnect
+                                </button>
+                            </div>
+                        </div>
                         
                         <div class="form-group">
-                            <label>Stream Worker URL</label>
+                            <label>Stream Relay Worker URL</label>
                             <input type="text" id="streamRelayWorkerUrl" class="form-input" placeholder="https://kiuma-stream-relay.your-account.workers.dev">
                             <small style="color: #888; display: block; margin-top: 5px;">
-                                Deploy the worker from <code>workers/stream-relay/</code> with R2 bucket binding.
+                                Cloudflare Worker that handles YouTube API calls and OAuth.
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>RTMP Relay Server URL</label>
+                            <input type="text" id="relayServerUrl" class="form-input" placeholder="https://your-server.up.railway.app">
+                            <small style="color: #888; display: block; margin-top: 5px;">
+                                Server running FFmpeg that converts browser video to RTMP for YouTube.
                             </small>
                         </div>
                         
@@ -853,7 +880,10 @@
                                 <i class="fas fa-save"></i> Save Settings
                             </button>
                             <button class="btn btn-outline" onclick="testStreamRelayConnection()">
-                                <i class="fas fa-plug"></i> Test Connection
+                                <i class="fas fa-plug"></i> Test Worker
+                            </button>
+                            <button class="btn btn-outline" onclick="testRelayServer()">
+                                <i class="fas fa-server"></i> Test Relay
                             </button>
                         </div>
                         <div id="streamRelaySettingsStatus" class="alert" style="margin-top: 15px;"></div>
@@ -3251,27 +3281,36 @@
         }
 
         // ==============================
-        // LIVE STREAMING (CLOUDFLARE R2) SETTINGS
+        // YOUTUBE LIVE STREAMING SETTINGS
         // ==============================
         function loadStreamRelaySettings() {
-            const url = localStorage.getItem('kiuma_stream_relay_url') || '';
-            document.getElementById('streamRelayWorkerUrl').value = url;
+            const workerUrl = localStorage.getItem('kiuma_stream_relay_url') || '';
+            const relayUrl = localStorage.getItem('kiuma_relay_server_url') || '';
+            document.getElementById('streamRelayWorkerUrl').value = workerUrl;
+            document.getElementById('relayServerUrl').value = relayUrl;
             checkStreamRelayStatus();
+            checkYouTubeConnection();
         }
 
         function saveStreamRelaySettings() {
-            const url = document.getElementById('streamRelayWorkerUrl').value.trim();
-            if (!url) {
-                localStorage.removeItem('kiuma_stream_relay_url');
-                showStatus('streamRelaySettingsStatus', 'Stream worker URL cleared', 'success');
-                checkStreamRelayStatus();
-                return;
-            }
-            try { new URL(url); } catch(e) {
-                showStatus('streamRelaySettingsStatus', 'Invalid URL format', 'error'); return;
-            }
-            localStorage.setItem('kiuma_stream_relay_url', url);
-            showStatus('streamRelaySettingsStatus', 'Stream settings saved!', 'success');
+            const workerUrl = document.getElementById('streamRelayWorkerUrl').value.trim();
+            const relayUrl = document.getElementById('relayServerUrl').value.trim();
+
+            if (workerUrl) {
+                try { new URL(workerUrl); } catch(e) {
+                    showStatus('streamRelaySettingsStatus', 'Invalid Worker URL format', 'error'); return;
+                }
+                localStorage.setItem('kiuma_stream_relay_url', workerUrl);
+            } else { localStorage.removeItem('kiuma_stream_relay_url'); }
+
+            if (relayUrl) {
+                try { new URL(relayUrl); } catch(e) {
+                    showStatus('streamRelaySettingsStatus', 'Invalid Relay Server URL format', 'error'); return;
+                }
+                localStorage.setItem('kiuma_relay_server_url', relayUrl);
+            } else { localStorage.removeItem('kiuma_relay_server_url'); }
+
+            showStatus('streamRelaySettingsStatus', 'YouTube Live settings saved!', 'success');
             checkStreamRelayStatus();
         }
 
@@ -3279,35 +3318,101 @@
             const url = document.getElementById('streamRelayWorkerUrl').value.trim();
             if (!url) { showStatus('streamRelaySettingsStatus', 'Enter a Worker URL first', 'error'); return; }
 
-            showStatus('streamRelaySettingsStatus', 'Testing connection...', 'success');
+            showStatus('streamRelaySettingsStatus', 'Testing worker...', 'success');
             try {
                 const res = await fetch(`${url}/health`, { method: 'GET' });
                 const data = await res.json();
                 if (data.status === 'ok') {
-                    const r2Msg = data.r2Available ? 'R2 storage ready' : 'R2 not bound';
-                    showStatus('streamRelaySettingsStatus', `✓ Worker reachable. ${r2Msg}.`, data.r2Available ? 'success' : 'error');
-                    document.getElementById('streamRelayStatusBadge').textContent = data.r2Available ? 'Connected' : 'R2 Missing';
-                    document.getElementById('streamRelayStatusBadge').className = 'status-badge ' + (data.r2Available ? 'connected' : 'disconnected');
+                    let msg = '✓ Worker reachable. ';
+                    msg += data.youtubeConnected ? 'YouTube connected!' : 'YouTube not yet connected.';
+                    showStatus('streamRelaySettingsStatus', msg, data.youtubeConnected ? 'success' : 'error');
                 } else {
                     showStatus('streamRelaySettingsStatus', 'Worker responded but status not OK', 'error');
                 }
             } catch(e) {
-                showStatus('streamRelaySettingsStatus', 'Connection failed: ' + e.message, 'error');
-                document.getElementById('streamRelayStatusBadge').textContent = 'Error';
-                document.getElementById('streamRelayStatusBadge').className = 'status-badge disconnected';
+                showStatus('streamRelaySettingsStatus', 'Worker connection failed: ' + e.message, 'error');
+            }
+        }
+
+        async function testRelayServer() {
+            const url = document.getElementById('relayServerUrl').value.trim();
+            if (!url) { showStatus('streamRelaySettingsStatus', 'Enter a Relay Server URL first', 'error'); return; }
+
+            showStatus('streamRelaySettingsStatus', 'Testing relay server...', 'success');
+            try {
+                const res = await fetch(`${url}/api/relay-health`, { method: 'GET' });
+                const data = await res.json();
+                if (data.success) {
+                    const ffmpegMsg = data.ffmpegAvailable ? 'FFmpeg available' : 'FFmpeg NOT installed';
+                    showStatus('streamRelaySettingsStatus', `✓ Relay server reachable. ${ffmpegMsg}.`, data.ffmpegAvailable ? 'success' : 'error');
+                } else {
+                    showStatus('streamRelaySettingsStatus', 'Relay server responded but error', 'error');
+                }
+            } catch(e) {
+                showStatus('streamRelaySettingsStatus', 'Relay server connection failed: ' + e.message, 'error');
             }
         }
 
         function checkStreamRelayStatus() {
-            const url = localStorage.getItem('kiuma_stream_relay_url');
+            const workerUrl = localStorage.getItem('kiuma_stream_relay_url');
+            const relayUrl = localStorage.getItem('kiuma_relay_server_url');
             const badge = document.getElementById('streamRelayStatusBadge');
-            if (url) {
+            if (workerUrl && relayUrl) {
                 badge.textContent = 'Configured';
                 badge.className = 'status-badge connected';
             } else {
                 badge.textContent = 'Not Configured';
                 badge.className = 'status-badge disconnected';
             }
+        }
+
+        async function checkYouTubeConnection() {
+            const workerUrl = localStorage.getItem('kiuma_stream_relay_url');
+            if (!workerUrl) return;
+            try {
+                const res = await fetch(`${workerUrl}/oauth/status`);
+                const data = await res.json();
+                if (data.connected) {
+                    document.getElementById('ytChannelName').textContent = data.channel?.title || 'YouTube Connected';
+                    document.getElementById('ytChannelStatus').textContent = 'Channel connected and ready to stream';
+                    document.getElementById('ytConnectBtn').style.display = 'none';
+                    document.getElementById('ytDisconnectBtn').style.display = '';
+                    document.getElementById('streamRelayStatusBadge').textContent = 'YouTube Connected';
+                    document.getElementById('streamRelayStatusBadge').className = 'status-badge connected';
+                } else {
+                    document.getElementById('ytChannelName').textContent = 'YouTube Not Connected';
+                    document.getElementById('ytChannelStatus').textContent = 'Connect your YouTube channel to enable live streaming';
+                    document.getElementById('ytConnectBtn').style.display = '';
+                    document.getElementById('ytDisconnectBtn').style.display = 'none';
+                }
+            } catch(e) { console.warn('YouTube status check failed:', e); }
+        }
+
+        function connectYouTube() {
+            const workerUrl = localStorage.getItem('kiuma_stream_relay_url');
+            if (!workerUrl) { showStatus('streamRelaySettingsStatus', 'Save the Worker URL first', 'error'); return; }
+            const popup = window.open(`${workerUrl}/oauth/login`, 'youtube-oauth', 'width=600,height=700,scrollbars=yes');
+            window.addEventListener('message', function handler(evt) {
+                if (evt.data && (evt.data.type === 'youtube-oauth-success' || evt.data.type === 'youtube-oauth-error')) {
+                    window.removeEventListener('message', handler);
+                    if (evt.data.type === 'youtube-oauth-success') {
+                        showStatus('streamRelaySettingsStatus', evt.data.message, 'success');
+                        checkYouTubeConnection();
+                    } else {
+                        showStatus('streamRelaySettingsStatus', evt.data.message, 'error');
+                    }
+                }
+            });
+        }
+
+        async function disconnectYouTube() {
+            const workerUrl = localStorage.getItem('kiuma_stream_relay_url');
+            if (!workerUrl) return;
+            try {
+                await fetch(`${workerUrl}/oauth/disconnect`, { method: 'POST' });
+                showStatus('streamRelaySettingsStatus', 'YouTube disconnected', 'success');
+                checkYouTubeConnection();
+            } catch(e) { showStatus('streamRelaySettingsStatus', 'Disconnect failed: ' + e.message, 'error'); }
         }
 
         // Check if a file with a similar name already exists in the loaded file lists
