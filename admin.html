@@ -3284,8 +3284,8 @@
         // YOUTUBE LIVE STREAMING SETTINGS
         // ==============================
         function loadStreamRelaySettings() {
-            const workerUrl = localStorage.getItem('kiuma_stream_relay_url') || '';
-            const relayUrl = localStorage.getItem('kiuma_relay_server_url') || '';
+            const workerUrl = localStorage.getItem('kiuma_stream_relay_url') || 'https://kiuma-stream-relay.kiuma4.workers.dev';
+            const relayUrl = localStorage.getItem('kiuma_relay_server_url') || 'https://invigorating-love-production.up.railway.app';
             document.getElementById('streamRelayWorkerUrl').value = workerUrl;
             document.getElementById('relayServerUrl').value = relayUrl;
             checkStreamRelayStatus();

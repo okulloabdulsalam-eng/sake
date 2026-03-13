@@ -316,12 +316,12 @@
 
         // Worker URL (YouTube API proxy) - set in admin panel Settings tab
         function getRelayWorkerUrl() {
-            return localStorage.getItem('kiuma_stream_relay_url') || '';
+            return localStorage.getItem('kiuma_stream_relay_url') || 'https://kiuma-stream-relay.kiuma4.workers.dev';
         }
 
         // Railway relay server URL (WebSocket RTMP relay)
         function getRelayServerUrl() {
-            return localStorage.getItem('kiuma_relay_server_url') || '';
+            return localStorage.getItem('kiuma_relay_server_url') || 'https://invigorating-love-production.up.railway.app';
         }
 
         // ============================================================
