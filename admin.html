@@ -830,6 +830,34 @@
                         </button>
                         <div id="passwordChangeStatus" class="alert" style="margin-top: 15px;"></div>
                     </div>
+
+                    <!-- Live Streaming (Cloudflare R2) -->
+                    <div class="config-card" style="border-left: 4px solid #F6821F;">
+                        <h4><i class="fas fa-broadcast-tower" style="color:#F6821F;"></i> Live Streaming
+                            <span class="status-badge disconnected" id="streamRelayStatusBadge">Not Configured</span>
+                        </h4>
+                        <p style="color:#888;font-size:13px;margin-bottom:15px;">
+                            Stream live via Cloudflare's global network. Video chunks are stored in R2 and delivered worldwide — free, no extra servers needed.
+                        </p>
+                        
+                        <div class="form-group">
+                            <label>Stream Worker URL</label>
+                            <input type="text" id="streamRelayWorkerUrl" class="form-input" placeholder="https://kiuma-stream-relay.your-account.workers.dev">
+                            <small style="color: #888; display: block; margin-top: 5px;">
+                                Deploy the worker from <code>workers/stream-relay/</code> with R2 bucket binding.
+                            </small>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="btn btn-primary" onclick="saveStreamRelaySettings()">
+                                <i class="fas fa-save"></i> Save Settings
+                            </button>
+                            <button class="btn btn-outline" onclick="testStreamRelayConnection()">
+                                <i class="fas fa-plug"></i> Test Connection
+                            </button>
+                        </div>
+                        <div id="streamRelaySettingsStatus" class="alert" style="margin-top: 15px;"></div>
+                    </div>
                 </div>
 
                 <!-- Notifications Panel -->
@@ -1918,6 +1946,9 @@
                 window.githubStorage.loadConfig();
                 loadGitHubSettingsUI();
             }
+
+            // Load Stream Relay settings
+            loadStreamRelaySettings();
 
             setupMediaPickerListeners();
             if (typeof updateNotificationBadge === 'function') {
@@ -3216,6 +3247,66 @@
                 document.getElementById('githubStatusBadge').textContent = 'Not Configured';
                 document.getElementById('githubStatusBadge').className = 'status-badge disconnected';
                 document.getElementById('storageStatus').textContent = '!';
+            }
+        }
+
+        // ==============================
+        // LIVE STREAMING (CLOUDFLARE R2) SETTINGS
+        // ==============================
+        function loadStreamRelaySettings() {
+            const url = localStorage.getItem('kiuma_stream_relay_url') || '';
+            document.getElementById('streamRelayWorkerUrl').value = url;
+            checkStreamRelayStatus();
+        }
+
+        function saveStreamRelaySettings() {
+            const url = document.getElementById('streamRelayWorkerUrl').value.trim();
+            if (!url) {
+                localStorage.removeItem('kiuma_stream_relay_url');
+                showStatus('streamRelaySettingsStatus', 'Stream worker URL cleared', 'success');
+                checkStreamRelayStatus();
+                return;
+            }
+            try { new URL(url); } catch(e) {
+                showStatus('streamRelaySettingsStatus', 'Invalid URL format', 'error'); return;
+            }
+            localStorage.setItem('kiuma_stream_relay_url', url);
+            showStatus('streamRelaySettingsStatus', 'Stream settings saved!', 'success');
+            checkStreamRelayStatus();
+        }
+
+        async function testStreamRelayConnection() {
+            const url = document.getElementById('streamRelayWorkerUrl').value.trim();
+            if (!url) { showStatus('streamRelaySettingsStatus', 'Enter a Worker URL first', 'error'); return; }
+
+            showStatus('streamRelaySettingsStatus', 'Testing connection...', 'success');
+            try {
+                const res = await fetch(`${url}/health`, { method: 'GET' });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    const r2Msg = data.r2Available ? 'R2 storage ready' : 'R2 not bound';
+                    showStatus('streamRelaySettingsStatus', `✓ Worker reachable. ${r2Msg}.`, data.r2Available ? 'success' : 'error');
+                    document.getElementById('streamRelayStatusBadge').textContent = data.r2Available ? 'Connected' : 'R2 Missing';
+                    document.getElementById('streamRelayStatusBadge').className = 'status-badge ' + (data.r2Available ? 'connected' : 'disconnected');
+                } else {
+                    showStatus('streamRelaySettingsStatus', 'Worker responded but status not OK', 'error');
+                }
+            } catch(e) {
+                showStatus('streamRelaySettingsStatus', 'Connection failed: ' + e.message, 'error');
+                document.getElementById('streamRelayStatusBadge').textContent = 'Error';
+                document.getElementById('streamRelayStatusBadge').className = 'status-badge disconnected';
+            }
+        }
+
+        function checkStreamRelayStatus() {
+            const url = localStorage.getItem('kiuma_stream_relay_url');
+            const badge = document.getElementById('streamRelayStatusBadge');
+            if (url) {
+                badge.textContent = 'Configured';
+                badge.className = 'status-badge connected';
+            } else {
+                badge.textContent = 'Not Configured';
+                badge.className = 'status-badge disconnected';
             }
         }
 

@@ -291,10 +291,8 @@
         let mediaStream      = null;
         let streamId         = null;
         let streamDoc        = null;
-        let legacyPC         = null;
-        let viewerPCs        = {};
-        let viewersUnsub     = null;
-        let legacyUnsub      = null;
+        let mediaRecorder    = null;  // MediaRecorder for capturing video
+        let cfStreamId       = null;  // Cloudflare R2 stream ID
         let streamDocUnsub   = null;
         let timerInterval    = null;
         let statsInterval    = null;
@@ -308,36 +306,17 @@
         let wakeLock         = null;
         let toastTimer       = null;
         let heartbeatInterval = null;
+        let chunkUploadQueue = [];
+        let isUploading      = false;
+        let chunksSent       = 0;
+        let bytesSentTotal   = 0;
+        let lastBytesSent    = 0;
+        let lastBytesTime    = 0;
 
-        // ICE servers — STUN + free TURN fallback
-        const ICE_SERVERS = [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' },
-            { urls: 'stun:stun3.l.google.com:19302' },
-            { urls: 'stun:stun4.l.google.com:19302' },
-            // Open TURN relay (relay.metered.ca free tier)
-            {
-                urls: 'turn:a.relay.metered.ca:80',
-                username: 'e8dd65b92a0fbc3e0f28a930',
-                credential: '5l3TpsinAr7VECvk'
-            },
-            {
-                urls: 'turn:a.relay.metered.ca:80?transport=tcp',
-                username: 'e8dd65b92a0fbc3e0f28a930',
-                credential: '5l3TpsinAr7VECvk'
-            },
-            {
-                urls: 'turn:a.relay.metered.ca:443',
-                username: 'e8dd65b92a0fbc3e0f28a930',
-                credential: '5l3TpsinAr7VECvk'
-            },
-            {
-                urls: 'turns:a.relay.metered.ca:443?transport=tcp',
-                username: 'e8dd65b92a0fbc3e0f28a930',
-                credential: '5l3TpsinAr7VECvk'
-            }
-        ];
+        // Worker URL - set in admin panel Settings tab
+        function getRelayWorkerUrl() {
+            return localStorage.getItem('kiuma_stream_relay_url') || '';
+        }
 
         // ============================================================
         //  INIT
@@ -345,30 +324,12 @@
         async function init() {
             setupButtons();
             await startCameraPreview();
-            loadTURNConfig();
-        }
-
-        // Try to load custom TURN config from Firestore (overrides defaults)
-        async function loadTURNConfig() {
-            try {
-                let attempts = 0;
-                while (!window.firebaseDb && attempts < 15) {
-                    await new Promise(r => setTimeout(r, 300));
-                    attempts++;
-                }
-                if (!window.firebaseDb) return;
-                const doc = await window.firebaseDb.collection('config').doc('turnServers').get();
-                if (doc.exists) {
-                    const data = doc.data();
-                    if (data.servers && Array.isArray(data.servers)) {
-                        // Replace TURN entries (keep STUN)
-                        const stunOnly = ICE_SERVERS.filter(s => typeof s.urls === 'string' && s.urls.startsWith('stun:'));
-                        ICE_SERVERS.length = 0;
-                        ICE_SERVERS.push(...stunOnly, ...data.servers);
-                        console.log('[BROADCAST] Loaded custom TURN config');
-                    }
-                }
-            } catch(e) { console.log('[BROADCAST] No custom TURN config, using defaults'); }
+            
+            // Check if relay worker is configured
+            const relayUrl = getRelayWorkerUrl();
+            if (!relayUrl) {
+                console.warn('[BROADCAST] Stream relay worker URL not configured. Set it in Admin > Settings.');
+            }
         }
 
         // ============================================================
@@ -445,15 +406,13 @@
                 mediaStream = newStream;
                 attachTrackEndedHandlers(newStream);
 
-                // Replace tracks in all active PeerConnections
-                const pcs = [legacyPC, ...Object.values(viewerPCs).map(e => e.pc)].filter(Boolean);
-                for (const pc of pcs) {
+                // Restart MediaRecorder with new stream if active
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                     try {
-                        for (const sender of pc.getSenders()) {
-                            const newTrack = newStream.getTracks().find(t => t.kind === sender.track?.kind);
-                            if (newTrack) await sender.replaceTrack(newTrack);
-                        }
-                    } catch(e) { console.warn('[BROADCAST] Track replace error:', e); }
+                        mediaRecorder.stop();
+                        startMediaRecorder(newStream, pickMimeType());
+                        console.log('[BROADCAST] MediaRecorder restarted with new stream');
+                    } catch(e) { console.warn('[BROADCAST] MediaRecorder restart error:', e); }
                 }
 
                 showToast('Camera/mic recovered', 'success');
@@ -486,8 +445,14 @@
             const title = inputTitle.value.trim();
             if (!title) { showToast('Enter a stream title', 'error'); inputTitle.focus(); return; }
 
+            const workerUrl = getRelayWorkerUrl();
+            if (!workerUrl) {
+                showToast('Stream relay not configured. Go to Admin > Settings.', 'error');
+                return;
+            }
+
             btnGoLive.disabled = true;
-            btnGoLive.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
+            btnGoLive.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting stream...';
 
             try {
                 // Wait for Firebase
@@ -498,10 +463,30 @@
                 }
                 if (!window.firebaseDb) throw new Error('Firebase not available');
 
-                // Unmute camera feed for broadcast (was muted for local preview)
-                cameraFeed.muted = true; // Keep local muted to avoid echo
+                // Keep local preview muted to avoid echo
+                cameraFeed.muted = true;
 
-                // Create Firestore doc
+                // 1. Determine MIME type before creating stream
+                const mimeType = pickMimeType();
+
+                // 2. Create R2 stream via Worker
+                const createRes = await fetch(`${workerUrl}/stream/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, mimeType })
+                });
+                if (!createRes.ok) {
+                    const err = await createRes.json().catch(() => ({}));
+                    throw new Error(err.error || 'Failed to create stream');
+                }
+                const streamData = await createRes.json();
+                cfStreamId = streamData.streamId;
+                console.log('[BROADCAST] R2 stream created:', cfStreamId);
+
+                // 3. Start MediaRecorder and upload chunks
+                startMediaRecorder(mediaStream, mimeType);
+
+                // 4. Create Firestore doc
                 const data = {
                     title,
                     description: inputDesc.value.trim(),
@@ -510,8 +495,10 @@
                     startedAt: new Date().toISOString(),
                     startedBy: 'admin',
                     viewerCount: 0,
-                    streamUrl: null,
-                    webrtcEnabled: true,
+                    cfStreamId: cfStreamId,
+                    workerUrl: workerUrl,
+                    mimeType: mimeType,
+                    streamType: 'cloudflare-r2',
                     cameraActive: true
                 };
 
@@ -519,9 +506,6 @@
                 streamId = docRef.id;
                 streamDoc = data;
                 console.log('[BROADCAST] Stream created:', streamId);
-
-                // Setup WebRTC (legacy + multi-viewer)
-                await setupWebRTC();
 
                 // Capture initial thumbnail
                 captureThumbnail();
@@ -531,7 +515,7 @@
                 topBar.classList.add('visible');
                 bottomBar.classList.add('visible');
                 liveTitle.textContent = title;
-                liveMeta.innerHTML = `<span><i class="fas fa-tag"></i> ${escHtml(inputCategory.value)}</span><span><i class="fas fa-broadcast-tower"></i> KIUMA</span>`;
+                liveMeta.innerHTML = `<span><i class="fas fa-tag"></i> ${escHtml(inputCategory.value)}</span><span><i class="fas fa-cloud"></i> Cloudflare</span>`;
 
                 // Start timers
                 startTimer();
@@ -549,191 +533,118 @@
                 showToast('Failed to start: ' + err.message, 'error');
                 btnGoLive.disabled = false;
                 btnGoLive.innerHTML = '<i class="fas fa-broadcast-tower"></i> Go Live';
+                cleanupRelay();
             }
         }
 
         // ============================================================
-        //  WebRTC SETUP — legacy + multi-viewer
+        //  CLOUDFLARE R2 CHUNK STREAMING
+        //  Browser → MediaRecorder → HTTP POST chunks → Worker → R2
+        //  Viewers poll Worker for new chunks → MSE playback
         // ============================================================
-        async function setupWebRTC() {
-            // 1. Legacy PC (single offer on parent doc)
-            legacyPC = new RTCPeerConnection({ iceServers: ICE_SERVERS });
-            mediaStream.getTracks().forEach(t => legacyPC.addTrack(t, mediaStream));
 
-            legacyPC.oniceconnectionstatechange = () => {
-                const s = legacyPC.iceConnectionState;
-                console.log('[BROADCAST] Legacy ICE:', s);
-                if (s === 'connected') showToast('Viewer connected!', 'success');
-                if (s === 'failed' || s === 'disconnected') {
-                    // ICE restart with re-signaling for legacy PC
-                    (async () => {
-                        try {
-                            if (legacyPC.signalingState === 'closed') return;
-                            console.log('[BROADCAST] Legacy ICE restart');
-                            const offer = await legacyPC.createOffer({ iceRestart: true });
-                            await legacyPC.setLocalDescription(offer);
-                            const fullOffer = await waitForICE(legacyPC);
-                            await window.firebaseDb.collection('liveStreams').doc(streamId).update({
-                                sdpOffer: fullOffer.sdp,
-                                sdpAnswer: firebase.firestore.FieldValue.delete(),
-                                lastUpdated: new Date().toISOString()
-                            });
-                        } catch(e) { console.warn('[BROADCAST] Legacy ICE restart failed:', e); }
-                    })();
+        function pickMimeType() {
+            // Prefer VP8+Opus for MSE compatibility (works in all browsers)
+            const mimeTypes = [
+                'video/webm;codecs=vp8,opus',
+                'video/webm;codecs=vp8',
+                'video/webm;codecs=vp9,opus',
+                'video/webm;codecs=vp9',
+                'video/webm',
+            ];
+            for (const mt of mimeTypes) {
+                if (MediaRecorder.isTypeSupported(mt)) return mt;
+            }
+            return 'video/webm';
+        }
+
+        function startMediaRecorder(stream, mimeType) {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                try { mediaRecorder.stop(); } catch(e) {}
+            }
+
+            console.log('[BROADCAST] MediaRecorder using:', mimeType);
+
+            mediaRecorder = new MediaRecorder(stream, {
+                mimeType,
+                videoBitsPerSecond: 1500000, // 1.5 Mbps (good for R2 upload)
+                audioBitsPerSecond: 128000,
+            });
+
+            mediaRecorder.ondataavailable = (evt) => {
+                if (evt.data && evt.data.size > 0 && cfStreamId) {
+                    chunkUploadQueue.push(evt.data);
+                    processUploadQueue();
                 }
             };
 
-            const offer = await legacyPC.createOffer();
-            await legacyPC.setLocalDescription(offer);
-            const fullOffer = await waitForICE(legacyPC);
+            mediaRecorder.onerror = (evt) => {
+                console.error('[BROADCAST] MediaRecorder error:', evt.error);
+                showToast('Recording error: ' + (evt.error?.message || 'Unknown'), 'error');
+            };
 
-            await window.firebaseDb.collection('liveStreams').doc(streamId).update({
-                sdpOffer: fullOffer.sdp,
-                streamType: 'webrtc',
-                webrtcConnected: true,
-                streamUrl: 'webrtc://' + streamId
-            });
+            mediaRecorder.onstop = () => {
+                console.log('[BROADCAST] MediaRecorder stopped');
+            };
 
-            // Listen for legacy answer
-            legacyUnsub = window.firebaseDb.collection('liveStreams').doc(streamId)
-                .onSnapshot(async (doc) => {
-                    const d = doc.data();
-                    if (d && d.sdpAnswer && legacyPC.signalingState === 'have-local-offer') {
-                        try {
-                            await legacyPC.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: d.sdpAnswer }));
-                            console.log('[BROADCAST] Legacy viewer connected');
-                        } catch(e) { console.warn('[BROADCAST] Legacy answer error:', e); }
-                    }
-                    // Update viewer count in real-time
-                    if (d && d.viewerCount !== undefined) {
-                        viewerNum.textContent = Math.max(0, d.viewerCount);
-                        $('#statViewers').textContent = Math.max(0, d.viewerCount);
-                    }
-                });
+            // 2-second chunks for balance between latency and upload efficiency
+            mediaRecorder.start(2000);
+            console.log('[BROADCAST] MediaRecorder started (2s chunks)');
+        }
 
-            // 2. Multi-viewer subcollection listener
-            viewersUnsub = window.firebaseDb.collection('liveStreams').doc(streamId)
-                .collection('viewers')
-                .onSnapshot(snapshot => {
-                    snapshot.docChanges().forEach(async change => {
-                        if (change.type === 'added') {
-                            const vid = change.doc.id;
-                            const vd = change.doc.data();
-                            if (vd.sdpOffer || vd.status === 'connected' || viewerPCs[vid]) return;
-                            console.log('[BROADCAST] New viewer:', vid.substr(0, 8));
-                            await handleNewViewer(vid);
-                        }
-                        if (change.type === 'removed') {
-                            const vid = change.doc.id;
-                            if (viewerPCs[vid]) {
-                                try { viewerPCs[vid].pc.close(); } catch(e) {}
-                                if (viewerPCs[vid].unsub) viewerPCs[vid].unsub();
-                                delete viewerPCs[vid];
-                                console.log('[BROADCAST] Viewer left:', vid.substr(0, 8));
-                            }
-                        }
+        async function processUploadQueue() {
+            if (isUploading || chunkUploadQueue.length === 0) return;
+            isUploading = true;
+
+            while (chunkUploadQueue.length > 0) {
+                const chunk = chunkUploadQueue.shift();
+                const workerUrl = getRelayWorkerUrl();
+                if (!workerUrl || !cfStreamId) break;
+
+                try {
+                    const res = await fetch(`${workerUrl}/stream/${cfStreamId}/chunk`, {
+                        method: 'POST',
+                        body: chunk,
                     });
-                });
-
-            console.log('[BROADCAST] WebRTC ready, waiting for viewers');
-        }
-
-        async function handleNewViewer(viewerId) {
-            try {
-                const ref = window.firebaseDb.collection('liveStreams').doc(streamId)
-                    .collection('viewers').doc(viewerId);
-
-                const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
-                mediaStream.getTracks().forEach(t => pc.addTrack(t, mediaStream));
-
-                pc.oniceconnectionstatechange = () => {
-                    const s = pc.iceConnectionState;
-                    console.log(`[BROADCAST] Viewer ${viewerId.substr(0,8)} ICE: ${s}`);
-                    if (s === 'connected') {
-                        const count = Object.keys(viewerPCs).length;
-                        showToast(`${count} viewer(s) watching`, 'success');
+                    if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        console.error('[BROADCAST] Chunk upload failed:', err.error);
+                        // Re-queue on failure (unless stream ended)
+                        if (streamId) chunkUploadQueue.unshift(chunk);
+                        break;
                     }
-                    if (s === 'failed') {
-                        // Full ICE restart with re-signaling
-                        iceRestartViewer(viewerId, pc, ref);
-                    }
-                    if (s === 'disconnected') {
-                        // Grace period: try ICE restart first, then clean up after 15s
-                        setTimeout(() => {
-                            if (pc.iceConnectionState === 'disconnected') {
-                                console.log(`[BROADCAST] Viewer ${viewerId.substr(0,8)} still disconnected, attempting ICE restart`);
-                                iceRestartViewer(viewerId, pc, ref);
-                            }
-                        }, 5000);
-                        setTimeout(() => {
-                            if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
-                                console.log(`[BROADCAST] Viewer ${viewerId.substr(0,8)} cleanup after 15s grace`);
-                                if (viewerPCs[viewerId]) {
-                                    try { pc.close(); } catch(e) {}
-                                    if (viewerPCs[viewerId].unsub) viewerPCs[viewerId].unsub();
-                                    delete viewerPCs[viewerId];
-                                }
-                            }
-                        }, 15000);
-                    }
-                    if (s === 'closed') {
-                        if (viewerPCs[viewerId]) {
-                            if (viewerPCs[viewerId].unsub) viewerPCs[viewerId].unsub();
-                            delete viewerPCs[viewerId];
-                        }
-                    }
-                };
+                    chunksSent++;
+                    bytesSentTotal += chunk.size;
+                } catch(e) {
+                    console.error('[BROADCAST] Chunk upload error:', e);
+                    if (streamId) chunkUploadQueue.unshift(chunk);
+                    // Wait before retry
+                    await new Promise(r => setTimeout(r, 1000));
+                    break;
+                }
+            }
 
-                const offer = await pc.createOffer();
-                await pc.setLocalDescription(offer);
-                const fullOffer = await waitForICE(pc);
-
-                await ref.update({ sdpOffer: fullOffer.sdp, status: 'offered' });
-
-                const unsub = ref.onSnapshot(async doc => {
-                    const vd = doc.data();
-                    if (vd && vd.sdpAnswer && pc.signalingState === 'have-local-offer') {
-                        try {
-                            await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: vd.sdpAnswer }));
-                            console.log(`[BROADCAST] Viewer ${viewerId.substr(0,8)} connected`);
-                        } catch(e) {}
-                    }
-                });
-
-                viewerPCs[viewerId] = { pc, unsub };
-            } catch(e) {
-                console.error('[BROADCAST] Viewer error:', e);
+            isUploading = false;
+            // If there are more chunks queued, continue processing
+            if (chunkUploadQueue.length > 0) {
+                setTimeout(() => processUploadQueue(), 100);
             }
         }
 
-        // ICE restart with full re-signaling for a viewer PC
-        async function iceRestartViewer(viewerId, pc, ref) {
-            try {
-                if (!viewerPCs[viewerId] || pc.signalingState === 'closed') return;
-                console.log(`[BROADCAST] ICE restart for viewer ${viewerId.substr(0,8)}`);
-                const offer = await pc.createOffer({ iceRestart: true });
-                await pc.setLocalDescription(offer);
-                const fullOffer = await waitForICE(pc);
-                await ref.update({
-                    sdpOffer: fullOffer.sdp,
-                    sdpAnswer: firebase.firestore.FieldValue.delete(),
-                    status: 'offered',
-                    iceRestart: true
-                });
-                console.log(`[BROADCAST] ICE restart offer written for ${viewerId.substr(0,8)}`);
-            } catch(e) {
-                console.warn(`[BROADCAST] ICE restart failed for ${viewerId.substr(0,8)}:`, e);
+        function cleanupRelay() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                try { mediaRecorder.stop(); } catch(e) {}
             }
-        }
+            mediaRecorder = null;
+            chunkUploadQueue = [];
+            isUploading = false;
 
-        function waitForICE(pc) {
-            return new Promise(resolve => {
-                const timeout = setTimeout(() => resolve(pc.localDescription), 5000);
-                if (pc.iceGatheringState === 'complete') { clearTimeout(timeout); resolve(pc.localDescription); return; }
-                pc.onicegatheringstatechange = () => {
-                    if (pc.iceGatheringState === 'complete') { clearTimeout(timeout); resolve(pc.localDescription); }
-                };
-            });
+            // Stop R2 stream
+            const workerUrl = getRelayWorkerUrl();
+            if (workerUrl && cfStreamId) {
+                fetch(`${workerUrl}/stream/${cfStreamId}/stop`, { method: 'POST' }).catch(() => {});
+            }
+            cfStreamId = null;
         }
 
         // ============================================================
@@ -808,31 +719,10 @@
                 // Mirror front camera, don't mirror back
                 cameraFeed.style.transform = currentDeviceIdx === 0 ? 'scaleX(-1)' : 'scaleX(1)';
 
-                // Replace tracks in legacy PC
-                if (legacyPC) {
-                    for (const sender of legacyPC.getSenders()) {
-                        const newTrack = newStream.getTracks().find(t => t.kind === sender.track?.kind);
-                        if (newTrack) await sender.replaceTrack(newTrack);
-                    }
-                    // Re-negotiate legacy
-                    const offer = await legacyPC.createOffer();
-                    await legacyPC.setLocalDescription(offer);
-                    const fullOffer = await waitForICE(legacyPC);
-                    await window.firebaseDb.collection('liveStreams').doc(streamId).update({
-                        sdpOffer: fullOffer.sdp,
-                        sdpAnswer: firebase.firestore.FieldValue.delete(),
-                        lastUpdated: new Date().toISOString()
-                    });
-                }
-
-                // Replace tracks in all viewer PCs
-                for (const [vid, entry] of Object.entries(viewerPCs)) {
-                    try {
-                        for (const sender of entry.pc.getSenders()) {
-                            const newTrack = newStream.getTracks().find(t => t.kind === sender.track?.kind);
-                            if (newTrack) await sender.replaceTrack(newTrack);
-                        }
-                    } catch(e) {}
+                // Restart MediaRecorder with new stream
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    try { mediaRecorder.stop(); } catch(e) {}
+                    startMediaRecorder(newStream, pickMimeType());
                 }
 
                 showToast('Camera flipped', 'success');
@@ -873,28 +763,12 @@
                 // Stop camera
                 if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
 
-                // Close all viewer PCs
-                for (const [vid, entry] of Object.entries(viewerPCs)) {
-                    try { entry.pc.close(); } catch(e) {}
-                    if (entry.unsub) entry.unsub();
-                }
-                viewerPCs = {};
-
-                // Close legacy PC
-                if (legacyPC) { try { legacyPC.close(); } catch(e) {} legacyPC = null; }
-                if (legacyUnsub) { legacyUnsub(); legacyUnsub = null; }
-                if (viewersUnsub) { viewersUnsub(); viewersUnsub = null; }
+                // Cleanup relay (MediaRecorder + R2 stream stop)
+                cleanupRelay();
                 if (streamDocUnsub) { streamDocUnsub(); streamDocUnsub = null; }
 
-                // Delete viewer docs
+                // Update Firestore
                 if (streamId && window.firebaseDb) {
-                    try {
-                        const snap = await window.firebaseDb.collection('liveStreams').doc(streamId).collection('viewers').get();
-                        const batch = window.firebaseDb.batch();
-                        snap.forEach(d => batch.delete(d.ref));
-                        await batch.commit();
-                    } catch(e) {}
-
                     await window.firebaseDb.collection('liveStreams').doc(streamId).update({
                         status: 'ended',
                         endedAt: new Date().toISOString(),
@@ -959,62 +833,34 @@
                     }
                 }
 
-                // WebRTC stats from first active PC
-                const activePCs = Object.values(viewerPCs).map(e => e.pc).filter(p => p.iceConnectionState === 'connected');
-                const pc = activePCs[0] || (legacyPC && legacyPC.iceConnectionState === 'connected' ? legacyPC : null);
-                if (pc) {
-                    try {
-                        const stats = await pc.getStats();
-                        let bytesSent = 0, packetsLost = 0;
-                        stats.forEach(report => {
-                            if (report.type === 'outbound-rtp' && report.kind === 'video') {
-                                bytesSent = report.bytesSent || 0;
-                            }
-                            if (report.type === 'remote-inbound-rtp') {
-                                packetsLost += report.packetsLost || 0;
-                            }
-                        });
-                        // RTT from remote-inbound-rtp
-                        let rtt = 0;
-                        stats.forEach(report => {
-                            if (report.type === 'remote-inbound-rtp' && report.roundTripTime !== undefined) {
-                                rtt = Math.max(rtt, report.roundTripTime);
-                            }
-                        });
-                        if (rtt > 0) {
-                            const rttMs = Math.round(rtt * 1000);
-                            const statRttEl = $('#statRtt');
-                            statRttEl.textContent = rttMs + ' ms';
-                            statRttEl.className = 'stat-value' + (rttMs < 100 ? ' good' : rttMs < 300 ? ' medium' : ' poor');
-                            const latRttEl = $('#latRtt');
-                            latRttEl.textContent = rttMs + ' ms';
-                            const latRttPill = $('#latRttPill');
-                            latRttPill.className = 'lat-pill' + (rttMs < 100 ? ' good' : rttMs < 300 ? ' medium' : ' poor');
-                        }
-
-                        // Rough bitrate (compare to previous)
-                        if (pc._lastBytes !== undefined && pc._lastTime !== undefined) {
-                            const elapsed = (Date.now() - pc._lastTime) / 1000;
-                            if (elapsed > 0) {
-                                const bps = ((bytesSent - pc._lastBytes) * 8) / elapsed;
-                                const kbps = Math.round(bps / 1000);
-                                const statBr = $('#statBitrate');
-                                statBr.textContent = kbps > 1000 ? (kbps/1000).toFixed(1) + ' Mbps' : kbps + ' kbps';
-                                statBr.className = 'stat-value' + (kbps > 500 ? ' good' : kbps > 100 ? ' medium' : ' poor');
-                                const latBrEl = $('#latBitrate');
-                                latBrEl.textContent = kbps > 1000 ? (kbps/1000).toFixed(1) + ' Mbps' : kbps + ' kbps';
-                                const latBrPill = $('#latBitratePill');
-                                latBrPill.className = 'lat-pill' + (kbps > 500 ? ' good' : kbps > 100 ? ' medium' : ' poor');
-                            }
-                        }
-                        pc._lastBytes = bytesSent;
-                        pc._lastTime = Date.now();
-                        $('#statLost').textContent = packetsLost;
-                    } catch(e) {}
+                // Relay upload stats (from MediaRecorder bytes sent)
+                if (bytesSentTotal > 0 && lastBytesTime > 0) {
+                    const elapsed = (Date.now() - lastBytesTime) / 1000;
+                    if (elapsed > 0) {
+                        const bps = ((bytesSentTotal - lastBytesSent) * 8) / elapsed;
+                        const kbps = Math.round(bps / 1000);
+                        const statBr = $('#statBitrate');
+                        statBr.textContent = kbps > 1000 ? (kbps/1000).toFixed(1) + ' Mbps' : kbps + ' kbps';
+                        statBr.className = 'stat-value' + (kbps > 500 ? ' good' : kbps > 100 ? ' medium' : ' poor');
+                        const latBrEl = $('#latBitrate');
+                        latBrEl.textContent = kbps > 1000 ? (kbps/1000).toFixed(1) + ' Mbps' : kbps + ' kbps';
+                        const latBrPill = $('#latBitratePill');
+                        latBrPill.className = 'lat-pill' + (kbps > 500 ? ' good' : kbps > 100 ? ' medium' : ' poor');
+                    }
                 }
+                lastBytesSent = bytesSentTotal;
+                lastBytesTime = Date.now();
 
-                // Adaptive bitrate: if too many packets lost, reduce resolution
-                // (only for advanced — requires re-getUserMedia which is disruptive)
+                // Chunk upload status
+                const uploading = cfStreamId && !isUploading || chunkUploadQueue.length === 0;
+                const statRttEl = $('#statRtt');
+                statRttEl.textContent = chunksSent + ' chunks';
+                statRttEl.className = 'stat-value good';
+                const latRttEl = $('#latRtt');
+                latRttEl.textContent = chunkUploadQueue.length === 0 ? 'OK' : chunkUploadQueue.length + ' queued';
+                const latRttPill = $('#latRttPill');
+                latRttPill.className = 'lat-pill' + (chunkUploadQueue.length < 3 ? ' good' : chunkUploadQueue.length < 6 ? ' medium' : ' poor');
+                $('#statLost').textContent = chunkUploadQueue.length;
             }, 3000);
         }
 
@@ -1022,7 +868,7 @@
         //  VIEWER COUNT POLLING
         // ============================================================
         function startViewerCountPolling() {
-            // Already handled by legacyUnsub onSnapshot, but add fallback + reconciliation
+            // Poll viewer count from Firestore
             setInterval(async () => {
                 if (!streamId || !window.firebaseDb) return;
                 try {
@@ -1034,24 +880,6 @@
                     }
                 } catch(e) {}
             }, 10000);
-
-            // Reconcile viewer count every 30s by counting actual viewer docs
-            setInterval(async () => {
-                if (!streamId || !window.firebaseDb) return;
-                try {
-                    const snap = await window.firebaseDb.collection('liveStreams').doc(streamId)
-                        .collection('viewers').get();
-                    const actualCount = snap.size;
-                    const docSnap = await window.firebaseDb.collection('liveStreams').doc(streamId).get();
-                    const stored = docSnap.data()?.viewerCount || 0;
-                    if (Math.abs(stored - actualCount) > 1) {
-                        console.log(`[BROADCAST] Viewer count reconciliation: stored=${stored}, actual=${actualCount}`);
-                        await window.firebaseDb.collection('liveStreams').doc(streamId).update({
-                            viewerCount: actualCount
-                        });
-                    }
-                } catch(e) {}
-            }, 30000);
         }
 
         // ============================================================
@@ -1121,6 +949,7 @@
                     });
                 } catch(e) {}
             }
+            cleanupRelay();
             if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
             releaseWakeLock();
         });

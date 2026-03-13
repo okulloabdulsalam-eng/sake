@@ -1,8 +1,7 @@
 /**
- * KIUMA Pesapal Payment Server - Railway Deployment
+ * KIUMA Server - Railway Deployment
  * 
- * Express.js server for Pesapal payment processing
- * Deploy this to Railway instead of Firebase Functions
+ * Express.js server for Pesapal payment processing.
  */
 
 const express = require('express');
@@ -414,8 +413,8 @@ app.get('/', (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`KIUMA Pesapal Payment Server running on port ${PORT}`);
-  console.log(`Pesapal enabled: ${process.env.PESAPAL_ENABLED === 'true'}`);
-  console.log(`Test mode: ${process.env.PESAPAL_TEST_MODE === 'true'}`);
+  console.log(`KIUMA Pesapal Server running on port ${PORT}`);
+  console.log(`  Pesapal enabled: ${process.env.PESAPAL_ENABLED === 'true'}`);
+  console.log(`  Test mode: ${process.env.PESAPAL_TEST_MODE === 'true'}`);
 });
 
