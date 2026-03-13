@@ -807,18 +807,21 @@
                 // Stop camera
                 if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
 
+                // Save broadcast ID before cleanup nulls it
+                const savedBroadcastId = ytBroadcastId;
+
                 // Cleanup relay (MediaRecorder + WebSocket)
                 cleanupRelay();
                 if (streamDocUnsub) { streamDocUnsub(); streamDocUnsub = null; }
 
                 // End YouTube broadcast
                 const workerUrl = getRelayWorkerUrl();
-                if (workerUrl && ytBroadcastId) {
+                if (workerUrl && savedBroadcastId) {
                     try {
                         await fetch(`${workerUrl}/api/end-stream`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ broadcastId: ytBroadcastId })
+                            body: JSON.stringify({ broadcastId: savedBroadcastId })
                         });
                     } catch(e) { console.warn('[BROADCAST] End YouTube broadcast error:', e); }
                 }
