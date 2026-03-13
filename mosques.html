@@ -216,8 +216,6 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: auto !important;
-            height: auto !important;
         }
         .mosque-marker-dot {
             background: var(--primary-green);
@@ -226,6 +224,7 @@
             width: 12px;
             height: 12px;
             box-shadow: 0 2px 6px rgba(76,175,80,0.5);
+            flex-shrink: 0;
         }
         .mosque-marker-label {
             background: rgba(255,255,255,0.92);
@@ -1713,8 +1712,8 @@
                 const labelIcon = L.divIcon({
                     className: 'mosque-marker',
                     html: '<div class="mosque-marker-dot"></div><div class="mosque-marker-label">' + mosque.name.replace(/</g, '&lt;') + '</div>',
-                    iconSize: [0, 0],
-                    iconAnchor: [0, 6]
+                    iconSize: [12, 12],
+                    iconAnchor: [6, 6]
                 });
                 const marker = L.marker([mosque.lat, mosque.lng], { icon: labelIcon })
                     .addTo(map)
