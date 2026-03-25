@@ -190,14 +190,27 @@
                         const firestoreNotifs = [];
                         snapshot.forEach(function(doc) {
                             const data = doc.data();
+                            // Handle Firestore Timestamp, ISO string, or missing createdAt
+                            var dateStr;
+                            if (data.createdAt && typeof data.createdAt.toDate === 'function') {
+                                dateStr = data.createdAt.toDate().toISOString();
+                            } else if (data.createdAt && data.createdAt.seconds) {
+                                dateStr = new Date(data.createdAt.seconds * 1000).toISOString();
+                            } else if (data.createdAt) {
+                                dateStr = new Date(data.createdAt).toISOString();
+                            } else if (data.date) {
+                                dateStr = new Date(data.date).toISOString();
+                            } else {
+                                dateStr = new Date().toISOString();
+                            }
                             firestoreNotifs.push({
                                 id: doc.id,
                                 title: data.title || 'Notification',
-                                message: data.message || '',
+                                message: data.message || data.body || '',
                                 icon: data.icon || 'fas fa-bell',
-                                category: data.category || 'general',
-                                status: data.status || 'unread',
-                                date: data.createdAt ? new Date(data.createdAt.seconds * 1000).toISOString() : new Date().toISOString(),
+                                category: data.category || data.type || 'general',
+                                status: data.status || (data.is_read ? 'read' : 'unread'),
+                                date: dateStr,
                                 source: 'firebase'
                             });
                         });

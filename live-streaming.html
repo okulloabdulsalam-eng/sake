@@ -1286,12 +1286,14 @@
                     playerVars: {
                         autoplay: 1,
                         playsinline: 1,
-                        controls: 0,
+                        controls: 1,
                         modestbranding: 1,
                         rel: 0,
                         fs: 0,
                         iv_load_policy: 3,
                         disablekb: 1,
+                        origin: window.location.origin,
+                        widget_referrer: window.location.href,
                     },
                     events: {
                         onReady: (event) => {
@@ -1335,9 +1337,18 @@
                             clearTimeout(timeout);
                             const errors = { 2:'Invalid video ID', 5:'Player error', 100:'Video not found', 101:'Embedding blocked', 150:'Embedding blocked' };
                             const msg = errors[event.data] || `Player error (${event.data})`;
-                            showToast(msg, 'error');
-                            if ([100,101,150].includes(event.data)) reject(new Error(msg));
-                            else scheduleReconnect(currentStreamId);
+                            console.error('[LIVE] YouTube player error:', event.data, msg);
+                            if ([101,150].includes(event.data)) {
+                                // Embedding blocked — show fallback with direct YouTube link
+                                showEmbedBlockedFallback(currentVideoId);
+                                reject(new Error(msg));
+                            } else if (event.data === 100) {
+                                showToast('Video not found', 'error');
+                                reject(new Error(msg));
+                            } else {
+                                showToast(msg, 'error');
+                                scheduleReconnect(currentStreamId);
+                            }
                         },
                     },
                 });
@@ -1353,6 +1364,44 @@
                 document.head.appendChild(script);
                 setTimeout(resolve, 5000);
             });
+        }
+
+        // ============================================================
+        //  EMBED BLOCKED FALLBACK
+        //  When YouTube blocks embedding (error 101/150), show a
+        //  user-friendly overlay with a direct YouTube link instead
+        //  of just a cryptic error toast.
+        // ============================================================
+        function showEmbedBlockedFallback(videoId) {
+            hideConnecting();
+            const ytUrl = 'https://www.youtube.com/watch?v=' + videoId;
+
+            let overlay = document.getElementById('embedBlockedOverlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'embedBlockedOverlay';
+                overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;padding:24px;';
+                document.body.appendChild(overlay);
+            }
+            overlay.innerHTML = `
+                <div style="text-align:center;max-width:400px;color:#fff;">
+                    <i class="fas fa-exclamation-triangle" style="font-size:48px;color:#FF9800;margin-bottom:16px;display:block;"></i>
+                    <h2 style="margin:0 0 12px;font-size:20px;">Playback Restricted</h2>
+                    <p style="color:#ccc;margin:0 0 20px;line-height:1.5;">
+                        The stream owner has restricted embedded playback.
+                        You can still watch directly on YouTube.
+                    </p>
+                    <a href="${ytUrl}" target="_blank" rel="noopener"
+                       style="display:inline-flex;align-items:center;gap:8px;background:#FF0000;color:#fff;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:600;font-size:16px;margin-bottom:12px;">
+                        <i class="fab fa-youtube"></i> Watch on YouTube
+                    </a>
+                    <br>
+                    <button onclick="document.getElementById('embedBlockedOverlay').remove();showStreamList();"
+                            style="margin-top:12px;background:transparent;border:1px solid #666;color:#aaa;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;">
+                        <i class="fas fa-arrow-left"></i> Back to Streams
+                    </button>
+                </div>
+            `;
         }
 
         // ============================================================

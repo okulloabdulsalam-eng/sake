@@ -989,7 +989,7 @@
                 <!-- Prayer Times Panel -->
                 <div class="admin-panel" id="prayerTimesPanel">
                     <h3><i class="fas fa-clock"></i> Manage Prayer Times</h3>
-                    <p style="color: #666; margin-bottom: 20px;">Set adhan and iqaama times for all daily prayers. Changes are saved to GitHub and reflected on the home page.</p>
+                    <p style="color: #666; margin-bottom: 20px;">Set adhan and iqaama times for all daily prayers. Changes sync to Firestore in real-time and are reflected on the home page instantly.</p>
                     
                     <div class="config-card">
                         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;font-weight:600;color:var(--dark-gray);padding-bottom:10px;border-bottom:2px solid #e0e0e0;margin-bottom:15px;">
@@ -1500,10 +1500,26 @@
             }
         }
         // Firestore support (requires firebase-config.js to be configured properly)
-        const supportsFirestore = typeof firebase !== 'undefined' && firebase.firestore;
+        // NOTE: Firebase SDK loads with defer, so we must check dynamically at call time
+        function checkFirestoreSupport() {
+            return typeof firebase !== 'undefined' && !!firebase.firestore;
+        }
         const NOTIFICATIONS_BACKEND = 'firestore'; // options: 'github', 'firestore', 'both'
         const useGitHubNotifications = NOTIFICATIONS_BACKEND === 'github' || NOTIFICATIONS_BACKEND === 'both';
-        const useFirestoreNotifications = (NOTIFICATIONS_BACKEND === 'firestore' || NOTIFICATIONS_BACKEND === 'both') && supportsFirestore;
+        // Dynamic getter — re-evaluates on every access so it works after defer scripts load
+        Object.defineProperty(window, '_useFirestoreNotifications', {
+            get: function() {
+                return (NOTIFICATIONS_BACKEND === 'firestore' || NOTIFICATIONS_BACKEND === 'both') && checkFirestoreSupport();
+            }
+        });
+        // Keep backward-compatible variable name via getter
+        // useFirestoreNotifications is now a dynamic getter so it works after deferred Firebase SDK loads
+        Object.defineProperty(window, 'useFirestoreNotifications', {
+            get: function() {
+                return (NOTIFICATIONS_BACKEND === 'firestore' || NOTIFICATIONS_BACKEND === 'both') && checkFirestoreSupport();
+            },
+            configurable: true
+        });
         let notificationsUnsubscribe = null;
         let githubNotificationsSha = null;
         let githubNotificationsPath = null;
@@ -1563,7 +1579,7 @@
         }
 
         function getFirestoreNotificationsCollection() {
-            if (!supportsFirestore) return null;
+            if (!checkFirestoreSupport()) return null;
             try {
                 return firebase.firestore().collection('notifications');
             } catch (error) {
@@ -5149,6 +5165,8 @@
         // ==============================
         // PRAYER TIMES MANAGEMENT
         // ==============================
+        var _adminPrayerTimesListenerActive = false;
+
         function applyPrayerTimesToUI(data) {
             const prayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha', 'jumuah'];
             prayers.forEach(p => {
@@ -5168,16 +5186,46 @@
             const local = JSON.parse(localStorage.getItem('kiuma_prayerTimes') || 'null');
             if (local) {
                 applyPrayerTimesToUI(local);
-                showStatus('prayerTimesStatus', 'Prayer times loaded.', 'success');
+                showStatus('prayerTimesStatus', 'Prayer times loaded from cache.', 'success');
             }
-            // Try Firestore in background to get latest
-            const serverData = await firestoreGet('appData/prayerTimes');
-            if (serverData) {
-                applyPrayerTimesToUI(serverData);
-                localStorage.setItem('kiuma_prayerTimes', JSON.stringify(serverData));
-                showStatus('prayerTimesStatus', 'Prayer times synced from server.', 'success');
-            } else if (!local) {
-                showStatus('prayerTimesStatus', 'No saved prayer times found. Set them below.', 'success');
+
+            // Wait for Firebase to be ready (up to 5s)
+            if (!window.firebaseDb) {
+                const start = Date.now();
+                while (!window.firebaseDb && (Date.now() - start) < 5000) {
+                    await new Promise(r => setTimeout(r, 200));
+                }
+            }
+
+            // Set up real-time Firestore listener (once) so admin sees live updates
+            try {
+                if (window.firebaseDb && !_adminPrayerTimesListenerActive) {
+                    _adminPrayerTimesListenerActive = true;
+                    window.firebaseDb.collection('appData').doc('prayerTimes').onSnapshot(function(doc) {
+                        if (doc.exists) {
+                            applyPrayerTimesToUI(doc.data());
+                            localStorage.setItem('kiuma_prayerTimes', JSON.stringify(doc.data()));
+                            showStatus('prayerTimesStatus', 'Prayer times synced from server.', 'success');
+                        }
+                    }, function(err) {
+                        console.warn('Admin prayer times listener error:', err);
+                        showStatus('prayerTimesStatus', 'Real-time sync error: ' + err.message, 'error');
+                    });
+                }
+            } catch(e) {
+                console.warn('Could not start admin prayer times listener:', e);
+            }
+
+            // Fallback: one-time fetch if listener didn't start
+            if (!_adminPrayerTimesListenerActive) {
+                const serverData = await firestoreGet('appData/prayerTimes');
+                if (serverData) {
+                    applyPrayerTimesToUI(serverData);
+                    localStorage.setItem('kiuma_prayerTimes', JSON.stringify(serverData));
+                    showStatus('prayerTimesStatus', 'Prayer times synced from server.', 'success');
+                } else if (!local) {
+                    showStatus('prayerTimesStatus', 'No saved prayer times found. Set them below.', 'success');
+                }
             }
         }
 
@@ -5199,7 +5247,7 @@
             // Sync to Firestore (global) and confirm success
             const result = await firestoreSet('appData/prayerTimes', data);
             if (result && result.ok) {
-                showStatus('prayerTimesStatus', 'Prayer times saved and synced!', 'success');
+                showStatus('prayerTimesStatus', 'Prayer times saved and synced to all users!', 'success');
             } else {
                 const reason = (result && result.reason) ? result.reason : 'Check internet/Firebase.';
                 showStatus('prayerTimesStatus', 'Saved on this device, but sync failed: ' + reason, 'error');

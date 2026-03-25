@@ -21,19 +21,39 @@ const db = admin.firestore();
  */
 async function sendBarakahPushNotification(title, body, type = 'general', sendEmail = false) {
   try {
-    // Get all user tokens
-    const tokensSnapshot = await db.collection('user_tokens').get();
+    // Get all user tokens — check both collections for compatibility
+    // Client-side (script.js) saves to 'fcm_tokens' with field 'token'
+    // Legacy code used 'user_tokens' with field 'fcm_token'
     const tokens = [];
     
-    tokensSnapshot.forEach(doc => {
+    // Primary: read from fcm_tokens (where the client actually saves)
+    const fcmSnapshot = await db.collection('fcm_tokens').get();
+    fcmSnapshot.forEach(doc => {
       const data = doc.data();
-      if (data.fcm_token && data.fcm_token !== '') {
+      if (data.token && data.token !== '') {
         tokens.push({
-          token: data.fcm_token,
-          user_id: doc.id
+          token: data.token,
+          user_id: data.deviceId || doc.id
         });
       }
     });
+    
+    // Fallback: also check legacy user_tokens collection
+    try {
+      const legacySnapshot = await db.collection('user_tokens').get();
+      const existingTokens = new Set(tokens.map(t => t.token));
+      legacySnapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.fcm_token && data.fcm_token !== '' && !existingTokens.has(data.fcm_token)) {
+          tokens.push({
+            token: data.fcm_token,
+            user_id: doc.id
+          });
+        }
+      });
+    } catch (e) {
+      console.log('[BarakahPush] Legacy user_tokens collection not found, skipping');
+    }
 
     if (tokens.length === 0) {
       console.log('[BarakahPush] No FCM tokens found');
@@ -98,13 +118,14 @@ async function sendBarakahPushNotification(title, body, type = 'general', sendEm
     }));
 
     // Send in batches of 500 (FCM limit)
+    // Use sendEach instead of deprecated sendAll (removed in Admin SDK v12+)
     const batchSize = 500;
     let successCount = 0;
     let failCount = 0;
 
     for (let i = 0; i < messages.length; i += batchSize) {
       const batch = messages.slice(i, i + batchSize);
-      const response = await admin.messaging().sendAll(batch);
+      const response = await admin.messaging().sendEach(batch);
       
       response.responses.forEach((resp, idx) => {
         if (resp.success) {
