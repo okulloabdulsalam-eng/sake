@@ -5,6 +5,11 @@
 // ══════════════════════════════════════════
 
 export default {
+  // ── Cron Trigger: Prayer reminders (5 min before) + Hijri white days ──
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(handleScheduled(env));
+  },
+
   async fetch(request, env) {
     const url = new URL(request.url);
     const path = url.pathname;
@@ -350,6 +355,250 @@ function base64url(input) {
     str = btoa(binary);
   }
   return str.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+// ══════════════════════════════════════
+// Scheduled Notifications (Cron Triggers)
+// Prayer reminders 5 min before adhan
+// Hijri white days fasting reminders
+// ══════════════════════════════════════
+
+const EAT_OFFSET_HOURS = 3; // East Africa Time = UTC+3
+const FIRESTORE_PROJECT = 'kiuma-mob-app';
+const PRAYER_TIMES_URL = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT}/databases/(default)/documents/appData/prayerTimes`;
+const PRAYER_NAMES = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+
+async function handleScheduled(env) {
+  try {
+    const prayerTimes = await fetchPrayerTimes(env);
+    if (prayerTimes) {
+      await checkPrayerReminders(prayerTimes, env);
+    }
+    await checkHijriReminders(env);
+  } catch (err) {
+    console.error('[Scheduled] Error:', err.message);
+  }
+}
+
+// ── Fetch prayer times from Firestore REST API (public read) ──
+async function fetchPrayerTimes(env) {
+  // Check KV cache first (1 hour TTL)
+  const cached = await env.FCM_TOKENS.get('cached_prayer_times');
+  if (cached) {
+    try {
+      const { data, expires_at } = JSON.parse(cached);
+      if (Date.now() < expires_at) return data;
+    } catch {}
+  }
+
+  try {
+    const resp = await fetch(PRAYER_TIMES_URL);
+    if (!resp.ok) {
+      console.error('[Prayer] Firestore API error:', resp.status);
+      // Fall back to expired cache if available
+      if (cached) {
+        try { return JSON.parse(cached).data; } catch {}
+      }
+      return null;
+    }
+
+    const doc = await resp.json();
+    const fields = doc.fields;
+    if (!fields) return null;
+
+    // Parse Firestore REST API response format
+    // Each prayer is a mapValue: { fields: { adhan: {stringValue}, iqaama: {stringValue} } }
+    const prayerTimes = {};
+    for (const name of PRAYER_NAMES) {
+      const prayerField = fields[name];
+      if (prayerField?.mapValue?.fields) {
+        const f = prayerField.mapValue.fields;
+        prayerTimes[name] = {
+          adhan: f.adhan?.stringValue || '',
+          iqaama: f.iqaama?.stringValue || ''
+        };
+      }
+    }
+
+    // Cache for 1 hour
+    await env.FCM_TOKENS.put('cached_prayer_times', JSON.stringify({
+      data: prayerTimes,
+      expires_at: Date.now() + 3600000
+    }));
+
+    return prayerTimes;
+  } catch (err) {
+    console.error('[Prayer] Fetch error:', err.message);
+    return null;
+  }
+}
+
+// ── Check if any prayer is 5 minutes away ──
+async function checkPrayerReminders(prayerTimes, env) {
+  const now = new Date();
+  // Current time in EAT
+  const eatHour = (now.getUTCHours() + EAT_OFFSET_HOURS) % 24;
+  const eatMinute = now.getUTCMinutes();
+  // Time 5 minutes from now in EAT
+  let targetMinute = eatMinute + 5;
+  let targetHour = eatHour;
+  if (targetMinute >= 60) {
+    targetMinute -= 60;
+    targetHour = (targetHour + 1) % 24;
+  }
+  const targetTimeStr = String(targetHour).padStart(2, '0') + ':' + String(targetMinute).padStart(2, '0');
+
+  const today = getEATDateString(now);
+
+  for (const name of PRAYER_NAMES) {
+    const prayer = prayerTimes[name];
+    if (!prayer?.adhan) continue;
+
+    // Compare adhan time (HH:MM) with target time
+    const adhanTime = prayer.adhan.substring(0, 5); // ensure HH:MM
+    if (adhanTime === targetTimeStr) {
+      // Check deduplication
+      const dedupeKey = `sent:prayer:${name}:${today}`;
+      const alreadySent = await env.FCM_TOKENS.get(dedupeKey);
+      if (alreadySent) continue;
+
+      const displayName = name.charAt(0).toUpperCase() + name.slice(1);
+      const title = `${displayName} Prayer Reminder`;
+      const body = `${displayName} adhan is in 5 minutes (${adhanTime}). Prepare for prayer.`;
+
+      console.log(`[Prayer] Sending ${name} reminder for ${adhanTime}`);
+      await sendScheduledPush(title, body, 'prayer', env);
+
+      // Mark as sent (24h TTL)
+      await env.FCM_TOKENS.put(dedupeKey, '1', { expirationTtl: 86400 });
+    }
+  }
+}
+
+// ── Hijri white days check ──
+async function checkHijriReminders(env) {
+  const now = new Date();
+  const eatHour = (now.getUTCHours() + EAT_OFFSET_HOURS) % 24;
+  const eatMinute = now.getUTCMinutes();
+
+  // Only send at 8 AM, 12 PM, 10 PM EAT (± 0 minutes)
+  const scheduledHours = [8, 12, 22];
+  if (!scheduledHours.includes(eatHour) || eatMinute !== 0) return;
+
+  const hijri = getHijriDate();
+  // White days are 13th, 14th, 15th of each Hijri month
+  if (hijri.day < 13 || hijri.day > 15) return;
+
+  const today = getEATDateString(now);
+  const dedupeKey = `sent:hijri:${today}:${eatHour}`;
+  const alreadySent = await env.FCM_TOKENS.get(dedupeKey);
+  if (alreadySent) return;
+
+  const title = 'Fasting Reminder — White Days';
+  const body = `Today is the ${hijri.day}th of the Hijri month — one of the blessed white days. Fast and seek reward!`;
+
+  console.log(`[Hijri] Sending white days reminder (day ${hijri.day}, ${eatHour}:00 EAT)`);
+  await sendScheduledPush(title, body, 'hijri', env);
+
+  await env.FCM_TOKENS.put(dedupeKey, '1', { expirationTtl: 86400 });
+}
+
+// ── Approximate Hijri date calculation ──
+function getHijriDate() {
+  const today = new Date();
+  // Approximate Hijri conversion
+  const hijriYear = Math.floor((today.getFullYear() - 622) * 1.0307);
+  const hijriMonth = Math.floor((today.getMonth() + 1) * 0.97);
+  const hijriDay = Math.floor(today.getDate() * 0.97);
+  return { day: hijriDay, month: hijriMonth, year: hijriYear };
+}
+
+// ── Get EAT date string (YYYY-MM-DD) ──
+function getEATDateString(now) {
+  const eat = new Date(now.getTime() + EAT_OFFSET_HOURS * 3600000);
+  return eat.toISOString().substring(0, 10);
+}
+
+// ── Send push to all registered devices (reuses existing FCM infrastructure) ──
+async function sendScheduledPush(title, body, category, env) {
+  const tokens = await getAllTokens(env);
+  if (tokens.length === 0) {
+    console.log('[Scheduled] No registered devices');
+    return;
+  }
+
+  const accessToken = await getFCMAccessToken(env);
+  const projectId = env.FCM_PROJECT_ID || FIRESTORE_PROJECT;
+  let sent = 0;
+  let failed = 0;
+  const failedTokenIds = [];
+
+  for (const entry of tokens) {
+    try {
+      const fcmPayload = {
+        message: {
+          token: entry.token,
+          notification: { title, body },
+          webpush: {
+            notification: {
+              title, body,
+              icon: '/logo.png',
+              badge: '/logo.png',
+              tag: `kiuma-${category}-${Date.now()}`,
+              requireInteraction: true
+            },
+            fcm_options: { link: '/notifications.html' }
+          },
+          data: {
+            title: String(title),
+            body: String(body),
+            category: String(category),
+            notification_id: `${category}_${Date.now()}`,
+            url: '/notifications.html'
+          }
+        }
+      };
+
+      const resp = await fetch(
+        `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(fcmPayload)
+        }
+      );
+
+      if (resp.ok) {
+        sent++;
+      } else {
+        const errData = await resp.json().catch(() => ({}));
+        const errStatus = errData?.error?.status;
+        if (resp.status === 404 || resp.status === 410 ||
+            errStatus === 'NOT_FOUND' || errStatus === 'INVALID_ARGUMENT') {
+          failedTokenIds.push(entry.device_id);
+        }
+        failed++;
+      }
+    } catch (err) {
+      console.error('[Scheduled] Send error:', err.message);
+      failed++;
+    }
+  }
+
+  // Clean up invalid tokens
+  if (failedTokenIds.length > 0) {
+    const index = await getTokenIndex(env);
+    const cleanIndex = index.filter(id => !failedTokenIds.includes(id));
+    await env.FCM_TOKENS.put('token_index', JSON.stringify(cleanIndex));
+    for (const id of failedTokenIds) {
+      await env.FCM_TOKENS.delete(`token:${id}`);
+    }
+  }
+
+  console.log(`[Scheduled] ${title}: sent=${sent}, failed=${failed}, cleaned=${failedTokenIds.length}`);
 }
 
 async function importPrivateKey(pem) {
