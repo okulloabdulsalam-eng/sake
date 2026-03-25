@@ -199,7 +199,7 @@ async function loadPrayerTimesAdmin() {
     const db = getDb();
     if (!db) { showStatus('prayerTimesStatus', 'Firestore not available.', 'error'); return; }
     try {
-        const doc = await db.collection('config').doc('prayerTimes').get();
+        const doc = await db.collection('appData').doc('prayerTimes').get();
         if (doc.exists) {
             const data = doc.data();
             const prayers = ['Fajr','Dhuhr','Asr','Maghrib','Isha','Jumuah'];
@@ -231,7 +231,7 @@ async function savePrayerTimes() {
         };
     });
     try {
-        await db.collection('config').doc('prayerTimes').set(data, {merge:true});
+        await db.collection('appData').doc('prayerTimes').set(data, {merge:true});
         showStatus('prayerTimesStatus', 'Prayer times saved!', 'success');
     } catch (e) { showStatus('prayerTimesStatus', 'Failed to save: ' + e.message, 'error'); }
 }

@@ -4738,16 +4738,17 @@
             var res = await fetch(_PUSH_WORKER_URL + '/api/send', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-API-Key': adminKey
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
+                    admin_key: adminKey,
                     title: notification.title || 'KIUMA',
-                    body: notification.message || '',
+                    message: notification.message || '',
                     data: {
                         icon: notification.icon || 'fas fa-bell',
                         category: notification.category || 'general',
-                        notificationId: notification.id || ''
+                        notification_id: notification.id || '',
+                        url: '/notifications.html'
                     }
                 })
             });
