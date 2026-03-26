@@ -267,10 +267,7 @@ async function handleCreateBroadcast(env, request) {
     contentDetails: {
       enableAutoStart: true,
       enableAutoStop: true,
-      enableEmbed: true,
-      enableDvr: true,
       latencyPreference: 'ultraLow',
-      enableLowLatency: true,
     },
     status: {
       privacyStatus: privacy,
