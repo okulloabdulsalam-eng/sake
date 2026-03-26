@@ -267,7 +267,6 @@ async function handleCreateBroadcast(env, request) {
     contentDetails: {
       enableAutoStart: true,
       enableAutoStop: true,
-      enableEmbed: true,
       latencyPreference: 'ultraLow',
     },
     status: {

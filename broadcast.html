@@ -313,6 +313,9 @@
         let bytesSentTotal    = 0;
         let lastBytesSent     = 0;
         let lastBytesTime     = 0;
+        let cfStreamId        = null;  // R2 chunk stream ID for in-app playback
+        let chunkQueue        = [];    // Queue of chunks to upload to R2
+        let chunkUploading    = false; // R2 upload lock
 
         // Worker URL (YouTube API proxy) - set in admin panel Settings tab
         function getRelayWorkerUrl() {
@@ -498,6 +501,27 @@
                 ytVideoId = broadcastData.videoId;
                 console.log('[BROADCAST] YouTube broadcast created:', ytBroadcastId);
 
+                // 1b. Also start R2 chunk stream for in-app playback
+                try {
+                    const r2Res = await fetch(`${workerUrl}/stream/start`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            title: title,
+                            mimeType: 'video/webm;codecs=vp8,opus'
+                        })
+                    });
+                    if (r2Res.ok) {
+                        const r2Data = await r2Res.json();
+                        cfStreamId = r2Data.streamId;
+                        console.log('[BROADCAST] R2 stream started:', cfStreamId);
+                    } else {
+                        console.warn('[BROADCAST] R2 stream start failed, in-app playback unavailable');
+                    }
+                } catch(e) {
+                    console.warn('[BROADCAST] R2 stream start error:', e);
+                }
+
                 // 2. Connect WebSocket to RTMP relay server
                 btnGoLive.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting relay...';
                 await connectRelaySocket(relayServerUrl, ytStreamKey, broadcastData.rtmpUrl);
@@ -520,6 +544,8 @@
                     youtubeUrl: broadcastData.youtubeUrl,
                     embedUrl: broadcastData.embedUrl,
                     streamType: 'youtube-live',
+                    cfStreamId: cfStreamId || null,
+                    workerUrl: workerUrl,
                     cameraActive: true
                 };
 
@@ -649,9 +675,17 @@
             });
 
             mediaRecorder.ondataavailable = (evt) => {
-                if (evt.data && evt.data.size > 0 && relaySocket && relaySocket.readyState === WebSocket.OPEN) {
-                    relaySocket.send(evt.data);
+                if (evt.data && evt.data.size > 0) {
+                    // Send to RTMP relay via WebSocket
+                    if (relaySocket && relaySocket.readyState === WebSocket.OPEN) {
+                        relaySocket.send(evt.data);
+                    }
                     bytesSentTotal += evt.data.size;
+                    // Also queue for R2 chunk upload (in-app playback)
+                    if (cfStreamId) {
+                        chunkQueue.push(evt.data);
+                        processR2ChunkQueue();
+                    }
                 }
             };
 
@@ -664,6 +698,25 @@
             console.log('[BROADCAST] MediaRecorder started (1s chunks)');
         }
 
+        // R2 chunk upload queue processor
+        async function processR2ChunkQueue() {
+            if (chunkUploading || chunkQueue.length === 0 || !cfStreamId) return;
+            chunkUploading = true;
+            const workerUrl = getRelayWorkerUrl();
+            while (chunkQueue.length > 0) {
+                const chunk = chunkQueue.shift();
+                try {
+                    await fetch(`${workerUrl}/stream/${cfStreamId}/chunk`, {
+                        method: 'POST',
+                        body: chunk
+                    });
+                } catch(e) {
+                    console.warn('[BROADCAST] R2 chunk upload failed:', e);
+                }
+            }
+            chunkUploading = false;
+        }
+
         function cleanupRelay() {
             if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                 try { mediaRecorder.stop(); } catch(e) {}
@@ -674,6 +727,15 @@
                 try { relaySocket.send(JSON.stringify({ type: 'stop' })); } catch(e) {}
                 try { relaySocket.close(); } catch(e) {}
                 relaySocket = null;
+            }
+
+            // Stop R2 stream
+            if (cfStreamId) {
+                const workerUrl = getRelayWorkerUrl();
+                fetch(`${workerUrl}/stream/${cfStreamId}/stop`, { method: 'POST' }).catch(() => {});
+                cfStreamId = null;
+                chunkQueue = [];
+                chunkUploading = false;
             }
 
             if (relayPingInterval) { clearInterval(relayPingInterval); relayPingInterval = null; }

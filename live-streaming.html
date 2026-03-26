@@ -757,9 +757,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
 
-    <!-- HLS.js for future HLS support -->
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-
     <script>
     // ============================================================
     //  KIUMA Live — Immersive Stream Viewer
@@ -796,11 +793,8 @@
         const toastText    = $('#toastText');
 
         // ---- State ----
-        let ytPlayer         = null;  // YouTube IFrame Player instance
         let currentStreamId  = null;
-        let currentVideoId   = null;  // YouTube video ID
         let currentQuality   = 'auto';
-        let hls              = null;
         let controlsVisible  = true;
         let hideTimer        = null;
         let retryCount       = 0;
@@ -813,10 +807,19 @@
         let isStreamActive   = false;
         let wakeLock         = null;
         let stallCheckInterval = null;
-        let lastPlayerState  = -1;
         let stallCount       = 0;
 
-        // Worker URL (YouTube API proxy)
+        // MSE/R2 chunk playback state
+        let mediaSource      = null;
+        let sourceBuffer     = null;
+        let chunkPollTimer   = null;
+        let nextChunkNum     = 0;
+        let currentWorkerUrl = null;
+        let currentCfStreamId = null;
+        let mseReady         = false;
+        let appendQueue      = [];
+        let isAppending      = false;
+
         function getRelayWorkerUrl() {
             return localStorage.getItem('kiuma_stream_relay_url') || 'https://kiuma-stream-relay.kiuma4.workers.dev';
         }
@@ -830,29 +833,6 @@
             setupNetworkMonitor();
             setupLifecycle();
             loadStreams();
-            
-            // Check if relay worker is configured
-            const relayUrl = getRelayWorkerUrl();
-            if (!relayUrl) {
-                console.warn('[LIVE] Stream relay worker URL not configured. Set it in Admin > Settings.');
-            }
-
-            // If HLS.js is available, prep it
-            if (typeof Hls !== 'undefined' && Hls.isSupported()) {
-                hls = new Hls({
-                    enableWorker: true,
-                    lowLatencyMode: true,
-                    backBufferLength: 90,
-                    maxBufferLength: 30,
-                    maxBufferHole: 0.5
-                });
-                hls.on(Hls.Events.ERROR, (_, data) => {
-                    if (data.fatal) {
-                        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad();
-                        else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
-                    }
-                });
-            }
         }
 
         // ============================================================
@@ -999,14 +979,7 @@
             document.querySelectorAll('.quality-option').forEach(opt => {
                 opt.classList.toggle('selected', opt.dataset.quality === quality);
             });
-            if (hls && hls.media) {
-                if (quality === 'auto') {
-                    hls.currentLevel = -1;
-                } else {
-                    const lvl = hls.levels.findIndex(l => l.height === parseInt(quality));
-                    if (lvl !== -1) hls.currentLevel = lvl;
-                }
-            }
+            // R2 streams are single quality — selector is informational only
             showToast(`Quality: ${quality === 'auto' ? 'Auto' : quality + 'p'}`, 'info');
         }
 
@@ -1193,7 +1166,7 @@
             showControls();
 
             try {
-                await connectToYouTube(streamId);
+                await connectToR2Stream(streamId);
             } catch (err) {
                 console.error('[LIVE] Connection failed:', err);
                 showToast('Connection failed: ' + err.message, 'error');
@@ -1202,23 +1175,28 @@
         }
 
         function cleanup() {
-            // Destroy YouTube player
-            if (ytPlayer) {
-                try { ytPlayer.destroy(); } catch(e) {}
-                ytPlayer = null;
+            // Stop MSE/R2 playback
+            if (chunkPollTimer) { clearInterval(chunkPollTimer); chunkPollTimer = null; }
+            if (mediaSource && mediaSource.readyState === 'open') {
+                try { mediaSource.endOfStream(); } catch(e) {}
             }
-            currentVideoId = null;
+            mediaSource = null;
+            sourceBuffer = null;
+            mseReady = false;
+            appendQueue = [];
+            isAppending = false;
+            nextChunkNum = 0;
+            currentCfStreamId = null;
+            currentWorkerUrl = null;
+
             if (streamDocUnsubscribe) { streamDocUnsubscribe(); streamDocUnsubscribe = null; }
             if (viewerInterval) { clearInterval(viewerInterval); viewerInterval = null; }
             if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
             stopStallDetection();
+            video.src = '';
             video.srcObject = null;
             isStreamActive = false;
             releaseWakeLock();
-
-            // Remove YouTube player container if exists
-            const ytContainer = document.getElementById('ytPlayerContainer');
-            if (ytContainer) ytContainer.remove();
 
             // Decrement viewer count (non-blocking)
             if (currentStreamId && window.firebaseDb) {
@@ -1231,25 +1209,26 @@
         }
 
         // ============================================================
-        //  YOUTUBE LIVE PLAYER CONNECTION
+        //  R2 CHUNK PLAYBACK via Media Source Extensions (MSE)
         //
         //  Flow:
-        //  1. Get stream doc from Firestore — contains youtubeVideoId
-        //  2. Load YouTube IFrame Player API
-        //  3. Create player with the video ID
-        //  4. Handle player state changes
+        //  1. Get stream doc from Firestore — contains cfStreamId + workerUrl
+        //  2. Create MediaSource, attach to <video>, add SourceBuffer
+        //  3. Poll /stream/:id/playlist every 2s for new chunk count
+        //  4. Fetch new chunks, append to SourceBuffer
         // ============================================================
-        async function connectToYouTube(streamId) {
+        async function connectToR2Stream(streamId) {
             const streamDoc = await window.firebaseDb.collection('liveStreams').doc(streamId).get();
             const streamData = streamDoc.data();
 
             if (!streamData) throw new Error('Stream not found');
             if (streamData.status === 'ended') throw new Error('Stream has ended');
-            if (!streamData.youtubeVideoId) throw new Error('Stream not ready (no YouTube video ID)');
+            if (!streamData.cfStreamId) throw new Error('Stream not ready (no R2 stream)');
 
             setStreamInfo(streamData);
-            currentVideoId = streamData.youtubeVideoId;
-            console.log('[LIVE] Connecting to YouTube video:', currentVideoId);
+            currentCfStreamId = streamData.cfStreamId;
+            currentWorkerUrl = streamData.workerUrl || getRelayWorkerUrl();
+            console.log('[LIVE] Connecting to R2 stream:', currentCfStreamId);
 
             if (retryCount === 0) {
                 try {
@@ -1259,149 +1238,133 @@
                 } catch(e) {}
             }
 
-            showConnecting('Loading YouTube player...');
+            showConnecting('Loading stream...');
 
-            await loadYouTubeAPI();
-
-            let ytContainer = document.getElementById('ytPlayerContainer');
-            if (!ytContainer) {
-                ytContainer = document.createElement('div');
-                ytContainer.id = 'ytPlayerContainer';
-                ytContainer.style.cssText = 'position:absolute;inset:0;z-index:2;background:#000';
-                video.parentElement.appendChild(ytContainer);
+            // Check if MSE is supported
+            if (!('MediaSource' in window)) {
+                throw new Error('Your browser does not support live playback');
             }
 
-            const playerDiv = document.createElement('div');
-            playerDiv.id = 'ytPlayer';
-            ytContainer.innerHTML = '';
-            ytContainer.appendChild(playerDiv);
+            // Get stream info from worker
+            const playlistRes = await fetch(`${currentWorkerUrl}/stream/${currentCfStreamId}/playlist`);
+            if (!playlistRes.ok) throw new Error('Stream not available');
+            const playlist = await playlistRes.json();
+            if (playlist.status === 'ended') throw new Error('Stream has ended');
 
-            return new Promise((resolve, reject) => {
-                const timeout = setTimeout(() => reject(new Error('YouTube player load timeout')), 20000);
+            const mimeType = playlist.mimeType || 'video/webm;codecs=vp8,opus';
 
-                ytPlayer = new YT.Player('ytPlayer', {
-                    videoId: currentVideoId,
-                    width: '100%',
-                    height: '100%',
-                    playerVars: {
-                        autoplay: 1,
-                        playsinline: 1,
-                        controls: 1,
-                        modestbranding: 1,
-                        rel: 0,
-                        fs: 0,
-                        iv_load_policy: 3,
-                        disablekb: 1,
-                        origin: window.location.origin,
-                        widget_referrer: window.location.href,
-                    },
-                    events: {
-                        onReady: (event) => {
-                            clearTimeout(timeout);
-                            event.target.playVideo();
-                            retryCount = 0;
-                            isStreamActive = true;
-                            hideConnecting();
-                            showToast('You are watching live', 'success');
-                            startAutoHide();
-                            livePill.classList.add('visible');
-                            viewerCount.classList.add('visible');
-                            streamInfo.classList.add('visible');
-                            startStallDetection();
-                            setupStreamListener(streamId);
-                            startViewerPolling(streamId);
-                            acquireWakeLock();
-                            resolve();
-                        },
-                        onStateChange: (event) => {
-                            lastPlayerState = event.data;
-                            switch (event.data) {
-                                case YT.PlayerState.PLAYING:
-                                    isStreamActive = true; hideConnecting(); stallCount = 0; break;
-                                case YT.PlayerState.BUFFERING:
-                                    showConnecting('Buffering...'); break;
-                                case YT.PlayerState.ENDED:
-                                    isStreamActive = false; showToast('Stream has ended', 'info'); break;
-                                case YT.PlayerState.PAUSED:
-                                    if (isStreamActive) {
-                                        setTimeout(() => {
-                                            if (ytPlayer && lastPlayerState === YT.PlayerState.PAUSED) {
-                                                try { ytPlayer.playVideo(); } catch(e) {}
-                                            }
-                                        }, 2000);
-                                    }
-                                    break;
-                            }
-                        },
-                        onError: (event) => {
-                            clearTimeout(timeout);
-                            const errors = { 2:'Invalid video ID', 5:'Player error', 100:'Video not found', 101:'Embedding blocked', 150:'Embedding blocked' };
-                            const msg = errors[event.data] || `Player error (${event.data})`;
-                            console.error('[LIVE] YouTube player error:', event.data, msg);
-                            if ([101,150].includes(event.data)) {
-                                // Embedding blocked — show fallback with direct YouTube link
-                                showEmbedBlockedFallback(currentVideoId);
-                                reject(new Error(msg));
-                            } else if (event.data === 100) {
-                                showToast('Video not found', 'error');
-                                reject(new Error(msg));
-                            } else {
-                                showToast(msg, 'error');
-                                scheduleReconnect(currentStreamId);
-                            }
-                        },
-                    },
-                });
+            if (!MediaSource.isTypeSupported(mimeType)) {
+                throw new Error('Unsupported stream format');
+            }
+
+            // Setup MediaSource
+            mediaSource = new MediaSource();
+            video.src = URL.createObjectURL(mediaSource);
+
+            await new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => reject(new Error('MediaSource open timeout')), 10000);
+                mediaSource.addEventListener('sourceopen', () => {
+                    clearTimeout(timeout);
+                    try {
+                        sourceBuffer = mediaSource.addSourceBuffer(mimeType);
+                        sourceBuffer.mode = 'sequence';
+                        sourceBuffer.addEventListener('updateend', processAppendQueue);
+                        sourceBuffer.addEventListener('error', (e) => {
+                            console.error('[LIVE] SourceBuffer error:', e);
+                        });
+                        mseReady = true;
+                        resolve();
+                    } catch(e) {
+                        reject(e);
+                    }
+                }, { once: true });
             });
-        }
 
-        function loadYouTubeAPI() {
-            return new Promise((resolve) => {
-                if (window.YT && window.YT.Player) { resolve(); return; }
-                window.onYouTubeIframeAPIReady = () => resolve();
-                const script = document.createElement('script');
-                script.src = 'https://www.youtube.com/iframe_api';
-                document.head.appendChild(script);
-                setTimeout(resolve, 5000);
-            });
-        }
+            // Start from recent chunks (skip old ones for low latency)
+            nextChunkNum = Math.max(0, playlist.chunkCount - 3);
 
-        // ============================================================
-        //  EMBED BLOCKED FALLBACK
-        //  When YouTube blocks embedding (error 101/150), show a
-        //  user-friendly overlay with a direct YouTube link instead
-        //  of just a cryptic error toast.
-        // ============================================================
-        function showEmbedBlockedFallback(videoId) {
+            // Fetch initial chunks
+            await fetchNewChunks();
+
+            // Start playing
+            try { await video.play(); } catch(e) {
+                // Autoplay blocked — try muted
+                video.muted = true;
+                try { await video.play(); } catch(e2) {}
+            }
+
+            // Connected!
+            retryCount = 0;
+            isStreamActive = true;
             hideConnecting();
-            const ytUrl = 'https://www.youtube.com/watch?v=' + videoId;
+            showToast('You are watching live', 'success');
+            startAutoHide();
+            livePill.classList.add('visible');
+            viewerCount.classList.add('visible');
+            streamInfo.classList.add('visible');
+            startStallDetection();
+            setupStreamListener(streamId);
+            startViewerPolling(streamId);
+            acquireWakeLock();
 
-            let overlay = document.getElementById('embedBlockedOverlay');
-            if (!overlay) {
-                overlay = document.createElement('div');
-                overlay.id = 'embedBlockedOverlay';
-                overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;padding:24px;';
-                document.body.appendChild(overlay);
+            // Poll for new chunks every 2s
+            chunkPollTimer = setInterval(fetchNewChunks, 2000);
+        }
+
+        async function fetchNewChunks() {
+            if (!currentCfStreamId || !currentWorkerUrl || !mseReady) return;
+            try {
+                const res = await fetch(`${currentWorkerUrl}/stream/${currentCfStreamId}/playlist`);
+                if (!res.ok) return;
+                const playlist = await res.json();
+
+                if (playlist.status === 'ended' && nextChunkNum >= playlist.chunkCount) {
+                    // Stream ended and all chunks consumed
+                    if (chunkPollTimer) { clearInterval(chunkPollTimer); chunkPollTimer = null; }
+                    return;
+                }
+
+                // Fetch any new chunks
+                while (nextChunkNum < playlist.chunkCount) {
+                    const chunkRes = await fetch(`${currentWorkerUrl}/stream/${currentCfStreamId}/chunk/${nextChunkNum}`);
+                    if (!chunkRes.ok) break;
+                    const chunkData = await chunkRes.arrayBuffer();
+                    appendQueue.push(chunkData);
+                    nextChunkNum++;
+                }
+                processAppendQueue();
+            } catch(e) {
+                console.warn('[LIVE] Chunk fetch error:', e);
             }
-            overlay.innerHTML = `
-                <div style="text-align:center;max-width:400px;color:#fff;">
-                    <i class="fas fa-exclamation-triangle" style="font-size:48px;color:#FF9800;margin-bottom:16px;display:block;"></i>
-                    <h2 style="margin:0 0 12px;font-size:20px;">Playback Restricted</h2>
-                    <p style="color:#ccc;margin:0 0 20px;line-height:1.5;">
-                        The stream owner has restricted embedded playback.
-                        You can still watch directly on YouTube.
-                    </p>
-                    <a href="${ytUrl}" target="_blank" rel="noopener"
-                       style="display:inline-flex;align-items:center;gap:8px;background:#FF0000;color:#fff;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:600;font-size:16px;margin-bottom:12px;">
-                        <i class="fab fa-youtube"></i> Watch on YouTube
-                    </a>
-                    <br>
-                    <button onclick="document.getElementById('embedBlockedOverlay').remove();showStreamList();"
-                            style="margin-top:12px;background:transparent;border:1px solid #666;color:#aaa;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;">
-                        <i class="fas fa-arrow-left"></i> Back to Streams
-                    </button>
-                </div>
-            `;
+        }
+
+        function processAppendQueue() {
+            if (!sourceBuffer || isAppending || appendQueue.length === 0) return;
+            if (sourceBuffer.updating) return;
+
+            isAppending = true;
+            const data = appendQueue.shift();
+            try {
+                sourceBuffer.appendBuffer(data);
+            } catch(e) {
+                if (e.name === 'QuotaExceededError') {
+                    // Trim old buffer to make room
+                    try {
+                        const buffered = sourceBuffer.buffered;
+                        if (buffered.length > 0) {
+                            const removeEnd = buffered.end(buffered.length - 1) - 30;
+                            if (removeEnd > buffered.start(0)) {
+                                sourceBuffer.remove(buffered.start(0), removeEnd);
+                            }
+                        }
+                    } catch(re) {}
+                    // Re-queue the data
+                    appendQueue.unshift(data);
+                } else {
+                    console.error('[LIVE] SourceBuffer append error:', e);
+                }
+            }
+            isAppending = false;
         }
 
         // ============================================================
@@ -1426,7 +1389,7 @@
             reconnectTimer = setTimeout(async () => {
                 try {
                     cleanup();
-                    await connectToYouTube(streamId);
+                    await connectToR2Stream(streamId);
                 } catch (err) {
                     console.error('[LIVE] Reconnect failed:', err);
                     scheduleReconnect(streamId);
@@ -1441,13 +1404,12 @@
             stopStallDetection();
             stallCount = 0;
             stallCheckInterval = setInterval(() => {
-                if (!isStreamActive || !ytPlayer) return;
+                if (!isStreamActive || !video) return;
                 try {
-                    const state = ytPlayer.getPlayerState();
-                    if (state === YT.PlayerState.BUFFERING) {
+                    if (video.readyState < 3) { // HAVE_FUTURE_DATA
                         stallCount++;
                         if (stallCount >= 4) { // 4 checks × 3s = 12s buffering
-                            console.log('[LIVE] YouTube player stalled');
+                            console.log('[LIVE] Video stalled');
                             showToast('Stream stalled, reconnecting...', 'error');
                             stallCount = 0;
                             scheduleReconnect(currentStreamId);
@@ -1580,7 +1542,7 @@
                         });
                     } catch(e) {}
                 }
-                if (ytPlayer) { try { ytPlayer.destroy(); } catch(e) {} }
+                cleanup();
                 releaseWakeLock();
             });
 
