@@ -266,7 +266,7 @@ async function getFCMToken(messaging, showConfirmation) {
 async function registerTokenWithWorker(token) {
     try {
         var WORKER_URL = 'https://kiuma-notifications.kiuma4.workers.dev';
-        await fetch(WORKER_URL + '/api/register', {
+        await fetch(WORKER_URL + '/api/register-token', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token: token, platform: 'web' })
