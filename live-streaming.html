@@ -818,7 +818,6 @@
         let currentCfStreamId = null;
         let mseReady         = false;
         let appendQueue      = [];
-        let isAppending      = false;
         let connectionGen    = 0;  // incremented on each connect; stale async ops bail out
         let useBlobMode      = false; // fallback: blob URL playback for MSE-incompatible codecs
         let blobChunks       = [];    // accumulated chunk data for blob mode
@@ -1187,7 +1186,6 @@
             sourceBuffer = null;
             mseReady = false;
             appendQueue = [];
-            isAppending = false;
             nextChunkNum = 0;
             currentCfStreamId = null;
             currentWorkerUrl = null;
@@ -1198,6 +1196,7 @@
             if (viewerInterval) { clearInterval(viewerInterval); viewerInterval = null; }
             if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
             stopStallDetection();
+            stopLiveEdgeSync();
             video.src = '';
             video.srcObject = null;
             isStreamActive = false;
@@ -1324,9 +1323,16 @@
             // Skip to recent chunks for low latency (chunk 0 already handled)
             nextChunkNum = Math.max(1, playlist.chunkCount - 3);
 
-            // Fetch recent chunks
+            // Pre-buffer: fetch initial chunks before playing
             await fetchNewChunks(myGen);
             if (myGen !== connectionGen) return;
+
+            // Wait for a second poll to have ≥2s of buffer before play
+            if (!useBlobMode && appendQueue.length < 2 && playlist.chunkCount > nextChunkNum) {
+                await new Promise(r => setTimeout(r, 1200));
+                await fetchNewChunks(myGen);
+                if (myGen !== connectionGen) return;
+            }
 
             // In blob mode, build initial blob and set as src
             if (useBlobMode) {
@@ -1349,13 +1355,14 @@
             viewerCount.classList.add('visible');
             streamInfo.classList.add('visible');
             startStallDetection();
+            startLiveEdgeSync();
             setupStreamListener(streamId);
             startViewerPolling(streamId);
             acquireWakeLock();
 
-            // Poll for new chunks every 2s
+            // Poll for new chunks every 1s (matches broadcaster's 1s MediaRecorder timeslice)
             const gen = myGen;
-            chunkPollTimer = setInterval(() => fetchNewChunks(gen), 2000);
+            chunkPollTimer = setInterval(() => fetchNewChunks(gen), 1000);
         }
 
         // Blob fallback: rebuild video src from accumulated chunks
@@ -1392,19 +1399,32 @@
                     return;
                 }
 
-                let newChunks = false;
+                // Fetch all new chunks in parallel for minimum latency
+                const toFetch = [];
                 while (nextChunkNum < playlist.chunkCount) {
-                    if (gen !== undefined && gen !== connectionGen) return;
-                    const chunkRes = await fetch(`${currentWorkerUrl}/stream/${currentCfStreamId}/chunk/${nextChunkNum}`);
-                    if (!chunkRes.ok) break;
-                    const chunkData = await chunkRes.arrayBuffer();
+                    toFetch.push(nextChunkNum);
+                    nextChunkNum++;
+                }
+                if (toFetch.length === 0) return;
+
+                const results = await Promise.all(
+                    toFetch.map(n =>
+                        fetch(`${currentWorkerUrl}/stream/${currentCfStreamId}/chunk/${n}`)
+                            .then(r => r.ok ? r.arrayBuffer() : null)
+                            .catch(() => null)
+                    )
+                );
+                if (gen !== undefined && gen !== connectionGen) return;
+
+                let newChunks = false;
+                for (const chunkData of results) {
+                    if (!chunkData) continue;
                     if (useBlobMode) {
                         blobChunks.push(chunkData);
                         newChunks = true;
                     } else {
                         appendQueue.push(chunkData);
                     }
-                    nextChunkNum++;
                 }
 
                 if (useBlobMode && newChunks) {
@@ -1418,14 +1438,13 @@
         }
 
         function processAppendQueue() {
-            if (!sourceBuffer || isAppending || appendQueue.length === 0) return;
+            if (!sourceBuffer || appendQueue.length === 0) return;
             if (sourceBuffer.updating) return;
             if (!mediaSource || mediaSource.readyState !== 'open') {
                 appendQueue = [];
                 return;
             }
 
-            isAppending = true;
             const data = appendQueue.shift();
             try {
                 sourceBuffer.appendBuffer(data);
@@ -1446,7 +1465,28 @@
                     appendQueue = [];
                 }
             }
-            isAppending = false;
+        }
+
+        // Keep video at live edge — prevents drift and buffer underruns
+        let liveEdgeTimer = null;
+        function startLiveEdgeSync() {
+            stopLiveEdgeSync();
+            liveEdgeTimer = setInterval(() => {
+                if (!video || !isStreamActive || useBlobMode) return;
+                try {
+                    const buf = video.buffered;
+                    if (buf.length > 0) {
+                        const liveEdge = buf.end(buf.length - 1);
+                        const behind = liveEdge - video.currentTime;
+                        if (behind > 2.5) {
+                            video.currentTime = liveEdge - 0.5;
+                        }
+                    }
+                } catch(e) {}
+            }, 3000);
+        }
+        function stopLiveEdgeSync() {
+            if (liveEdgeTimer) { clearInterval(liveEdgeTimer); liveEdgeTimer = null; }
         }
 
         // ============================================================
