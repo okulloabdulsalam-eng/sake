@@ -819,6 +819,7 @@
         let mseReady         = false;
         let appendQueue      = [];
         let isAppending      = false;
+        let connectionGen    = 0;  // incremented on each connect; stale async ops bail out
 
         function getRelayWorkerUrl() {
             return localStorage.getItem('kiuma_stream_relay_url') || 'https://kiuma-stream-relay.kiuma4.workers.dev';
@@ -1218,12 +1219,16 @@
         //  4. Fetch new chunks, append to SourceBuffer
         // ============================================================
         async function connectToR2Stream(streamId) {
+            // Increment generation so any stale async ops from previous connections bail out
+            const myGen = ++connectionGen;
+
             const streamDoc = await window.firebaseDb.collection('liveStreams').doc(streamId).get();
             const streamData = streamDoc.data();
 
             if (!streamData) throw new Error('Stream not found');
             if (streamData.status === 'ended') throw new Error('Stream has ended');
             if (!streamData.cfStreamId) throw new Error('Stream not ready (no R2 stream)');
+            if (myGen !== connectionGen) return; // superseded
 
             setStreamInfo(streamData);
             currentCfStreamId = streamData.cfStreamId;
@@ -1240,7 +1245,6 @@
 
             showConnecting('Loading stream...');
 
-            // Check if MSE is supported
             if (!('MediaSource' in window)) {
                 throw new Error('Your browser does not support live playback');
             }
@@ -1250,11 +1254,12 @@
             if (!playlistRes.ok) throw new Error('Stream not available');
             const playlist = await playlistRes.json();
             if (playlist.status === 'ended') throw new Error('Stream has ended');
+            if (myGen !== connectionGen) return; // superseded
 
             const mimeType = playlist.mimeType || 'video/webm;codecs=vp8,opus';
 
             if (!MediaSource.isTypeSupported(mimeType)) {
-                throw new Error('Unsupported stream format');
+                throw new Error('Unsupported stream format: ' + mimeType);
             }
 
             // Setup MediaSource
@@ -1280,15 +1285,34 @@
                 }, { once: true });
             });
 
-            // Start from recent chunks (skip old ones for low latency)
-            nextChunkNum = Math.max(0, playlist.chunkCount - 3);
+            if (myGen !== connectionGen) return; // superseded
 
-            // Fetch initial chunks
-            await fetchNewChunks();
+            // Always fetch chunk 0 first — it contains the WebM init segment (EBML header + Tracks)
+            console.log('[LIVE] Fetching init segment (chunk 0)');
+            const initRes = await fetch(`${currentWorkerUrl}/stream/${currentCfStreamId}/chunk/0`);
+            if (!initRes.ok) throw new Error('Failed to fetch init segment');
+            const initData = await initRes.arrayBuffer();
+            if (myGen !== connectionGen) return; // superseded
+
+            // Append init segment and wait for it to complete
+            await new Promise((resolve, reject) => {
+                const onDone = () => { sourceBuffer.removeEventListener('updateend', onDone); resolve(); };
+                const onErr = () => { sourceBuffer.removeEventListener('error', onErr); reject(new Error('Init segment rejected')); };
+                sourceBuffer.addEventListener('updateend', onDone);
+                sourceBuffer.addEventListener('error', onErr);
+                sourceBuffer.appendBuffer(initData);
+            });
+
+            // Skip to recent chunks for low latency (chunk 0 already appended)
+            nextChunkNum = Math.max(1, playlist.chunkCount - 3);
+
+            // Fetch recent chunks
+            await fetchNewChunks(myGen);
+
+            if (myGen !== connectionGen) return; // superseded
 
             // Start playing
             try { await video.play(); } catch(e) {
-                // Autoplay blocked — try muted
                 video.muted = true;
                 try { await video.play(); } catch(e2) {}
             }
@@ -1308,24 +1332,27 @@
             acquireWakeLock();
 
             // Poll for new chunks every 2s
-            chunkPollTimer = setInterval(fetchNewChunks, 2000);
+            const gen = myGen;
+            chunkPollTimer = setInterval(() => fetchNewChunks(gen), 2000);
         }
 
-        async function fetchNewChunks() {
+        async function fetchNewChunks(gen) {
+            // Bail out if this connection has been superseded
+            if (gen !== undefined && gen !== connectionGen) return;
             if (!currentCfStreamId || !currentWorkerUrl || !mseReady) return;
+            if (!mediaSource || mediaSource.readyState !== 'open') return;
             try {
                 const res = await fetch(`${currentWorkerUrl}/stream/${currentCfStreamId}/playlist`);
                 if (!res.ok) return;
                 const playlist = await res.json();
 
                 if (playlist.status === 'ended' && nextChunkNum >= playlist.chunkCount) {
-                    // Stream ended and all chunks consumed
                     if (chunkPollTimer) { clearInterval(chunkPollTimer); chunkPollTimer = null; }
                     return;
                 }
 
-                // Fetch any new chunks
                 while (nextChunkNum < playlist.chunkCount) {
+                    if (gen !== undefined && gen !== connectionGen) return;
                     const chunkRes = await fetch(`${currentWorkerUrl}/stream/${currentCfStreamId}/chunk/${nextChunkNum}`);
                     if (!chunkRes.ok) break;
                     const chunkData = await chunkRes.arrayBuffer();
@@ -1341,6 +1368,11 @@
         function processAppendQueue() {
             if (!sourceBuffer || isAppending || appendQueue.length === 0) return;
             if (sourceBuffer.updating) return;
+            // Guard: check MediaSource is still open (SourceBuffer may have been removed)
+            if (!mediaSource || mediaSource.readyState !== 'open') {
+                appendQueue = [];
+                return;
+            }
 
             isAppending = true;
             const data = appendQueue.shift();
@@ -1348,7 +1380,6 @@
                 sourceBuffer.appendBuffer(data);
             } catch(e) {
                 if (e.name === 'QuotaExceededError') {
-                    // Trim old buffer to make room
                     try {
                         const buffered = sourceBuffer.buffered;
                         if (buffered.length > 0) {
@@ -1358,10 +1389,11 @@
                             }
                         }
                     } catch(re) {}
-                    // Re-queue the data
                     appendQueue.unshift(data);
                 } else {
                     console.error('[LIVE] SourceBuffer append error:', e);
+                    // Stop trying if SourceBuffer is dead
+                    appendQueue = [];
                 }
             }
             isAppending = false;

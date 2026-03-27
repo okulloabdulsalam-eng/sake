@@ -502,13 +502,14 @@
                 console.log('[BROADCAST] YouTube broadcast created:', ytBroadcastId);
 
                 // 1b. Also start R2 chunk stream for in-app playback
+                const actualMimeType = detectRecorderMimeType();
                 try {
                     const r2Res = await fetch(`${workerUrl}/stream/start`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             title: title,
-                            mimeType: 'video/webm;codecs=vp8,opus'
+                            mimeType: actualMimeType
                         })
                     });
                     if (r2Res.ok) {
@@ -528,7 +529,7 @@
 
                 // 3. Start MediaRecorder and send to relay
                 btnGoLive.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting stream...';
-                startMediaRecorder(mediaStream);
+                startMediaRecorder(mediaStream, actualMimeType);
 
                 // 4. Create Firestore doc with YouTube info
                 const data = {
@@ -649,12 +650,7 @@
             } catch(e) { console.warn('[BROADCAST] Go-live transition error:', e); }
         }
 
-        function startMediaRecorder(stream) {
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                try { mediaRecorder.stop(); } catch(e) {}
-            }
-
-            // Prefer H.264 for RTMP (copy instead of transcode)
+        function detectRecorderMimeType() {
             const mimeTypes = [
                 'video/webm;codecs=h264,opus',
                 'video/webm;codecs=h264',
@@ -662,10 +658,17 @@
                 'video/webm;codecs=vp8',
                 'video/webm',
             ];
-            let mimeType = 'video/webm';
             for (const mt of mimeTypes) {
-                if (MediaRecorder.isTypeSupported(mt)) { mimeType = mt; break; }
+                if (MediaRecorder.isTypeSupported(mt)) return mt;
             }
+            return 'video/webm';
+        }
+
+        function startMediaRecorder(stream, mimeType) {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                try { mediaRecorder.stop(); } catch(e) {}
+            }
+            if (!mimeType) mimeType = detectRecorderMimeType();
             console.log('[BROADCAST] MediaRecorder using:', mimeType);
 
             mediaRecorder = new MediaRecorder(stream, {
