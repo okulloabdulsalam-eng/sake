@@ -523,15 +523,21 @@
                     console.warn('[BROADCAST] R2 stream start error:', e);
                 }
 
-                // 2. Connect WebSocket to RTMP relay server
+                // 2. Try connecting RTMP relay (optional — R2 streaming works without it)
+                let relayConnected = false;
                 btnGoLive.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting relay...';
-                await connectRelaySocket(relayServerUrl, ytStreamKey, broadcastData.rtmpUrl);
+                try {
+                    await connectRelaySocket(relayServerUrl, ytStreamKey, broadcastData.rtmpUrl);
+                    relayConnected = true;
+                } catch(relayErr) {
+                    console.warn('[BROADCAST] Relay unavailable, continuing with R2 only:', relayErr.message);
+                }
 
-                // 3. Start MediaRecorder and send to relay
+                // 3. Start MediaRecorder (sends to relay if connected + R2 chunks)
                 btnGoLive.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting stream...';
                 startMediaRecorder(mediaStream, actualMimeType);
 
-                // 4. Create Firestore doc with YouTube info
+                // 4. Create Firestore doc
                 const data = {
                     title,
                     description: inputDesc.value.trim(),
@@ -563,7 +569,10 @@
                 topBar.classList.add('visible');
                 bottomBar.classList.add('visible');
                 liveTitle.textContent = title;
-                liveMeta.innerHTML = `<span><i class="fas fa-tag"></i> ${escHtml(inputCategory.value)}</span><span><i class="fab fa-youtube" style="color:#ff0000"></i> YouTube Live</span>`;
+                const relayTag = relayConnected
+                    ? '<span><i class="fab fa-youtube" style="color:#ff0000"></i> YouTube Live</span>'
+                    : '<span><i class="fas fa-cloud"></i> In-App Only</span>';
+                liveMeta.innerHTML = `<span><i class="fas fa-tag"></i> ${escHtml(inputCategory.value)}</span>${relayTag}`;
 
                 // Start timers
                 startTimer();
@@ -571,11 +580,11 @@
                 startThumbnailCapture();
                 startViewerCountPolling();
                 startHeartbeat();
-                startRelayPing();
+                if (relayConnected) startRelayPing();
                 acquireWakeLock();
                 $('#latencyOverlay').classList.add('visible');
 
-                showToast('You are now live on YouTube!', 'success');
+                showToast(relayConnected ? 'You are now live!' : 'You are now live (in-app only, YouTube relay unavailable)', 'success');
 
             } catch(err) {
                 console.error('[BROADCAST] Go live error:', err);
