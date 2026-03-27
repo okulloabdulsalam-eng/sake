@@ -1490,8 +1490,19 @@
                 try {
                     if (video.readyState < 3) { // HAVE_FUTURE_DATA
                         stallCount++;
-                        if (stallCount >= 4) { // 4 checks × 3s = 12s buffering
-                            console.log('[LIVE] Video stalled');
+                        // After 4 checks (12s): try seeking to live edge
+                        if (stallCount === 4) {
+                            console.log('[LIVE] Trying to seek to live edge');
+                            try {
+                                const buf = video.buffered;
+                                if (buf.length > 0) {
+                                    video.currentTime = buf.end(buf.length - 1) - 0.5;
+                                }
+                            } catch(e) {}
+                        }
+                        // After 8 checks (24s): full reconnect as last resort
+                        if (stallCount >= 8) {
+                            console.log('[LIVE] Video stalled for 24s, reconnecting');
                             showToast('Stream stalled, reconnecting...', 'error');
                             stallCount = 0;
                             scheduleReconnect(currentStreamId);

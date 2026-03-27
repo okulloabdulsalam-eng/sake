@@ -630,7 +630,10 @@
             if (!relayServerUrl) return;
             try {
                 await connectRelaySocket(relayServerUrl, ytStreamKey);
-                if (mediaStream) { startMediaRecorder(mediaStream); showToast('Relay reconnected', 'success'); }
+                // Do NOT restart MediaRecorder — it would create a new WebM init segment
+                // and corrupt the R2 stream. The existing MediaRecorder keeps running;
+                // ondataavailable will send through the new relaySocket automatically.
+                showToast('Relay reconnected', 'success');
             } catch(e) {
                 console.error('[BROADCAST] Reconnect failed:', e);
                 setTimeout(() => reconnectRelay(), 10000);
