@@ -820,6 +820,8 @@
         let appendQueue      = [];
         let isAppending      = false;
         let connectionGen    = 0;  // incremented on each connect; stale async ops bail out
+        let useBlobMode      = false; // fallback: blob URL playback for MSE-incompatible codecs
+        let blobChunks       = [];    // accumulated chunk data for blob mode
 
         function getRelayWorkerUrl() {
             return localStorage.getItem('kiuma_stream_relay_url') || 'https://kiuma-stream-relay.kiuma4.workers.dev';
@@ -1189,6 +1191,8 @@
             nextChunkNum = 0;
             currentCfStreamId = null;
             currentWorkerUrl = null;
+            useBlobMode = false;
+            blobChunks = [];
 
             if (streamDocUnsubscribe) { streamDocUnsubscribe(); streamDocUnsubscribe = null; }
             if (viewerInterval) { clearInterval(viewerInterval); viewerInterval = null; }
@@ -1219,7 +1223,6 @@
         //  4. Fetch new chunks, append to SourceBuffer
         // ============================================================
         async function connectToR2Stream(streamId) {
-            // Increment generation so any stale async ops from previous connections bail out
             const myGen = ++connectionGen;
 
             const streamDoc = await window.firebaseDb.collection('liveStreams').doc(streamId).get();
@@ -1228,7 +1231,7 @@
             if (!streamData) throw new Error('Stream not found');
             if (streamData.status === 'ended') throw new Error('Stream has ended');
             if (!streamData.cfStreamId) throw new Error('Stream not ready (no R2 stream)');
-            if (myGen !== connectionGen) return; // superseded
+            if (myGen !== connectionGen) return;
 
             setStreamInfo(streamData);
             currentCfStreamId = streamData.cfStreamId;
@@ -1245,71 +1248,90 @@
 
             showConnecting('Loading stream...');
 
-            if (!('MediaSource' in window)) {
-                throw new Error('Your browser does not support live playback');
-            }
-
             // Get stream info from worker
             const playlistRes = await fetch(`${currentWorkerUrl}/stream/${currentCfStreamId}/playlist`);
             if (!playlistRes.ok) throw new Error('Stream not available');
             const playlist = await playlistRes.json();
             if (playlist.status === 'ended') throw new Error('Stream has ended');
-            if (myGen !== connectionGen) return; // superseded
+            if (myGen !== connectionGen) return;
 
-            const mimeType = playlist.mimeType || 'video/webm;codecs=vp8,opus';
+            const storedMime = playlist.mimeType || 'video/webm;codecs=vp8,opus';
 
-            if (!MediaSource.isTypeSupported(mimeType)) {
-                throw new Error('Unsupported stream format: ' + mimeType);
-            }
-
-            // Setup MediaSource
-            mediaSource = new MediaSource();
-            video.src = URL.createObjectURL(mediaSource);
-
-            await new Promise((resolve, reject) => {
-                const timeout = setTimeout(() => reject(new Error('MediaSource open timeout')), 10000);
-                mediaSource.addEventListener('sourceopen', () => {
-                    clearTimeout(timeout);
-                    try {
-                        sourceBuffer = mediaSource.addSourceBuffer(mimeType);
-                        sourceBuffer.mode = 'sequence';
-                        sourceBuffer.addEventListener('updateend', processAppendQueue);
-                        sourceBuffer.addEventListener('error', (e) => {
-                            console.error('[LIVE] SourceBuffer error:', e);
-                        });
-                        mseReady = true;
-                        resolve();
-                    } catch(e) {
-                        reject(e);
-                    }
-                }, { once: true });
-            });
-
-            if (myGen !== connectionGen) return; // superseded
-
-            // Always fetch chunk 0 first — it contains the WebM init segment (EBML header + Tracks)
+            // Fetch chunk 0 (init segment) — needed for both MSE and blob modes
             console.log('[LIVE] Fetching init segment (chunk 0)');
             const initRes = await fetch(`${currentWorkerUrl}/stream/${currentCfStreamId}/chunk/0`);
             if (!initRes.ok) throw new Error('Failed to fetch init segment');
             const initData = await initRes.arrayBuffer();
-            if (myGen !== connectionGen) return; // superseded
+            if (myGen !== connectionGen) return;
 
-            // Append init segment and wait for it to complete
-            await new Promise((resolve, reject) => {
-                const onDone = () => { sourceBuffer.removeEventListener('updateend', onDone); resolve(); };
-                const onErr = () => { sourceBuffer.removeEventListener('error', onErr); reject(new Error('Init segment rejected')); };
-                sourceBuffer.addEventListener('updateend', onDone);
-                sourceBuffer.addEventListener('error', onErr);
-                sourceBuffer.appendBuffer(initData);
-            });
+            // Try MSE first, fall back to blob URL if codec is incompatible
+            let mseOk = false;
+            if ('MediaSource' in window) {
+                const candidates = [storedMime, 'video/webm;codecs=vp8,opus', 'video/webm;codecs=vp9,opus', 'video/webm'];
+                let mseMime = null;
+                for (const mt of candidates) {
+                    if (MediaSource.isTypeSupported(mt)) { mseMime = mt; break; }
+                }
+                if (mseMime) {
+                    console.log('[LIVE] Trying MSE with:', mseMime);
+                    try {
+                        mediaSource = new MediaSource();
+                        video.src = URL.createObjectURL(mediaSource);
+                        await new Promise((resolve, reject) => {
+                            const t = setTimeout(() => reject(new Error('timeout')), 8000);
+                            mediaSource.addEventListener('sourceopen', () => {
+                                clearTimeout(t);
+                                try {
+                                    sourceBuffer = mediaSource.addSourceBuffer(mseMime);
+                                    sourceBuffer.mode = 'sequence';
+                                    sourceBuffer.addEventListener('updateend', processAppendQueue);
+                                    resolve();
+                                } catch(e) { reject(e); }
+                            }, { once: true });
+                        });
+                        // Try appending init segment — this is where H.264 will fail
+                        await new Promise((resolve, reject) => {
+                            const onDone = () => { sourceBuffer.removeEventListener('updateend', onDone); resolve(); };
+                            const onErr = () => { sourceBuffer.removeEventListener('error', onErr); reject(new Error('Init rejected')); };
+                            sourceBuffer.addEventListener('updateend', onDone);
+                            sourceBuffer.addEventListener('error', onErr);
+                            sourceBuffer.appendBuffer(initData);
+                        });
+                        mseReady = true;
+                        mseOk = true;
+                        console.log('[LIVE] MSE init segment accepted');
+                    } catch(e) {
+                        console.warn('[LIVE] MSE failed, falling back to blob playback:', e.message);
+                        // Tear down failed MSE
+                        if (mediaSource && mediaSource.readyState === 'open') {
+                            try { mediaSource.endOfStream(); } catch(ex) {}
+                        }
+                        mediaSource = null;
+                        sourceBuffer = null;
+                        mseReady = false;
+                    }
+                }
+            }
+            if (myGen !== connectionGen) return;
 
-            // Skip to recent chunks for low latency (chunk 0 already appended)
+            if (!mseOk) {
+                // Blob fallback — Chrome's native <video> decoder handles H.264 in WebM
+                console.log('[LIVE] Using blob URL fallback for:', storedMime);
+                useBlobMode = true;
+                blobChunks = [initData];
+            }
+
+            // Skip to recent chunks for low latency (chunk 0 already handled)
             nextChunkNum = Math.max(1, playlist.chunkCount - 3);
 
             // Fetch recent chunks
             await fetchNewChunks(myGen);
+            if (myGen !== connectionGen) return;
 
-            if (myGen !== connectionGen) return; // superseded
+            // In blob mode, build initial blob and set as src
+            if (useBlobMode) {
+                rebuildBlobSrc(storedMime);
+            }
 
             // Start playing
             try { await video.play(); } catch(e) {
@@ -1336,11 +1358,30 @@
             chunkPollTimer = setInterval(() => fetchNewChunks(gen), 2000);
         }
 
+        // Blob fallback: rebuild video src from accumulated chunks
+        function rebuildBlobSrc(mimeType) {
+            if (!blobChunks.length) return;
+            const currentTime = video.currentTime || 0;
+            const blob = new Blob(blobChunks, { type: mimeType || 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const oldUrl = video.src;
+            video.src = url;
+            // Try to restore playback position
+            video.addEventListener('loadeddata', () => {
+                if (currentTime > 1) {
+                    try { video.currentTime = Math.max(0, video.duration - 3); } catch(e) {}
+                }
+                video.play().catch(() => { video.muted = true; video.play().catch(() => {}); });
+            }, { once: true });
+            if (oldUrl && oldUrl.startsWith('blob:')) {
+                try { URL.revokeObjectURL(oldUrl); } catch(e) {}
+            }
+        }
+
         async function fetchNewChunks(gen) {
-            // Bail out if this connection has been superseded
             if (gen !== undefined && gen !== connectionGen) return;
-            if (!currentCfStreamId || !currentWorkerUrl || !mseReady) return;
-            if (!mediaSource || mediaSource.readyState !== 'open') return;
+            if (!currentCfStreamId || !currentWorkerUrl) return;
+            if (!useBlobMode && (!mseReady || !mediaSource || mediaSource.readyState !== 'open')) return;
             try {
                 const res = await fetch(`${currentWorkerUrl}/stream/${currentCfStreamId}/playlist`);
                 if (!res.ok) return;
@@ -1351,15 +1392,26 @@
                     return;
                 }
 
+                let newChunks = false;
                 while (nextChunkNum < playlist.chunkCount) {
                     if (gen !== undefined && gen !== connectionGen) return;
                     const chunkRes = await fetch(`${currentWorkerUrl}/stream/${currentCfStreamId}/chunk/${nextChunkNum}`);
                     if (!chunkRes.ok) break;
                     const chunkData = await chunkRes.arrayBuffer();
-                    appendQueue.push(chunkData);
+                    if (useBlobMode) {
+                        blobChunks.push(chunkData);
+                        newChunks = true;
+                    } else {
+                        appendQueue.push(chunkData);
+                    }
                     nextChunkNum++;
                 }
-                processAppendQueue();
+
+                if (useBlobMode && newChunks) {
+                    rebuildBlobSrc(playlist.mimeType);
+                } else if (!useBlobMode) {
+                    processAppendQueue();
+                }
             } catch(e) {
                 console.warn('[LIVE] Chunk fetch error:', e);
             }
@@ -1368,7 +1420,6 @@
         function processAppendQueue() {
             if (!sourceBuffer || isAppending || appendQueue.length === 0) return;
             if (sourceBuffer.updating) return;
-            // Guard: check MediaSource is still open (SourceBuffer may have been removed)
             if (!mediaSource || mediaSource.readyState !== 'open') {
                 appendQueue = [];
                 return;
@@ -1392,7 +1443,6 @@
                     appendQueue.unshift(data);
                 } else {
                     console.error('[LIVE] SourceBuffer append error:', e);
-                    // Stop trying if SourceBuffer is dead
                     appendQueue = [];
                 }
             }
