@@ -651,11 +651,13 @@
         }
 
         function detectRecorderMimeType() {
+            // VP8/VP9+opus in WebM — works with both MediaRecorder AND MSE playback
+            // H.264 in WebM is NOT supported by MSE, so avoid it
             const mimeTypes = [
-                'video/webm;codecs=h264,opus',
-                'video/webm;codecs=h264',
                 'video/webm;codecs=vp8,opus',
                 'video/webm;codecs=vp8',
+                'video/webm;codecs=vp9,opus',
+                'video/webm;codecs=vp9',
                 'video/webm',
             ];
             for (const mt of mimeTypes) {
