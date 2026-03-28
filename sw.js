@@ -1,6 +1,6 @@
 // KIUMA Service Worker - Enables offline functionality (SAKE core, single project)
 // Cache version - UPDATE THIS when you deploy changes to force refresh
-const CACHE_VERSION = '2026-03-28-quran-overhaul';
+const CACHE_VERSION = '2026-03-28-quran-v2-proxy';
 const CACHE_NAME = 'kiuma-cache-' + CACHE_VERSION;
 const OFFLINE_URL = 'offline.html';
 
@@ -102,6 +102,7 @@ const STATIC_ASSETS = [
     './js/register-service-worker.js',
     './js/search.js',
     './js/search-data.js',
+    './js/quran-reader-main.js',
     './firebase-config.js',
     './update-navigation.js',
     './offline-db.js',
@@ -169,7 +170,25 @@ self.addEventListener('fetch', (event) => {
     const path = url.pathname.toLowerCase();
     const mediaExt = /\.(mp4|webm|ogg|mov|avi|mp3|wav|flac|aac|m4a)(\?|$)/i;
     // Allow PDFs to be cached for offline viewing, but exclude other media
-    if (mediaExt.test(path) || path.includes('/file/') || url.hostname.includes('workers.dev')) return;
+    if (mediaExt.test(path) || path.includes('/file/')) return;
+
+    // Quran word-by-word JSON proxy (same cache bucket as alquran)
+    if (url.hostname.includes('kiuma-quran') && path.includes('/verses/')) {
+        event.respondWith(
+            fetch(request)
+                .then((networkResponse) => {
+                    if (networkResponse && networkResponse.status === 200) {
+                        const clone = networkResponse.clone();
+                        caches.open(CACHE_NAME + '-quran').then(c => c.put(request, clone));
+                    }
+                    return networkResponse;
+                })
+                .catch(() => caches.match(request).then(r => r || new Response('{"error":"offline"}', { status: 503, headers: { 'Content-Type': 'application/json' } })))
+        );
+        return;
+    }
+
+    if (url.hostname.includes('workers.dev')) return;
 
     if (url.hostname.includes('firebaseio.com') ||
         url.hostname.includes('firestore.googleapis.com') ||

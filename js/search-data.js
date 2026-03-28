@@ -155,7 +155,7 @@ const SEARCH_DATA = [
     // Quran Reader
     {
         title: "Al Quran",
-        description: "Read, listen and recite the Holy Quran with Mushaf view, translations, tajweed, transliteration, memorization mode and audio.",
+        description: "Tarteel-style Quran: dark home with Surah/Page/Juz/Hizb/Ruku, Mushaf pages, word-by-word adaptive view, audio, AI recitation, bookmarks.",
         url: "quran-reader.html",
         category: "page",
         keywords: ["quran", "surah", "ayah", "verse", "recitation", "tafsir", "translation", "arabic", "read", "holy", "tajweed", "audio", "listen", "mushaf", "memorization", "transliteration", "juz", "page", "bookmark"],

@@ -122,6 +122,21 @@ function hashToken(token) {
   return 'dev_' + Math.abs(hash).toString(36);
 }
 
+/** Android heads-up: must set channel_id matching KiumaMessagingService + high priority */
+function buildAndroidNotificationBlock(imageUrl) {
+  const notification = {
+    channel_id: 'kiuma_app_messages',
+    sound: 'default',
+    default_vibrate_timings: true,
+    notification_priority: 'PRIORITY_HIGH'
+  };
+  if (imageUrl) notification.image = imageUrl;
+  return {
+    priority: 'high',
+    notification
+  };
+}
+
 // ── Get All Tokens ──
 async function getAllTokens(env) {
   const index = await getTokenIndex(env);
@@ -203,6 +218,7 @@ async function sendNotification(body, env) {
       const fcmMessage = {
         token: entry.token,
         notification: notificationPayload,
+        android: buildAndroidNotificationBlock(imageUrl),
         webpush: {
           notification: webpushNotification,
           fcm_options: {
@@ -218,9 +234,6 @@ async function sendNotification(body, env) {
           image: String(imageUrl || '')
         }
       };
-      if (imageUrl) {
-        fcmMessage.android = { notification: { image: imageUrl } };
-      }
       const fcmPayload = { message: fcmMessage };
 
       const projectId = env.FCM_PROJECT_ID || 'kiuma-mob-app';
@@ -449,43 +462,71 @@ async function fetchPrayerTimes(env) {
   }
 }
 
-// ── Check if any prayer is 5 minutes away ──
+function padTime(h, m) {
+  return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+}
+
+// ── Prayer: 5 min before adhan, at adhan, 5 min before iqaama (salat) ──
 async function checkPrayerReminders(prayerTimes, env) {
   const now = new Date();
-  // Current time in EAT
   const eatHour = (now.getUTCHours() + EAT_OFFSET_HOURS) % 24;
   const eatMinute = now.getUTCMinutes();
-  // Time 5 minutes from now in EAT
-  let targetMinute = eatMinute + 5;
-  let targetHour = eatHour;
-  if (targetMinute >= 60) {
-    targetMinute -= 60;
-    targetHour = (targetHour + 1) % 24;
+  const currentStr = padTime(eatHour, eatMinute);
+
+  let in5m = eatMinute + 5;
+  let in5h = eatHour;
+  if (in5m >= 60) {
+    in5m -= 60;
+    in5h = (in5h + 1) % 24;
   }
-  const targetTimeStr = String(targetHour).padStart(2, '0') + ':' + String(targetMinute).padStart(2, '0');
+  const in5Str = padTime(in5h, in5m);
 
   const today = getEATDateString(now);
 
   for (const name of PRAYER_NAMES) {
     const prayer = prayerTimes[name];
-    if (!prayer?.adhan) continue;
+    if (!prayer) continue;
 
-    // Compare adhan time (HH:MM) with target time
-    const adhanTime = prayer.adhan.substring(0, 5); // ensure HH:MM
-    if (adhanTime === targetTimeStr) {
-      // Check deduplication
-      const dedupeKey = `sent:prayer:${name}:${today}`;
-      const alreadySent = await env.FCM_TOKENS.get(dedupeKey);
-      if (alreadySent) continue;
+    const adhanTime = (prayer.adhan || '').substring(0, 5);
+    const iqaamaTime = (prayer.iqaama || '').substring(0, 5);
+    const displayName = name.charAt(0).toUpperCase() + name.slice(1);
 
-      const displayName = name.charAt(0).toUpperCase() + name.slice(1);
-      const title = `${displayName} Prayer Reminder`;
-      const body = `${displayName} adhan is in 5 minutes (${adhanTime}). Prepare for prayer.`;
+    // 1) Five minutes before adhan
+    if (adhanTime && in5Str === adhanTime) {
+      const dedupeKey = `sent:prayer:5before_adhan:${name}:${today}`;
+      if (await env.FCM_TOKENS.get(dedupeKey)) continue;
+      await sendScheduledPush(
+        `${displayName} — adhan soon`,
+        `${displayName} adhan in 5 minutes (${adhanTime}).`,
+        'prayer',
+        env
+      );
+      await env.FCM_TOKENS.put(dedupeKey, '1', { expirationTtl: 86400 });
+    }
 
-      console.log(`[Prayer] Sending ${name} reminder for ${adhanTime}`);
-      await sendScheduledPush(title, body, 'prayer', env);
+    // 2) At adhan time
+    if (adhanTime && currentStr === adhanTime) {
+      const dedupeKey = `sent:prayer:adhan_now:${name}:${today}`;
+      if (await env.FCM_TOKENS.get(dedupeKey)) continue;
+      await sendScheduledPush(
+        `${displayName} adhan`,
+        `It is time for ${displayName} adhan (${adhanTime}).`,
+        'prayer',
+        env
+      );
+      await env.FCM_TOKENS.put(dedupeKey, '1', { expirationTtl: 86400 });
+    }
 
-      // Mark as sent (24h TTL)
+    // 3) Five minutes before salat (iqaama)
+    if (iqaamaTime && in5Str === iqaamaTime) {
+      const dedupeKey = `sent:prayer:5before_iqaama:${name}:${today}`;
+      if (await env.FCM_TOKENS.get(dedupeKey)) continue;
+      await sendScheduledPush(
+        `${displayName} — salat soon`,
+        `${displayName} salat (iqaama) in 5 minutes (${iqaamaTime}).`,
+        'prayer',
+        env
+      );
       await env.FCM_TOKENS.put(dedupeKey, '1', { expirationTtl: 86400 });
     }
   }
@@ -623,6 +664,7 @@ async function sendScheduledPush(title, body, category, env) {
         message: {
           token: entry.token,
           notification: { title, body },
+          android: buildAndroidNotificationBlock(''),
           webpush: {
             notification: {
               title, body,
