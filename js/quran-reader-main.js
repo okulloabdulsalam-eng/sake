@@ -665,7 +665,6 @@
     document.getElementById('qrTransSel').value = s.transEd;
     document.getElementById('qrTajT').classList.toggle('on', s.tajweed);
     document.getElementById('qrRecSel').value = s.reciter;
-    document.getElementById('qrModeSelect').value = s.readingMode;
     document.getElementById('qrMemoT').classList.toggle('on', s.memorization);
     document.getElementById('qrRBody').style.fontSize = s.fontSize + 'px';
     var mb = document.getElementById('qrMBody');
