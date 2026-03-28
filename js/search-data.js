@@ -152,13 +152,13 @@ const SEARCH_DATA = [
         icon: "fa-hand-holding-heart"
     },
     
-    // Quran Page
+    // Quran Reader
     {
-        title: "Quran",
-        description: "Read and study the Holy Quran with translations and tafsir.",
-        url: "quran.html",
+        title: "Al Quran",
+        description: "Read, listen and recite the Holy Quran with translations, tajweed and audio.",
+        url: "quran-reader.html",
         category: "page",
-        keywords: ["quran", "surah", "ayah", "verse", "recitation", "tafsir", "translation", "arabic", "read", "holy"],
+        keywords: ["quran", "surah", "ayah", "verse", "recitation", "tafsir", "translation", "arabic", "read", "holy", "tajweed", "audio", "listen"],
         icon: "fa-book-quran"
     },
     

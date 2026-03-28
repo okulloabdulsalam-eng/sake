@@ -177,8 +177,8 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Cache Quran API responses for offline (network-first, fallback to cache)
-    if (url.hostname.includes('api.alquran.cloud') || url.hostname.includes('cdn.alquran.cloud')) {
+    // Cache Quran API and audio responses for offline (network-first, fallback to cache)
+    if (url.hostname.includes('api.alquran.cloud') || url.hostname.includes('cdn.alquran.cloud') || url.hostname.includes('cdn.islamic.network')) {
         event.respondWith(
             fetch(request)
                 .then((networkResponse) => {
