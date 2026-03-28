@@ -40,7 +40,7 @@
   ];
 
   var surahs = [], curSurah = 1, curAyahs = [], curPage = 1, mushafAyahs = [];
-  var readingMode = 'mushaf';
+  var readingMode = 'adaptive';
   var activeTab = 'surah';
   var audioEl = null, audioPlaying = false, audioAyahIdx = 0, audioRepeatOn = false, audioSpeed = 1;
   var reciteWs = null, reciteRecorder = null, reciteStream = null, reciteAyahIdx = 0, reciteMistakes = 0;
@@ -53,7 +53,7 @@
   function loadSettings() { try { return JSON.parse(localStorage.getItem('quran_settings')) || {}; } catch (e) { return {}; } }
   function saveSettings(s) { try { localStorage.setItem('quran_settings', JSON.stringify(s)); } catch (e) { } }
   function getSet() {
-    var d = { theme: 'dark', fontSize: 22, showTrans: true, transEd: 'en.asad', tajweed: false, reciter: 'ar.alafasy', showTranslit: false, memorization: false, readingMode: 'mushaf', wordByWord: false };
+    var d = { theme: 'dark', fontSize: 22, showTrans: true, transEd: 'en.asad', tajweed: false, reciter: 'ar.alafasy', showTranslit: false, memorization: false, readingMode: 'adaptive' };
     var s = loadSettings();
     for (var k in d) if (s[k] !== undefined) d[k] = s[k];
     return d;
@@ -108,11 +108,6 @@
     var d = document.createElement('div');
     d.textContent = t;
     return d.innerHTML;
-  }
-
-  var AR_DIGITS = '٠١٢٣٤٥٦٧٨٩';
-  function toArabicIndic(n) {
-    return String(n).replace(/\d/g, function (ch) { return AR_DIGITS[+ch]; });
   }
 
   function updateStreak() {
@@ -295,9 +290,8 @@
   function openMushafPage(page) {
     curPage = Math.max(1, Math.min(604, page));
     showView('qrMushaf');
-    var s = surahs[curSurah - 1];
-    document.getElementById('qrMTitle').textContent = s ? curSurah + '. ' + s.englishName : 'Page ' + curPage;
-    document.getElementById('qrMSub').textContent = 'Page ' + curPage + ' · Juz ' + juzFromPage(curPage);
+    document.getElementById('qrMTitle').textContent = 'Page ' + curPage;
+    document.getElementById('qrMSub').textContent = 'Juz ' + juzFromPage(curPage);
     loadMushafPage(curPage);
   }
 
@@ -307,13 +301,11 @@
     var list = document.getElementById('qrRBody');
     list.innerHTML = '<div class="qr-skel">Loading…</div>';
     try {
-      if (s.wordByWord) {
-        var proxyVerses = await fetchProxyVersesForSurah(surahNum);
-        if (proxyVerses && proxyVerses.length) {
-          curAyahs = proxyVerses.map(function (v) { return normalizeProxyVerse(v, surahNum); });
-          renderAdaptiveFromWords(curAyahs, surahNum, scrollToAyah);
-          return;
-        }
+      var proxyVerses = await fetchProxyVersesForSurah(surahNum);
+      if (proxyVerses && proxyVerses.length) {
+        curAyahs = proxyVerses.map(function (v) { return normalizeProxyVerse(v, surahNum); });
+        renderAdaptiveFromWords(curAyahs, surahNum, scrollToAyah);
+        return;
       }
     } catch (e) { }
     try {
@@ -434,18 +426,10 @@
           html += '<div class="qr-surah-banner">' + sname + '</div>';
           if (sn !== 1 && sn !== 9) html += '<div class="qr-bism">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>';
         }
-        var ayNum = a.numberInSurah;
-        html += '<span class="qr-mtext">' + a.text + '</span><button type="button" class="qr-ayah-badge" onclick="window.qrMushafAct(' + page + ',' + ayNum + ')" aria-label="Ayah ' + ayNum + '">' + toArabicIndic(ayNum) + '</button> ';
+        html += '<span class="qr-mtext">' + a.text + '</span><button type="button" class="qr-ayah-badge" onclick="window.qrMushafAct(' + page + ',' + a.numberInSurah + ')">' + a.numberInSurah + '</button> ';
       });
-      html += '</div><div class="qr-pagenum">— ' + toArabicIndic(page) + ' —</div></div>';
+      html += '</div><div class="qr-pagenum">— ' + page + ' —</div></div>';
       box.innerHTML = html;
-      var first = mushafAyahs[0];
-      if (first && first.surah) {
-        curSurah = first.surah.number;
-        var en = first.surah.englishName || first.surah.name || '';
-        document.getElementById('qrMTitle').textContent = first.surah.number + '. ' + en;
-        document.getElementById('qrMSub').textContent = 'Page ' + page + ' · Juz ' + juzFromPage(page);
-      }
       saveContinue(curSurah || 1, 1, page);
     } catch (e) {
       box.innerHTML = '<p class="qr-muted">Could not load page.</p>';
@@ -682,8 +666,6 @@
     document.getElementById('qrTajT').classList.toggle('on', s.tajweed);
     document.getElementById('qrRecSel').value = s.reciter;
     document.getElementById('qrMemoT').classList.toggle('on', s.memorization);
-    var wbw = document.getElementById('qrWbwT');
-    if (wbw) wbw.classList.toggle('on', !!s.wordByWord);
     document.getElementById('qrRBody').style.fontSize = s.fontSize + 'px';
     var mb = document.getElementById('qrMBody');
     if (mb) mb.style.fontSize = (s.fontSize + 4) + 'px';
@@ -694,8 +676,7 @@
   window.qrSetTrans = function (v) { putSet('transEd', v); };
   window.qrToggleTaj = function () { putSet('tajweed', !getSet().tajweed); applySettings(); };
   window.qrSetRec = function (v) { putSet('reciter', v); };
-  window.qrSetMode = function (v) { putSet('readingMode', v); readingMode = v === 'mushaf' ? 'mushaf' : 'adaptive'; };
-  window.qrToggleWbw = function () { putSet('wordByWord', !getSet().wordByWord); applySettings(); };
+  window.qrSetMode = function (v) { putSet('readingMode', v); };
   window.qrToggleMemo = function () { putSet('memorization', !getSet().memorization); applySettings(); };
 
   function toggleReaderPicker() {
@@ -713,11 +694,7 @@
   window.qrPickFromReader = function (n) {
     document.getElementById('qrPicker').classList.remove('show');
     document.getElementById('qrPickBD').classList.remove('show');
-    curSurah = n;
-    curPage = SURAH_PAGE[n - 1];
-    readingMode = getSet().readingMode === 'mushaf' ? 'mushaf' : 'adaptive';
-    if (readingMode === 'mushaf') openMushafPage(curPage);
-    else openSurah(n, 1);
+    openSurah(n, 1);
   };
 
   function startRecite() {
@@ -853,7 +830,6 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     document.body.classList.add('quran-standalone');
-    readingMode = getSet().readingMode === 'mushaf' ? 'mushaf' : 'adaptive';
     var mt = document.getElementById('menuToggle');
     if (mt) {
       document.getElementById('qrMenuBtn').addEventListener('click', function () { mt.click(); });
@@ -890,19 +866,6 @@
   window.qrNextSurah = nextSurah;
   window.qrPrevPage = prevMushafPage;
   window.qrNextPage = nextMushafPage;
-  window.qrTogglePicker = toggleReaderPicker;
-  window.qrClosePicker = function () {
-    document.getElementById('qrPicker').classList.remove('show');
-    document.getElementById('qrPickBD').classList.remove('show');
-  };
-  window.qrStartRecite = startRecite;
-  window.qrStopRecite = stopRecite;
-  window.qrToggleMic = toggleMicRec;
-  window.qrRecPrev = recitePrev;
-  window.qrRecNext = reciteNext;
-  window.qrCloseAct = closeAct;
-})();
-extMushafPage;
   window.qrTogglePicker = toggleReaderPicker;
   window.qrClosePicker = function () {
     document.getElementById('qrPicker').classList.remove('show');
