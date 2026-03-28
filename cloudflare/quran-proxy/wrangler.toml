@@ -12,5 +12,5 @@ compatibility_date = "2024-01-01"
 # id = "YOUR_KV_ID"
 
 [vars]
-# auto = try prelive OAuth then production (see worker.js). Or set prelive | production only.
-QF_ENV = "auto"
+# production = live Quran.Foundation OAuth + APIs (see dashboard). Use prelive + prelive credentials for test app.
+QF_ENV = "production"

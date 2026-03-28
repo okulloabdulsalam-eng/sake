@@ -51,9 +51,9 @@ export default {
       const qs = new URLSearchParams(url.search);
       if (!qs.has('words')) qs.set('words', 'true');
       if (!qs.has('per_page')) qs.set('per_page', '50');
-      if (!qs.has('word_translation_language')) qs.set('word_translation_language', 'en');
+      if (!qs.has('language')) qs.set('language', 'en');
       if (!qs.has('word_fields')) qs.set('word_fields', 'text_uthmani');
-      const apiPath = `/v4/verses/by_page/${page}?${qs.toString()}`;
+      const apiPath = `/content/api/v4/verses/by_page/${page}?${qs.toString()}`;
       return proxyApiPath(apiPath, clientId, clientSecret, env, cors);
     }
 
@@ -63,9 +63,9 @@ export default {
       const qs = new URLSearchParams(url.search);
       if (!qs.has('words')) qs.set('words', 'true');
       if (!qs.has('per_page')) qs.set('per_page', '50');
-      if (!qs.has('word_translation_language')) qs.set('word_translation_language', 'en');
+      if (!qs.has('language')) qs.set('language', 'en');
       if (!qs.has('word_fields')) qs.set('word_fields', 'text_uthmani');
-      const apiPath = `/v4/verses/by_chapter/${ch}?${qs.toString()}`;
+      const apiPath = `/content/api/v4/verses/by_chapter/${ch}?${qs.toString()}`;
       return proxyApiPath(apiPath, clientId, clientSecret, env, cors);
     }
 
