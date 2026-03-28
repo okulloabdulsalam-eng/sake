@@ -877,3 +877,8 @@ exports.getUserPayments = functions.https.onCall(async (data, context) => {
   }
 });
 
+
+// Re-export BarakahPush notification functions
+const barakahPush = require('./barakahpush-functions');
+Object.assign(exports, barakahPush);
+

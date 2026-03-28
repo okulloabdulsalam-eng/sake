@@ -279,24 +279,6 @@ async function registerTokenWithWorker(token) {
 
 async function saveFCMTokenToFirestore(token) {
     registerTokenWithWorker(token);
-    if (typeof firebase === 'undefined' || !firebase.firestore) return;
-    
-    try {
-        const deviceId = localStorage.getItem('deviceId') || generateDeviceId();
-        localStorage.setItem('deviceId', deviceId);
-        
-        await firebase.firestore().collection('fcm_tokens').doc(deviceId).set({
-            token: token,
-            deviceId: deviceId,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            userAgent: navigator.userAgent,
-            platform: navigator.platform
-        }, { merge: true });
-        
-        console.log('FCM token saved to Firestore');
-    } catch (error) {
-        console.warn('Failed to save FCM token to Firestore:', error);
-    }
 }
 
 function generateDeviceId() {
@@ -306,6 +288,7 @@ function generateDeviceId() {
 function showForegroundNotification(payload) {
     const title = payload.notification?.title || payload.data?.title || 'KIUMA Update';
     const body = payload.notification?.body || payload.data?.body || '';
+    const image = payload.notification?.image || payload.data?.image || '';
     
     // Persist notification to localStorage so it shows in notifications.html
     try {
@@ -319,6 +302,7 @@ function showForegroundNotification(payload) {
                 title: title,
                 message: body,
                 icon: (payload.data && payload.data.icon) || 'fas fa-bell',
+                image: image,
                 category: (payload.data && payload.data.category) || 'general',
                 status: 'unread',
                 date: new Date().toISOString(),
@@ -330,9 +314,10 @@ function showForegroundNotification(payload) {
     } catch(e) { console.warn('Failed to save notification locally:', e); }
 
     // Show in-app toast — persistent until user taps or 30s
+    var imgHtml = image ? `<img src="${image}" style="width:100%;max-height:120px;object-fit:cover;border-radius:6px;margin-top:8px;" onerror="this.style.display='none'">` : '';
     const toast = document.createElement('div');
     toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--whatsapp-green);color:var(--toast-text);padding:15px 20px;border-radius:10px;z-index:9999;box-shadow:0 4px 15px rgba(0,0,0,0.3);max-width:90%;cursor:pointer;display:flex;align-items:flex-start;gap:10px;';
-    toast.innerHTML = `<div style="flex:1"><strong>${title}</strong><br><span style="opacity:0.9">${body}</span></div><span style="font-size:18px;opacity:0.7;padding:0 4px;">&times;</span>`;
+    toast.innerHTML = `<div style="flex:1"><strong>${title}</strong><br><span style="opacity:0.9">${body}</span>${imgHtml}</div><span style="font-size:18px;opacity:0.7;padding:0 4px;">&times;</span>`;
     toast.onclick = (e) => {
         if (e.target.tagName === 'SPAN' && e.target.textContent === '×') { toast.remove(); return; }
         window.location.href = 'notifications.html'; toast.remove();

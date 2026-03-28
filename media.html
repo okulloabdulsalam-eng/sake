@@ -318,34 +318,36 @@
             var m = { mp4:'video/mp4', webm:'video/webm', m4a:'audio/mp4', mp3:'audio/mpeg', ogg:'audio/ogg', pdf:'application/pdf', jpg:'image/jpeg', jpeg:'image/jpeg', png:'image/png', gif:'image/gif', webp:'image/webp' };
             return m[(ext || '').toLowerCase()] || '';
         }
+        function _addDlParam(url) {
+            try { var u = new URL(url, location.href); u.searchParams.set('dl', '1'); return u.toString(); } catch(e) { return url + (url.includes('?') ? '&' : '?') + 'dl=1'; }
+        }
+
         async function _inAppDownload(url, filename) {
             if (!url) return;
             var btn = event ? event.currentTarget : null;
             var origHTML = btn ? btn.innerHTML : '';
             if (btn) { btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true; }
-            try {
-                if (window.KiumaBridge && window.KiumaBridge.isInApp() && typeof window.KiumaBridge.saveFileToDevice === 'function') {
-                    var name = (filename && decodeURIComponent(filename)) || url.split('/').pop() || 'download';
-                    var ext = name.split('.').pop();
-                    var mime = _mimeFromExt(ext);
+            if (window.KiumaBridge && window.KiumaBridge.isInApp() && typeof window.KiumaBridge.saveFileToDevice === 'function') {
+                var name = (filename && decodeURIComponent(filename)) || url.split('/').pop() || 'download';
+                var ext = name.split('.').pop();
+                var mime = _mimeFromExt(ext);
+                try {
                     var ok = await window.KiumaBridge.saveFileToDevice(url, name, mime, { saveToAppDirectory: true });
                     if (btn) { btn.innerHTML = ok ? '<i class="fas fa-check"></i>' : '<i class="fas fa-exclamation-triangle"></i>'; setTimeout(function() { btn.innerHTML = origHTML; btn.disabled = false; }, 2000); }
                     if (ok) return;
+                } catch(e) {
+                    console.warn('Native download failed, falling back to external:', e);
                 }
-                var res = await fetch(url);
-                if (!res.ok) throw new Error('Download failed');
-                var blob = await res.blob();
-                var a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = filename || url.split('/').pop() || 'download';
-                document.body.appendChild(a);
-                a.click();
-                setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
-                if (btn) { btn.innerHTML = '<i class="fas fa-check"></i>'; setTimeout(function() { btn.innerHTML = origHTML; btn.disabled = false; }, 2000); }
-            } catch(e) {
-                console.error('Download error:', e);
-                if (btn) { btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i>'; setTimeout(function() { btn.innerHTML = origHTML; btn.disabled = false; }, 2000); }
             }
+            var a = document.createElement('a');
+            a.href = _addDlParam(url);
+            a.download = filename || url.split('/').pop() || 'download';
+            a.target = '_blank';
+            a.rel = 'noopener';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function() { a.remove(); }, 500);
+            if (btn) { btn.innerHTML = '<i class="fas fa-check"></i>'; setTimeout(function() { btn.innerHTML = origHTML; btn.disabled = false; }, 2000); }
         }
         window.inAppDownload = _inAppDownload;
 
@@ -1036,19 +1038,15 @@
                 setTimeout(function() { btn.innerHTML = origHTML; btn.disabled = false; }, 2000);
                 return;
             }
-            try {
-                var res = await fetch(url);
-                var blob = await res.blob();
-                var a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = name || 'download';
-                document.body.appendChild(a);
-                a.click();
-                setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
-                btn.innerHTML = '<i class="fas fa-check" style="font-size:12px;"></i>';
-            } catch(e) {
-                btn.innerHTML = '<i class="fas fa-exclamation" style="font-size:12px;"></i>';
-            }
+            var a = document.createElement('a');
+            a.href = _addDlParam(url);
+            a.download = name || 'download';
+            a.target = '_blank';
+            a.rel = 'noopener';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function() { a.remove(); }, 500);
+            btn.innerHTML = '<i class="fas fa-check" style="font-size:12px;"></i>';
             setTimeout(function() { btn.innerHTML = origHTML; btn.disabled = false; }, 2000);
         }
         window.handleSaveToDevice = handleSaveToDevice;

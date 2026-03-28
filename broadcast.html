@@ -316,6 +316,13 @@
         let cfStreamId        = null;  // R2 chunk stream ID for in-app playback
         let chunkQueue        = [];    // Queue of chunks to upload to R2
         let chunkUploading    = false; // R2 upload lock
+        let adaptiveTimer     = null;
+        let currentBitrate    = 2500000; // default Medium
+        const BITRATE_PRESETS = {
+            Low:    { video: 1000000, audio: 96000, label: 'Low (1 Mbps)' },
+            Medium: { video: 2500000, audio: 128000, label: 'Medium (2.5 Mbps)' },
+            High:   { video: 4000000, audio: 128000, label: 'High (4 Mbps)' }
+        };
 
         // Worker URL (YouTube API proxy) - set in admin panel Settings tab
         function getRelayWorkerUrl() {
@@ -581,6 +588,7 @@
                 startViewerCountPolling();
                 startHeartbeat();
                 if (relayConnected) startRelayPing();
+                startAdaptiveBitrate();
                 acquireWakeLock();
                 $('#latencyOverlay').classList.add('visible');
 
@@ -687,8 +695,8 @@
 
             mediaRecorder = new MediaRecorder(stream, {
                 mimeType,
-                videoBitsPerSecond: 2500000,
-                audioBitsPerSecond: 128000,
+                videoBitsPerSecond: currentBitrate,
+                audioBitsPerSecond: BITRATE_PRESETS[currentBitrate === 1000000 ? 'Low' : currentBitrate === 2500000 ? 'Medium' : 'High'].audio,
             });
 
             mediaRecorder.ondataavailable = (evt) => {
@@ -734,7 +742,54 @@
             chunkUploading = false;
         }
 
+        function startAdaptiveBitrate() {
+            stopAdaptiveBitrate();
+            adaptiveTimer = setInterval(() => {
+                if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
+                const conn = navigator.connection;
+                if (!conn) return;
+
+                let targetPreset = 'Medium';
+                const et = conn.effectiveType;
+                const dl = conn.downlink;
+                const rtt = conn.rtt;
+
+                // Choose preset based on network quality
+                if (et === 'slow-2g' || et === '2g' || dl < 1.5) {
+                    targetPreset = 'Low';
+                } else if (et === '3g' || (dl >= 1.5 && dl < 4)) {
+                    targetPreset = 'Medium';
+                } else if (et === '4g' || et === '5g' || dl >= 4) {
+                    targetPreset = 'High';
+                }
+
+                // Adjust for high RTT
+                if (rtt > 800 && targetPreset === 'High') targetPreset = 'Medium';
+                if (rtt > 1200 && targetPreset === 'Medium') targetPreset = 'Low';
+
+                const targetBitrate = BITRATE_PRESETS[targetPreset].video;
+                if (targetBitrate !== currentBitrate) {
+                    console.log(`[BROADCAST] Adaptive bitrate: ${Object.keys(BITRATE_PRESETS).find(k => BITRATE_PRESETS[k].video === currentBitrate)} → ${targetPreset}`);
+                    currentBitrate = targetBitrate;
+                    // Restart MediaRecorder with new bitrate
+                    try {
+                        const wasActive = mediaRecorder.state === 'recording';
+                        if (wasActive) mediaRecorder.stop();
+                        startMediaRecorder(mediaStream);
+                        showToast(`Quality: ${BITRATE_PRESETS[targetPreset].label}`, 'info');
+                    } catch(e) {
+                        console.warn('[BROADCAST] Failed to restart MediaRecorder for adaptive bitrate:', e);
+                    }
+                }
+            }, 10000);
+        }
+
+        function stopAdaptiveBitrate() {
+            if (adaptiveTimer) { clearInterval(adaptiveTimer); adaptiveTimer = null; }
+        }
+
         function cleanupRelay() {
+            stopAdaptiveBitrate();
             if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                 try { mediaRecorder.stop(); } catch(e) {}
             }
@@ -1078,8 +1133,30 @@
             }
         });
 
-        // Cleanup on page leave
+        // Cleanup on page leave — use sendBeacon + keepalive fetch for reliability
         window.addEventListener('beforeunload', () => {
+            // 1. Beacon R2 worker to mark stream ended (survives tab close)
+            if (cfStreamId) {
+                const workerUrl = getRelayWorkerUrl();
+                if (workerUrl) {
+                    const beaconUrl = `${workerUrl}/stream/${cfStreamId}/end-notify`;
+                    // sendBeacon is fire-and-forget, survives page unload
+                    if (navigator.sendBeacon) {
+                        navigator.sendBeacon(beaconUrl, '{}');
+                    }
+                    // Backup: keepalive fetch (works on browsers without sendBeacon)
+                    try {
+                        fetch(beaconUrl, {
+                            method: 'POST',
+                            body: '{}',
+                            keepalive: true,
+                            headers: { 'Content-Type': 'application/json' }
+                        }).catch(() => {});
+                    } catch(e) {}
+                }
+            }
+
+            // 2. Best-effort Firestore update (may not complete on tab close, but helps)
             if (streamId && window.firebaseDb) {
                 try {
                     window.firebaseDb.collection('liveStreams').doc(streamId).update({
@@ -1087,9 +1164,27 @@
                     });
                 } catch(e) {}
             }
+
             cleanupRelay();
             if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
             releaseWakeLock();
+        });
+
+        // Also handle pagehide for mobile browsers (more reliable than beforeunload on iOS/Android)
+        window.addEventListener('pagehide', () => {
+            if (cfStreamId) {
+                const workerUrl = getRelayWorkerUrl();
+                if (workerUrl && navigator.sendBeacon) {
+                    navigator.sendBeacon(`${workerUrl}/stream/${cfStreamId}/end-notify`, '{}');
+                }
+            }
+            if (streamId && window.firebaseDb) {
+                try {
+                    window.firebaseDb.collection('liveStreams').doc(streamId).update({
+                        status: 'ended', endedAt: new Date().toISOString(), cameraActive: false, viewerCount: 0
+                    });
+                } catch(e) {}
+            }
         });
 
         // ============================================================

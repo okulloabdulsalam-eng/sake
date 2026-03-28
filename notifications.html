@@ -192,12 +192,13 @@
                             const data = doc.data();
                             // Handle Firestore Timestamp, ISO string, or missing createdAt
                             var dateStr;
-                            if (data.createdAt && typeof data.createdAt.toDate === 'function') {
-                                dateStr = data.createdAt.toDate().toISOString();
-                            } else if (data.createdAt && data.createdAt.seconds) {
-                                dateStr = new Date(data.createdAt.seconds * 1000).toISOString();
-                            } else if (data.createdAt) {
-                                dateStr = new Date(data.createdAt).toISOString();
+                            var ts = data.createdAt || data.created_at;
+                            if (ts && typeof ts.toDate === 'function') {
+                                dateStr = ts.toDate().toISOString();
+                            } else if (ts && ts.seconds) {
+                                dateStr = new Date(ts.seconds * 1000).toISOString();
+                            } else if (ts) {
+                                dateStr = new Date(ts).toISOString();
                             } else if (data.date) {
                                 dateStr = new Date(data.date).toISOString();
                             } else {
@@ -208,6 +209,7 @@
                                 title: data.title || 'Notification',
                                 message: data.message || data.body || '',
                                 icon: data.icon || 'fas fa-bell',
+                                image: data.image || '',
                                 category: data.category || data.type || 'general',
                                 status: data.status || (data.is_read ? 'read' : 'unread'),
                                 date: dateStr,
@@ -357,6 +359,10 @@
             if (status !== 'unread') {
                 item.style.opacity = '0.7';
             }
+            var imageHtml = '';
+            if (notification.image) {
+                imageHtml = `<img src="${notification.image}" alt="" style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;margin:8px 0 4px;" onerror="this.style.display='none'">`;
+            }
             item.innerHTML = `
                 <div class="notification-icon">
                     <i class="${notification.icon || 'fas fa-bell'}"></i>
@@ -364,6 +370,7 @@
                 <div class="notification-content">
                     <h4>${notification.title}</h4>
                     <p>${notification.message}</p>
+                    ${imageHtml}
                     <span class="notification-time">${formatTimeAgo(notification.date)}</span>
                 </div>
             `;

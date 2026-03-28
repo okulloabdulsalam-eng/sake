@@ -525,6 +525,23 @@ async function handleStreamStop(env, streamId) {
   return jsonResponse({ success: true, message: 'Stream ended', streamId });
 }
 
+// Lightweight end-notify for sendBeacon (broadcaster tab close / crash).
+// Accepts any content-type since sendBeacon sends text/plain by default.
+async function handleEndNotify(env, streamId) {
+  try {
+    const metaObj = await env.STREAMS.get(`${streamId}/meta.json`);
+    if (!metaObj) return jsonResponse({ success: false, reason: 'not found' });
+    const meta = JSON.parse(await metaObj.text());
+    if (meta.status === 'ended') return jsonResponse({ success: true, already: true });
+    meta.status = 'ended';
+    meta.endedAt = new Date().toISOString();
+    await env.STREAMS.put(`${streamId}/meta.json`, JSON.stringify(meta));
+    return jsonResponse({ success: true, message: 'Stream marked ended via beacon' });
+  } catch (e) {
+    return jsonResponse({ success: false, error: e.message });
+  }
+}
+
 async function handleStreamCleanup(env, streamId) {
   // Delete all chunks and meta for a stream
   const list = await env.STREAMS.list({ prefix: `${streamId}/` });
@@ -585,6 +602,11 @@ export default {
       const stopMatch = path.match(/^\/stream\/([^/]+)\/stop$/);
       if (stopMatch && request.method === 'POST') {
         return handleStreamStop(env, stopMatch[1]);
+      }
+
+      const endNotifyMatch = path.match(/^\/stream\/([^/]+)\/end-notify$/);
+      if (endNotifyMatch && request.method === 'POST') {
+        return handleEndNotify(env, endNotifyMatch[1]);
       }
 
       const cleanupMatch = path.match(/^\/stream\/([^/]+)\/cleanup$/);

@@ -30,7 +30,7 @@ export default {
 
       if (path === '/health') {
         response = json({ status: 'ok', service: 'KIUMA Push Notifications' });
-      } else if (path === '/api/register-token' && request.method === 'POST') {
+      } else if ((path === '/api/register-token' || path === '/api/register') && request.method === 'POST') {
         response = await registerToken(await request.json(), env);
       } else if (path === '/api/unregister-token' && request.method === 'POST') {
         response = await unregisterToken(await request.json(), env);
@@ -170,6 +170,8 @@ async function sendNotification(body, env) {
   // Get FCM access token
   const accessToken = await getFCMAccessToken(env);
 
+  const imageUrl = data?.image || '';
+
   let sent = 0;
   let failed = 0;
   let lastError = null;
@@ -178,35 +180,48 @@ async function sendNotification(body, env) {
   // Send to each device
   for (const entry of tokens) {
     try {
-      const fcmPayload = {
-        message: {
-          token: entry.token,
-          notification: {
-            title: title,
-            body: message || ''
-          },
-          webpush: {
-            notification: {
-              title: title,
-              body: message || '',
-              icon: '/logo.png',
-              badge: '/logo.png',
-              tag: data?.notification_id || 'kiuma-' + Date.now(),
-              requireInteraction: true
-            },
-            fcm_options: {
-              link: data?.url || '/notifications.html'
-            }
-          },
-          data: {
-            title: String(title),
-            body: String(message || ''),
-            notification_id: String(data?.notification_id || ''),
-            category: String(data?.category || 'general'),
-            url: String(data?.url || '/notifications.html')
+      const webpushNotification = {
+        title: title,
+        body: message || '',
+        icon: '/logo.png',
+        badge: '/logo.png',
+        tag: data?.notification_id || 'kiuma-' + Date.now(),
+        requireInteraction: true
+      };
+      if (imageUrl) {
+        webpushNotification.image = imageUrl;
+      }
+
+      const notificationPayload = {
+        title: title,
+        body: message || ''
+      };
+      if (imageUrl) {
+        notificationPayload.image = imageUrl;
+      }
+
+      const fcmMessage = {
+        token: entry.token,
+        notification: notificationPayload,
+        webpush: {
+          notification: webpushNotification,
+          fcm_options: {
+            link: data?.url || '/notifications.html'
           }
+        },
+        data: {
+          title: String(title),
+          body: String(message || ''),
+          notification_id: String(data?.notification_id || ''),
+          category: String(data?.category || 'general'),
+          url: String(data?.url || '/notifications.html'),
+          image: String(imageUrl || '')
         }
       };
+      if (imageUrl) {
+        fcmMessage.android = { notification: { image: imageUrl } };
+      }
+      const fcmPayload = { message: fcmMessage };
 
       const projectId = env.FCM_PROJECT_ID || 'kiuma-mob-app';
       const resp = await fetch(
@@ -375,6 +390,7 @@ async function handleScheduled(env) {
       await checkPrayerReminders(prayerTimes, env);
     }
     await checkHijriReminders(env);
+    await checkDarsuReminders(env);
   } catch (err) {
     console.error('[Scheduled] Error:', err.message);
   }
@@ -501,6 +517,74 @@ async function checkHijriReminders(env) {
   await sendScheduledPush(title, body, 'hijri', env);
 
   await env.FCM_TOKENS.put(dedupeKey, '1', { expirationTtl: 86400 });
+}
+
+// ── Darsu reminder check ──
+async function checkDarsuReminders(env) {
+  const now = new Date();
+  const eatHour = (now.getUTCHours() + EAT_OFFSET_HOURS) % 24;
+  const eatMinute = now.getUTCMinutes();
+
+  // Send reminders at 7 AM and 8 PM EAT only
+  if (!((eatHour === 7 && eatMinute === 0) || (eatHour === 20 && eatMinute === 0))) return;
+
+  const today = getEATDateString(now);
+  const tomorrow = getEATDateString(new Date(now.getTime() + 86400000 + EAT_OFFSET_HOURS * 3600000));
+  const tomorrowEAT = new Date(now.getTime() + 86400000);
+  const tomorrowStr = getEATDateString(tomorrowEAT);
+
+  try {
+    const darsuUrl = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT}/databases/(default)/documents/darsuSchedule`;
+    const resp = await fetch(darsuUrl);
+    if (!resp.ok) return;
+    const result = await resp.json();
+    if (!result.documents || result.documents.length === 0) return;
+
+    for (const doc of result.documents) {
+      const fields = doc.fields;
+      if (!fields) continue;
+      const darsuDate = fields.date?.stringValue;
+      const darsuTitle = fields.title?.stringValue || 'Darsu';
+      const darsuTime = fields.time?.stringValue || '';
+      const darsuSheikh = fields.sheikh?.stringValue || '';
+      const darsuLocation = fields.location?.stringValue || '';
+
+      if (!darsuDate) continue;
+
+      let shouldSend = false;
+      let reminderType = '';
+
+      if (darsuDate === today && eatHour === 7) {
+        shouldSend = true;
+        reminderType = 'today';
+      } else if (darsuDate === tomorrowStr && eatHour === 20) {
+        shouldSend = true;
+        reminderType = 'tomorrow';
+      }
+
+      if (!shouldSend) continue;
+
+      const dedupeKey = `sent:darsu:${darsuDate}:${reminderType}`;
+      const alreadySent = await env.FCM_TOKENS.get(dedupeKey);
+      if (alreadySent) continue;
+
+      const timeStr = darsuTime ? ` at ${darsuTime}` : '';
+      const sheikStr = darsuSheikh ? ` with ${darsuSheikh}` : '';
+      const locStr = darsuLocation ? ` — ${darsuLocation}` : '';
+      const title = reminderType === 'today'
+        ? `Darsu Today: ${darsuTitle}`
+        : `Darsu Tomorrow: ${darsuTitle}`;
+      const body = reminderType === 'today'
+        ? `${darsuTitle}${timeStr}${sheikStr}${locStr}. Don't miss it!`
+        : `Reminder: ${darsuTitle} is tomorrow${timeStr}${sheikStr}${locStr}. Prepare yourself.`;
+
+      console.log(`[Darsu] Sending ${reminderType} reminder for ${darsuTitle}`);
+      await sendScheduledPush(title, body, 'darsu', env);
+      await env.FCM_TOKENS.put(dedupeKey, '1', { expirationTtl: 172800 });
+    }
+  } catch (err) {
+    console.error('[Darsu] Check error:', err.message);
+  }
 }
 
 // ── Approximate Hijri date calculation ──

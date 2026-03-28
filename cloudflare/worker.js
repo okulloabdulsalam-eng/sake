@@ -191,7 +191,9 @@ export default {
         h.set('Accept-Ranges', 'bytes');
         h.set('Cache-Control', 'public, max-age=86400');
         const fname = safeDecodeURI(key.split('/').pop());
-        h.set('Content-Disposition', "inline; filename*=UTF-8''" + encodeURIComponent(fname));
+        const forceDownload = url.searchParams.has('dl') || url.searchParams.has('download');
+        const disposition = forceDownload ? 'attachment' : 'inline';
+        h.set('Content-Disposition', disposition + "; filename*=UTF-8''" + encodeURIComponent(fname));
         return new Response(object.body, { status: 200, headers: h });
       }
 

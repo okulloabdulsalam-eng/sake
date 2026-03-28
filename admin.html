@@ -441,6 +441,9 @@
                     <button class="admin-tab" onclick="switchTab('prayerTimes', this)">
                         <i class="fas fa-clock"></i> Prayer Times
                     </button>
+                    <button class="admin-tab" onclick="switchTab('darsu', this)">
+                        <i class="fas fa-chalkboard-teacher"></i> Darsu
+                    </button>
                     <button class="admin-tab" onclick="switchTab('events', this)">
                         <i class="fas fa-calendar-alt"></i> Events
                     </button>
@@ -917,6 +920,11 @@
                     </div>
 
                     <div class="form-group">
+                        <label>Image URL (optional — shown in notification)</label>
+                        <input type="url" id="notificationImage" placeholder="https://example.com/image.jpg" class="form-control">
+                    </div>
+
+                    <div class="form-group">
                         <label>Preview</label>
                         <div id="notificationPreview" style="border: 1px solid #eee; border-left: 4px solid var(--primary-green); border-radius: 8px; padding: 12px; background: #fafafa;">
                             <div style="display: flex; gap: 12px; align-items: flex-start;">
@@ -1036,6 +1044,43 @@
                         </button>
                     </div>
                     <div id="prayerTimesStatus" class="alert" style="margin-top:15px;"></div>
+                </div>
+
+                <!-- Darsu Schedule Panel -->
+                <div class="admin-panel" id="darsuPanel">
+                    <h3><i class="fas fa-chalkboard-teacher"></i> Darsu Schedule &amp; Reminders</h3>
+                    <p style="color: #666; margin-bottom: 20px;">Schedule upcoming darsu sessions. Users will receive a push reminder the morning of each darsu and the day before.</p>
+                    <div class="config-card">
+                        <h4><i class="fas fa-plus-circle"></i> Add Darsu</h4>
+                        <div class="form-group">
+                            <label>Darsu Title</label>
+                            <input type="text" id="darsuTitle" placeholder="e.g. Tafsir Al-Quran" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Sheikh / Teacher</label>
+                            <input type="text" id="darsuSheikh" placeholder="e.g. Sheikh Ahmad" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Date</label>
+                            <input type="date" id="darsuDate" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Time</label>
+                            <input type="time" id="darsuTime" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Location / Notes</label>
+                            <input type="text" id="darsuLocation" placeholder="e.g. Main Hall, KIUMA Mosque" class="form-control">
+                        </div>
+                        <button class="btn btn-primary" onclick="saveDarsu()">
+                            <i class="fas fa-save"></i> Save Darsu
+                        </button>
+                        <div id="darsuFormStatus" class="alert" style="margin-top:15px;"></div>
+                    </div>
+                    <div class="config-card">
+                        <h4><i class="fas fa-list"></i> Scheduled Darsu Sessions</h4>
+                        <div id="adminDarsuList"><p style="text-align:center;color:#888;padding:10px;">Loading...</p></div>
+                    </div>
                 </div>
 
                 <!-- Events Panel -->
@@ -2027,6 +2072,7 @@
             
             // Auto-load data for Firestore-dependent tabs
             if (tabName === 'prayerTimes') loadPrayerTimesAdmin();
+            if (tabName === 'darsu') loadDarsuList();
             if (tabName === 'events') loadEventsAdmin();
             if (tabName === 'announcement') loadAnnouncementAdmin();
             if (tabName === 'liveTracker') loadTrackersAdmin();
@@ -3649,6 +3695,12 @@
             if (skipped > 0) summary += ` ${skipped} skipped.`;
             showStatus('mediaUploadStatus', summary, failed > 0 ? 'error' : 'success');
 
+            if (success > 0) {
+                var mediaNames = results.filter(r => r.success).map(r => r.file).join(', ');
+                var pushTitle = title || mediaNames;
+                sendContentPushNotification(type, pushTitle, '');
+            }
+
             // Cleanup
             setTimeout(() => {
                 progressContainer.remove();
@@ -3815,6 +3867,10 @@
             }
             if (skipped > 0) summary += ` ${skipped} skipped.`;
             showStatus('libraryUploadStatus', summary, failed > 0 ? 'error' : 'success');
+
+            if (success > 0) {
+                sendContentPushNotification('book', title || 'New book added', '');
+            }
 
             // Cleanup
             setTimeout(() => {
@@ -4610,6 +4666,8 @@
             }
             const category = categoryEl.value;
             const icon = iconEl.value;
+            const imageEl = document.getElementById('notificationImage');
+            const image = imageEl ? imageEl.value.trim() : '';
             const list = getStoredNotifications();
             let notification;
             if (editingNotificationId) {
@@ -4626,6 +4684,7 @@
                     message,
                     category,
                     icon,
+                    image,
                     status: list[index].status || 'unread',
                     date: list[index].date || list[index].createdAt || new Date().toISOString(),
                     updatedAt: new Date().toISOString()
@@ -4647,6 +4706,7 @@
                     message,
                     category,
                     icon,
+                    image,
                     status: 'unread',
                     date: new Date().toISOString(),
                     createdAt: new Date().toISOString(),
@@ -4748,7 +4808,8 @@
                         icon: notification.icon || 'fas fa-bell',
                         category: notification.category || 'general',
                         notification_id: notification.id || '',
-                        url: '/notifications.html'
+                        url: '/notifications.html',
+                        image: notification.image || ''
                     }
                 })
             });
@@ -4761,6 +4822,41 @@
                 throw new Error(result.error || 'Push send failed: HTTP ' + res.status);
             }
             return result.sent || 0;
+        }
+
+        async function sendContentPushNotification(contentType, title, imageUrl) {
+            try {
+                var adminKey = _PUSH_ADMIN_KEY || localStorage.getItem('kiuma_push_admin_key');
+                if (!adminKey) {
+                    console.warn('No push admin key set — skipping content push notification');
+                    return;
+                }
+                var typeLabel = contentType === 'audio' ? 'Audio' : contentType === 'video' ? 'Video' : contentType === 'book' ? 'Book' : 'Content';
+                var icon = contentType === 'audio' ? 'fas fa-headphones' : contentType === 'video' ? 'fas fa-video' : contentType === 'book' ? 'fas fa-book' : 'fas fa-bell';
+                var targetUrl = contentType === 'book' ? '/library.html' : '/media.html';
+                var payload = {
+                    admin_key: adminKey,
+                    title: 'New ' + typeLabel + ' Added',
+                    message: title || ('A new ' + typeLabel.toLowerCase() + ' has been added to the app.'),
+                    data: {
+                        icon: icon,
+                        category: 'content',
+                        notification_id: 'content-' + Date.now(),
+                        url: targetUrl
+                    }
+                };
+                if (imageUrl) {
+                    payload.data.image = imageUrl;
+                }
+                await fetch(_PUSH_WORKER_URL + '/api/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                console.log('Content push notification sent for ' + typeLabel + ': ' + title);
+            } catch (e) {
+                console.warn('Failed to send content push notification:', e);
+            }
         }
 
         async function deleteNotification(id) {
@@ -5249,10 +5345,110 @@
             const result = await firestoreSet('appData/prayerTimes', data);
             if (result && result.ok) {
                 showStatus('prayerTimesStatus', 'Prayer times saved and synced to all users!', 'success');
+                try {
+                    var adminKey = _PUSH_ADMIN_KEY || localStorage.getItem('kiuma_push_admin_key');
+                    if (adminKey) {
+                        await fetch(_PUSH_WORKER_URL + '/api/send', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                admin_key: adminKey,
+                                title: 'Prayer Times Updated',
+                                message: 'Prayer times have been updated. Check the app for the new schedule.',
+                                data: {
+                                    icon: 'fas fa-clock',
+                                    category: 'prayer',
+                                    notification_id: 'prayer-update-' + Date.now(),
+                                    url: '/index.html'
+                                }
+                            })
+                        });
+                        showStatus('prayerTimesStatus', 'Prayer times saved and push notification sent!', 'success');
+                    }
+                } catch (pushErr) {
+                    console.warn('Prayer update push failed:', pushErr);
+                }
             } else {
                 const reason = (result && result.reason) ? result.reason : 'Check internet/Firebase.';
                 showStatus('prayerTimesStatus', 'Saved on this device, but sync failed: ' + reason, 'error');
             }
+        }
+
+        // ==============================
+        // DARSU SCHEDULE MANAGEMENT
+        // ==============================
+        let currentDarsuList = [];
+
+        async function loadDarsuList() {
+            try { currentDarsuList = JSON.parse(localStorage.getItem('kiuma_darsuSchedule') || '[]'); } catch(x) { currentDarsuList = []; }
+            renderAdminDarsuList();
+            var serverList = await firestoreList('darsuSchedule', 'date');
+            if (serverList && serverList.length > 0) {
+                currentDarsuList = serverList;
+                localStorage.setItem('kiuma_darsuSchedule', JSON.stringify(currentDarsuList));
+                renderAdminDarsuList();
+            }
+        }
+
+        function renderAdminDarsuList() {
+            var container = document.getElementById('adminDarsuList');
+            if (!container) return;
+            var upcoming = currentDarsuList.filter(function(d) { return d.date >= new Date().toISOString().substring(0,10); });
+            var past = currentDarsuList.filter(function(d) { return d.date < new Date().toISOString().substring(0,10); });
+            var sorted = upcoming.sort(function(a,b){ return a.date.localeCompare(b.date); }).concat(past.sort(function(a,b){ return b.date.localeCompare(a.date); }));
+            if (!sorted.length) {
+                container.innerHTML = '<p style="text-align:center;color:#888;padding:20px;">No darsu sessions scheduled</p>';
+                return;
+            }
+            container.innerHTML = sorted.map(function(d) {
+                var isPast = d.date < new Date().toISOString().substring(0,10);
+                var dateStr = d.date ? new Date(d.date + 'T' + (d.time || '00:00')).toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' }) : 'No date';
+                return '<div class="file-item" style="' + (isPast ? 'opacity:0.5;' : '') + '">' +
+                    '<i class="file-icon fas fa-chalkboard-teacher" style="color:' + (isPast ? '#888' : 'var(--primary-green)') + ';"></i>' +
+                    '<div class="file-info"><div class="file-name">' + escapeHtml(d.title) + '</div>' +
+                    '<div class="file-meta">' + dateStr + (d.time ? ' at ' + d.time : '') + (d.sheikh ? ' — ' + escapeHtml(d.sheikh) : '') + (d.location ? ' · ' + escapeHtml(d.location) : '') + '</div></div>' +
+                    '<button class="btn btn-outline" onclick="deleteDarsu(\'' + d.id + '\')" style="padding:4px 10px;font-size:11px;color:#e53935;"><i class="fas fa-trash"></i></button>' +
+                    '</div>';
+            }).join('');
+        }
+
+        async function saveDarsu() {
+            var title = document.getElementById('darsuTitle').value.trim();
+            var sheikh = document.getElementById('darsuSheikh').value.trim();
+            var date = document.getElementById('darsuDate').value;
+            var time = document.getElementById('darsuTime').value;
+            var location = document.getElementById('darsuLocation').value.trim();
+            if (!title || !date) {
+                showStatus('darsuFormStatus', 'Title and date are required.', 'error');
+                return;
+            }
+            var darsu = {
+                id: 'darsu-' + Date.now(),
+                title: title,
+                sheikh: sheikh,
+                date: date,
+                time: time,
+                location: location,
+                createdAt: new Date().toISOString()
+            };
+            currentDarsuList.push(darsu);
+            localStorage.setItem('kiuma_darsuSchedule', JSON.stringify(currentDarsuList));
+            showStatus('darsuFormStatus', 'Darsu saved!', 'success');
+            firestoreSet('darsuSchedule/' + darsu.id, darsu);
+            document.getElementById('darsuTitle').value = '';
+            document.getElementById('darsuSheikh').value = '';
+            document.getElementById('darsuDate').value = '';
+            document.getElementById('darsuTime').value = '';
+            document.getElementById('darsuLocation').value = '';
+            renderAdminDarsuList();
+        }
+
+        async function deleteDarsu(id) {
+            if (!confirm('Delete this darsu?')) return;
+            currentDarsuList = currentDarsuList.filter(function(d) { return d.id !== id; });
+            localStorage.setItem('kiuma_darsuSchedule', JSON.stringify(currentDarsuList));
+            renderAdminDarsuList();
+            if (typeof firestoreDelete === 'function') firestoreDelete('darsuSchedule/' + id);
         }
 
         // ==============================
@@ -6009,6 +6205,9 @@
                 }
                 if (tabName === 'prayerTimes' && typeof loadPrayerTimesAdmin === 'function') {
                     loadPrayerTimesAdmin();
+                }
+                if (tabName === 'darsu' && typeof loadDarsuList === 'function') {
+                    loadDarsuList();
                 }
                 if (tabName === 'events' && typeof loadEventsAdmin === 'function') {
                     loadEventsAdmin();

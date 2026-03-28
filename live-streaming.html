@@ -821,6 +821,14 @@
         let connectionGen    = 0;  // incremented on each connect; stale async ops bail out
         let useBlobMode      = false; // fallback: blob URL playback for MSE-incompatible codecs
         let blobChunks       = [];    // accumulated chunk data for blob mode
+        let lastNewChunkTime = 0;     // for secondary stream-end detection
+        let streamEndHandled = false; // guard: prevents multiple end-handlers racing
+        let chunkFetchInFlight = false; // prevents overlapping chunk fetches
+        let chunkAbortController = null; // AbortController for chunk fetches
+        let blobRebuildTimer = null;  // debounce timer for blob mode rebuilds
+        let blobDirty = false;        // flag: new chunks accumulated since last blob rebuild
+        let bufferTrimTimer = null;   // proactive buffer trimming interval
+        let adaptivePollTimer = null; // adaptive poll timer (replaces fixed setInterval)
 
         function getRelayWorkerUrl() {
             return localStorage.getItem('kiuma_stream_relay_url') || 'https://kiuma-stream-relay.kiuma4.workers.dev';
@@ -1158,6 +1166,7 @@
             console.log('[LIVE] watchStream:', streamId);
             currentStreamId = streamId;
             retryCount = 0;
+            streamEndHandled = false; // reset guard for new stream
 
             // Cleanup
             cleanup();
@@ -1179,6 +1188,13 @@
         function cleanup() {
             // Stop MSE/R2 playback
             if (chunkPollTimer) { clearInterval(chunkPollTimer); chunkPollTimer = null; }
+            if (adaptivePollTimer) { clearTimeout(adaptivePollTimer); adaptivePollTimer = null; }
+            if (blobRebuildTimer) { clearTimeout(blobRebuildTimer); blobRebuildTimer = null; }
+            if (bufferTrimTimer) { clearInterval(bufferTrimTimer); bufferTrimTimer = null; }
+            if (chunkAbortController) { try { chunkAbortController.abort(); } catch(e) {} chunkAbortController = null; }
+            chunkFetchInFlight = false;
+            blobDirty = false;
+
             if (mediaSource && mediaSource.readyState === 'open') {
                 try { mediaSource.endOfStream(); } catch(e) {}
             }
@@ -1191,6 +1207,17 @@
             currentWorkerUrl = null;
             useBlobMode = false;
             blobChunks = [];
+            lastNewChunkTime = 0;
+
+            // Reset playback rate to normal
+            try { video.playbackRate = 1.0; } catch(e) {}
+
+            // Remove video event listeners for stall recovery
+            try {
+                video.removeEventListener('waiting', onVideoWaiting);
+                video.removeEventListener('stalled', onVideoStalled);
+                video.removeEventListener('playing', onVideoPlaying);
+            } catch(e) {}
 
             if (streamDocUnsubscribe) { streamDocUnsubscribe(); streamDocUnsubscribe = null; }
             if (viewerInterval) { clearInterval(viewerInterval); viewerInterval = null; }
@@ -1210,6 +1237,20 @@
                     }).catch(() => {});
                 } catch(e) {}
             }
+        }
+
+        // Centralized stream-end handler — prevents multiple end-detection paths from racing
+        function handleStreamEnd(reason) {
+            if (streamEndHandled) return; // guard: only run once
+            streamEndHandled = true;
+            console.log('[LIVE] Stream ended — reason:', reason);
+            cleanup();
+            isStreamActive = false;
+            hideConnecting();
+            livePill.classList.remove('visible');
+            viewerCount.classList.remove('visible');
+            showToast('Stream has ended', 'info');
+            setTimeout(() => showPicker(), 1500);
         }
 
         // ============================================================
@@ -1399,6 +1440,25 @@
                     return;
                 }
 
+                // Secondary stream-end detection: if worker says ended AND no new chunks for 6s, end stream
+                if (playlist.status === 'ended') {
+                    const now = Date.now();
+                    if (!lastNewChunkTime) lastNewChunkTime = now;
+                    if (now - lastNewChunkTime > 6000) {
+                        console.log('[LIVE] Stream ended (worker ended + no new chunks for 6s)');
+                        cleanup();
+                        isStreamActive = false;
+                        hideConnecting();
+                        livePill.classList.remove('visible');
+                        viewerCount.classList.remove('visible');
+                        showToast('Stream has ended', 'info');
+                        setTimeout(() => showPicker(), 1500);
+                        return;
+                    }
+                } else {
+                    lastNewChunkTime = Date.now(); // reset timer when we get new chunks
+                }
+
                 // Fetch all new chunks in parallel for minimum latency
                 const toFetch = [];
                 while (nextChunkNum < playlist.chunkCount) {
@@ -1566,6 +1626,7 @@
             if (streamDocUnsubscribe) streamDocUnsubscribe();
 
             let heartbeatWarned = false;
+            let heartbeatMissCount = 0; // track consecutive missed heartbeats
 
             streamDocUnsubscribe = window.firebaseDb.collection('liveStreams').doc(streamId)
                 .onSnapshot((doc) => {
@@ -1573,13 +1634,7 @@
                     if (!d) return;
 
                     if (d.status === 'ended') {
-                        cleanup();
-                        hideConnecting();
-                        isStreamActive = false;
-                        livePill.classList.remove('visible');
-                        viewerCount.classList.remove('visible');
-                        showToast('Stream has ended', 'info');
-                        setTimeout(() => showPicker(), 1500);
+                        handleStreamEnd('firestore-status-ended');
                         return;
                     }
 
@@ -1588,17 +1643,33 @@
                         viewerNum.textContent = Math.max(0, d.viewerCount);
                     }
 
-                    // Broadcaster heartbeat check
+                    // Broadcaster heartbeat check — auto-end after 60s of silence
                     if (d.lastHeartbeat && isStreamActive) {
                         const hbAge = (Date.now() - new Date(d.lastHeartbeat).getTime()) / 1000;
                         if (hbAge > 45 && !heartbeatWarned) {
                             heartbeatWarned = true;
+                            heartbeatMissCount++;
                             showToast('Broadcaster may be offline', 'error');
                             showConnecting('Broadcaster unresponsive...');
                         } else if (hbAge <= 45 && heartbeatWarned) {
                             heartbeatWarned = false;
+                            heartbeatMissCount = 0;
                             hideConnecting();
                             showToast('Broadcaster back', 'success');
+                        }
+
+                        // Auto-end: heartbeat stale for >60s means broadcaster is gone
+                        if (hbAge > 60) {
+                            console.log('[LIVE] Heartbeat stale for ' + Math.round(hbAge) + 's — auto-ending');
+                            // Also update Firestore so other viewers see it
+                            try {
+                                window.firebaseDb.collection('liveStreams').doc(streamId).update({
+                                    status: 'ended',
+                                    endedAt: new Date().toISOString(),
+                                    viewerCount: 0
+                                }).catch(() => {});
+                            } catch(e) {}
+                            handleStreamEnd('heartbeat-timeout-' + Math.round(hbAge) + 's');
                         }
                     }
                 });

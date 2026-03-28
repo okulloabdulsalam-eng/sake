@@ -1,6 +1,6 @@
 // KIUMA Service Worker - Enables offline functionality (SAKE core, single project)
 // Cache version - UPDATE THIS when you deploy changes to force refresh
-const CACHE_VERSION = '2026-03-27-register-fix';
+const CACHE_VERSION = '2026-03-27-auto-end-adaptive';
 const CACHE_NAME = 'kiuma-cache-' + CACHE_VERSION;
 const OFFLINE_URL = 'offline.html';
 
@@ -36,6 +36,7 @@ try {
         messaging.onBackgroundMessage((payload) => {
             const title = payload.notification?.title || payload.data?.title || 'KIUMA Update';
             const body = payload.notification?.body || payload.data?.body || '';
+            const imageUrl = payload.notification?.image || payload.data?.image || '';
 
             const notificationOptions = {
                 body,
@@ -46,26 +47,11 @@ try {
                 requireInteraction: true,
                 vibrate: [200, 100, 200]
             };
+            if (imageUrl) {
+                notificationOptions.image = imageUrl;
+            }
 
             return self.registration.showNotification(title, notificationOptions);
-        });
-
-        self.addEventListener('notificationclick', (event) => {
-            event.notification.close();
-            const targetUrl = `${BASE_PATH}/notifications.html`;
-            event.waitUntil(
-                clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-                    // Prefer focusing a tab that is already on the notifications page
-                    const notificationsClient = clientList.find(c => c.url && c.url.includes('notifications.html'));
-                    if (notificationsClient) {
-                        return notificationsClient.focus();
-                    }
-                    // Do not focus home or other pages — open notifications so user sees the notification content
-                    if (clients.openWindow) {
-                        return clients.openWindow(targetUrl);
-                    }
-                })
-            );
         });
     }
 } catch (e) {
@@ -301,28 +287,36 @@ self.addEventListener('push', (event) => {
     let notificationData = {
         title: 'KIUMA Update',
         body: 'You have a new notification',
-        icon: '/logo.png',
-        badge: '/logo.png',
+        icon: `${BASE_PATH}/logo.png`,
+        badge: `${BASE_PATH}/logo.png`,
         tag: 'kiuma-notification',
-        data: { url: '/notifications.html' }
+        data: { url: `${BASE_PATH}/notifications.html` }
     };
+
     if (event.data) {
         try {
             const data = event.data.json();
+            // Skip FCM-originated pushes (handled by onBackgroundMessage above)
+            if (data && (data.firebase_messaging_msg_data || data.notification || data.from === '69327390212')) return;
+
             notificationData = {
                 title: data.title || notificationData.title,
                 body: data.message || data.body || notificationData.body,
-                icon: data.icon || '/logo.png',
-                badge: '/logo.png',
+                icon: data.icon || `${BASE_PATH}/logo.png`,
+                badge: `${BASE_PATH}/logo.png`,
                 tag: data.id || 'kiuma-notification-' + Date.now(),
-                data: { url: data.url || '/notifications.html', notificationId: data.id },
+                data: { url: data.url || `${BASE_PATH}/notifications.html`, notificationId: data.id },
                 vibrate: [200, 100, 200],
                 requireInteraction: true
             };
+            if (data.image) {
+                notificationData.image = data.image;
+            }
         } catch (e) {
             notificationData.body = event.data.text();
         }
     }
+
     event.waitUntil(
         self.registration.showNotification(notificationData.title, {
             body: notificationData.body,
@@ -330,6 +324,7 @@ self.addEventListener('push', (event) => {
             badge: notificationData.badge,
             tag: notificationData.tag,
             data: notificationData.data,
+            image: notificationData.image,
             vibrate: notificationData.vibrate,
             requireInteraction: notificationData.requireInteraction
         })
@@ -338,9 +333,13 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-    const urlToOpen = event.notification.data?.url || '/notifications.html';
+    const urlToOpen = event.notification.data?.url || `${BASE_PATH}/notifications.html`;
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+            const existing = clientList.find(c => c.url && c.url.includes('notifications.html'));
+            if (existing) {
+                return existing.focus();
+            }
             for (const client of clientList) {
                 if (client.url.includes(self.location.origin) && 'focus' in client) {
                     client.navigate(urlToOpen);
