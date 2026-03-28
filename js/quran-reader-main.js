@@ -3,6 +3,7 @@
   'use strict';
 
   var API = 'https://api.alquran.cloud/v1';
+  var QCOM = 'https://api.quran.com/api/v4';
   var AUDIO_CDN = 'https://cdn.islamic.network/quran/audio/128';
   var QURAN_PROXY = 'https://kiuma-quran.kiuma4.workers.dev';
   var RECITE_WS = 'wss://kiuma-recitation.kiuma4.workers.dev/ws';
@@ -108,6 +109,40 @@
     var d = document.createElement('div');
     d.textContent = t;
     return d.innerHTML;
+  }
+
+  var AR_DIGITS = '٠١٢٣٤٥٦٧٨٩';
+  function toArabicIndic(n) {
+    return String(n).replace(/\d/g, function (ch) { return AR_DIGITS[+ch]; });
+  }
+
+  function renderMushafMarkup(page) {
+    var html = '<div class="qr-frame"><div class="qr-frame-inner qr-mushaf-flow">';
+    var lastSurah = 0;
+    mushafAyahs.forEach(function (a) {
+      var sn = a.surah ? a.surah.number : 0;
+      if (sn && sn !== lastSurah) {
+        lastSurah = sn;
+        var sname = a.surah ? a.surah.name : '';
+        html += '<div class="qr-surah-banner-wrap"><span class="qr-surah-orn" aria-hidden="true"></span><div class="qr-surah-banner">' + sname + '</div><span class="qr-surah-orn" aria-hidden="true"></span></div>';
+        if (sn !== 1 && sn !== 9) html += '<div class="qr-bism">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>';
+      }
+      var ayNum = a.numberInSurah;
+      html += '<span class="qr-mtext">' + a.text + '</span><button type="button" class="qr-ayah-badge" onclick="window.qrMushafAct(' + page + ',' + ayNum + ')" aria-label="' + ayNum + '">' + toArabicIndic(ayNum) + '</button> ';
+    });
+    html += '</div><div class="qr-pagenum">— ' + toArabicIndic(page) + ' —</div></div>';
+    return html;
+  }
+
+  function syncMushafHeader(page) {
+    var first = mushafAyahs[0];
+    if (first && first.surah && first.surah.number) {
+      curSurah = first.surah.number;
+      var en = first.surah.englishName || '';
+      var ar = first.surah.name || '';
+      document.getElementById('qrMTitle').textContent = first.surah.number + '. ' + (en || ar || 'Surah');
+      document.getElementById('qrMSub').textContent = 'Page ' + page + ' · Juz ' + juzFromPage(page);
+    }
   }
 
   function updateStreak() {
@@ -290,8 +325,9 @@
   function openMushafPage(page) {
     curPage = Math.max(1, Math.min(604, page));
     showView('qrMushaf');
-    document.getElementById('qrMTitle').textContent = 'Page ' + curPage;
-    document.getElementById('qrMSub').textContent = 'Juz ' + juzFromPage(curPage);
+    var s = surahs[curSurah - 1];
+    document.getElementById('qrMTitle').textContent = s ? curSurah + '. ' + s.englishName : 'Page ' + curPage;
+    document.getElementById('qrMSub').textContent = 'Page ' + curPage + ' · Juz ' + juzFromPage(curPage);
     loadMushafPage(curPage);
   }
 
@@ -411,27 +447,44 @@
     var sig = abortPending();
     var box = document.getElementById('qrMBody');
     box.innerHTML = '<div class="qr-skel">Loading page…</div>';
+
+    function mapQcomVerses(verses) {
+      return verses.map(function (v) {
+        var parts = (v.verse_key || '').split(':');
+        var sn = parseInt(parts[0], 10) || 1;
+        var sm = surahs[sn - 1];
+        return {
+          text: v.text_uthmani || '',
+          numberInSurah: v.verse_number,
+          surah: { number: sn, name: sm ? sm.name : '', englishName: sm ? sm.englishName : '' }
+        };
+      });
+    }
+
+    try {
+      var rqc = await fetch(QCOM + '/verses/by_page/' + page + '?per_page=50&fields=text_uthmani', { signal: sig });
+      if (rqc.ok) {
+        var jqc = await rqc.json();
+        var vlist = jqc.verses || [];
+        if (vlist.length) {
+          mushafAyahs = mapQcomVerses(vlist);
+          box.innerHTML = renderMushafMarkup(page);
+          syncMushafHeader(page);
+          saveContinue(curSurah || 1, 1, page);
+          return;
+        }
+      }
+    } catch (e) { }
+
     try {
       var r = await fetch(API + '/page/' + page + '/quran-uthmani', { signal: sig });
       var j = await r.json();
       if (!j.data || !j.data.ayahs) throw new Error('bad');
       mushafAyahs = j.data.ayahs;
-      var html = '<div class="qr-frame"><div class="qr-frame-inner">';
-      var lastSurah = 0;
-      mushafAyahs.forEach(function (a) {
-        var sn = a.surah ? a.surah.number : 0;
-        if (sn && sn !== lastSurah) {
-          lastSurah = sn;
-          var sname = a.surah ? a.surah.name : '';
-          html += '<div class="qr-surah-banner">' + sname + '</div>';
-          if (sn !== 1 && sn !== 9) html += '<div class="qr-bism">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>';
-        }
-        html += '<span class="qr-mtext">' + a.text + '</span><button type="button" class="qr-ayah-badge" onclick="window.qrMushafAct(' + page + ',' + a.numberInSurah + ')">' + a.numberInSurah + '</button> ';
-      });
-      html += '</div><div class="qr-pagenum">— ' + page + ' —</div></div>';
-      box.innerHTML = html;
+      box.innerHTML = renderMushafMarkup(page);
+      syncMushafHeader(page);
       saveContinue(curSurah || 1, 1, page);
-    } catch (e) {
+    } catch (e2) {
       box.innerHTML = '<p class="qr-muted">Could not load page.</p>';
     }
   }
@@ -694,7 +747,10 @@
   window.qrPickFromReader = function (n) {
     document.getElementById('qrPicker').classList.remove('show');
     document.getElementById('qrPickBD').classList.remove('show');
-    openSurah(n, 1);
+    curSurah = n;
+    curPage = SURAH_PAGE[n - 1];
+    if (getSet().readingMode === 'mushaf') openMushafPage(curPage);
+    else openSurah(n, 1);
   };
 
   function startRecite() {

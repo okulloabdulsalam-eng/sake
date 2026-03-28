@@ -1,6 +1,6 @@
 // KIUMA Service Worker - Enables offline functionality (SAKE core, single project)
 // Cache version - UPDATE THIS when you deploy changes to force refresh
-const CACHE_VERSION = '2026-03-28-quran-v2-proxy';
+const CACHE_VERSION = '2026-03-29-quran-com-mushaf';
 const CACHE_NAME = 'kiuma-cache-' + CACHE_VERSION;
 const OFFLINE_URL = 'offline.html';
 
@@ -197,7 +197,7 @@ self.addEventListener('fetch', (event) => {
     }
 
     // Cache Quran API and audio responses for offline (network-first, fallback to cache)
-    if (url.hostname.includes('api.alquran.cloud') || url.hostname.includes('cdn.alquran.cloud') || url.hostname.includes('cdn.islamic.network')) {
+    if (url.hostname.includes('api.alquran.cloud') || url.hostname.includes('cdn.alquran.cloud') || url.hostname.includes('cdn.islamic.network') || url.hostname.includes('api.quran.com')) {
         event.respondWith(
             fetch(request)
                 .then((networkResponse) => {
