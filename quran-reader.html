@@ -102,6 +102,7 @@
     .qr-r-head .qr-back { background: none; border: none; color: var(--txt); font-size: 20px; cursor: pointer; padding: 6px; }
     .qr-r-center { flex: 1; text-align: center; cursor: pointer; min-width: 0; }
     .qr-r-title { font-size: 15px; font-weight: 600; display: block; }
+    .qr-r-center .qr-r-title::after { content: ' ▾'; font-size: 0.65em; opacity: 0.5; font-weight: 400; margin-inline-start: 3px; }
     .qr-r-sub { font-size: 11px; color: var(--muted); }
     .qr-r-actions { display: flex; gap: 2px; }
     .qr-r-actions button { background: none; border: none; color: var(--txt); font-size: 16px; padding: 8px; cursor: pointer; }
@@ -139,25 +140,35 @@
     .qr-verse.qr-memo .qr-wa, .qr-verse.qr-memo .qr-ayah-ar { filter: blur(7px); }
     .qr-verse.qr-memo:active .qr-wa, .qr-verse.qr-memo:active .qr-ayah-ar { filter: none; }
 
-    /* Mushaf */
-    .qr-m-body { flex: 1; overflow-y: auto; padding: 12px 12px 200px; background: var(--bg); }
+    /* Mushaf — centered page text, framed surah title, ornamental ayah markers */
+    .qr-m-body { flex: 1; overflow-y: auto; padding: 16px 14px 200px; background: var(--bg); }
     .qr-frame {
       border: 2px solid var(--txt); border-image: none;
-      padding: 8px; min-height: 55vh; position: relative;
+      padding: 12px 10px 20px; min-height: 55vh; position: relative;
       box-shadow: inset 0 0 0 1px var(--line), 0 0 0 1px var(--txt);
+      background: var(--bg);
     }
-    .qr-frame-inner { font-family: 'Amiri', serif; font-size: 24px; line-height: 2.1; direction: rtl; text-align: justify; color: var(--txt); }
+    .qr-frame-inner {
+      font-family: 'Amiri', serif; font-size: 26px; line-height: 2.35; direction: rtl; text-align: center; color: var(--txt);
+      letter-spacing: 0.03em; padding: 4px 4px 8px; max-width: 100%;
+    }
     .qr-surah-banner {
-      text-align: center; font-family: 'Amiri', serif; font-size: 22px; font-weight: 700; padding: 12px; margin: 8px 0;
-      border: 1px solid var(--line); border-radius: 4px;
+      text-align: center; font-family: 'Amiri', serif; font-size: clamp(1.05rem, 4vw, 1.4rem); font-weight: 700;
+      padding: 16px 14px; margin: 8px auto 18px; max-width: 92%;
+      border: 2px solid var(--txt); border-radius: 2px;
+      box-shadow: inset 0 0 0 1px var(--line), 3px 3px 0 0 rgba(255,255,255,.06);
+      line-height: 1.55;
     }
-    .qr-bism { text-align: center; font-family: 'Amiri', serif; font-size: 20px; color: var(--green2); margin: 8px 0; }
+    #quranApp[data-theme="light"] .qr-surah-banner { box-shadow: inset 0 0 0 1px var(--line), 3px 3px 0 0 rgba(0,0,0,.06); }
+    .qr-bism { text-align: center; font-family: 'Amiri', serif; font-size: 1.05em; color: var(--green2); margin: 10px 0 14px; line-height: 1.8; }
     .qr-mtext { display: inline; }
     .qr-ayah-badge {
-      display: inline-flex; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--txt); font-size: 11px;
-      align-items: center; justify-content: center; margin: 0 2px; vertical-align: middle; background: transparent; color: var(--txt); cursor: pointer;
+      display: inline-flex; min-width: 30px; height: 30px; padding: 0 5px; border-radius: 50%;
+      border: 2px double var(--txt); font-family: 'Amiri', 'Segoe UI', serif; font-size: 13px; font-weight: 700;
+      align-items: center; justify-content: center; margin: 0 3px 2px; vertical-align: middle;
+      background: radial-gradient(circle at 30% 25%, rgba(255,255,255,.08), transparent 55%); color: var(--txt); cursor: pointer;
     }
-    .qr-pagenum { text-align: center; font-size: 13px; color: var(--muted); margin-top: 20px; letter-spacing: 3px; }
+    .qr-pagenum { text-align: center; font-size: 13px; color: var(--muted); margin-top: 28px; letter-spacing: 4px; }
 
     /* Bottom bar */
     .qr-botbar {
@@ -401,9 +412,10 @@
         </div></div>
         <div class="qr-set-row"><span>Reading mode</span>
             <select id="qrModeSelect" class="qr-sel" onchange="window.qrSetMode(this.value)">
-                <option value="adaptive">Adaptive</option><option value="mushaf">Mushaf</option>
+                <option value="mushaf">Mushaf (page)</option><option value="adaptive">Adaptive (surah)</option>
             </select>
         </div>
+        <div class="qr-set-row"><span>Word-by-word <small class="qr-muted" style="font-size:11px;font-weight:400">(adaptive)</small></span><button type="button" class="qr-toggle" id="qrWbwT" onclick="window.qrToggleWbw()"></button></div>
         <div class="qr-set-row"><span>Font size <small id="qrFsVal">22px</small></span>
             <input type="range" id="qrFs" min="16" max="32" value="22" oninput="window.qrSetFs(this.value)">
         </div>
