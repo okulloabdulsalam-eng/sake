@@ -116,6 +116,45 @@
     return String(n).replace(/\d/g, function (ch) { return AR_DIGITS[+ch]; });
   }
 
+  /* Ornamental ʿunwān frame (surah headpiece) + ayah rosette — inline SVG, inherits currentColor */
+  var MUSHAF_UNWAN_SVG =
+    '<svg class="qr-unwan-svg" viewBox="0 0 360 84" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M22 38c0-10 8-18 18-18h280c10 0 18 8 18 18v6c0 6-4 11-10 13l-2 .5c-40 10-80 4-120 8s-80-2-120 8l-2-.5c-6-2-10-7-10-13v-6z" opacity=".22"/>' +
+    '<path d="M16 36c0-12 9.5-22 22-22h284c12.5 0 22 10 22 22v8c0 7-4.5 13.5-11 16-.8.4-1.8.6-2.8.6h-1.2c-38 9.2-76 3.8-114 7.4-4.8.5-9.6.5-14.4 0-38-3.6-76 1.8-114-7.4h-1.2c-1 0-2-.2-2.8-.6-6.5-2.5-11-9-11-16v-8z"/>' +
+    '<path d="M28 32h304M28 52h304" opacity=".45"/>' +
+    '<path d="M34 26c-5 6-5 16 0 22M326 26c5 6 5 16 0 22"/>' +
+    '<path d="M52 58q64 12 128 4t128 4"/>' +
+    '<circle cx="30" cy="30" r="3" fill="currentColor" stroke="none"/><circle cx="330" cy="30" r="3" fill="currentColor" stroke="none"/>' +
+    '<path d="M14 40l8-4 8 4M330 40l8-4 8 4M22 22l5 5M333 22l-5 5"/>' +
+    '</svg>';
+
+  var MUSHAF_AYAH_ROSETTE_SVG =
+    '<svg class="qr-ayah-rosette" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.05" stroke-linecap="round">' +
+    '<circle cx="18" cy="18" r="12.5"/><circle cx="18" cy="18" r="8.2" opacity=".42"/>' +
+    '<path d="M18 3v5.2M18 27.8V33M3 18h5.2M27.8 18H33"/>' +
+    '<path d="M7.3 7.3l3.6 3.6M25.1 25.1l3.6 3.6M28.7 7.3l-3.6 3.6M10.9 25.1l-3.6 3.6"/>' +
+    '</svg>';
+
+  function formatMushafSurahHeading(arName) {
+    var t = (arName || '').trim();
+    if (!t) return '';
+    if (/^\s*سور/.test(t)) return t;
+    return 'سُورَةُ ' + t;
+  }
+
+  function mushafUnwanHtml(arName) {
+    var label = formatMushafSurahHeading(arName);
+    return (
+      '<div class="qr-unwan" role="heading" aria-level="2">' +
+      '<div class="qr-unwan-bg">' +
+      MUSHAF_UNWAN_SVG +
+      '</div>' +
+      '<div class="qr-unwan-text">' +
+      escapeHtml(label) +
+      '</div></div>'
+    );
+  }
+
   function renderMushafMarkup(page) {
     var html = '<div class="qr-frame"><div class="qr-frame-inner qr-mushaf-flow">';
     var lastSurah = 0;
@@ -124,11 +163,24 @@
       if (sn && sn !== lastSurah) {
         lastSurah = sn;
         var sname = a.surah ? a.surah.name : '';
-        html += '<div class="qr-surah-banner-wrap"><span class="qr-surah-orn" aria-hidden="true"></span><div class="qr-surah-banner">' + sname + '</div><span class="qr-surah-orn" aria-hidden="true"></span></div>';
+        html += mushafUnwanHtml(sname);
         if (sn !== 1 && sn !== 9) html += '<div class="qr-bism">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>';
       }
       var ayNum = a.numberInSurah;
-      html += '<span class="qr-mtext">' + a.text + '</span><button type="button" class="qr-ayah-badge" onclick="window.qrMushafAct(' + page + ',' + ayNum + ')" aria-label="' + ayNum + '">' + toArabicIndic(ayNum) + '</button> ';
+      html +=
+        '<span class="qr-mtext">' +
+        a.text +
+        '</span><button type="button" class="qr-ayah-badge" onclick="window.qrMushafAct(' +
+        page +
+        ',' +
+        ayNum +
+        ')" aria-label="' +
+        ayNum +
+        '">' +
+        MUSHAF_AYAH_ROSETTE_SVG +
+        '<span class="qr-ayah-num">' +
+        toArabicIndic(ayNum) +
+        '</span></button> ';
     });
     html += '</div><div class="qr-pagenum">— ' + toArabicIndic(page) + ' —</div></div>';
     return html;
