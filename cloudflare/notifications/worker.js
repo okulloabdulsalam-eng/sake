@@ -387,7 +387,7 @@ function base64url(input) {
 
 // ══════════════════════════════════════
 // Scheduled Notifications (Cron Triggers)
-// Prayer reminders 5 min before adhan
+// Prayer reminders: 5 min before salat (iqaama) only (no adhan-time pushes)
 // Hijri white days fasting reminders
 // ══════════════════════════════════════
 
@@ -466,12 +466,11 @@ function padTime(h, m) {
   return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
 }
 
-// ── Prayer: 5 min before adhan, at adhan, 5 min before iqaama (salat) ──
+// ── Prayer: 5 min before iqaama (salat) only ──
 async function checkPrayerReminders(prayerTimes, env) {
   const now = new Date();
   const eatHour = (now.getUTCHours() + EAT_OFFSET_HOURS) % 24;
   const eatMinute = now.getUTCMinutes();
-  const currentStr = padTime(eatHour, eatMinute);
 
   let in5m = eatMinute + 5;
   let in5h = eatHour;
@@ -487,37 +486,9 @@ async function checkPrayerReminders(prayerTimes, env) {
     const prayer = prayerTimes[name];
     if (!prayer) continue;
 
-    const adhanTime = (prayer.adhan || '').substring(0, 5);
     const iqaamaTime = (prayer.iqaama || '').substring(0, 5);
     const displayName = name.charAt(0).toUpperCase() + name.slice(1);
 
-    // 1) Five minutes before adhan
-    if (adhanTime && in5Str === adhanTime) {
-      const dedupeKey = `sent:prayer:5before_adhan:${name}:${today}`;
-      if (await env.FCM_TOKENS.get(dedupeKey)) continue;
-      await sendScheduledPush(
-        `${displayName} — adhan soon`,
-        `${displayName} adhan in 5 minutes (${adhanTime}).`,
-        'prayer',
-        env
-      );
-      await env.FCM_TOKENS.put(dedupeKey, '1', { expirationTtl: 86400 });
-    }
-
-    // 2) At adhan time
-    if (adhanTime && currentStr === adhanTime) {
-      const dedupeKey = `sent:prayer:adhan_now:${name}:${today}`;
-      if (await env.FCM_TOKENS.get(dedupeKey)) continue;
-      await sendScheduledPush(
-        `${displayName} adhan`,
-        `It is time for ${displayName} adhan (${adhanTime}).`,
-        'prayer',
-        env
-      );
-      await env.FCM_TOKENS.put(dedupeKey, '1', { expirationTtl: 86400 });
-    }
-
-    // 3) Five minutes before salat (iqaama)
     if (iqaamaTime && in5Str === iqaamaTime) {
       const dedupeKey = `sent:prayer:5before_iqaama:${name}:${today}`;
       if (await env.FCM_TOKENS.get(dedupeKey)) continue;

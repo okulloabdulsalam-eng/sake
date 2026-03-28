@@ -15,7 +15,7 @@ id = "1876969cec50417d857ab09695662b0d"
 [vars]
 FCM_PROJECT_ID = "kiuma-mob-app"
 
-# Cron Triggers — runs every minute for prayer time reminders (5 min before adhan)
+# Cron Triggers — runs every minute for prayer reminders (5 min before iqaama)
 # and Hijri white days fasting reminders
 [triggers]
 crons = ["* * * * *"]
