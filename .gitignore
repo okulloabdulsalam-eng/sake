@@ -71,6 +71,9 @@ coverage/
 # Misc
 .cache/
 .parcel-cache/
+# Windows accidental file from bad shell redirection (e.g. `> nul` in wrong cwd)
+/nul
+nul
 
 # Capacitor native builds (keep repo clean for GitHub Pages)
 android/
