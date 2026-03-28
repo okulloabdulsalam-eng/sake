@@ -1,6 +1,6 @@
 // KIUMA Service Worker - Enables offline functionality (SAKE core, single project)
 // Cache version - UPDATE THIS when you deploy changes to force refresh
-const CACHE_VERSION = '2026-03-27-auto-end-adaptive';
+const CACHE_VERSION = '2026-03-28-quran-overhaul';
 const CACHE_NAME = 'kiuma-cache-' + CACHE_VERSION;
 const OFFLINE_URL = 'offline.html';
 

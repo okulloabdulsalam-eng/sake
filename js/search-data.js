@@ -155,10 +155,10 @@ const SEARCH_DATA = [
     // Quran Reader
     {
         title: "Al Quran",
-        description: "Read, listen and recite the Holy Quran with translations, tajweed and audio.",
+        description: "Read, listen and recite the Holy Quran with Mushaf view, translations, tajweed, transliteration, memorization mode and audio.",
         url: "quran-reader.html",
         category: "page",
-        keywords: ["quran", "surah", "ayah", "verse", "recitation", "tafsir", "translation", "arabic", "read", "holy", "tajweed", "audio", "listen"],
+        keywords: ["quran", "surah", "ayah", "verse", "recitation", "tafsir", "translation", "arabic", "read", "holy", "tajweed", "audio", "listen", "mushaf", "memorization", "transliteration", "juz", "page", "bookmark"],
         icon: "fa-book-quran"
     },
     
