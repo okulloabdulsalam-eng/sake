@@ -1,6 +1,6 @@
 // KIUMA Service Worker - Enables offline functionality (SAKE core, single project)
 // Cache version - UPDATE THIS when you deploy changes to force refresh
-const CACHE_VERSION = '2026-03-29-quran-mushaf-classic-ui';
+const CACHE_VERSION = '2026-03-29-quran-maintenance-notice';
 const CACHE_NAME = 'kiuma-cache-' + CACHE_VERSION;
 const OFFLINE_URL = 'offline.html';
 
@@ -111,6 +111,7 @@ const STATIC_ASSETS = [
     './js/search.js',
     './js/search-data.js',
     './js/quran-reader-main.js',
+    './js/quran-maintenance.js',
     './firebase-config.js',
     './update-navigation.js',
     './offline-db.js',

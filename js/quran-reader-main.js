@@ -1053,6 +1053,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
+    if (window.KIUMA_QURAN_MAINTENANCE_ACTIVE) return;
     document.body.classList.add('quran-standalone');
     var mt = document.getElementById('menuToggle');
     var menuBtn = document.getElementById('qrMenuBtn');
