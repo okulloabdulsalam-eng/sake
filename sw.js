@@ -1,6 +1,6 @@
 // KIUMA Service Worker - Enables offline functionality (SAKE core, single project)
 // Cache version - UPDATE THIS when you deploy changes to force refresh
-const CACHE_VERSION = '2026-03-28-quran-mushaf-print-lines';
+const CACHE_VERSION = '2026-03-28-quran-reader-no-mushaf';
 const CACHE_NAME = 'kiuma-cache-' + CACHE_VERSION;
 const OFFLINE_URL = 'offline.html';
 
@@ -99,14 +99,8 @@ const STATIC_ASSETS = [
     './fonts/webfonts/fa-solid-900.ttf',
     './css/search.css',
     './css/fonts-quran.css',
-    './fonts/quran/KFGQPC-Uthmanic-Script-HAFS.woff2',
-    './fonts/amiri-quran/amiri-quran-arabic-400-normal.woff2',
     './fonts/amiri/amiri-arabic-400-normal.woff2',
     './fonts/amiri/amiri-arabic-700-normal.woff2',
-    './fonts/noto-naskh-arabic/noto-naskh-arabic-arabic-400-normal.woff2',
-    './fonts/noto-naskh-arabic/noto-naskh-arabic-arabic-500-normal.woff2',
-    './fonts/noto-naskh-arabic/noto-naskh-arabic-arabic-600-normal.woff2',
-    './fonts/noto-naskh-arabic/noto-naskh-arabic-arabic-700-normal.woff2',
     './fonts/poppins/poppins-latin-300-normal.woff2',
     './fonts/poppins/poppins-latin-400-normal.woff2',
     './fonts/poppins/poppins-latin-500-normal.woff2',

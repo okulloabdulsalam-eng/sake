@@ -155,10 +155,10 @@ const SEARCH_DATA = [
     // Quran Reader
     {
         title: "Al Quran",
-        description: "Tarteel-style Quran: dark home with Surah/Page/Juz/Hizb/Ruku, Mushaf pages, word-by-word adaptive view, audio, AI recitation, bookmarks.",
+        description: "Tarteel-style Quran: dark home with Surah/Page/Juz/Hizb/Ruku, word-by-word adaptive reader, audio, AI recitation, bookmarks.",
         url: "quran-reader.html",
         category: "page",
-        keywords: ["quran", "surah", "ayah", "verse", "recitation", "tafsir", "translation", "arabic", "read", "holy", "tajweed", "audio", "listen", "mushaf", "memorization", "transliteration", "juz", "page", "bookmark"],
+        keywords: ["quran", "surah", "ayah", "verse", "recitation", "tafsir", "translation", "arabic", "read", "holy", "tajweed", "audio", "listen", "memorization", "transliteration", "juz", "page", "bookmark"],
         icon: "fa-book-quran"
     },
     
