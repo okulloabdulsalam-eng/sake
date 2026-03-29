@@ -194,7 +194,10 @@
   async function loadMushafPage(page) {
     var sig = abortPending();
     var body = document.getElementById('qrMBody');
-    if (!body) return;
+    if (!body) {
+      showToast('Mushaf view missing — refresh or update the app');
+      return;
+    }
     body.innerHTML = '<div class="qr-skel">Loading mushaf…</div>';
     mushafAyahs = [];
     var all = [];
@@ -232,6 +235,10 @@
     }
   }
   function openMushafPage(page) {
+    if (!document.getElementById('qrMushaf') || !document.getElementById('qrMBody')) {
+      showToast('Mushaf not available — hard-refresh this page');
+      return;
+    }
     stopAutoScroll();
     page = Math.max(1, Math.min(604, page));
     curPage = page;
@@ -251,17 +258,29 @@
     document.getElementById('qrActVerse').textContent = actData.text;
     document.getElementById('qrActRef').textContent = sn + ':' + an;
   };
+  function syncModeSelectToMushaf() {
+    var sel = document.getElementById('qrModeSel');
+    if (sel) sel.value = 'mushaf';
+  }
   window.qrEnterMushafFromHome = function () {
-    putSet('readingMode', 'mushaf');
-    applySettings();
-    var c = loadContinue();
-    var pg = c && c.page ? c.page : 1;
-    openMushafPage(pg);
+    try {
+      putSet('readingMode', 'mushaf');
+      syncModeSelectToMushaf();
+      var c = loadContinue();
+      var pg = c && c.page ? c.page : 1;
+      openMushafPage(pg);
+    } catch (err) {
+      showToast('Could not open mushaf');
+    }
   };
   window.qrEnterMushafFromReader = function () {
-    putSet('readingMode', 'mushaf');
-    applySettings();
-    openMushafPage(curPage);
+    try {
+      putSet('readingMode', 'mushaf');
+      syncModeSelectToMushaf();
+      openMushafPage(curPage);
+    } catch (err) {
+      showToast('Could not open mushaf');
+    }
   };
 
   function updateStreak() {
@@ -301,9 +320,10 @@
   }
 
   function showView(id) {
-    document.querySelectorAll('.qr-view').forEach(function (v) { v.classList.remove('active'); });
     var n = document.getElementById(id);
-    if (n) n.classList.add('active');
+    if (!n) return;
+    document.querySelectorAll('.qr-view').forEach(function (v) { v.classList.remove('active'); });
+    n.classList.add('active');
   }
 
   function showHome() {
@@ -812,20 +832,29 @@
   }
   function applySettings() {
     var s = getSet();
-    document.getElementById('quranApp').setAttribute('data-theme', s.theme);
+    var app = document.getElementById('quranApp');
+    if (app) app.setAttribute('data-theme', s.theme);
     document.querySelectorAll('.qr-theme-dot').forEach(function (d) {
       d.classList.toggle('on', d.getAttribute('data-t') === s.theme);
     });
-    document.getElementById('qrFs').value = s.fontSize;
-    document.getElementById('qrFsVal').textContent = s.fontSize + 'px';
-    document.getElementById('qrTransT').classList.toggle('on', s.showTrans);
-    document.getElementById('qrTransSel').value = s.transEd;
-    document.getElementById('qrTajT').classList.toggle('on', s.tajweed);
-    document.getElementById('qrRecSel').value = s.reciter;
-    document.getElementById('qrMemoT').classList.toggle('on', s.memorization);
+    var qrFs = document.getElementById('qrFs');
+    if (qrFs) qrFs.value = s.fontSize;
+    var qrFsVal = document.getElementById('qrFsVal');
+    if (qrFsVal) qrFsVal.textContent = s.fontSize + 'px';
+    var qrTransT = document.getElementById('qrTransT');
+    if (qrTransT) qrTransT.classList.toggle('on', s.showTrans);
+    var qrTransSel = document.getElementById('qrTransSel');
+    if (qrTransSel) qrTransSel.value = s.transEd;
+    var qrTajT = document.getElementById('qrTajT');
+    if (qrTajT) qrTajT.classList.toggle('on', s.tajweed);
+    var qrRecSel = document.getElementById('qrRecSel');
+    if (qrRecSel) qrRecSel.value = s.reciter;
+    var qrMemoT = document.getElementById('qrMemoT');
+    if (qrMemoT) qrMemoT.classList.toggle('on', s.memorization);
     var modeSel = document.getElementById('qrModeSel');
     if (modeSel) modeSel.value = s.readingMode === 'mushaf' ? 'mushaf' : 'adaptive';
-    document.getElementById('qrRBody').style.fontSize = s.fontSize + 'px';
+    var rBody = document.getElementById('qrRBody');
+    if (rBody) rBody.style.fontSize = s.fontSize + 'px';
     var mBody = document.getElementById('qrMBody');
     if (mBody) mBody.style.fontSize = s.fontSize + 'px';
   }
@@ -1002,8 +1031,15 @@
   document.addEventListener('DOMContentLoaded', function () {
     document.body.classList.add('quran-standalone');
     var mt = document.getElementById('menuToggle');
-    if (mt) {
-      document.getElementById('qrMenuBtn').addEventListener('click', function () { mt.click(); });
+    var menuBtn = document.getElementById('qrMenuBtn');
+    if (mt && menuBtn) {
+      menuBtn.addEventListener('click', function () { mt.click(); });
+    }
+    var mushafHomeBtn = document.getElementById('qrBtnMushafHome');
+    if (mushafHomeBtn) {
+      mushafHomeBtn.addEventListener('click', function () {
+        if (typeof window.qrEnterMushafFromHome === 'function') window.qrEnterMushafFromHome();
+      });
     }
     applySettings();
     renderLastReadChips();
