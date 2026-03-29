@@ -1,6 +1,6 @@
 // KIUMA Service Worker - Enables offline functionality (SAKE core, single project)
 // Cache version - UPDATE THIS when you deploy changes to force refresh
-const CACHE_VERSION = '2026-03-29-quran-unwan-mushaf';
+const CACHE_VERSION = '2026-03-28-quran-amiri-quran-fallback';
 const CACHE_NAME = 'kiuma-cache-' + CACHE_VERSION;
 const OFFLINE_URL = 'offline.html';
 
@@ -98,6 +98,20 @@ const STATIC_ASSETS = [
     './fonts/webfonts/fa-regular-400.ttf',
     './fonts/webfonts/fa-solid-900.ttf',
     './css/search.css',
+    './css/fonts-quran.css',
+    './fonts/quran/KFGQPC-Uthmanic-Script-HAFS.woff2',
+    './fonts/amiri-quran/amiri-quran-arabic-400-normal.woff2',
+    './fonts/amiri/amiri-arabic-400-normal.woff2',
+    './fonts/amiri/amiri-arabic-700-normal.woff2',
+    './fonts/noto-naskh-arabic/noto-naskh-arabic-arabic-400-normal.woff2',
+    './fonts/noto-naskh-arabic/noto-naskh-arabic-arabic-500-normal.woff2',
+    './fonts/noto-naskh-arabic/noto-naskh-arabic-arabic-600-normal.woff2',
+    './fonts/noto-naskh-arabic/noto-naskh-arabic-arabic-700-normal.woff2',
+    './fonts/poppins/poppins-latin-300-normal.woff2',
+    './fonts/poppins/poppins-latin-400-normal.woff2',
+    './fonts/poppins/poppins-latin-500-normal.woff2',
+    './fonts/poppins/poppins-latin-600-normal.woff2',
+    './fonts/poppins/poppins-latin-700-normal.woff2',
     './script.js',
     './js/register-service-worker.js',
     './js/search.js',
@@ -109,8 +123,7 @@ const STATIC_ASSETS = [
     './media-offline.js',
     './app-storage.js',
     './assets/css/player.css',
-    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-    'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap'
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
 ];
 
 // Install event - cache static assets

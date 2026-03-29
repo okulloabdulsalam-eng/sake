@@ -6,8 +6,8 @@
     <title>Al Quran - KIUMA</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="styles.min.css">
+    <link rel="stylesheet" href="css/fonts-quran.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
     /* Full-screen reader: hide site chrome */
     body.quran-standalone .page-hero { display: none !important; }
@@ -18,6 +18,7 @@
     #quranApp {
       --bg: #000; --bg2: #0a0a0a; --txt: #fff; --muted: #9e9e9e; --accent: #64B5F6; --green: #22c55e; --green2: #4ade80;
       --ribbon: #1a237e; --card: #121212; --line: #2a2a2a;
+      --qr-mushaf-font: 'KFGQPC HAFS Uthmanic Script', 'Amiri Quran', 'Noto Naskh Arabic', 'Amiri', serif;
       max-width: 480px; margin: 0 auto; min-height: 100vh; background: var(--bg); color: var(--txt);
       font-family: 'Poppins', sans-serif; position: relative;
     }
@@ -148,9 +149,9 @@
       background: var(--bg);
     }
     .qr-frame-inner.qr-mushaf-flow {
-      font-family: 'Noto Naskh Arabic', 'Amiri', serif; font-size: 26px; font-weight: 500;
-      line-height: 2.55; direction: rtl; text-align: center;
-      color: var(--txt); letter-spacing: 0.02em; hyphens: none;
+      font-family: var(--qr-mushaf-font); font-size: 25px; font-weight: 400;
+      line-height: 2.45; direction: rtl; text-align: center;
+      color: var(--txt); letter-spacing: 0; font-feature-settings: 'liga' 1, 'kern' 1;
       max-width: 22em; margin: 0 auto; padding: 4px 2px 8px;
     }
     /* ʿUnwān — ornamental surah title (manuscript-style frame) */
@@ -166,11 +167,11 @@
     }
     .qr-unwan-text {
       position: relative; z-index: 1; padding: 18px 36px 22px; text-align: center; line-height: 1.55;
-      font-family: 'Noto Naskh Arabic', 'Amiri', serif; font-size: clamp(1.12rem, 4.5vw, 1.42rem); font-weight: 700;
+      font-family: var(--qr-mushaf-font); font-size: clamp(1.05rem, 4.2vw, 1.32rem); font-weight: 400;
       color: var(--txt);
     }
     .qr-bism {
-      text-align: center; font-family: 'Noto Naskh Arabic', 'Amiri', serif; font-size: 1.14em; font-weight: 600;
+      text-align: center; font-family: var(--qr-mushaf-font); font-size: 1.08em; font-weight: 400;
       color: var(--green2); margin: 4px auto 16px; line-height: 2.1; max-width: 20em;
     }
     .qr-mtext { display: inline; }
