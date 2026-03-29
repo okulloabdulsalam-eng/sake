@@ -152,7 +152,24 @@
       };
     });
   }
+  function mushafSurahBannerHtml(verses) {
+    var v0 = verses[0];
+    if (!v0 || !v0.verse_key) return '';
+    var sn = parseInt(v0.verse_key.split(':')[0], 10);
+    if (sn < 1 || sn > 114 || v0.verse_number !== 1) return '';
+    var sm = surahs[sn - 1];
+    if (!sm || !sm.name) return '';
+    var raw = String(sm.name).trim();
+    var title = raw.indexOf('سور') === 0 ? raw : ('سُورَةُ ' + raw);
+    return (
+      '<div class="qr-mushaf-surah-wrap" dir="rtl" aria-hidden="true">' +
+      '<div class="qr-mushaf-surah-frame"><span class="qr-mushaf-surah-title">' +
+      escapeHtml(title) +
+      '</span></div></div>'
+    );
+  }
   function renderMushafPageHtml(page, verses) {
+    var banner = mushafSurahBannerHtml(verses);
     var lines = verses.map(function (v) {
       var src = mushafImageSrc(v.image_url);
       var w = v.image_width || 675;
@@ -168,13 +185,20 @@
       );
     }).join('');
     return (
-      '<div class="qr-frame qr-frame-print"><div class="qr-mushaf-print" dir="rtl">' +
+      '<div class="qr-mushaf-sheet">' +
+      '<div class="qr-frame-print qr-mushaf-page">' +
+      banner +
+      '<div class="qr-mushaf-print" dir="rtl">' +
       lines +
-      '</div><div class="qr-pagenum">— ' +
+      '</div>' +
+      '<div class="qr-pagenum">— ' +
       toArabicIndic(page) +
-      ' —</div><p class="qr-print-hint">Line images from <a href="https://quran.com" class="qr-link" target="_blank" rel="noopener">Quran.com</a> (needs internet). <a href="#" class="qr-link" onclick="event.preventDefault();window.qrOpenQuranComMushaf(' +
+      ' —</div>' +
+      '<p class="qr-print-hint">Madinah line art via <a href="https://quran.com" class="qr-link" target="_blank" rel="noopener">Quran.com</a>. ' +
+      '<a href="#" class="qr-link" onclick="event.preventDefault();window.qrOpenQuranComMushaf(' +
       page +
-      ')">Open this page on Quran.com</a></p></div>'
+      ')">Compare on Quran.com</a></p>' +
+      '</div></div>'
     );
   }
   function syncMushafHeader(page) {
