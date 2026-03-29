@@ -113,6 +113,20 @@
 
     .qr-r-body { flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 200px; }
 
+    .qr-m-body { flex: 1; overflow-y: auto; padding: 12px; padding-bottom: 200px; background: var(--bg2); }
+    #quranApp[data-theme="dark"] .qr-m-body .qr-frame-print { filter: invert(1) hue-rotate(180deg); }
+    #quranApp[data-theme="sepia"] .qr-m-body .qr-frame-print { filter: sepia(0.2) contrast(1.02); }
+    .qr-mushaf-print { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .qr-mushaf-line {
+      display: block; width: 100%; max-width: 100%; padding: 0; margin: 0; border: none; background: transparent;
+      cursor: pointer; border-radius: 4px;
+    }
+    .qr-mushaf-line.playing { box-shadow: 0 0 0 2px var(--green2); }
+    .qr-mushaf-img { width: 100%; height: auto; display: block; max-width: 720px; margin: 0 auto; }
+    .qr-pagenum { text-align: center; font-family: 'Amiri', serif; font-size: 18px; margin: 12px 0 8px; color: var(--muted); }
+    .qr-print-hint { font-size: 11px; color: var(--muted); line-height: 1.5; padding: 0 8px 24px; max-width: 720px; margin: 0 auto; }
+    .qr-frame-print { background: #fff; border-radius: 8px; padding: 8px 0; margin: 0 auto; max-width: 100%; }
+
     .qr-info-card {
       display: flex; align-items: center; gap: 12px; padding: 14px; background: var(--card); border-radius: 12px; margin-bottom: 16px; border: 1px solid var(--line);
     }
@@ -279,7 +293,7 @@
             <button type="button" id="qrMenuBtn" aria-label="Menu"><i class="fas fa-bars"></i><span class="qr-dot"></span></button>
             <h1>Al Quran</h1>
             <div class="qr-streak"><i class="fas fa-bolt"></i> <span id="qrStreak">1</span></div>
-            <button type="button" onclick="window.qrOpenQuranComMushaf()" aria-label="Mushaf on Quran.com" title="Mushaf (Quran.com)"><i class="fas fa-book-open"></i></button>
+            <button type="button" onclick="window.qrEnterMushafFromHome()" aria-label="Open mushaf" title="Mushaf (in app)"><i class="fas fa-book-open"></i></button>
             <button type="button" onclick="document.getElementById('qrSearchRow').scrollIntoView({behavior:'smooth'})" aria-label="Search"><i class="fas fa-search"></i></button>
         </header>
         <div class="qr-scroll-h">
@@ -318,7 +332,8 @@
                 <span class="qr-r-sub" id="qrReaderSub">Page 1</span>
             </div>
             <div class="qr-r-actions">
-                <button type="button" onclick="window.qrOpenQuranComMushaf()" aria-label="This page on Quran.com" title="Mushaf — this page"><i class="fas fa-book-open"></i></button>
+                <button type="button" onclick="window.qrEnterMushafFromReader()" aria-label="Mushaf this page" title="Mushaf view"><i class="fas fa-book-open"></i></button>
+                <button type="button" onclick="window.qrOpenQuranComMushaf()" aria-label="Open on Quran.com" title="Quran.com"><i class="fas fa-external-link-alt"></i></button>
                 <button type="button" onclick="window.qrOpenSettings()"><i class="fas fa-sliders-h"></i></button>
             </div>
         </header>
@@ -327,6 +342,28 @@
         <nav class="qr-botbar">
             <button type="button" onclick="window.qrOpenContents()"><i class="fas fa-language"></i><span>Contents</span></button>
             <button type="button" id="qrAutoBtn" onclick="window.qrToggleAuto()"><i class="fas fa-angles-down"></i><span>Auto Scroll</span></button>
+            <button type="button" onclick="window.qrToggleAudio()"><i class="fas fa-play"></i><span>Play Audio</span></button>
+        </nav>
+        <button type="button" class="qr-fab" onclick="window.qrStartRecite()" aria-label="Recite"><i class="fas fa-microphone"></i></button>
+    </div>
+
+    <div class="qr-view" id="qrMushaf">
+        <header class="qr-r-head">
+            <button type="button" class="qr-back" onclick="window.qrShowHome()"><i class="fas fa-arrow-left"></i></button>
+            <div class="qr-r-center" onclick="window.qrTogglePicker()">
+                <span class="qr-r-title" id="qrMTitle">Al-Fatihah</span>
+                <span class="qr-r-sub" id="qrMSub">Page 1</span>
+            </div>
+            <div class="qr-r-actions">
+                <button type="button" onclick="window.qrOpenQuranComMushaf()" aria-label="Open on Quran.com" title="Quran.com"><i class="fas fa-external-link-alt"></i></button>
+                <button type="button" onclick="window.qrOpenSettings()"><i class="fas fa-sliders-h"></i></button>
+            </div>
+        </header>
+        <div class="qr-ribbon"><span id="qrMRibbon">Juz 1 · Ḥizb 1 · Page 1</span><a href="#" class="qr-link" onclick="event.preventDefault();window.qrOpenSettings()" style="color:#90caf9">Juz info</a></div>
+        <div class="qr-m-body" id="qrMBody"></div>
+        <nav class="qr-botbar">
+            <button type="button" onclick="window.qrOpenContents()"><i class="fas fa-language"></i><span>Contents</span></button>
+            <button type="button" id="qrMAutoBtn" onclick="window.qrToggleAuto()"><i class="fas fa-angles-down"></i><span>Auto Scroll</span></button>
             <button type="button" onclick="window.qrToggleAudio()"><i class="fas fa-play"></i><span>Play Audio</span></button>
         </nav>
         <button type="button" class="qr-fab" onclick="window.qrStartRecite()" aria-label="Recite"><i class="fas fa-microphone"></i></button>
@@ -354,7 +391,13 @@
     <div class="qr-bd" id="qrSetBD" onclick="window.qrCloseSettings()"></div>
     <div class="qr-sheet" id="qrSetSheet">
         <h3 style="margin-top:0">Settings</h3>
-        <p class="qr-muted" style="font-size:12px;line-height:1.45;margin:0 0 14px;padding-bottom:14px;border-bottom:1px solid var(--line)">The <i class="fas fa-book-open" aria-hidden="true"></i> button opens the official <a href="https://quran.com" class="qr-link" target="_blank" rel="noopener">Quran.com</a> mushaf (pages 1–604, Medinah layout). Opens in a new tab; no API key needed.</p>
+        <div class="qr-set-row"><span>Reading</span>
+            <select id="qrModeSel" class="qr-sel" onchange="window.qrSetMode(this.value)">
+                <option value="adaptive">Adaptive reader</option>
+                <option value="mushaf">Mushaf (pages 1–604)</option>
+            </select>
+        </div>
+        <p class="qr-muted" style="font-size:11px;line-height:1.45;margin:-4px 0 12px">Mushaf uses Madinah line images from Quran.com; requires internet. Use <i class="fas fa-external-link-alt" style="font-size:10px"></i> to open the same page on their site.</p>
         <div class="qr-set-row"><span>Theme</span><div class="qr-theme-row">
             <button type="button" class="qr-theme-dot on" data-t="dark" onclick="window.qrSetTheme('dark')"></button>
             <button type="button" class="qr-theme-dot" data-t="light" onclick="window.qrSetTheme('light')"></button>
