@@ -599,6 +599,9 @@
     <!-- ===== STAGE: Full-viewport video ===== -->
     <div class="stage">
         <video id="videoPlayer" playsinline autoplay></video>
+        <div id="ytPlayerWrap" style="display:none;width:100%;height:100%;position:absolute;inset:0;z-index:1;">
+            <div id="ytPlayer" style="width:100%;height:100%;"></div>
+        </div>
     </div>
 
     <!-- ===== TAP ZONE: toggle controls visibility ===== -->
@@ -751,6 +754,9 @@
         <span id="toastText">Message</span>
     </div>
 
+    <!-- YouTube IFrame Player API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
@@ -791,8 +797,12 @@
         const pickerCloseBtn = $('#pickerCloseBtn');
         const toast        = $('#toast');
         const toastText    = $('#toastText');
+        const ytPlayerWrap = $('#ytPlayerWrap');
 
         // ---- State ----
+        let ytPlayer         = null;   // YouTube IFrame Player instance
+        let usingYouTube     = false;  // true when playing via YouTube embed
+        let ytApiReady       = false;  // set by onYouTubeIframeAPIReady
         let currentStreamId  = null;
         let currentQuality   = 'auto';
         let controlsVisible  = true;
@@ -835,6 +845,117 @@
         }
 
         // ============================================================
+        //  YOUTUBE IFRAME PLAYER
+        // ============================================================
+
+        // Global callback required by YouTube IFrame API
+        window.onYouTubeIframeAPIReady = () => {
+            ytApiReady = true;
+            console.log('[LIVE] YouTube IFrame API ready');
+        };
+
+        function createYouTubePlayer(videoId) {
+            return new Promise((resolve, reject) => {
+                if (!ytApiReady || !window.YT || !window.YT.Player) {
+                    reject(new Error('YouTube API not loaded'));
+                    return;
+                }
+
+                destroyYouTubePlayer();
+
+                // Show YouTube container, hide native video
+                ytPlayerWrap.style.display = 'block';
+                video.style.display = 'none';
+
+                ytPlayer = new YT.Player('ytPlayer', {
+                    videoId: videoId,
+                    width: '100%',
+                    height: '100%',
+                    playerVars: {
+                        autoplay: 1,
+                        playsinline: 1,
+                        controls: 0,
+                        modestbranding: 1,
+                        rel: 0,
+                        showinfo: 0,
+                        iv_load_policy: 3,
+                        disablekb: 1,
+                        fs: 0,
+                        origin: window.location.origin,
+                    },
+                    events: {
+                        onReady: (evt) => {
+                            console.log('[LIVE] YouTube player ready');
+                            evt.target.setVolume(100);
+                            evt.target.unMute();
+                            resolve(evt.target);
+                        },
+                        onStateChange: (evt) => {
+                            // YT.PlayerState: PLAYING=1, PAUSED=2, BUFFERING=3, ENDED=0
+                            if (evt.data === YT.PlayerState.ENDED) {
+                                handleStreamEnd('youtube-ended');
+                            }
+                        },
+                        onError: (evt) => {
+                            console.error('[LIVE] YouTube player error:', evt.data);
+                            // Error codes: 2=invalid id, 5=HTML5 error, 100=not found, 101/150=restricted
+                            showToast('YouTube playback error, trying fallback...', 'error');
+                            // Fall back to R2 if YouTube fails
+                            destroyYouTubePlayer();
+                            reject(new Error('YouTube player error: ' + evt.data));
+                        }
+                    }
+                });
+            });
+        }
+
+        function destroyYouTubePlayer() {
+            if (ytPlayer) {
+                try { ytPlayer.destroy(); } catch(e) {}
+                ytPlayer = null;
+            }
+            usingYouTube = false;
+            ytPlayerWrap.style.display = 'none';
+            video.style.display = 'block';
+            // Recreate the ytPlayer div (destroy removes it)
+            if (!document.getElementById('ytPlayer')) {
+                const div = document.createElement('div');
+                div.id = 'ytPlayer';
+                div.style.cssText = 'width:100%;height:100%;';
+                ytPlayerWrap.appendChild(div);
+            }
+        }
+
+        async function connectToYouTubeStream(streamData) {
+            const videoId = streamData.youtubeVideoId;
+            if (!videoId) throw new Error('No YouTube video ID');
+
+            console.log('[LIVE] Connecting via YouTube embed:', videoId);
+            showConnecting('Loading YouTube stream...');
+
+            // Wait for YouTube API if not ready yet (max 5s)
+            let waitCount = 0;
+            while (!ytApiReady && waitCount < 25) {
+                await new Promise(r => setTimeout(r, 200));
+                waitCount++;
+            }
+            if (!ytApiReady) throw new Error('YouTube API failed to load');
+
+            await createYouTubePlayer(videoId);
+            usingYouTube = true;
+
+            // YouTube handles everything — mark as active
+            isStreamActive = true;
+            hideConnecting();
+            showToast('You are watching live', 'success');
+            startAutoHide();
+            livePill.classList.add('visible');
+            viewerCount.classList.add('visible');
+            streamInfo.classList.add('visible');
+            acquireWakeLock();
+        }
+
+        // ============================================================
         //  INIT
         // ============================================================
         function init() {
@@ -852,9 +973,15 @@
             // Mute
             btnMute.addEventListener('click', (e) => {
                 e.stopPropagation();
-                video.muted = !video.muted;
-                updateMuteUI();
-                showToast(video.muted ? 'Muted' : 'Unmuted', 'info');
+                if (usingYouTube && ytPlayer) {
+                    if (ytPlayer.isMuted()) { ytPlayer.unMute(); } else { ytPlayer.mute(); }
+                    updateMuteUI();
+                    showToast(ytPlayer.isMuted() ? 'Muted' : 'Unmuted', 'info');
+                } else {
+                    video.muted = !video.muted;
+                    updateMuteUI();
+                    showToast(video.muted ? 'Muted' : 'Unmuted', 'info');
+                }
             });
 
             // Quality
@@ -925,7 +1052,8 @@
 
         function updateMuteUI() {
             const icon = btnMute.querySelector('i');
-            if (video.muted) {
+            const isMuted = (usingYouTube && ytPlayer) ? ytPlayer.isMuted() : video.muted;
+            if (isMuted) {
                 icon.className = 'fas fa-volume-mute';
                 btnMute.classList.add('muted');
             } else {
@@ -1177,7 +1305,41 @@
             showControls();
 
             try {
-                await connectToR2Stream(streamId);
+                // Fetch stream doc to check for YouTube video ID
+                const streamDoc = await window.firebaseDb.collection('liveStreams').doc(streamId).get();
+                const streamData = streamDoc.data();
+                if (!streamData) throw new Error('Stream not found');
+                if (streamData.status === 'ended') throw new Error('Stream has ended');
+
+                setStreamInfo(streamData);
+
+                // Try YouTube first (if broadcast has a YouTube video ID)
+                if (streamData.youtubeVideoId) {
+                    try {
+                        await connectToYouTubeStream(streamData);
+                        // Set up Firestore listener for stream end + viewer count
+                        setupStreamListener(streamId);
+                        startViewerPolling(streamId);
+                        // Increment viewer count
+                        try {
+                            await window.firebaseDb.collection('liveStreams').doc(streamId).update({
+                                viewerCount: firebase.firestore.FieldValue.increment(1)
+                            });
+                        } catch(e) {}
+                        return; // YouTube connected successfully
+                    } catch (ytErr) {
+                        console.warn('[LIVE] YouTube failed, falling back to R2:', ytErr.message);
+                        destroyYouTubePlayer();
+                        showConnecting('YouTube unavailable, trying direct stream...');
+                    }
+                }
+
+                // Fallback: R2 chunk streaming
+                if (streamData.cfStreamId) {
+                    await connectToR2Stream(streamId);
+                } else {
+                    throw new Error('No stream source available');
+                }
             } catch (err) {
                 console.error('[LIVE] Connection failed:', err);
                 showToast('Connection failed: ' + err.message, 'error');
@@ -1186,6 +1348,9 @@
         }
 
         function cleanup() {
+            // Stop YouTube player if active
+            destroyYouTubePlayer();
+
             // Stop MSE/R2 playback
             if (chunkPollTimer) { clearInterval(chunkPollTimer); chunkPollTimer = null; }
             if (adaptivePollTimer) { clearTimeout(adaptivePollTimer); adaptivePollTimer = null; }
@@ -1208,6 +1373,8 @@
             useBlobMode = false;
             blobChunks = [];
             lastNewChunkTime = 0;
+            lastBlobRebuildTime = 0;
+            pendingBlobMime = null;
 
             // Reset playback rate to normal
             try { video.playbackRate = 1.0; } catch(e) {}
@@ -1407,22 +1574,48 @@
         }
 
         // Blob fallback: rebuild video src from accumulated chunks
+        // Debounced — only rebuild every 5s to avoid constant freeze/reload
+        let lastBlobRebuildTime = 0;
+        let pendingBlobMime = null;
+
         function rebuildBlobSrc(mimeType) {
             if (!blobChunks.length) return;
-            const currentTime = video.currentTime || 0;
+            pendingBlobMime = mimeType;
+            const now = Date.now();
+            const timeSinceLast = now - lastBlobRebuildTime;
+
+            // First build (initial) — do immediately
+            if (lastBlobRebuildTime === 0) {
+                doRebuildBlob(mimeType);
+                return;
+            }
+
+            // Subsequent builds — debounce to every 5s
+            if (timeSinceLast < 5000) {
+                if (!blobRebuildTimer) {
+                    blobRebuildTimer = setTimeout(() => {
+                        blobRebuildTimer = null;
+                        if (pendingBlobMime) doRebuildBlob(pendingBlobMime);
+                    }, 5000 - timeSinceLast);
+                }
+                return;
+            }
+            doRebuildBlob(mimeType);
+        }
+
+        function doRebuildBlob(mimeType) {
+            lastBlobRebuildTime = Date.now();
             const blob = new Blob(blobChunks, { type: mimeType || 'video/webm' });
             const url = URL.createObjectURL(blob);
             const oldUrl = video.src;
             video.src = url;
-            // Try to restore playback position
             video.addEventListener('loadeddata', () => {
-                if (currentTime > 1) {
-                    try { video.currentTime = Math.max(0, video.duration - 3); } catch(e) {}
-                }
+                // Jump to near live edge
+                try { video.currentTime = Math.max(0, video.duration - 2); } catch(e) {}
                 video.play().catch(() => { video.muted = true; video.play().catch(() => {}); });
             }, { once: true });
             if (oldUrl && oldUrl.startsWith('blob:')) {
-                try { URL.revokeObjectURL(oldUrl); } catch(e) {}
+                setTimeout(() => { try { URL.revokeObjectURL(oldUrl); } catch(e) {} }, 1000);
             }
         }
 

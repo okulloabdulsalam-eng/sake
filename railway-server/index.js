@@ -452,7 +452,10 @@ wss.on('connection', (ws, req) => {
 
   const ffmpeg = spawn('ffmpeg', [
     '-i', 'pipe:0',
-    '-c:v', 'copy',
+    '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency',
+    '-g', '60', '-keyint_min', '30',
+    '-b:v', '2500k', '-maxrate', '2500k', '-bufsize', '5000k',
+    '-pix_fmt', 'yuv420p',
     '-c:a', 'aac', '-ar', '44100', '-b:a', '128k',
     '-f', 'flv', '-flvflags', 'no_duration_filesize',
     `${rtmpUrl}/${streamKey}`,

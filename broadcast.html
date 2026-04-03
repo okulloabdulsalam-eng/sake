@@ -662,11 +662,43 @@
             const workerUrl = getRelayWorkerUrl();
             if (!workerUrl) return;
             try {
-                await fetch(`${workerUrl}/api/go-live`, {
+                // Request YouTube to transition to live
+                const res = await fetch(`${workerUrl}/api/go-live`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ broadcastId: ytBroadcastId })
                 });
+                if (!res.ok) {
+                    console.warn('[BROADCAST] Go-live request failed:', res.status);
+                    return;
+                }
+                console.log('[BROADCAST] Go-live requested, polling for YouTube ready...');
+                showToast('Waiting for YouTube to go live...', 'info');
+
+                // Poll YouTube stream status until it's actually live (max 60s)
+                const maxAttempts = 20;
+                for (let i = 0; i < maxAttempts; i++) {
+                    await new Promise(r => setTimeout(r, 3000));
+                    try {
+                        const statusRes = await fetch(`${workerUrl}/api/stream-status/${ytBroadcastId}`);
+                        if (statusRes.ok) {
+                            const statusData = await statusRes.json();
+                            const lifecycleStatus = statusData.lifeCycleStatus || statusData.status;
+                            console.log('[BROADCAST] YouTube status:', lifecycleStatus);
+                            if (lifecycleStatus === 'live') {
+                                showToast('YouTube broadcast is LIVE!', 'success');
+                                return;
+                            }
+                            if (lifecycleStatus === 'complete' || lifecycleStatus === 'revoked') {
+                                showToast('YouTube broadcast ended unexpectedly', 'error');
+                                return;
+                            }
+                        }
+                    } catch(pollErr) {
+                        console.warn('[BROADCAST] Status poll error:', pollErr);
+                    }
+                }
+                showToast('YouTube may still be starting — viewers can join', 'info');
             } catch(e) { console.warn('[BROADCAST] Go-live transition error:', e); }
         }
 
