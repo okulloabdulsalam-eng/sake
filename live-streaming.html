@@ -400,6 +400,119 @@
         }
         .picker-loading i { font-size: 32px; }
 
+        /* Add-stream button in picker header */
+        .add-stream-btn {
+            display: flex; align-items: center; gap: 6px;
+            padding: 8px 14px;
+            border-radius: 20px;
+            background: rgba(76,175,80,0.15);
+            border: 1px solid rgba(76,175,80,0.3);
+            color: #81C784;
+            font-size: 12px; font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .add-stream-btn:hover { background: rgba(76,175,80,0.25); }
+        .add-stream-btn i { font-size: 11px; }
+
+        /* Manual stream form card */
+        .add-stream-form {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(76,175,80,0.2);
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 16px;
+            display: none;
+            animation: fadeSlideIn 0.25s ease;
+        }
+        .add-stream-form.open { display: block; }
+        @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+        .add-stream-form h3 {
+            font-size: 14px; font-weight: 700;
+            margin-bottom: 14px;
+            color: rgba(255,255,255,0.85);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .add-stream-form h3 i { color: #81C784; font-size: 13px; }
+
+        .form-field {
+            margin-bottom: 12px;
+        }
+        .form-field label {
+            display: block;
+            font-size: 10px; font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 6px;
+        }
+        .form-field input, .form-field select {
+            width: 100%;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 11px 14px;
+            color: #fff;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: border 0.2s;
+        }
+        .form-field input:focus, .form-field select:focus {
+            border-color: rgba(76,175,80,0.5);
+        }
+        .form-field input::placeholder { color: rgba(255,255,255,0.2); }
+        .form-field select option { background: #1a1a1a; color: #fff; }
+        .form-field .url-hint {
+            font-size: 10px;
+            color: rgba(255,255,255,0.3);
+            margin-top: 5px;
+        }
+        .form-actions {
+            display: flex; gap: 10px; margin-top: 14px;
+        }
+        .form-actions button {
+            flex: 1;
+            padding: 11px;
+            border-radius: 10px;
+            border: none;
+            font-size: 13px; font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .form-submit-btn {
+            background: linear-gradient(135deg, #4CAF50, #388E3C);
+            color: #fff;
+            box-shadow: 0 2px 12px rgba(76,175,80,0.3);
+        }
+        .form-submit-btn:hover { box-shadow: 0 4px 18px rgba(76,175,80,0.4); }
+        .form-submit-btn:disabled { opacity: 0.5; pointer-events: none; }
+        .form-cancel-btn {
+            background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.6);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .form-cancel-btn:hover { background: rgba(255,255,255,0.1); }
+
+        /* Section divider */
+        .picker-divider {
+            font-size: 11px; font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.3);
+            margin: 8px 0 12px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .picker-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255,255,255,0.08);
+        }
+
         .stream-item {
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(255,255,255,0.06);
@@ -738,12 +851,47 @@
     <div class="stream-picker" id="streamPicker">
         <div class="picker-header">
             <h1><i class="fas fa-circle"></i> Live Now</h1>
-            <button class="back-btn" id="pickerCloseBtn"><i class="fas fa-times"></i></button>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <button class="add-stream-btn" id="btnAddStream"><i class="fas fa-plus"></i> Add Stream</button>
+                <button class="back-btn" id="pickerCloseBtn"><i class="fas fa-times"></i></button>
+            </div>
         </div>
         <div class="picker-body" id="pickerBody">
-            <div class="picker-loading">
-                <i class="fas fa-spinner fa-spin"></i>
-                <span>Finding live streams...</span>
+            <!-- Manual stream form -->
+            <div class="add-stream-form" id="addStreamForm">
+                <h3><i class="fas fa-link"></i> Add External Stream</h3>
+                <div class="form-field">
+                    <label>Stream URL</label>
+                    <input type="url" id="manualStreamUrl" placeholder="https://youtube.com/watch?v=... or YouTube live link" autocomplete="off" spellcheck="false">
+                    <div class="url-hint">Supports YouTube links (watch, live, youtu.be, embed)</div>
+                </div>
+                <div class="form-field">
+                    <label>Title</label>
+                    <input type="text" id="manualStreamTitle" placeholder="e.g. Friday Khutbah" maxlength="100">
+                </div>
+                <div class="form-field">
+                    <label>Category</label>
+                    <select id="manualStreamCategory">
+                        <option value="Lecture">Lecture</option>
+                        <option value="Khutbah">Khutbah</option>
+                        <option value="Quran">Quran Recitation</option>
+                        <option value="Dua">Dua / Dhikr</option>
+                        <option value="Event">Event</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button class="form-cancel-btn" id="btnCancelAdd">Cancel</button>
+                    <button class="form-submit-btn" id="btnSubmitStream"><i class="fas fa-broadcast-tower"></i> Add to Live</button>
+                </div>
+            </div>
+
+            <!-- Stream list populated by JS -->
+            <div id="streamListArea">
+                <div class="picker-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>Finding live streams...</span>
+                </div>
             </div>
         </div>
     </div>
@@ -798,6 +946,14 @@
         const toast        = $('#toast');
         const toastText    = $('#toastText');
         const ytPlayerWrap = $('#ytPlayerWrap');
+        const btnAddStream = $('#btnAddStream');
+        const addStreamForm = $('#addStreamForm');
+        const manualStreamUrl = $('#manualStreamUrl');
+        const manualStreamTitle = $('#manualStreamTitle');
+        const manualStreamCategory = $('#manualStreamCategory');
+        const btnCancelAdd = $('#btnCancelAdd');
+        const btnSubmitStream = $('#btnSubmitStream');
+        const streamListArea = $('#streamListArea');
 
         // ---- State ----
         let ytPlayer         = null;   // YouTube IFrame Player instance
@@ -960,6 +1116,7 @@
         // ============================================================
         function init() {
             setupControls();
+            setupAddStreamForm();
             setupTapToggle();
             setupNetworkMonitor();
             setupLifecycle();
@@ -1223,7 +1380,7 @@
         }
 
         async function loadStreams() {
-            pickerBody.innerHTML = `<div class="picker-loading"><i class="fas fa-spinner fa-spin"></i><span>Finding live streams...</span></div>`;
+            streamListArea.innerHTML = `<div class="picker-loading"><i class="fas fa-spinner fa-spin"></i><span>Finding live streams...</span></div>`;
 
             // Wait for Firebase
             let attempts = 0;
@@ -1233,7 +1390,7 @@
             }
 
             if (!window.firebaseDb) {
-                pickerBody.innerHTML = `<div class="picker-empty"><i class="fas fa-wifi-slash"></i><h3>Connection issue</h3><p>Could not connect to the server. Pull down to retry.</p></div>`;
+                streamListArea.innerHTML = `<div class="picker-empty"><i class="fas fa-wifi-slash"></i><h3>Connection issue</h3><p>Could not connect to the server. Pull down to retry.</p></div>`;
                 return;
             }
 
@@ -1248,20 +1405,20 @@
                 snapshot.forEach(doc => streams.push({ id: doc.id, ...doc.data() }));
 
                 if (streams.length === 0) {
-                    pickerBody.innerHTML = `
+                    streamListArea.innerHTML = `
                         <div class="picker-empty">
                             <i class="fas fa-satellite-dish"></i>
                             <h3>No live streams</h3>
-                            <p>There are no live streams at the moment. Check back later.</p>
+                            <p>There are no live streams at the moment. Check back later or add one above.</p>
                         </div>`;
                     return;
                 }
 
-                pickerBody.innerHTML = streams.map(s => `
+                streamListArea.innerHTML = `<div class="picker-divider">Live Now</div>` + streams.map(s => `
                     <div class="stream-item" data-id="${s.id}">
                         <div class="stream-thumb">
-                            ${s.thumbnail ? `<img src="${s.thumbnail}" alt="">` : '<i class="fas fa-broadcast-tower"></i>'}
-                            <span class="thumb-live">LIVE</span>
+                            ${s.thumbnail ? `<img src="${s.thumbnail}" alt="">` : `<i class="fas ${s.source === 'manual' ? 'fa-link' : 'fa-broadcast-tower'}"></i>`}
+                            <span class="thumb-live">${s.source === 'manual' ? 'EXTERNAL' : 'LIVE'}</span>
                         </div>
                         <div class="stream-detail">
                             <h3>${escHtml(s.title || 'Live Stream')}</h3>
@@ -1276,14 +1433,157 @@
                 `).join('');
 
                 // Bind clicks
-                pickerBody.querySelectorAll('.stream-item').forEach(el => {
+                streamListArea.querySelectorAll('.stream-item').forEach(el => {
                     el.addEventListener('click', () => watchStream(el.dataset.id));
                 });
 
             } catch (err) {
                 console.error('Error loading streams:', err);
-                pickerBody.innerHTML = `<div class="picker-empty"><i class="fas fa-exclamation-triangle"></i><h3>Error</h3><p>Could not load streams. Tap to retry.</p></div>`;
-                pickerBody.querySelector('.picker-empty').addEventListener('click', loadStreams);
+                streamListArea.innerHTML = `<div class="picker-empty"><i class="fas fa-exclamation-triangle"></i><h3>Error</h3><p>Could not load streams. Tap to retry.</p></div>`;
+                streamListArea.querySelector('.picker-empty').addEventListener('click', loadStreams);
+            }
+        }
+
+        // ============================================================
+        //  MANUAL STREAM — add external YouTube / video link
+        // ============================================================
+
+        function setupAddStreamForm() {
+            btnAddStream.addEventListener('click', (e) => {
+                e.stopPropagation();
+                addStreamForm.classList.toggle('open');
+                if (addStreamForm.classList.contains('open')) {
+                    manualStreamUrl.focus();
+                }
+            });
+
+            btnCancelAdd.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeAddForm();
+            });
+
+            btnSubmitStream.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                await submitManualStream();
+            });
+
+            // Auto-fill title from URL paste
+            manualStreamUrl.addEventListener('input', () => {
+                const vid = extractYouTubeVideoId(manualStreamUrl.value.trim());
+                if (vid && !manualStreamTitle.value.trim()) {
+                    manualStreamTitle.placeholder = 'YouTube stream detected — add a title';
+                } else {
+                    manualStreamTitle.placeholder = 'e.g. Friday Khutbah';
+                }
+            });
+        }
+
+        function closeAddForm() {
+            addStreamForm.classList.remove('open');
+            manualStreamUrl.value = '';
+            manualStreamTitle.value = '';
+            manualStreamCategory.value = 'Lecture';
+        }
+
+        // Extract YouTube video ID from various URL formats
+        function extractYouTubeVideoId(url) {
+            if (!url) return null;
+            // youtube.com/watch?v=ID
+            let m = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+            if (m) return m[1];
+            // youtube.com/live/ID
+            m = url.match(/youtube\.com\/live\/([a-zA-Z0-9_-]{11})/);
+            if (m) return m[1];
+            // youtu.be/ID
+            m = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+            if (m) return m[1];
+            // youtube.com/embed/ID
+            m = url.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/);
+            if (m) return m[1];
+            // youtube.com/shorts/ID (unlikely for live but handle it)
+            m = url.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/);
+            if (m) return m[1];
+            // bare video ID (11 chars)
+            m = url.match(/^([a-zA-Z0-9_-]{11})$/);
+            if (m) return m[1];
+            return null;
+        }
+
+        async function submitManualStream() {
+            const url = manualStreamUrl.value.trim();
+            const title = manualStreamTitle.value.trim() || 'External Live Stream';
+            const category = manualStreamCategory.value;
+
+            if (!url) {
+                showToast('Please paste a stream URL', 'error');
+                manualStreamUrl.focus();
+                return;
+            }
+
+            const videoId = extractYouTubeVideoId(url);
+            if (!videoId) {
+                showToast('Could not detect a YouTube video ID from this URL', 'error');
+                manualStreamUrl.focus();
+                return;
+            }
+
+            btnSubmitStream.disabled = true;
+            btnSubmitStream.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+
+            try {
+                // Wait for Firebase
+                let waitAttempts = 0;
+                while (!window.firebaseDb && waitAttempts < 10) {
+                    await new Promise(r => setTimeout(r, 300));
+                    waitAttempts++;
+                }
+                if (!window.firebaseDb) throw new Error('Firebase not available');
+
+                // Check for duplicate — same YouTube video ID already live
+                const existing = await window.firebaseDb
+                    .collection('liveStreams')
+                    .where('youtubeVideoId', '==', videoId)
+                    .where('status', '==', 'live')
+                    .limit(1)
+                    .get();
+
+                if (!existing.empty) {
+                    // Already listed — just watch it
+                    const existId = existing.docs[0].id;
+                    showToast('Stream already listed — opening it now', 'info');
+                    closeAddForm();
+                    watchStream(existId);
+                    return;
+                }
+
+                // Create Firestore document
+                const docRef = await window.firebaseDb.collection('liveStreams').add({
+                    title: title,
+                    category: category,
+                    status: 'live',
+                    source: 'manual',
+                    youtubeVideoId: videoId,
+                    youtubeUrl: url,
+                    viewerCount: 0,
+                    startedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    heartbeat: firebase.firestore.FieldValue.serverTimestamp(),
+                    createdBy: 'manual',
+                });
+
+                console.log('[LIVE] Manual stream added:', docRef.id, 'videoId:', videoId);
+                showToast('Stream added! Opening...', 'success');
+                closeAddForm();
+
+                // Refresh the list then auto-play the new stream
+                await loadStreams();
+                watchStream(docRef.id);
+
+            } catch (err) {
+                console.error('[LIVE] Failed to add manual stream:', err);
+                showToast('Failed to add stream: ' + err.message, 'error');
+            } finally {
+                btnSubmitStream.disabled = false;
+                btnSubmitStream.innerHTML = '<i class="fas fa-broadcast-tower"></i> Add to Live';
             }
         }
 
@@ -1411,6 +1711,16 @@
             if (streamEndHandled) return; // guard: only run once
             streamEndHandled = true;
             console.log('[LIVE] Stream ended — reason:', reason);
+
+            // Mark manual streams as ended in Firestore so they don't linger in the list
+            if (currentStreamId && window.firebaseDb) {
+                window.firebaseDb.collection('liveStreams').doc(currentStreamId).get().then(doc => {
+                    if (doc.exists && doc.data().source === 'manual') {
+                        doc.ref.update({ status: 'ended', endedAt: firebase.firestore.FieldValue.serverTimestamp() }).catch(() => {});
+                    }
+                }).catch(() => {});
+            }
+
             cleanup();
             isStreamActive = false;
             hideConnecting();

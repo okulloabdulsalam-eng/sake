@@ -451,12 +451,19 @@ wss.on('connection', (ws, req) => {
   console.log(`[RTMP Relay] New connection, streaming to ${rtmpUrl}/****${streamKey.slice(-4)}`);
 
   const ffmpeg = spawn('ffmpeg', [
+    '-loglevel', 'warning',
+    '-fflags', '+genpts+discardcorrupt+igndts',
+    '-err_detect', 'ignore_err',
+    '-f', 'webm',
+    '-probesize', '5000000',
+    '-analyzeduration', '5000000',
     '-i', 'pipe:0',
     '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency',
     '-g', '60', '-keyint_min', '30',
     '-b:v', '2500k', '-maxrate', '2500k', '-bufsize', '5000k',
     '-pix_fmt', 'yuv420p',
-    '-c:a', 'aac', '-ar', '44100', '-b:a', '128k',
+    '-threads', '2',
+    '-c:a', 'aac', '-ar', '44100', '-b:a', '128k', '-ac', '2',
     '-f', 'flv', '-flvflags', 'no_duration_filesize',
     `${rtmpUrl}/${streamKey}`,
   ], { stdio: ['pipe', 'pipe', 'pipe'] });
@@ -465,14 +472,22 @@ wss.on('connection', (ws, req) => {
   ws.send(JSON.stringify({ type: 'connected', message: 'RTMP relay connected' }));
 
   let ffmpegReady = false;
+  let lastErrorSent = 0;
   ffmpeg.stderr.on('data', (data) => {
     const msg = data.toString();
-    if (!ffmpegReady && (msg.includes('Output #0') || msg.includes('Stream mapping'))) {
+    if (!ffmpegReady && (msg.includes('Output #0') || msg.includes('Stream mapping') || msg.includes('frame='))) {
       ffmpegReady = true;
       ws.send(JSON.stringify({ type: 'streaming', message: 'FFmpeg is streaming to YouTube' }));
     }
-    if (msg.toLowerCase().includes('error') || msg.toLowerCase().includes('fatal')) {
+    // Only forward errors at most once per 10s to avoid flooding the client
+    if (msg.toLowerCase().includes('fatal')) {
       ws.send(JSON.stringify({ type: 'ffmpeg-error', message: msg.trim() }));
+    } else if (msg.toLowerCase().includes('error')) {
+      const now = Date.now();
+      if (now - lastErrorSent > 10000) {
+        lastErrorSent = now;
+        ws.send(JSON.stringify({ type: 'ffmpeg-error', message: msg.trim().substring(0, 200) }));
+      }
     }
   });
 

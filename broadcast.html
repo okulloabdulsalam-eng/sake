@@ -318,6 +318,7 @@
         let chunkUploading    = false; // R2 upload lock
         let adaptiveTimer     = null;
         let currentBitrate    = 2500000; // default Medium
+        let intentionalRelayClose = false;
         const BITRATE_PRESETS = {
             Low:    { video: 1000000, audio: 96000, label: 'Low (1 Mbps)' },
             Medium: { video: 2500000, audio: 128000, label: 'Medium (2.5 Mbps)' },
@@ -660,7 +661,8 @@
                 };
 
                 relaySocket.onclose = () => {
-                    if (streamId) { showToast('Relay lost, reconnecting...', 'error'); setTimeout(() => reconnectRelay(), 3000); }
+                    if (streamId && !intentionalRelayClose) { showToast('Relay lost, reconnecting...', 'error'); setTimeout(() => reconnectRelay(), 3000); }
+                    intentionalRelayClose = false;
                 };
 
                 relaySocket.onerror = () => { clearTimeout(timeout); if (!streamId) reject(new Error('Failed to connect to relay')); };
@@ -802,7 +804,7 @@
 
         function startAdaptiveBitrate() {
             stopAdaptiveBitrate();
-            adaptiveTimer = setInterval(() => {
+            adaptiveTimer = setInterval(async () => {
                 if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
                 const conn = navigator.connection;
                 if (!conn) return;
@@ -829,14 +831,32 @@
                 if (targetBitrate !== currentBitrate) {
                     console.log(`[BROADCAST] Adaptive bitrate: ${Object.keys(BITRATE_PRESETS).find(k => BITRATE_PRESETS[k].video === currentBitrate)} → ${targetPreset}`);
                     currentBitrate = targetBitrate;
-                    // Restart MediaRecorder with new bitrate
+                    // To change bitrate we must restart MediaRecorder, which emits a new
+                    // WebM header.  FFmpeg can't handle a second header mid-stream, so we
+                    // also need to close the old relay socket (killing the old FFmpeg) and
+                    // open a fresh one so the new MediaRecorder output arrives cleanly.
                     try {
-                        const wasActive = mediaRecorder.state === 'recording';
-                        if (wasActive) mediaRecorder.stop();
+                        if (mediaRecorder.state === 'recording') mediaRecorder.stop();
+                        // Close old relay so server kills the old FFmpeg process
+                        if (relaySocket && relaySocket.readyState === WebSocket.OPEN) {
+                            intentionalRelayClose = true;
+                            try { relaySocket.send(JSON.stringify({ type: 'stop' })); } catch(e) {}
+                            relaySocket.close();
+                        }
+                        // Open a fresh relay → fresh FFmpeg
+                        const relayServerUrl = getRelayServerUrl();
+                        if (relayServerUrl && ytStreamKey) {
+                            try {
+                                await connectRelaySocket(relayServerUrl, ytStreamKey, 'rtmp://a.rtmp.youtube.com/live2');
+                            } catch(e) {
+                                console.warn('[BROADCAST] Relay reconnect after bitrate change failed:', e);
+                            }
+                        }
+                        // Now start MediaRecorder — its fresh WebM header goes to the fresh FFmpeg
                         startMediaRecorder(mediaStream);
                         showToast(`Quality: ${BITRATE_PRESETS[targetPreset].label}`, 'info');
                     } catch(e) {
-                        console.warn('[BROADCAST] Failed to restart MediaRecorder for adaptive bitrate:', e);
+                        console.warn('[BROADCAST] Failed to restart for adaptive bitrate:', e);
                     }
                 }
             }, 10000);
