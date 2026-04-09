@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -16,18 +16,13 @@
         .donate-verse { background: linear-gradient(135deg, #f0faf2, #e8f5e9); border-left: 4px solid #4CAF50; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px; text-align: left; }
         .donate-verse p { font-size: 13px; color: #333; line-height: 1.5; margin: 0; }
         .donate-verse .verse-ref { font-size: 11px; color: #888; margin-top: 6px; display: block; }
-        .amount-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+        .amount-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
         .amount-btn { padding: 12px 4px; border-radius: 10px; border: 2px solid #e0e0e0; background: #fafafa; font-size: 14px; font-weight: 600; color: #333; cursor: pointer; transition: all 0.2s; }
         .amount-btn:active { transform: scale(0.96); }
         .amount-btn.active { border-color: #4CAF50; background: #e8f5e9; color: #1a5c2e; }
         .custom-amount { margin-bottom: 16px; }
         .custom-amount input { width: 100%; padding: 14px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; text-align: center; outline: none; transition: border-color 0.2s; }
         .custom-amount input:focus { border-color: #4CAF50; }
-        .phone-input { margin-bottom: 16px; }
-        .phone-input label { font-size: 12px; color: #666; display: block; margin-bottom: 6px; text-align: left; }
-        .phone-input input { width: 100%; padding: 14px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; outline: none; transition: border-color 0.2s; }
-        .phone-input input:focus { border-color: #4CAF50; }
-        .phone-hint { font-size: 11px; color: #999; margin-top: 4px; text-align: left; }
         .donate-btn { width: 100%; padding: 16px; border: none; border-radius: 12px; background: linear-gradient(135deg, #4CAF50, #2E7D32); color: #fff; font-size: 17px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .donate-btn:active { transform: scale(0.97); }
         .donate-btn:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -47,26 +42,22 @@
 
         <div class="donate-verse">
             <p><em>"The example of those who spend their wealth in the way of Allah is like a seed which grows seven ears; in each ear is a hundred grains."</em></p>
-            <span class="verse-ref">— Quran 2:261</span>
+            <span class="verse-ref"> Quran 2:261</span>
         </div>
 
         <div class="amount-grid">
+            <button class="amount-btn" onclick="pickAmount(500, this)">500</button>
+            <button class="amount-btn" onclick="pickAmount(1000, this)">1,000</button>
+            <button class="amount-btn active" onclick="pickAmount(2000, this)">2,000</button>
             <button class="amount-btn" onclick="pickAmount(5000, this)">5,000</button>
             <button class="amount-btn" onclick="pickAmount(10000, this)">10,000</button>
-            <button class="amount-btn active" onclick="pickAmount(20000, this)">20,000</button>
+            <button class="amount-btn" onclick="pickAmount(20000, this)">20,000</button>
             <button class="amount-btn" onclick="pickAmount(50000, this)">50,000</button>
-            <button class="amount-btn" onclick="pickAmount(100000, this)">100,000</button>
             <button class="amount-btn" onclick="pickAmount(0, this)">Other</button>
         </div>
 
         <div class="custom-amount" id="customAmountWrap" style="display:none;">
             <input type="number" id="customAmount" placeholder="Enter amount (UGX)" min="500" inputmode="numeric">
-        </div>
-
-        <div class="phone-input">
-            <label>Phone number <span style="color:#aaa;">(for mobile money)</span></label>
-            <input type="tel" id="donatePhone" placeholder="e.g. 0700 000 000" inputmode="tel">
-            <p class="phone-hint">Used to pre-fill your number on the Pesapal payment page.</p>
         </div>
 
         <button class="donate-btn" id="donateBtn" onclick="quickDonate()">
@@ -75,13 +66,13 @@
             <i class="fas fa-spinner fa-spin donate-spinner" id="donateSpinner"></i>
         </button>
 
-        <p class="donate-secure"><i class="fas fa-shield-alt"></i> Secure payment via Pesapal</p>
+        <p class="donate-secure"><i class="fas fa-shield-alt"></i> Secure & encrypted payment</p>
         <a href="index.html" class="donate-home"><i class="fas fa-arrow-left"></i> Back to KIUMA</a>
     </div>
 
     <script src="public/payment.js"></script>
     <script>
-        var selectedAmt = 20000;
+        var selectedAmt = 2000;
 
         function pickAmount(amt, btn) {
             document.querySelectorAll('.amount-btn').forEach(function(b) { b.classList.remove('active'); });
@@ -103,13 +94,13 @@
                 alert('Please select or enter an amount (minimum 500 UGX).');
                 return;
             }
-            var phone = (document.getElementById('donatePhone').value || '').trim();
+            var phone = '';
             var btn = document.getElementById('donateBtn');
             var spinner = document.getElementById('donateSpinner');
             var btnText = document.getElementById('donateBtnText');
             btn.disabled = true;
             spinner.classList.add('show');
-            btnText.textContent = 'Connecting to Pesapal…';
+            btnText.textContent = 'Processing...';
 
             if (typeof sessionStorage !== 'undefined') {
                 sessionStorage.setItem('pesapal_payer_name', 'Donor');
