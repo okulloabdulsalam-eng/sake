@@ -159,7 +159,7 @@ async function processPayment(paymentData) {
   try {
     var workerUrl = '';
     try {
-      workerUrl = localStorage.getItem('kiuma_pesapal_worker_url') || 'https://kiuma-pesapal.kiuma4.workers.dev';
+      workerUrl = localStorage.getItem('kiuma_pesapal_worker_url') || 'https://kiuma-pesapal.abdulsalamokullo7.workers.dev';
     } catch (e) {}
 
     if (workerUrl) {
@@ -233,7 +233,7 @@ async function verifyPaymentAfterRedirect(orderTrackingId, reference) {
 
   var workerUrl = '';
   try {
-    workerUrl = localStorage.getItem('kiuma_pesapal_worker_url') || 'https://kiuma-pesapal.kiuma4.workers.dev';
+    workerUrl = localStorage.getItem('kiuma_pesapal_worker_url') || 'https://kiuma-pesapal.abdulsalamokullo7.workers.dev';
   } catch (e) {}
 
   // Try worker verify first (same as SAKE)

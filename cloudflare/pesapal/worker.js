@@ -165,6 +165,11 @@ async function initializePayment(body, env) {
 
   const orderResp = await resp.json();
 
+  if (!orderResp.redirect_url) {
+    const errMsg = (orderResp.error && orderResp.error.message) || 'Pesapal did not return a checkout URL';
+    throw new Error(errMsg);
+  }
+
   return json({
     success: true,
     reference: reference,

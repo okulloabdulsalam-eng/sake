@@ -6,7 +6,7 @@ compatibility_date = "2024-01-01"
 # Then replace the id below with the returned id (and add a preview id for local dev if needed).
 [[kv_namespaces]]
 binding = "FUNDRAISING_KV"
-id = "7cfc757498734b6d8c0de93706bb134a"
+id = "a23c0fe1617f4a06b004bfba3070e648"
 
 # Secrets (set via wrangler secret put):
 #   npx wrangler secret put PESAPAL_CONSUMER_KEY
@@ -17,5 +17,5 @@ id = "7cfc757498734b6d8c0de93706bb134a"
 [vars]
 PESAPAL_TEST_MODE = "false"
 APP_BASE_URL = "https://okulloabdulsalam-eng.github.io/sake"
-WORKER_URL = "https://kiuma-pesapal.kiuma4.workers.dev"
+WORKER_URL = "https://kiuma-pesapal.abdulsalamokullo7.workers.dev"
 # ↑ Set WORKER_URL after first deploy (e.g. https://kiuma-pesapal.YOUR_SUBDOMAIN.workers.dev)
