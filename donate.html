@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Donate - KIUMA</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="fonts/fontawesome.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; min-height: 100vh; background: linear-gradient(135deg, #0d7a3e 0%, #1a5c2e 50%, #0a3d1f 100%); display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .donate-card { background: #fff; border-radius: 20px; width: 100%; max-width: 400px; padding: 32px 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center; }
+        .donate-logo { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; margin-bottom: 12px; border: 3px solid #4CAF50; }
+        .donate-title { font-size: 22px; font-weight: 700; color: #1a5c2e; margin-bottom: 4px; }
+        .donate-sub { font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.4; }
+        .donate-verse { background: linear-gradient(135deg, #f0faf2, #e8f5e9); border-left: 4px solid #4CAF50; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px; text-align: left; }
+        .donate-verse p { font-size: 13px; color: #333; line-height: 1.5; margin: 0; }
+        .donate-verse .verse-ref { font-size: 11px; color: #888; margin-top: 6px; display: block; }
+        .amount-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+        .amount-btn { padding: 12px 4px; border-radius: 10px; border: 2px solid #e0e0e0; background: #fafafa; font-size: 14px; font-weight: 600; color: #333; cursor: pointer; transition: all 0.2s; }
+        .amount-btn:active { transform: scale(0.96); }
+        .amount-btn.active { border-color: #4CAF50; background: #e8f5e9; color: #1a5c2e; }
+        .custom-amount { margin-bottom: 16px; }
+        .custom-amount input { width: 100%; padding: 14px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; text-align: center; outline: none; transition: border-color 0.2s; }
+        .custom-amount input:focus { border-color: #4CAF50; }
+        .phone-input { margin-bottom: 16px; }
+        .phone-input label { font-size: 12px; color: #666; display: block; margin-bottom: 6px; text-align: left; }
+        .phone-input input { width: 100%; padding: 14px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; outline: none; transition: border-color 0.2s; }
+        .phone-input input:focus { border-color: #4CAF50; }
+        .phone-hint { font-size: 11px; color: #999; margin-top: 4px; text-align: left; }
+        .donate-btn { width: 100%; padding: 16px; border: none; border-radius: 12px; background: linear-gradient(135deg, #4CAF50, #2E7D32); color: #fff; font-size: 17px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .donate-btn:active { transform: scale(0.97); }
+        .donate-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .donate-btn i { font-size: 18px; }
+        .donate-secure { font-size: 11px; color: #999; margin-top: 12px; }
+        .donate-secure i { color: #4CAF50; }
+        .donate-home { display: inline-block; margin-top: 16px; font-size: 13px; color: #4CAF50; text-decoration: none; }
+        .donate-spinner { display: none; }
+        .donate-spinner.show { display: inline-block; }
+    </style>
+</head>
+<body>
+    <div class="donate-card">
+        <img src="logo.png" alt="KIUMA" class="donate-logo" onerror="this.style.display='none'">
+        <h1 class="donate-title">Support KIUMA</h1>
+        <p class="donate-sub">Your donation helps support Islamic education, help the needy, and strengthen our community.</p>
+
+        <div class="donate-verse">
+            <p><em>"The example of those who spend their wealth in the way of Allah is like a seed which grows seven ears; in each ear is a hundred grains."</em></p>
+            <span class="verse-ref">— Quran 2:261</span>
+        </div>
+
+        <div class="amount-grid">
+            <button class="amount-btn" onclick="pickAmount(5000, this)">5,000</button>
+            <button class="amount-btn" onclick="pickAmount(10000, this)">10,000</button>
+            <button class="amount-btn active" onclick="pickAmount(20000, this)">20,000</button>
+            <button class="amount-btn" onclick="pickAmount(50000, this)">50,000</button>
+            <button class="amount-btn" onclick="pickAmount(100000, this)">100,000</button>
+            <button class="amount-btn" onclick="pickAmount(0, this)">Other</button>
+        </div>
+
+        <div class="custom-amount" id="customAmountWrap" style="display:none;">
+            <input type="number" id="customAmount" placeholder="Enter amount (UGX)" min="500" inputmode="numeric">
+        </div>
+
+        <div class="phone-input">
+            <label>Phone number <span style="color:#aaa;">(for mobile money)</span></label>
+            <input type="tel" id="donatePhone" placeholder="e.g. 0700 000 000" inputmode="tel">
+            <p class="phone-hint">Used to pre-fill your number on the Pesapal payment page.</p>
+        </div>
+
+        <button class="donate-btn" id="donateBtn" onclick="quickDonate()">
+            <i class="fas fa-hand-holding-heart"></i>
+            <span id="donateBtnText">Donate Now</span>
+            <i class="fas fa-spinner fa-spin donate-spinner" id="donateSpinner"></i>
+        </button>
+
+        <p class="donate-secure"><i class="fas fa-shield-alt"></i> Secure payment via Pesapal</p>
+        <a href="index.html" class="donate-home"><i class="fas fa-arrow-left"></i> Back to KIUMA</a>
+    </div>
+
+    <script src="public/payment.js"></script>
+    <script>
+        var selectedAmt = 20000;
+
+        function pickAmount(amt, btn) {
+            document.querySelectorAll('.amount-btn').forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            var wrap = document.getElementById('customAmountWrap');
+            if (amt === 0) {
+                wrap.style.display = 'block';
+                document.getElementById('customAmount').focus();
+                selectedAmt = 0;
+            } else {
+                wrap.style.display = 'none';
+                selectedAmt = amt;
+            }
+        }
+
+        async function quickDonate() {
+            var amount = selectedAmt || parseInt(document.getElementById('customAmount').value, 10);
+            if (!amount || amount < 500) {
+                alert('Please select or enter an amount (minimum 500 UGX).');
+                return;
+            }
+            var phone = (document.getElementById('donatePhone').value || '').trim();
+            var btn = document.getElementById('donateBtn');
+            var spinner = document.getElementById('donateSpinner');
+            var btnText = document.getElementById('donateBtnText');
+            btn.disabled = true;
+            spinner.classList.add('show');
+            btnText.textContent = 'Connecting to Pesapal…';
+
+            if (typeof sessionStorage !== 'undefined') {
+                sessionStorage.setItem('pesapal_payer_name', 'Donor');
+                sessionStorage.setItem('pesapal_category', 'Donation');
+                sessionStorage.setItem('pesapal_amount', String(amount));
+                sessionStorage.setItem('pesapal_currency', 'UGX');
+                sessionStorage.setItem('pesapal_quick_donate', '1');
+            }
+
+            try {
+                var base = window.location.origin;
+                if (window.location.hostname.includes('github.io')) {
+                    base = base + '/sake';
+                }
+                await window.processPayment({
+                    amount: amount,
+                    currency: 'UGX',
+                    description: 'Donation to KIUMA',
+                    email: '',
+                    phone: phone,
+                    first_name: 'Donor',
+                    last_name: '',
+                    name: 'Donor',
+                    category: 'Donation',
+                    callback_url: base + '/payment/callback.html',
+                    cancel_url: base + '/donate.html'
+                });
+            } catch (err) {
+                alert(err.message || 'Could not connect to payment. Please try again.');
+                btn.disabled = false;
+                spinner.classList.remove('show');
+                btnText.textContent = 'Donate Now';
+            }
+        }
+    </script>
+</body>
+</html>

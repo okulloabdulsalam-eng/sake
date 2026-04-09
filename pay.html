@@ -406,16 +406,8 @@
                 }
             }
 
-            // Payment confirmation
-            const paymentTypeNames = {
-                'semester': 'Semester Subscription',
-                'monthly': 'Monthly Subscription',
-                'zakat': 'Zakat',
-                'charity': 'Charity',
-                'donate': 'Donation'
-            };
-
-            alert(`Payment Instructions:\n\nAmount: ${amount.toLocaleString()} UGX\nType: ${paymentTypeNames[selectedPaymentType]}\n\nPlease make payment using one of the recommended methods above.\n\nAfter payment, contact the Finance Minister to confirm your deposit.`);
+            // Go directly to Pesapal via submitPesapalPay
+            submitPesapalPay();
         }
 
         function handleDonationTypeChange(value) {}

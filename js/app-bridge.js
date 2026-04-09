@@ -127,9 +127,19 @@
     // Try to open an external URL using multiple methods for robustness
     function openExternalUrl(href) {
         console.log('[KiumaBridge] Opening external URL:', href);
-        // Method 1: Send to parent bridge (native Intent via Capacitor plugin)
+        // Method 1: Direct native JS interface (works from iframe, no postMessage needed)
+        if (window.KiumaNative && window.KiumaNative.openExternal) {
+            try {
+                window.KiumaNative.openExternal(href);
+                console.log('[KiumaBridge] Opened via KiumaNative');
+                return;
+            } catch(e) {
+                console.warn('[KiumaBridge] KiumaNative failed:', e);
+            }
+        }
+        // Method 2: Send to parent bridge (native Intent via Capacitor plugin)
         sendToParent('OPEN_EXTERNAL', { url: href });
-        // Method 2: Fallback after 600ms - try real window.open if bridge didn't handle it
+        // Method 3: Fallback after 600ms - try real window.open if bridge didn't handle it
         setTimeout(function() {
             try {
                 _realWindowOpen.call(window, href, '_system');
