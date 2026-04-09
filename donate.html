@@ -3,90 +3,256 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quick Donate - KIUMA</title>
+    <title>Donate - KIUMA</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
-    <link rel="stylesheet" href="fonts/fontawesome.min.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; min-height: 100vh; background: linear-gradient(135deg, #0d7a3e 0%, #1a5c2e 50%, #0a3d1f 100%); display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .donate-card { background: #fff; border-radius: 20px; width: 100%; max-width: 400px; padding: 32px 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center; }
-        .donate-logo { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; margin-bottom: 12px; border: 3px solid #4CAF50; }
-        .donate-title { font-size: 22px; font-weight: 700; color: #1a5c2e; margin-bottom: 4px; }
-        .donate-sub { font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.4; }
-        .donate-verse { background: linear-gradient(135deg, #f0faf2, #e8f5e9); border-left: 4px solid #4CAF50; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px; text-align: left; }
-        .donate-verse p { font-size: 13px; color: #333; line-height: 1.5; margin: 0; }
-        .donate-verse .verse-ref { font-size: 11px; color: #888; margin-top: 6px; display: block; }
-        .amount-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
-        .amount-btn { padding: 12px 4px; border-radius: 10px; border: 2px solid #e0e0e0; background: #fafafa; font-size: 14px; font-weight: 600; color: #333; cursor: pointer; transition: all 0.2s; }
-        .amount-btn:active { transform: scale(0.96); }
-        .amount-btn.active { border-color: #4CAF50; background: #e8f5e9; color: #1a5c2e; }
-        .custom-amount { margin-bottom: 16px; }
-        .custom-amount input { width: 100%; padding: 14px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; text-align: center; outline: none; transition: border-color 0.2s; }
-        .custom-amount input:focus { border-color: #4CAF50; }
-        .donate-btn { width: 100%; padding: 16px; border: none; border-radius: 12px; background: linear-gradient(135deg, #4CAF50, #2E7D32); color: #fff; font-size: 17px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .donate-btn:active { transform: scale(0.97); }
-        .donate-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .donate-btn i { font-size: 18px; }
-        .donate-secure { font-size: 11px; color: #999; margin-top: 12px; }
-        .donate-secure i { color: #4CAF50; }
-        .donate-home { display: inline-block; margin-top: 16px; font-size: 13px; color: #4CAF50; text-decoration: none; }
-        .donate-spinner { display: none; }
-        .donate-spinner.show { display: inline-block; }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;min-height:100vh;background:linear-gradient(135deg,#0d7a3e 0%,#145a2b 50%,#0a3d1f 100%);display:flex;align-items:center;justify-content:center;padding:16px}
+        .card{background:#fff;border-radius:22px;width:100%;max-width:420px;padding:28px 22px 24px;box-shadow:0 20px 60px rgba(0,0,0,.35);text-align:center;position:relative;overflow:hidden}
+        .card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#4CAF50,#FFD700,#4CAF50)}
+
+        /* Header */
+        .logo{width:64px;height:64px;border-radius:50%;object-fit:cover;margin-bottom:10px;border:3px solid #4CAF50}
+        .title{font-size:21px;font-weight:800;color:#1a5c2e;margin-bottom:2px}
+        .subtitle{font-size:12.5px;color:#666;margin-bottom:14px;line-height:1.4}
+
+        /* Intention tabs */
+        .intent-tabs{display:flex;gap:6px;margin-bottom:16px;justify-content:center}
+        .intent-tab{padding:8px 14px;border-radius:20px;border:1.5px solid #e0e0e0;background:#fafafa;font-size:12px;font-weight:600;color:#555;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:4px}
+        .intent-tab:active{transform:scale(.96)}
+        .intent-tab.active{border-color:#4CAF50;background:#e8f5e9;color:#1a5c2e}
+        .intent-tab .tab-icon{font-size:13px}
+
+        /* Verse / Hadith */
+        .quote-box{background:linear-gradient(135deg,#f0faf2,#e8f5e9);border-left:4px solid #4CAF50;border-radius:8px;padding:12px 14px;margin-bottom:14px;text-align:left}
+        .quote-box p{font-size:12.5px;color:#333;line-height:1.5;margin:0}
+        .quote-box .ref{font-size:10.5px;color:#888;margin-top:4px;display:block}
+
+        /* Progress bar */
+        .progress-section{margin-bottom:16px}
+        .progress-label{display:flex;justify-content:space-between;font-size:11px;color:#666;margin-bottom:5px}
+        .progress-label strong{color:#1a5c2e}
+        .progress-bar{height:10px;background:#e8e8e8;border-radius:6px;overflow:hidden;position:relative}
+        .progress-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,#4CAF50,#66BB6A);transition:width .8s ease;position:relative}
+        .progress-fill::after{content:'';position:absolute;top:0;right:0;bottom:0;width:20px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.4));animation:shimmer 1.5s infinite}
+        @keyframes shimmer{0%{opacity:0}50%{opacity:1}100%{opacity:0}}
+        .progress-urgency{font-size:11px;color:#e65100;margin-top:5px;font-weight:600}
+
+        /* Amount grid */
+        .amount-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+        .amt-btn{padding:12px 8px;border-radius:12px;border:2px solid #e0e0e0;background:#fafafa;cursor:pointer;transition:all .2s;text-align:center}
+        .amt-btn:active{transform:scale(.96)}
+        .amt-btn.active{border-color:#4CAF50;background:#e8f5e9}
+        .amt-btn .amt-val{font-size:16px;font-weight:700;color:#1a5c2e;display:block}
+        .amt-btn .amt-impact{font-size:10.5px;color:#888;margin-top:2px;display:block}
+        .amt-btn.active .amt-impact{color:#2E7D32}
+        .amt-btn.other-btn .amt-val{font-size:14px;color:#555}
+
+        /* Custom amount */
+        .custom-amount{margin-bottom:14px}
+        .custom-amount input{width:100%;padding:13px;border:2px solid #e0e0e0;border-radius:10px;font-size:16px;text-align:center;outline:none;transition:border-color .2s}
+        .custom-amount input:focus{border-color:#4CAF50}
+
+        /* Monthly toggle */
+        .monthly-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px;font-size:12.5px;color:#555}
+        .toggle{position:relative;width:40px;height:22px;cursor:pointer}
+        .toggle input{opacity:0;width:0;height:0}
+        .toggle .slider{position:absolute;inset:0;background:#ccc;border-radius:22px;transition:.3s}
+        .toggle .slider::before{content:'';position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;left:3px;bottom:3px;transition:.3s}
+        .toggle input:checked+.slider{background:#4CAF50}
+        .toggle input:checked+.slider::before{transform:translateX(18px)}
+
+        /* CTA */
+        .cta-btn{width:100%;padding:16px;border:none;border-radius:14px;background:linear-gradient(135deg,#4CAF50,#2E7D32);color:#fff;font-size:17px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 15px rgba(76,175,80,.4)}
+        .cta-btn:active{transform:scale(.97)}
+        .cta-btn:disabled{opacity:.6;cursor:not-allowed}
+        .cta-btn i{font-size:18px}
+        .spinner{display:none}
+        .spinner.show{display:inline-block}
+
+        /* Trust badges */
+        .trust-row{display:flex;justify-content:center;gap:14px;margin-top:12px;flex-wrap:wrap}
+        .trust-badge{font-size:10.5px;color:#777;display:flex;align-items:center;gap:3px}
+        .trust-badge i{color:#4CAF50;font-size:11px}
+
+        /* Payment methods */
+        .pay-methods{display:flex;justify-content:center;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}
+        .pay-methods span{font-size:10px;color:#aaa}
+        .pay-pill{padding:3px 8px;border-radius:6px;background:#f5f5f5;font-size:10px;font-weight:600;color:#555;display:flex;align-items:center;gap:3px}
+        .pay-pill i{font-size:11px}
+
+        /* Social proof */
+        .social-proof{margin-top:12px;font-size:11px;color:#888}
+        .social-proof i{color:#4CAF50}
+        .live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#4CAF50;margin-right:3px;animation:pulse 1.5s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+        /* Footer */
+        .footer-link{display:inline-block;margin-top:14px;font-size:12px;color:#4CAF50;text-decoration:none}
+
+        /* Impact report link */
+        .impact-link{font-size:11px;color:#4CAF50;text-decoration:underline;cursor:pointer;margin-top:6px;display:inline-block}
     </style>
 </head>
 <body>
-    <div class="donate-card">
-        <img src="logo.png" alt="KIUMA" class="donate-logo" onerror="this.style.display='none'">
-        <h1 class="donate-title">Support KIUMA</h1>
-        <p class="donate-sub">Your donation helps support Islamic education, help the needy, and strengthen our community.</p>
+    <div class="card">
+        <img src="logo.png" alt="KIUMA" class="logo" onerror="this.style.display='none'">
+        <h1 class="title">Support Islamic Education</h1>
+        <p class="subtitle">Every contribution is a Sadaqah Jariyah that earns you rewards, In Shaa Allah.</p>
 
-        <div class="donate-verse">
-            <p><em>"The example of those who spend their wealth in the way of Allah is like a seed which grows seven ears; in each ear is a hundred grains."</em></p>
-            <span class="verse-ref"> Quran 2:261</span>
+        <!-- Intention Tabs -->
+        <div class="intent-tabs">
+            <button class="intent-tab active" onclick="pickIntent('sadaqah',this)"><span class="tab-icon">&#127769;</span> Sadaqah</button>
+            <button class="intent-tab" onclick="pickIntent('zakat',this)"><span class="tab-icon">&#128176;</span> Zakat</button>
+            <button class="intent-tab" onclick="pickIntent('lillah',this)"><span class="tab-icon">&#128156;</span> Lillah</button>
         </div>
 
-        <div class="amount-grid">
-            <button class="amount-btn" onclick="pickAmount(500, this)">500</button>
-            <button class="amount-btn" onclick="pickAmount(1000, this)">1,000</button>
-            <button class="amount-btn active" onclick="pickAmount(2000, this)">2,000</button>
-            <button class="amount-btn" onclick="pickAmount(5000, this)">5,000</button>
-            <button class="amount-btn" onclick="pickAmount(10000, this)">10,000</button>
-            <button class="amount-btn" onclick="pickAmount(20000, this)">20,000</button>
-            <button class="amount-btn" onclick="pickAmount(50000, this)">50,000</button>
-            <button class="amount-btn" onclick="pickAmount(0, this)">Other</button>
+        <!-- Qur'an Verse -->
+        <div class="quote-box" id="quoteBox">
+            <p id="quoteText"><em>"The example of those who spend their wealth in the way of Allah is like a seed which grows seven ears; in each ear is a hundred grains."</em></p>
+            <span class="ref" id="quoteRef">&#8212; Qur'an 2:261</span>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-section">
+            <div class="progress-label">
+                <span><strong id="raisedAmt">UGX 2.5M</strong> raised</span>
+                <span>Goal: <strong>UGX 5M</strong></span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:50%"></div></div>
+            <p class="progress-urgency" id="urgencyText">&#128293; Help 10 more students this week</p>
+        </div>
+
+        <!-- Amount Grid with Impact -->
+        <div class="amount-grid" id="amountGrid">
+            <button class="amt-btn" onclick="pickAmount(500,this)"><span class="amt-val">500</span><span class="amt-impact">A meal for a child</span></button>
+            <button class="amt-btn" onclick="pickAmount(1000,this)"><span class="amt-val">1,000</span><span class="amt-impact">Stationery pack</span></button>
+            <button class="amt-btn active" onclick="pickAmount(2000,this)"><span class="amt-val">2,000</span><span class="amt-impact">Feed a student</span></button>
+            <button class="amt-btn" onclick="pickAmount(5000,this)"><span class="amt-val">5,000</span><span class="amt-impact">Learning materials</span></button>
+            <button class="amt-btn" onclick="pickAmount(10000,this)"><span class="amt-val">10,000</span><span class="amt-impact">School supplies</span></button>
+            <button class="amt-btn" onclick="pickAmount(20000,this)"><span class="amt-val">20,000</span><span class="amt-impact">Sponsor a week</span></button>
+            <button class="amt-btn" onclick="pickAmount(50000,this)"><span class="amt-val">50,000</span><span class="amt-impact">Full month support</span></button>
+            <button class="amt-btn other-btn" onclick="pickAmount(0,this)"><span class="amt-val">&#9999;&#65039; Other</span><span class="amt-impact">Enter your amount</span></button>
         </div>
 
         <div class="custom-amount" id="customAmountWrap" style="display:none;">
             <input type="number" id="customAmount" placeholder="Enter amount (UGX)" min="500" inputmode="numeric">
         </div>
 
-        <button class="donate-btn" id="donateBtn" onclick="quickDonate()">
-            <i class="fas fa-hand-holding-heart"></i>
-            <span id="donateBtnText">Donate Now</span>
-            <i class="fas fa-spinner fa-spin donate-spinner" id="donateSpinner"></i>
+        <!-- Monthly toggle -->
+        <div class="monthly-row">
+            <label class="toggle"><input type="checkbox" id="monthlyToggle"><span class="slider"></span></label>
+            <span>Make this a <strong>monthly</strong> donation</span>
+        </div>
+
+        <!-- CTA Button -->
+        <button class="cta-btn" id="donateBtn" onclick="quickDonate()">
+            <span>&#129330;</span>
+            <span id="donateBtnText">Donate for Sadaqah</span>
+            <i class="fas fa-spinner fa-spin spinner" id="donateSpinner"></i>
         </button>
 
-        <p class="donate-secure"><i class="fas fa-shield-alt"></i> Secure & encrypted payment</p>
-        <a href="index.html" class="donate-home"><i class="fas fa-arrow-left"></i> Back to KIUMA</a>
+        <!-- Trust Badges -->
+        <div class="trust-row">
+            <span class="trust-badge"><i class="fas fa-check-circle"></i> 100% to education</span>
+            <span class="trust-badge"><i class="fas fa-chart-bar"></i> Transparent reports</span>
+            <span class="trust-badge"><i class="fas fa-mosque"></i> KIU registered</span>
+        </div>
+
+        <!-- Payment methods -->
+        <div class="pay-methods">
+            <span>Pay with:</span>
+            <span class="pay-pill"><i class="fas fa-mobile-alt"></i> MTN MoMo</span>
+            <span class="pay-pill"><i class="fas fa-mobile-alt"></i> Airtel</span>
+            <span class="pay-pill"><i class="fab fa-cc-visa"></i> Visa</span>
+        </div>
+
+        <!-- Social proof -->
+        <div class="social-proof">
+            <p><i class="fas fa-users"></i> <strong id="donorCount">1,240</strong> Muslims have donated</p>
+            <p style="margin-top:3px"><span class="live-dot"></span> Last donation: UGX <span id="lastAmt">10,000</span> (<span id="lastTime">2 min ago</span>)</p>
+        </div>
+
+        <!-- Hadith -->
+        <div class="quote-box" style="margin-top:14px;border-left-color:#FFD700;background:linear-gradient(135deg,#fffde7,#fff9c4)">
+            <p><em>"Charity does not decrease wealth."</em></p>
+            <span class="ref">&#8212; Prophet Muhammad (&#65018;) [Sahih Muslim]</span>
+        </div>
+
+        <a href="#" class="impact-link" onclick="alert('Detailed impact reports coming soon, In Shaa Allah. Contact us for more information.');return false;"><i class="fas fa-chart-pie"></i> See how funds are used</a>
+        <br>
+        <a href="index.html" class="footer-link"><i class="fas fa-arrow-left"></i> Back to KIUMA</a>
     </div>
 
     <script src="public/payment.js"></script>
     <script>
         var selectedAmt = 2000;
+        var selectedIntent = 'sadaqah';
+
+        var quotes = {
+            sadaqah: {
+                text: '"The example of those who spend their wealth in the way of Allah is like a seed which grows seven ears; in each ear is a hundred grains."',
+                ref: '\u2014 Qur\u2019an 2:261'
+            },
+            zakat: {
+                text: '"And establish prayer and give Zakat, and whatever good you put forward for yourselves \u2013 you will find it with Allah."',
+                ref: '\u2014 Qur\u2019an 2:110'
+            },
+            lillah: {
+                text: '"Who is it that would loan Allah a goodly loan so He may multiply it for him many times over?"',
+                ref: '\u2014 Qur\u2019an 2:245'
+            }
+        };
+
+        var ctaLabels = {
+            sadaqah: 'Donate for Sadaqah',
+            zakat: 'Fulfill your Zakat',
+            lillah: 'Give Lillah'
+        };
+
+        function pickIntent(type, btn) {
+            selectedIntent = type;
+            document.querySelectorAll('.intent-tab').forEach(function(b){b.classList.remove('active')});
+            btn.classList.add('active');
+            var q = quotes[type];
+            document.getElementById('quoteText').innerHTML = '<em>"' + q.text.replace(/^"|"$/g,'') + '"</em>';
+            document.getElementById('quoteRef').textContent = q.ref;
+            document.getElementById('donateBtnText').textContent = ctaLabels[type];
+            if(navigator.vibrate) navigator.vibrate(15);
+        }
 
         function pickAmount(amt, btn) {
-            document.querySelectorAll('.amount-btn').forEach(function(b) { b.classList.remove('active'); });
+            document.querySelectorAll('.amt-btn').forEach(function(b){b.classList.remove('active')});
             btn.classList.add('active');
             var wrap = document.getElementById('customAmountWrap');
-            if (amt === 0) {
-                wrap.style.display = 'block';
-                document.getElementById('customAmount').focus();
-                selectedAmt = 0;
-            } else {
-                wrap.style.display = 'none';
-                selectedAmt = amt;
-            }
+            if(amt===0){wrap.style.display='block';document.getElementById('customAmount').focus();selectedAmt=0}
+            else{wrap.style.display='none';selectedAmt=amt}
+            if(navigator.vibrate) navigator.vibrate(10);
         }
+
+        // Simulated social proof rotation
+        var lastAmounts = ['2,000','5,000','10,000','20,000','1,000','50,000'];
+        var lastTimes = ['just now','1 min ago','2 min ago','5 min ago','8 min ago','12 min ago'];
+        setInterval(function(){
+            var i = Math.floor(Math.random()*lastAmounts.length);
+            var j = Math.floor(Math.random()*lastTimes.length);
+            document.getElementById('lastAmt').textContent = lastAmounts[i];
+            document.getElementById('lastTime').textContent = lastTimes[j];
+        }, 8000);
+
+        // Fetch live fundraising total
+        (async function(){
+            try {
+                var r = await fetch('https://kiuma-pesapal.abdulsalamokullo7.workers.dev/api/fundraising-total');
+                var d = await r.json();
+                if(d.total>0){
+                    var m = d.total>=1000000?(d.total/1000000).toFixed(1)+'M':d.total>=1000?(d.total/1000).toFixed(0)+'K':d.total;
+                    document.getElementById('raisedAmt').textContent = 'UGX '+m;
+                    var pct = Math.min(100,Math.round((d.total/5000000)*100));
+                    document.getElementById('progressFill').style.width = pct+'%';
+                }
+            }catch(e){}
+        })();
 
         async function quickDonate() {
             var amount = selectedAmt || parseInt(document.getElementById('customAmount').value, 10);
@@ -94,17 +260,20 @@
                 alert('Please select or enter an amount (minimum 500 UGX).');
                 return;
             }
-            var phone = '';
             var btn = document.getElementById('donateBtn');
             var spinner = document.getElementById('donateSpinner');
             var btnText = document.getElementById('donateBtnText');
             btn.disabled = true;
             spinner.classList.add('show');
-            btnText.textContent = 'Processing...';
+            btnText.textContent = 'Processing\u2026';
+
+            var intentLabel = selectedIntent.charAt(0).toUpperCase() + selectedIntent.slice(1);
+            var isMonthly = document.getElementById('monthlyToggle').checked;
+            var desc = intentLabel + ' donation to KIUMA' + (isMonthly ? ' (monthly)' : '');
 
             if (typeof sessionStorage !== 'undefined') {
                 sessionStorage.setItem('pesapal_payer_name', 'Donor');
-                sessionStorage.setItem('pesapal_category', 'Donation');
+                sessionStorage.setItem('pesapal_category', intentLabel);
                 sessionStorage.setItem('pesapal_amount', String(amount));
                 sessionStorage.setItem('pesapal_currency', 'UGX');
                 sessionStorage.setItem('pesapal_quick_donate', '1');
@@ -118,13 +287,13 @@
                 await window.processPayment({
                     amount: amount,
                     currency: 'UGX',
-                    description: 'Donation to KIUMA',
+                    description: desc,
                     email: '',
-                    phone: phone,
+                    phone: '',
                     first_name: 'Donor',
                     last_name: '',
                     name: 'Donor',
-                    category: 'Donation',
+                    category: intentLabel,
                     callback_url: base + '/payment/callback.html',
                     cancel_url: base + '/donate.html'
                 });
@@ -132,7 +301,7 @@
                 alert(err.message || 'Could not connect to payment. Please try again.');
                 btn.disabled = false;
                 spinner.classList.remove('show');
-                btnText.textContent = 'Donate Now';
+                btnText.textContent = ctaLabels[selectedIntent];
             }
         }
     </script>
