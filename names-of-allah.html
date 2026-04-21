@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>99 Names of Allah - KIUMA</title>
+    <link rel="manifest" href="manifest.json">
+    <script>
+        (function() {
+            var t;
+            try { t = localStorage.getItem('themePreference'); } catch(e) {}
+            if (t === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="styles.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: var(--gray);
+            padding-bottom: 0;
+        }
+        .container {
+            max-width: 428px;
+            margin: 0 auto;
+            background: var(--white);
+            min-height: 100vh;
+        }
+        .names-header {
+            background: linear-gradient(135deg, #1a237e, #3949ab);
+            color: white;
+            padding: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .names-header::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 100%;
+            height: 20px;
+            background: var(--white);
+            border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+        }
+        .names-header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            z-index: 1;
+        }
+        .back-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .search-toggle {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        /* Hero Section */
+        .names-hero {
+            background: linear-gradient(135deg, #1a237e, #3949ab);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            margin-top: -10px;
+        }
+        .hero-arabic {
+            font-family: 'Amiri', serif;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        .hero-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .hero-subtitle {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        /* Search Bar */
+        .search-container {
+            padding: 15px;
+            background: var(--white);
+            position: sticky;
+            top: 60px;
+            z-index: 50;
+        }
+        .search-input {
+            width: 100%;
+            padding: 12px 15px 12px 45px;
+            border: 2px solid var(--light-gray);
+            border-radius: 12px;
+            font-size: 15px;
+            background: var(--gray);
+            transition: border-color 0.3s;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #3949ab;
+        }
+        .search-icon {
+            position: absolute;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-gray);
+        }
+
+        /* Names Grid */
+        .names-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding: 15px;
+            padding-bottom: 100px;
+        }
+        .name-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 18px 15px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+        .name-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #1a237e, #3949ab);
+            transform: scaleX(0);
+            transition: transform 0.3s;
+        }
+        .name-card:hover::before,
+        .name-card.favorite::before {
+            transform: scaleX(1);
+        }
+        .name-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        .name-card.favorite {
+            border-color: #ffd700;
+            background: linear-gradient(180deg, #fffde7, var(--white));
+        }
+        .name-number {
+            position: absolute;
+            top: 8px;
+            left: 10px;
+            font-size: 11px;
+            color: var(--text-gray);
+            font-weight: 600;
+        }
+        .name-favorite {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            font-size: 14px;
+            color: #ddd;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        .name-favorite.active {
+            color: #ffd700;
+        }
+        .name-arabic {
+            font-family: 'Amiri', serif;
+            font-size: 28px;
+            color: #1a237e;
+            margin-bottom: 8px;
+            direction: rtl;
+        }
+        .name-transliteration {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--dark-gray);
+            margin-bottom: 4px;
+        }
+        .name-meaning {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        /* Detail Modal */
+        .name-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+            padding: 20px;
+        }
+        .name-modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background: var(--white);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 380px;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #1a237e, #3949ab);
+            color: white;
+            padding: 25px 20px;
+            text-align: center;
+            border-radius: 20px 20px 0 0;
+        }
+        .modal-number {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-bottom: 10px;
+        }
+        .modal-arabic {
+            font-family: 'Amiri', serif;
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .modal-transliteration {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        .modal-body {
+            padding: 25px 20px;
+        }
+        .modal-meaning {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .modal-meaning-label {
+            font-size: 12px;
+            color: var(--text-gray);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        .modal-meaning-text {
+            font-size: 18px;
+            color: var(--dark-gray);
+            font-weight: 500;
+        }
+        .modal-description {
+            background: var(--gray);
+            border-radius: 12px;
+            padding: 15px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--dark-gray);
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+        .modal-btn.primary {
+            background: linear-gradient(135deg, #1a237e, #3949ab);
+            color: white;
+        }
+        .modal-btn.secondary {
+            background: var(--gray);
+            color: var(--dark-gray);
+        }
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        /* Filter Tabs */
+        .filter-tabs {
+            display: flex;
+            padding: 0 15px 15px;
+            gap: 10px;
+            overflow-x: auto;
+        }
+        .filter-tab {
+            padding: 8px 16px;
+            background: var(--gray);
+            border: none;
+            border-radius: 20px;
+            font-size: 13px;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .filter-tab.active {
+            background: linear-gradient(135deg, #1a237e, #3949ab);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="page-hero-compact">
+            <div class="hero-deco"></div>
+            <div class="hero-compact-nav">
+                <button class="hero-back-btn" onclick="history.back()">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <span class="hero-nav-title" id="heroNavPageTitle"></span>
+                <div class="hero-compact-actions">
+                    <button onclick="toggleSearch()"><i class="fas fa-search"></i></button>
+                </div>
+            </div>
+            <div class="hero-compact-title">
+                <p style="font-family:'Amiri',serif;font-size:24px;color:#fff;margin-bottom:4px;">أَسْمَاءُ اللَّهِ الْحُسْنَى</p>
+                <h1>99 Names of Allah</h1>
+                <p>The Most Beautiful Names</p>
+                <div class="hero-accent-line"></div>
+            </div>
+        </div>
+
+        <div class="search-container" style="display:none;" id="searchContainer">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" class="search-input" placeholder="Search names..." id="searchInput" oninput="filterNames()">
+        </div>
+
+        <div class="filter-tabs">
+            <button class="filter-tab active" onclick="setFilter('all')">All Names</button>
+            <button class="filter-tab" onclick="setFilter('favorites')">Favorites</button>
+        </div>
+
+        <div class="names-grid" id="namesGrid"></div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div class="name-modal" id="nameModal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+                <div class="modal-number" id="modalNumber"></div>
+                <div class="modal-arabic" id="modalArabic"></div>
+                <div class="modal-transliteration" id="modalTransliteration"></div>
+            </div>
+            <div class="modal-body">
+                <div class="modal-meaning">
+                    <div class="modal-meaning-label">Meaning</div>
+                    <div class="modal-meaning-text" id="modalMeaning"></div>
+                </div>
+                <div class="modal-description" id="modalDescription"></div>
+                <div class="modal-actions">
+                    <button class="modal-btn secondary" onclick="toggleFavoriteModal()">
+                        <i class="fas fa-star" id="modalFavIcon"></i> Favorite
+                    </button>
+                    <button class="modal-btn primary" onclick="shareNameModal()">
+                        <i class="fas fa-share-alt"></i> Share
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.min.js" defer></script>
+    <script>
+        const FAVORITES_KEY = 'allah_names_favorites';
+        let favorites = [];
+        let currentFilter = 'all';
+        let selectedName = null;
+
+        const namesOfAllah = [
+            { num: 1, arabic: 'ٱلرَّحْمَـٰنُ', trans: 'Ar-Rahman', meaning: 'The Most Gracious', desc: 'The One who has plenty of mercy for the believers and the disbelievers in this world and especially for the believers in the Hereafter.' },
+            { num: 2, arabic: 'ٱلرَّحِيمُ', trans: 'Ar-Raheem', meaning: 'The Most Merciful', desc: 'The One who has plenty of mercy for the believers.' },
+            { num: 3, arabic: 'ٱلْمَلِكُ', trans: 'Al-Malik', meaning: 'The King', desc: 'The One with complete dominion, the One whose dominion is clear from imperfection.' },
+            { num: 4, arabic: 'ٱلْقُدُّوسُ', trans: 'Al-Quddus', meaning: 'The Most Sacred', desc: 'The One who is pure from any imperfection and clear from children and adversaries.' },
+            { num: 5, arabic: 'ٱلسَّلَامُ', trans: 'As-Salam', meaning: 'The Source of Peace', desc: 'The One who is free from every imperfection.' },
+            { num: 6, arabic: 'ٱلْمُؤْمِنُ', trans: 'Al-Mu\'min', meaning: 'The Guardian of Faith', desc: 'The One who witnessed for Himself that no one is God but Him.' },
+            { num: 7, arabic: 'ٱلْمُهَيْمِنُ', trans: 'Al-Muhaymin', meaning: 'The Protector', desc: 'The One who witnesses the saying and deeds of His creatures.' },
+            { num: 8, arabic: 'ٱلْعَزِيزُ', trans: 'Al-Aziz', meaning: 'The Almighty', desc: 'The Defeater who is not defeated.' },
+            { num: 9, arabic: 'ٱلْجَبَّارُ', trans: 'Al-Jabbar', meaning: 'The Compeller', desc: 'The One that nothing happens in His dominion except that which He willed.' },
+            { num: 10, arabic: 'ٱلْمُتَكَبِّرُ', trans: 'Al-Mutakabbir', meaning: 'The Supreme', desc: 'The One who is clear from the attributes of the creatures and from resembling them.' },
+            { num: 11, arabic: 'ٱلْخَالِقُ', trans: 'Al-Khaliq', meaning: 'The Creator', desc: 'The One who brings everything from non-existence to existence.' },
+            { num: 12, arabic: 'ٱلْبَارِئُ', trans: 'Al-Bari', meaning: 'The Maker', desc: 'The Creator who has the Power to turn the entities.' },
+            { num: 13, arabic: 'ٱلْمُصَوِّرُ', trans: 'Al-Musawwir', meaning: 'The Fashioner', desc: 'The One who forms His creatures in different pictures.' },
+            { num: 14, arabic: 'ٱلْغَفَّارُ', trans: 'Al-Ghaffar', meaning: 'The Forgiver', desc: 'The One who forgives the sins of His slaves time and time again.' },
+            { num: 15, arabic: 'ٱلْقَهَّارُ', trans: 'Al-Qahhar', meaning: 'The Subduer', desc: 'The Subduer who has the perfect Power and is not unable over anything.' },
+            { num: 16, arabic: 'ٱلْوَهَّابُ', trans: 'Al-Wahhab', meaning: 'The Bestower', desc: 'The One who is Generous in giving plenty without any return.' },
+            { num: 17, arabic: 'ٱلرَّزَّاقُ', trans: 'Ar-Razzaq', meaning: 'The Provider', desc: 'The One who gives everything that benefits whether physical or spiritual.' },
+            { num: 18, arabic: 'ٱلْفَتَّاحُ', trans: 'Al-Fattah', meaning: 'The Opener', desc: 'The One who opens for His slaves the closed worldly and religious matters.' },
+            { num: 19, arabic: 'ٱلْعَلِيمُ', trans: 'Al-Aleem', meaning: 'The All-Knowing', desc: 'The One nothing is absent from His knowledge.' },
+            { num: 20, arabic: 'ٱلْقَابِضُ', trans: 'Al-Qabid', meaning: 'The Withholder', desc: 'The One who constricts the sustenance by His wisdom.' },
+            { num: 21, arabic: 'ٱلْبَاسِطُ', trans: 'Al-Basit', meaning: 'The Expander', desc: 'The One who expands and gives abundantly.' },
+            { num: 22, arabic: 'ٱلْخَافِضُ', trans: 'Al-Khafid', meaning: 'The Abaser', desc: 'The One who lowers whoever He willed by His Destruction.' },
+            { num: 23, arabic: 'ٱلرَّافِعُ', trans: 'Ar-Rafi', meaning: 'The Exalter', desc: 'The One who raises whoever He willed by His Endowment.' },
+            { num: 24, arabic: 'ٱلْمُعِزُّ', trans: 'Al-Mu\'izz', meaning: 'The Bestower of Honor', desc: 'He gives esteem to whoever He willed.' },
+            { num: 25, arabic: 'ٱلْمُذِلُّ', trans: 'Al-Mudhill', meaning: 'The Humiliator', desc: 'He degrades and humiliates whoever He willed.' },
+            { num: 26, arabic: 'ٱلسَّمِيعُ', trans: 'As-Sami', meaning: 'The All-Hearing', desc: 'The One who hears all things that are heard by His eternal hearing.' },
+            { num: 27, arabic: 'ٱلْبَصِيرُ', trans: 'Al-Basir', meaning: 'The All-Seeing', desc: 'The One who sees all things that are seen by His eternal seeing.' },
+            { num: 28, arabic: 'ٱلْحَكَمُ', trans: 'Al-Hakam', meaning: 'The Judge', desc: 'He is the Ruler and His judgment is His Word.' },
+            { num: 29, arabic: 'ٱلْعَدْلُ', trans: 'Al-Adl', meaning: 'The Just', desc: 'The One who is entitled to do what He does.' },
+            { num: 30, arabic: 'ٱللَّطِيفُ', trans: 'Al-Latif', meaning: 'The Subtle One', desc: 'The One who is kind to His slaves and endows upon them.' },
+            { num: 31, arabic: 'ٱلْخَبِيرُ', trans: 'Al-Khabir', meaning: 'The All-Aware', desc: 'The One who knows the truth of things.' },
+            { num: 32, arabic: 'ٱلْحَلِيمُ', trans: 'Al-Halim', meaning: 'The Forbearing', desc: 'The One who delays the punishment for those who deserve it.' },
+            { num: 33, arabic: 'ٱلْعَظِيمُ', trans: 'Al-Azim', meaning: 'The Magnificent', desc: 'The One deserving the attributes of Exaltment, Glory, Extolment.' },
+            { num: 34, arabic: 'ٱلْغَفُورُ', trans: 'Al-Ghafur', meaning: 'The Forgiving', desc: 'The One who forgives a lot.' },
+            { num: 35, arabic: 'ٱلشَّكُورُ', trans: 'Ash-Shakur', meaning: 'The Grateful', desc: 'The One who gives a lot of reward for a little obedience.' },
+            { num: 36, arabic: 'ٱلْعَلِىُّ', trans: 'Al-Ali', meaning: 'The Most High', desc: 'The One who is clear from the attributes of the creatures.' },
+            { num: 37, arabic: 'ٱلْكَبِيرُ', trans: 'Al-Kabir', meaning: 'The Greatest', desc: 'The One who is greater than everything in status.' },
+            { num: 38, arabic: 'ٱلْحَفِيظُ', trans: 'Al-Hafiz', meaning: 'The Preserver', desc: 'The One who protects whatever and whoever He willed to protect.' },
+            { num: 39, arabic: 'ٱلْمُقِيتُ', trans: 'Al-Muqit', meaning: 'The Nourisher', desc: 'The One who has the Power.' },
+            { num: 40, arabic: 'ٱلْحَسِيبُ', trans: 'Al-Hasib', meaning: 'The Reckoner', desc: 'The One who gives satisfaction.' },
+            { num: 41, arabic: 'ٱلْجَلِيلُ', trans: 'Al-Jalil', meaning: 'The Majestic', desc: 'The One who is attributed with greatness of Power and Glory.' },
+            { num: 42, arabic: 'ٱلْكَرِيمُ', trans: 'Al-Karim', meaning: 'The Generous', desc: 'The One who is clear from abjectness.' },
+            { num: 43, arabic: 'ٱلرَّقِيبُ', trans: 'Ar-Raqib', meaning: 'The Watchful', desc: 'The One that nothing is absent from Him.' },
+            { num: 44, arabic: 'ٱلْمُجِيبُ', trans: 'Al-Mujib', meaning: 'The Responsive', desc: 'The One who answers the one in need if he asks Him.' },
+            { num: 45, arabic: 'ٱلْوَاسِعُ', trans: 'Al-Wasi', meaning: 'The All-Encompassing', desc: 'The Knowledgeable.' },
+            { num: 46, arabic: 'ٱلْحَكِيمُ', trans: 'Al-Hakim', meaning: 'The All-Wise', desc: 'The One who is correct in His doings.' },
+            { num: 47, arabic: 'ٱلْوَدُودُ', trans: 'Al-Wadud', meaning: 'The Loving', desc: 'The One who loves His believing slaves and His believing slaves love Him.' },
+            { num: 48, arabic: 'ٱلْمَجِيدُ', trans: 'Al-Majid', meaning: 'The Glorious', desc: 'The One who is with perfect Power, High Status, Compassion.' },
+            { num: 49, arabic: 'ٱلْبَاعِثُ', trans: 'Al-Ba\'ith', meaning: 'The Resurrector', desc: 'The One who resurrects His slaves after death for reward.' },
+            { num: 50, arabic: 'ٱلشَّهِيدُ', trans: 'Ash-Shahid', meaning: 'The Witness', desc: 'The One who nothing is absent from Him.' },
+            { num: 51, arabic: 'ٱلْحَقُّ', trans: 'Al-Haqq', meaning: 'The Truth', desc: 'The One who truly exists.' },
+            { num: 52, arabic: 'ٱلْوَكِيلُ', trans: 'Al-Wakil', meaning: 'The Trustee', desc: 'The One who gives the satisfaction and is relied upon.' },
+            { num: 53, arabic: 'ٱلْقَوِىُّ', trans: 'Al-Qawiyy', meaning: 'The Strong', desc: 'The One with the complete Power.' },
+            { num: 54, arabic: 'ٱلْمَتِينُ', trans: 'Al-Matin', meaning: 'The Firm', desc: 'The One with extreme Power which is uninterrupted.' },
+            { num: 55, arabic: 'ٱلْوَلِىُّ', trans: 'Al-Waliyy', meaning: 'The Protecting Friend', desc: 'The Supporter.' },
+            { num: 56, arabic: 'ٱلْحَمِيدُ', trans: 'Al-Hamid', meaning: 'The Praiseworthy', desc: 'The praised One who deserves to be praised.' },
+            { num: 57, arabic: 'ٱلْمُحْصِى', trans: 'Al-Muhsi', meaning: 'The Counter', desc: 'The One who the count of things are known to Him.' },
+            { num: 58, arabic: 'ٱلْمُبْدِئُ', trans: 'Al-Mubdi', meaning: 'The Originator', desc: 'The One who started the human being.' },
+            { num: 59, arabic: 'ٱلْمُعِيدُ', trans: 'Al-Mu\'id', meaning: 'The Restorer', desc: 'The One who brings back the creatures after death.' },
+            { num: 60, arabic: 'ٱلْمُحْىِى', trans: 'Al-Muhyi', meaning: 'The Giver of Life', desc: 'The One who took out a living human from seminal fluid.' },
+            { num: 61, arabic: 'ٱلْمُمِيتُ', trans: 'Al-Mumit', meaning: 'The Bringer of Death', desc: 'The One who renders the living dead.' },
+            { num: 62, arabic: 'ٱلْحَىُّ', trans: 'Al-Hayy', meaning: 'The Ever-Living', desc: 'The One attributed with a life that is unlike our life.' },
+            { num: 63, arabic: 'ٱلْقَيُّومُ', trans: 'Al-Qayyum', meaning: 'The Self-Subsisting', desc: 'The One who remains and does not end.' },
+            { num: 64, arabic: 'ٱلْوَاجِدُ', trans: 'Al-Wajid', meaning: 'The Finder', desc: 'The Rich who is never poor.' },
+            { num: 65, arabic: 'ٱلْمَاجِدُ', trans: 'Al-Majid', meaning: 'The Noble', desc: 'The One who is Majid.' },
+            { num: 66, arabic: 'ٱلْوَاحِدُ', trans: 'Al-Wahid', meaning: 'The One', desc: 'The One without a partner.' },
+            { num: 67, arabic: 'ٱلْأَحَدُ', trans: 'Al-Ahad', meaning: 'The Unique', desc: 'The One.' },
+            { num: 68, arabic: 'ٱلصَّمَدُ', trans: 'As-Samad', meaning: 'The Eternal', desc: 'The Master who is relied upon in matters.' },
+            { num: 69, arabic: 'ٱلْقَادِرُ', trans: 'Al-Qadir', meaning: 'The Capable', desc: 'The One attributed with Power.' },
+            { num: 70, arabic: 'ٱلْمُقْتَدِرُ', trans: 'Al-Muqtadir', meaning: 'The Powerful', desc: 'The One with the perfect Power.' },
+            { num: 71, arabic: 'ٱلْمُقَدِّمُ', trans: 'Al-Muqaddim', meaning: 'The Expediter', desc: 'The One who puts things in their right places.' },
+            { num: 72, arabic: 'ٱلْمُؤَخِّرُ', trans: 'Al-Mu\'akhkhir', meaning: 'The Delayer', desc: 'The One who delays things.' },
+            { num: 73, arabic: 'ٱلْأَوَّلُ', trans: 'Al-Awwal', meaning: 'The First', desc: 'The One whose Existence is without a beginning.' },
+            { num: 74, arabic: 'ٱلْآخِرُ', trans: 'Al-Akhir', meaning: 'The Last', desc: 'The One whose Existence is without an end.' },
+            { num: 75, arabic: 'ٱلظَّاهِرُ', trans: 'Az-Zahir', meaning: 'The Manifest', desc: 'The One that nothing is above Him and nothing is underneath Him.' },
+            { num: 76, arabic: 'ٱلْبَاطِنُ', trans: 'Al-Batin', meaning: 'The Hidden', desc: 'The One that nothing is above Him and nothing is underneath Him.' },
+            { num: 77, arabic: 'ٱلْوَالِى', trans: 'Al-Wali', meaning: 'The Governor', desc: 'The One who owns things and manages them.' },
+            { num: 78, arabic: 'ٱلْمُتَعَالِى', trans: 'Al-Muta\'ali', meaning: 'The Most Exalted', desc: 'The One who is clear from the attributes of the creation.' },
+            { num: 79, arabic: 'ٱلْبَرُّ', trans: 'Al-Barr', meaning: 'The Source of Goodness', desc: 'The One who is kind to His creatures.' },
+            { num: 80, arabic: 'ٱلتَّوَّابُ', trans: 'At-Tawwab', meaning: 'The Acceptor of Repentance', desc: 'The One who grants repentance.' },
+            { num: 81, arabic: 'ٱلْمُنْتَقِمُ', trans: 'Al-Muntaqim', meaning: 'The Avenger', desc: 'The One who victoriously prevails over His enemies.' },
+            { num: 82, arabic: 'ٱلْعَفُوُّ', trans: 'Al-Afuww', meaning: 'The Pardoner', desc: 'The One with wide forgiveness.' },
+            { num: 83, arabic: 'ٱلرَّؤُوفُ', trans: 'Ar-Ra\'uf', meaning: 'The Compassionate', desc: 'The One with extreme Mercy.' },
+            { num: 84, arabic: 'مَالِكُ ٱلْمُلْكِ', trans: 'Malik-ul-Mulk', meaning: 'Owner of Sovereignty', desc: 'The One who controls the Dominion.' },
+            { num: 85, arabic: 'ذُو ٱلْجَلَالِ وَٱلْإِكْرَامِ', trans: 'Dhul-Jalali wal-Ikram', meaning: 'Lord of Majesty', desc: 'The One who deserves to be Exalted.' },
+            { num: 86, arabic: 'ٱلْمُقْسِطُ', trans: 'Al-Muqsit', meaning: 'The Equitable', desc: 'The One who is Just in His judgment.' },
+            { num: 87, arabic: 'ٱلْجَامِعُ', trans: 'Al-Jami', meaning: 'The Gatherer', desc: 'The One who gathers the creatures on a day.' },
+            { num: 88, arabic: 'ٱلْغَنِىُّ', trans: 'Al-Ghani', meaning: 'The Self-Sufficient', desc: 'The One who does not need the creation.' },
+            { num: 89, arabic: 'ٱلْمُغْنِى', trans: 'Al-Mughni', meaning: 'The Enricher', desc: 'The One who satisfies the necessities of the creatures.' },
+            { num: 90, arabic: 'ٱلْمَانِعُ', trans: 'Al-Mani', meaning: 'The Preventer', desc: 'The Withholder.' },
+            { num: 91, arabic: 'ٱلضَّارُّ', trans: 'Ad-Darr', meaning: 'The Distresser', desc: 'The One who makes harm reach whoever He willed.' },
+            { num: 92, arabic: 'ٱلنَّافِعُ', trans: 'An-Nafi', meaning: 'The Benefiter', desc: 'The One who gives benefits to whoever He wills.' },
+            { num: 93, arabic: 'ٱلنُّورُ', trans: 'An-Nur', meaning: 'The Light', desc: 'The One who guides.' },
+            { num: 94, arabic: 'ٱلْهَادِى', trans: 'Al-Hadi', meaning: 'The Guide', desc: 'The One with guidance.' },
+            { num: 95, arabic: 'ٱلْبَدِيعُ', trans: 'Al-Badi', meaning: 'The Originator', desc: 'The One who created the creation without any preceding example.' },
+            { num: 96, arabic: 'ٱلْبَاقِى', trans: 'Al-Baqi', meaning: 'The Everlasting', desc: 'The One that the state of non-existence is impossible for Him.' },
+            { num: 97, arabic: 'ٱلْوَارِثُ', trans: 'Al-Warith', meaning: 'The Inheritor', desc: 'The One whose Existence remains.' },
+            { num: 98, arabic: 'ٱلرَّشِيدُ', trans: 'Ar-Rashid', meaning: 'The Guide to the Right Path', desc: 'The One who guides.' },
+            { num: 99, arabic: 'ٱلصَّبُورُ', trans: 'As-Sabur', meaning: 'The Patient', desc: 'The One who does not quickly punish the sinners.' }
+        ];
+
+        function loadFavorites() {
+            try {
+                favorites = JSON.parse(localStorage.getItem(FAVORITES_KEY)) || [];
+            } catch(e) {
+                favorites = [];
+            }
+        }
+
+        function saveFavorites() {
+            localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+        }
+
+        function renderNames() {
+            const grid = document.getElementById('namesGrid');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            let filtered = namesOfAllah;
+            
+            if (currentFilter === 'favorites') {
+                filtered = filtered.filter(n => favorites.includes(n.num));
+            }
+            
+            if (searchTerm) {
+                filtered = filtered.filter(n => 
+                    n.trans.toLowerCase().includes(searchTerm) ||
+                    n.meaning.toLowerCase().includes(searchTerm) ||
+                    n.arabic.includes(searchTerm)
+                );
+            }
+            
+            grid.innerHTML = filtered.map(name => `
+                <div class="name-card ${favorites.includes(name.num) ? 'favorite' : ''}" onclick="openModal(${name.num})">
+                    <span class="name-number">${name.num}</span>
+                    <span class="name-favorite ${favorites.includes(name.num) ? 'active' : ''}" onclick="event.stopPropagation(); toggleFavorite(${name.num})">
+                        <i class="fas fa-star"></i>
+                    </span>
+                    <div class="name-arabic">${name.arabic}</div>
+                    <div class="name-transliteration">${name.trans}</div>
+                    <div class="name-meaning">${name.meaning}</div>
+                </div>
+            `).join('');
+        }
+
+        function toggleFavorite(num) {
+            const idx = favorites.indexOf(num);
+            if (idx > -1) {
+                favorites.splice(idx, 1);
+            } else {
+                favorites.push(num);
+            }
+            saveFavorites();
+            renderNames();
+        }
+
+        function openModal(num) {
+            selectedName = namesOfAllah.find(n => n.num === num);
+            document.getElementById('modalNumber').textContent = `#${selectedName.num}`;
+            document.getElementById('modalArabic').textContent = selectedName.arabic;
+            document.getElementById('modalTransliteration').textContent = selectedName.trans;
+            document.getElementById('modalMeaning').textContent = selectedName.meaning;
+            document.getElementById('modalDescription').textContent = selectedName.desc;
+            document.getElementById('modalFavIcon').className = favorites.includes(num) ? 'fas fa-star' : 'far fa-star';
+            document.getElementById('nameModal').classList.add('show');
+        }
+
+        function closeModal(e) {
+            if (!e || e.target.id === 'nameModal') {
+                document.getElementById('nameModal').classList.remove('show');
+            }
+        }
+
+        function toggleFavoriteModal() {
+            if (selectedName) {
+                toggleFavorite(selectedName.num);
+                document.getElementById('modalFavIcon').className = favorites.includes(selectedName.num) ? 'fas fa-star' : 'far fa-star';
+            }
+        }
+
+        function shareNameModal() {
+            if (selectedName && navigator.share) {
+                navigator.share({
+                    title: selectedName.trans,
+                    text: `${selectedName.arabic}\n${selectedName.trans} - ${selectedName.meaning}\n\n${selectedName.desc}`
+                });
+            } else if (selectedName) {
+                const text = `${selectedName.arabic}\n${selectedName.trans} - ${selectedName.meaning}`;
+                navigator.clipboard.writeText(text);
+                showToast('Copied to clipboard!', 'success');
+            }
+        }
+
+        function toggleSearch() {
+            const container = document.getElementById('searchContainer');
+            container.style.display = container.style.display === 'none' ? 'block' : 'none';
+            if (container.style.display === 'block') {
+                document.getElementById('searchInput').focus();
+            }
+        }
+
+        function filterNames() {
+            renderNames();
+        }
+
+        function setFilter(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.textContent.toLowerCase().includes(filter));
+            });
+            renderNames();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFavorites();
+            renderNames();
+        });
+    </script>
+<script src="js/app-bridge.js" defer></script></body>
+</html>

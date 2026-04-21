@@ -1,0 +1,138 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function: Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function: Check if user owns the document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Helper function: Check if request is from Cloud Functions
+    function isFromCloudFunction() {
+      // Cloud Functions use admin SDK which bypasses rules
+      // But we can check for specific metadata
+      return request.auth.token.firebase.sign_in_provider == 'custom';
+    }
+    
+    // Payments collection - Receipt book (Pesapal successful payments)
+    // Callback page writes here after backend verifies payment; admin reads in Admin Panel
+    match /payments/{paymentId} {
+      allow create: if true;   // Callback can add after Pesapal verification
+      allow read: if true;    // Admin panel (receipt book) can read
+      allow update, delete: if false;  // Immutable - audit trail
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      // Users can read their own data
+      allow read: if isAuthenticated() && isOwner(userId);
+      
+      // Users can create/update their own document
+      allow create, update: if isAuthenticated() && isOwner(userId);
+      
+      // No deletes
+      allow delete: if false;
+    }
+    
+    // App data - prayer times, announcement (single documents)
+    // Admin panel has its own password protection
+    match /appData/{docId} {
+      allow read: if true;
+      allow create, update: if true;
+      allow delete: if false;
+    }
+
+    // Config collection - playlists, app settings
+    match /config/{docId} {
+      allow read: if true;
+      allow create, update: if true;
+      allow delete: if false;
+    }
+
+    // Events collection - admin-managed upcoming events
+    match /events/{eventId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+
+    // Live Trackers - results, donation progress, fundraiser goals
+    match /liveTrackers/{trackerId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+
+    // Mosques collection - Community submissions
+    // Admin panel has its own password protection
+    match /mosques/{mosqueId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if true;
+    }
+
+    // Notifications collection - Real-time notifications (Firebase-only)
+    match /notifications/{notificationId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+
+    // FCM tokens - push notification device registration
+    match /fcm_tokens/{tokenId} {
+      allow read: if true;
+      allow create, update: if true;
+      allow delete: if isAuthenticated();
+    }
+
+    // Push queue - queued push notifications
+    match /push_queue/{pushId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+
+    // Stream Requests collection - Live streaming approval system
+    match /streamRequests/{requestId} {
+      // Anyone can read stream requests (for public viewing)
+      allow read: if true;
+      
+      // Authenticated or anonymous users can create requests
+      allow create: if true;
+      
+      // Only admin or the request owner can update
+      allow update: if isAuthenticated() && (isOwner(resource.data.hostId) || isFromCloudFunction());
+      
+      // Only admin or the request owner can delete
+      allow delete: if isAuthenticated() && (isOwner(resource.data.hostId) || isFromCloudFunction());
+    }
+
+    // Live Streams collection - Direct streaming
+    match /liveStreams/{streamId} {
+      // Anyone can read live streams (for public viewing)
+      allow read: if true;
+      
+      // Admin users can create, update, delete live streams
+      allow create, update, delete: if true;
+
+      // Viewers subcollection — per-viewer WebRTC signaling
+      match /viewers/{viewerId} {
+        // Anyone can read viewer docs (admin needs to read answers)
+        allow read: if true;
+        
+        // Any viewer can create/update their own doc (join + write SDP answer)
+        allow create, update: if true;
+        
+        // Viewer or admin can delete (cleanup on leave or stream end)
+        allow delete: if true;
+      }
+    }
+
+    // Default: Deny all other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+

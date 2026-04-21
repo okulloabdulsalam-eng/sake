@@ -1,0 +1,34 @@
+name = "kiuma-subtitles"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+workers_dev = true
+
+# ===== KV Namespace for subtitle job records =====
+[[kv_namespaces]]
+binding = "SUBTITLE_JOBS"
+id = "9bb1c017917a4e1fa8c77ae6ef5ffcfd"
+preview_id = "9bb1c017917a4e1fa8c77ae6ef5ffcfd"
+
+# ===== Queue bindings =====
+# Producer binding allows the fetch worker to enqueue jobs
+[[queues.producers]]
+binding = "SUBTITLE_QUEUE"
+queue = "kiuma-subtitles-queue"
+
+# Consumer binding allows the same Worker to process queue batches via the queue() exported handler
+[[queues.consumers]]
+queue = "kiuma-subtitles-queue"
+max_batch_size = 1
+max_retries = 5
+
+# ===== R2 bucket for subtitle artifacts (kiuma-files) =====
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "kiuma-files"
+
+# Required secrets (set via `npx wrangler secret put ...`)
+#   ADMIN_TOKEN
+#   OPENAI_API_KEY
+# Optional/advanced:
+#   PUBLIC_STORAGE_BASE (e.g., https://kiuma-storage.workers.dev/file)
+#   WHISPER_MODEL, TRANSLATE_MODEL, MAX_VIDEO_BYTES

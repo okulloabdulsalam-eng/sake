@@ -1,0 +1,6 @@
+{
+  "version": "2.5.0",
+  "build": "2026-03-08",
+  "minAppVersion": "1.0.0",
+  "changelog": "Add admin approval system for live streaming - Complete stream request workflow with admin approval panel, host dashboard for managing streams, real-time notifications, and comprehensive approval controls"
+}

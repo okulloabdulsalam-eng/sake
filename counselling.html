@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="theme-color" content="#757575">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Counselling - KIUMA</title>
+    <link rel="manifest" href="manifest.json">
+    <script>
+        (function() {
+            var t;
+            try { t = localStorage.getItem('themePreference'); } catch(e) {}
+            if (t === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="styles.min.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    <!-- Font Awesome: CDN primary, local fallback -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="fonts/fontawesome.min.css">
+    
+    <!-- Service Worker Registration (for offline functionality) -->
+    <script src="js/register-service-worker.js" defer></script>
+    
+    <style>
+        .counselling-container {
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+        
+        .counselling-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .counselling-header h1 {
+            color: var(--primary-green);
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .counselling-header p {
+            color: var(--text-gray);
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        
+        .counselling-types {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .counselling-type-card {
+            background: var(--white);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-left: 4px solid var(--primary-green);
+        }
+        
+        .counselling-type-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+        
+        .counselling-type-card.active {
+            border-left-color: var(--dark-green);
+            background: #f0f9f0;
+        }
+        
+        .counselling-type-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+        
+        .counselling-type-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 24px;
+        }
+        
+        .counselling-type-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--dark-gray);
+            flex: 1;
+        }
+        
+        .counselling-type-description {
+            color: var(--text-gray);
+            font-size: 14px;
+            line-height: 1.6;
+            margin-top: 10px;
+        }
+        
+        .form-section {
+            background: var(--white);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+        
+        .form-section.active {
+            display: block;
+        }
+        
+        .form-section-title {
+            color: var(--primary-green);
+            font-size: 22px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--dark-gray);
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .form-label .required {
+            color: #F44336;
+        }
+        
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+        
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary-green);
+        }
+        
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
+        .checkbox-item input[type="checkbox"] {
+            margin-top: 4px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .checkbox-item label {
+            color: var(--dark-gray);
+            font-size: 14px;
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
+            color: var(--white);
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+        
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+        
+        .success-message {
+            background: #E8F5E9;
+            color: #2E7D32;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .success-message.show {
+            display: block;
+        }
+        
+        .back-btn {
+            background: #f5f5f5;
+            color: var(--dark-gray);
+            border: 2px solid #e0e0e0;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .back-btn.show {
+            display: inline-block;
+        }
+        
+        .back-btn:hover {
+            background: #e0e0e0;
+        }
+        
+        @media (min-width: 768px) {
+            .counselling-types {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Menu -->
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="quran.html" class="nav-link"><i class="fas fa-quran"></i> Quran</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="counselling.html" class="nav-link active"><i class="fas fa-hands-helping"></i> Counselling</a></li>
+            <li><a href="library.html" class="nav-link"><i class="fas fa-book-open"></i> Library</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="media-settings.html" class="nav-link"><i class="fas fa-sliders-h"></i> Media Settings</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <div class="page-hero">
+            <div class="hero-deco"></div>
+            <nav class="hero-nav">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <span class="hero-nav-title" id="heroNavPageTitle"></span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="notifications-btn" id="notificationsBtn">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge" style="display:none;"></span>
+                    </button>
+                    <div class="hero-profile-avatar" onclick="if(typeof toggleAccountModal==='function')toggleAccountModal()"><i class="fas fa-user"></i></div>
+                </div>
+            </nav>
+            <div class="hero-logo-row">
+                <div class="hero-logo-ring">
+                    <img src="logo.png" alt="KIUMA" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="logo-fallback" style="display:none;">KU</div>
+                </div>
+            </div>
+            <div class="hero-title-area">
+                <div class="hero-org-name">KIUMA</div>
+                <h1 class="hero-page-title">Counselling</h1>
+                <p class="hero-subtitle">Guidance &amp; support services</p>
+                <div class="hero-accent-line"></div>
+            </div>
+        </div>
+
+        <main class="main-content">
+            <div style="height:8px;"></div>
+            <div class="counselling-container">
+                <div class="counselling-header">
+                    <h1><i class="fas fa-comments"></i> Counselling Services</h1>
+                    <p>We provide confidential and supportive counselling services to help you navigate challenges and grow in your faith and personal life. Click on a counselling type below to get started.</p>
+                </div>
+
+                <!-- Counselling Types Navigation -->
+                <div class="counselling-types" id="counsellingTypes">
+                    <div class="counselling-type-card" data-type="personal">
+                        <div class="counselling-type-header">
+                            <div class="counselling-type-icon">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="counselling-type-title">Personal Counselling</div>
+                        </div>
+                        <div class="counselling-type-description">
+                            Get support for personal challenges you're facing at campus, religious struggles, family issues, and more.
+                        </div>
+                    </div>
+
+                    <div class="counselling-type-card" data-type="brother-sister">
+                        <div class="counselling-type-header">
+                            <div class="counselling-type-icon">
+                                <i class="fas fa-hands-helping"></i>
+                            </div>
+                            <div class="counselling-type-title">Brother/Sister Needs Help</div>
+                        </div>
+                        <div class="counselling-type-description">
+                            Report concerns about a brother or sister who may need counselling or support.
+                        </div>
+                    </div>
+
+                    <div class="counselling-type-card" data-type="marriage">
+                        <div class="counselling-type-header">
+                            <div class="counselling-type-icon">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                            <div class="counselling-type-title">Marriage Counselling</div>
+                        </div>
+                        <div class="counselling-type-description">
+                            Get guidance on marriage, family approval, seeking suitable partners, and more.
+                        </div>
+                    </div>
+
+                    <div class="counselling-type-card" data-type="academic">
+                        <div class="counselling-type-header">
+                            <div class="counselling-type-icon">
+                                <i class="fas fa-graduation-cap"></i>
+                            </div>
+                            <div class="counselling-type-title">Academic Counselling</div>
+                        </div>
+                        <div class="counselling-type-description">
+                            Get guidance from seniors who have completed your course to help you succeed.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Back Button -->
+                <button class="back-btn" id="backBtn" onclick="showCounsellingTypes()">
+                    <i class="fas fa-arrow-left"></i> Back to Counselling Types
+                </button>
+
+                <!-- Personal Counselling Form -->
+                <div class="form-section" id="personalForm">
+                    <h2 class="form-section-title">
+                        <i class="fas fa-user"></i>
+                        Personal Counselling Request
+                    </h2>
+                    <form id="personalCounsellingForm">
+                        <div class="form-group">
+                            <label class="form-label">
+                                Your Name <span class="required">*</span>
+                            </label>
+                            <input type="text" class="form-input" name="name" required placeholder="Enter your full name">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                Contact Number <span class="required">*</span>
+                            </label>
+                            <input type="tel" class="form-input" name="contact" required placeholder="Enter your phone number">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                Email Address
+                            </label>
+                            <input type="email" class="form-input" name="email" placeholder="Enter your email (optional)">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                What issues are you facing? <span class="required">*</span>
+                            </label>
+                            <div class="checkbox-group">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="issues" value="campus-issues" id="campusIssues">
+                                    <label for="campusIssues">Campus/University Issues</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="issues" value="religious-struggles" id="religiousStruggles">
+                                    <label for="religiousStruggles">Religious Struggles (Prayer, Faith, etc.)</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="issues" value="family-issues" id="familyIssues">
+                                    <label for="familyIssues">Family Issues</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="issues" value="emotional-stress" id="emotionalStress">
+                                    <label for="emotionalStress">Emotional Stress/Anxiety</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="issues" value="peer-pressure" id="peerPressure">
+                                    <label for="peerPressure">Peer Pressure</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="issues" value="other" id="personalOther">
+                                    <label for="personalOther">Other Issues</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                Please describe your situation in detail <span class="required">*</span>
+                            </label>
+                            <textarea class="form-textarea" name="description" required placeholder="Share as much detail as you're comfortable with. All information is confidential."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                Preferred Contact Method
+                            </label>
+                            <select class="form-select" name="contactMethod">
+                                <option value="phone">Phone Call</option>
+                                <option value="whatsapp">WhatsApp</option>
+                                <option value="email">Email</option>
+                                <option value="in-person">In-Person Meeting</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="submit-btn">
+                            <i class="fab fa-whatsapp"></i> Submit via WhatsApp (0768829144 @kiumasupport)
+                        </button>
+
+                        <div class="success-message" id="personalSuccess">
+                            <i class="fas fa-check-circle"></i> WhatsApp will open with your request. Thank you!
+                        </div>
+                    </form>
+                    
+                </div>
+
+                <!-- Brother/Sister Needs Help Form -->
+                <div class="form-section" id="brotherSisterFormSection">
+                    <h2 class="form-section-title">
+                        <i class="fas fa-hands-helping"></i>
+                        Report Brother/Sister Needing Help
+                    </h2>
+                    <form id="brotherSisterForm">
+                        <div class="form-group">
+                            <label class="form-label">
+                                Your Name <span class="required">*</span>
+                            </label>
+                            <input type="text" class="form-input" name="reporterName" required placeholder="Enter your name">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                Your Contact Number <span class="required">*</span>
+                            </label>
+                            <input type="tel" class="form-input" name="reporterContact" required placeholder="Enter your phone number">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                Name of Brother/Sister (if known)
+                            </label>
+                            <input type="text" class="form-input" name="personName" placeholder="Enter their name (optional)">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                What issues are you concerned about? <span class="required">*</span>
+                            </label>
+                            <div class="checkbox-group">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="concerns" value="sister-not-praying" id="sisterNotPraying">
+                                    <label for="sisterNotPraying">Sister Not Praying</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="concerns" value="brother-not-praying" id="brotherNotPraying">
+                                    <label for="brotherNotPraying">Brother Not Praying</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="concerns" value="brother-zina" id="brotherZina">
+                                    <label for="brotherZina">Brother Committing Zina</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="concerns" value="sister-zina" id="sisterZina">
+                                    <label for="sisterZina">Sister Committing Zina</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="concerns" value="drugs-alcohol" id="drugsAlcohol">
+                                    <label for="drugsAlcohol">Drugs/Alcohol Abuse</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="concerns" value="depression" id="depression">
+                                    <label for="depression">Depression/Mental Health Issues</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="concerns" value="academic-struggles" id="academicStruggles">
+                                    <label for="academicStruggles">Academic Struggles</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="concerns" value="family-issues" id="bsFamilyIssues">
+                                    <label for="bsFamilyIssues">Family Issues</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="concerns" value="other" id="bsOther">
+                                    <label for="bsOther">Other Concerns</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                Please describe the situation <span class="required">*</span>
+                            </label>
+                            <textarea class="form-textarea" name="situation" required placeholder="Describe what you've observed and why you're concerned. Be as specific as possible."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                How can we reach them? (Contact info if available)
+                            </label>
+                            <input type="text" class="form-input" name="personContact" placeholder="Phone number, email, or other contact info">
+                        </div>
+
+                        <button type="submit" class="submit-btn">
+                            <i class="fab fa-whatsapp"></i> Submit via WhatsApp (0768829144 @kiumasupport)
+                        </button>
+
+                        <div class="success-message" id="brotherSisterSuccess">
+                            <i class="fas fa-check-circle"></i> WhatsApp will open with your report. Thank you for your concern!
+                        </div>
+                    </form>
+                    
+                </div>
+
+                <!-- Marriage Counselling Form -->
+                <div class="form-section" id="marriageForm">
+                    <h2 class="form-section-title">
+                        <i class="fas fa-heart"></i>
+                        Marriage Counselling Request
+                    </h2>
+                    <form id="marriageCounsellingForm">
+                        <div class="form-group">
+                            <label class="form-label">
+                                Your Name <span class="required">*</span>
+                            </label>
+                            <input type="text" class="form-input" name="name" required placeholder="Enter your full name">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                Gender <span class="required">*</span>
+                            </label>
+                            <select class="form-select" name="gender" required>
+                                <option value="">Select gender</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                Contact Number <span class="required">*</span>
+                            </label>
+                            <input type="tel" class="form-input" name="contact" required placeholder="Enter your phone number">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                Email Address
+                            </label>
+                            <input type="email" class="form-input" name="email" placeholder="Enter your email (optional)">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                What do you need help with? <span class="required">*</span>
+                            </label>
+                            <div class="checkbox-group">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="marriageNeeds" value="want-to-marry" id="wantToMarry">
+                                    <label for="wantToMarry">I Want to Get Married</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="marriageNeeds" value="family-difficulties" id="familyDifficulties">
+                                    <label for="familyDifficulties">Family Difficulties/Approval Issues</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="marriageNeeds" value="elder-advice" id="elderAdvice">
+                                    <label for="elderAdvice">Want Advice from Elders Before Taking the Step</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="marriageNeeds" value="know-more" id="knowMore">
+                                    <label for="knowMore">Want to Know More About a Sister/Brother</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="marriageNeeds" value="kiuma-suggest" id="kiumaSuggest">
+                                    <label for="kiumaSuggest">Want KIUMA to Suggest a Suitable Sister/Brother</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="marriageNeeds" value="marriage-preparation" id="marriagePrep">
+                                    <label for="marriagePrep">Marriage Preparation Guidance</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="marriageNeeds" value="nikah-process" id="nikahProcess">
+                                    <label for="nikahProcess">Nikah Process Guidance</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="marriageNeeds" value="other" id="marriageOther">
+                                    <label for="marriageOther">Other Marriage-Related Issues</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group" id="suggestPersonGroup" style="display: none;">
+                            <label class="form-label">
+                                If you want to know more about someone, please provide their name (if known)
+                            </label>
+                            <input type="text" class="form-input" name="personOfInterest" placeholder="Enter their name">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                Please provide more details <span class="required">*</span>
+                            </label>
+                            <textarea class="form-textarea" name="details" required placeholder="Share your situation, concerns, or what you're looking for. All information is confidential."></textarea>
+                        </div>
+
+                        <button type="submit" class="submit-btn">
+                            <i class="fab fa-whatsapp"></i> Submit via WhatsApp (0768829144 @kiumasupport)
+                        </button>
+
+                        <div class="success-message" id="marriageSuccess">
+                            <i class="fas fa-check-circle"></i> WhatsApp will open with your request. Thank you!
+                        </div>
+                    </form>
+                    
+                </div>
+
+                <!-- Academic Counselling Form -->
+                <div class="form-section" id="academicForm">
+                    <h2 class="form-section-title">
+                        <i class="fas fa-graduation-cap"></i>
+                        Academic Counselling Request
+                    </h2>
+                    <form id="academicCounsellingForm">
+                        <div class="form-group">
+                            <label class="form-label">
+                                Your Name <span class="required">*</span>
+                            </label>
+                            <input type="text" class="form-input" name="name" required placeholder="Enter your full name">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                Registration Number <span class="required">*</span>
+                            </label>
+                            <input type="text" class="form-input" name="regNumber" required placeholder="Enter your registration number">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                Course/Program <span class="required">*</span>
+                            </label>
+                            <input type="text" class="form-input" name="course" required placeholder="e.g., Medicine, Engineering, Law, etc.">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                Current Year/Semester <span class="required">*</span>
+                            </label>
+                            <select class="form-select" name="year" required>
+                                <option value="">Select year/semester</option>
+                                <option value="year1-sem1">Year 1, Semester 1</option>
+                                <option value="year1-sem2">Year 1, Semester 2</option>
+                                <option value="year2-sem1">Year 2, Semester 1</option>
+                                <option value="year2-sem2">Year 2, Semester 2</option>
+                                <option value="year3-sem1">Year 3, Semester 1</option>
+                                <option value="year3-sem2">Year 3, Semester 2</option>
+                                <option value="year4-sem1">Year 4, Semester 1</option>
+                                <option value="year4-sem2">Year 4, Semester 2</option>
+                                <option value="year5-sem1">Year 5, Semester 1</option>
+                                <option value="year5-sem2">Year 5, Semester 2</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                Contact Number <span class="required">*</span>
+                            </label>
+                            <input type="tel" class="form-input" name="contact" required placeholder="Enter your phone number">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                Email Address
+                            </label>
+                            <input type="email" class="form-input" name="email" placeholder="Enter your email (optional)">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                What do you need help with? <span class="required">*</span>
+                            </label>
+                            <div class="checkbox-group">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="academicNeeds" value="course-guidance" id="courseGuidance">
+                                    <label for="courseGuidance">General Course Guidance</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="academicNeeds" value="senior-briefing" id="seniorBriefing">
+                                    <label for="seniorBriefing">Get Briefing from Seniors Who Completed Same Class</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="academicNeeds" value="study-strategies" id="studyStrategies">
+                                    <label for="studyStrategies">Study Strategies and Tips</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="academicNeeds" value="exam-preparation" id="examPrep">
+                                    <label for="examPrep">Exam Preparation</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="academicNeeds" value="time-management" id="timeManagement">
+                                    <label for="timeManagement">Time Management</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="academicNeeds" value="course-selection" id="courseSelection">
+                                    <label for="courseSelection">Course/Elective Selection</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="academicNeeds" value="academic-stress" id="academicStress">
+                                    <label for="academicStress">Academic Stress/Anxiety</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="academicNeeds" value="other" id="academicOther">
+                                    <label for="academicOther">Other Academic Issues</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                Please describe what you need help with <span class="required">*</span>
+                            </label>
+                            <textarea class="form-textarea" name="description" required placeholder="Describe your academic challenges, specific courses you're struggling with, or what guidance you're seeking."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                Preferred Contact Method
+                            </label>
+                            <select class="form-select" name="contactMethod">
+                                <option value="phone">Phone Call</option>
+                                <option value="whatsapp">WhatsApp</option>
+                                <option value="email">Email</option>
+                                <option value="in-person">In-Person Meeting</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="submit-btn">
+                            <i class="fab fa-whatsapp"></i> Submit via WhatsApp (0768829144 @kiumasupport)
+                        </button>
+
+                        <div class="success-message" id="academicSuccess">
+                            <i class="fas fa-check-circle"></i> WhatsApp will open with your request. Thank you!
+                        </div>
+                    </form>
+                    
+                </div>
+            </div>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
+            <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
+            <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
+        </nav>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js" defer></script>
+    <script src="firebase-config.js" defer></script>
+    <script src="script.min.js" defer></script>
+    <script src="update-navigation.js" defer></script>
+    <script>
+    </script>
+    <script>
+        // Show counselling type selection
+        function showCounsellingTypes() {
+            document.getElementById('counsellingTypes').style.display = 'grid';
+            document.querySelectorAll('.form-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById('backBtn').classList.remove('show');
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Show specific form
+        function showForm(formType) {
+            document.getElementById('counsellingTypes').style.display = 'none';
+            document.querySelectorAll('.form-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Handle special case for brother-sister form
+            const formId = formType === 'brother-sister' ? 'brotherSisterFormSection' : formType + 'Form';
+            document.getElementById(formId).classList.add('active');
+            document.getElementById('backBtn').classList.add('show');
+            
+            // Scroll to form
+            setTimeout(() => {
+                document.getElementById(formId).scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+
+        // Handle counselling type card clicks
+        document.querySelectorAll('.counselling-type-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const formType = this.getAttribute('data-type');
+                showForm(formType);
+            });
+        });
+
+        // Handle marriage form - show person of interest field
+        document.getElementById('marriageCounsellingForm').addEventListener('change', function(e) {
+            if (e.target.name === 'marriageNeeds' && e.target.value === 'know-more' && e.target.checked) {
+                document.getElementById('suggestPersonGroup').style.display = 'block';
+            } else if (e.target.name === 'marriageNeeds' && e.target.value === 'know-more' && !e.target.checked) {
+                const otherChecked = Array.from(document.querySelectorAll('input[name="marriageNeeds"]:checked'))
+                    .some(cb => cb.value === 'know-more');
+                if (!otherChecked) {
+                    document.getElementById('suggestPersonGroup').style.display = 'none';
+                }
+            }
+        });
+
+        // WhatsApp number
+        const whatsappNumber = '256768829144';
+
+        // Format WhatsApp message for Personal Counselling
+        function formatPersonalCounsellingMessage(formData) {
+            const name = formData.get('name');
+            const contact = formData.get('contact');
+            const email = formData.get('email') || 'Not provided';
+            const issues = Array.from(formData.getAll('issues')).join(', ') || 'Not specified';
+            const description = formData.get('description');
+            const contactMethod = formData.get('contactMethod');
+            
+            let message = `*Personal Counselling Request*\n\n`;
+            message += `*Name:* ${name}\n`;
+            message += `*Contact:* ${contact}\n`;
+            message += `*Email:* ${email}\n`;
+            message += `*Issues:* ${issues}\n`;
+            message += `*Preferred Contact Method:* ${contactMethod}\n\n`;
+            message += `*Description:*\n${description}\n\n`;
+            message += `_I need personal counselling support._`;
+            
+            return message;
+        }
+
+        // Handle form submissions
+        document.getElementById('personalCounsellingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            // Validate required fields
+            if (!formData.get('name') || !formData.get('contact') || !formData.get('description')) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            
+            // Check if at least one issue is selected
+            const issues = formData.getAll('issues');
+            if (issues.length === 0) {
+                alert('Please select at least one issue you are facing.');
+                return;
+            }
+            
+            const message = formatPersonalCounsellingMessage(formData);
+            const encodedMsg = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMsg}`;
+            
+            window.open(whatsappUrl, '_blank');
+            
+            document.getElementById('personalSuccess').classList.add('show');
+            this.reset();
+            setTimeout(() => {
+                document.getElementById('personalSuccess').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        });
+
+        // Format WhatsApp message for Brother/Sister Report
+        function formatBrotherSisterMessage(formData) {
+            const reporterName = formData.get('reporterName');
+            const reporterContact = formData.get('reporterContact');
+            const personName = formData.get('personName') || 'Not provided';
+            const concerns = Array.from(formData.getAll('concerns')).join(', ') || 'Not specified';
+            const situation = formData.get('situation');
+            const personContact = formData.get('personContact') || 'Not provided';
+            
+            let message = `*Brother/Sister Needs Help - Report*\n\n`;
+            message += `*Reporter Name:* ${reporterName}\n`;
+            message += `*Reporter Contact:* ${reporterContact}\n`;
+            message += `*Name of Brother/Sister:* ${personName}\n`;
+            message += `*Their Contact (if known):* ${personContact}\n`;
+            message += `*Concerns:* ${concerns}\n\n`;
+            message += `*Situation Description:*\n${situation}\n\n`;
+            message += `_A brother/sister needs counselling support._`;
+            
+            return message;
+        }
+
+        document.getElementById('brotherSisterForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            // Validate required fields
+            if (!formData.get('reporterName') || !formData.get('reporterContact') || !formData.get('situation')) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            
+            // Check if at least one concern is selected
+            const concerns = formData.getAll('concerns');
+            if (concerns.length === 0) {
+                alert('Please select at least one concern.');
+                return;
+            }
+            
+            const message = formatBrotherSisterMessage(formData);
+            const encodedMsg = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMsg}`;
+            
+            window.open(whatsappUrl, '_blank');
+            
+            document.getElementById('brotherSisterSuccess').classList.add('show');
+            this.reset();
+            setTimeout(() => {
+                document.getElementById('brotherSisterSuccess').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        });
+
+        // Format WhatsApp message for Marriage Counselling
+        function formatMarriageCounsellingMessage(formData) {
+            const name = formData.get('name');
+            const gender = formData.get('gender');
+            const contact = formData.get('contact');
+            const email = formData.get('email') || 'Not provided';
+            const marriageNeeds = Array.from(formData.getAll('marriageNeeds')).join(', ') || 'Not specified';
+            const personOfInterest = formData.get('personOfInterest') || '';
+            const details = formData.get('details');
+            
+            let message = `*Marriage Counselling Request*\n\n`;
+            message += `*Name:* ${name}\n`;
+            message += `*Gender:* ${gender}\n`;
+            message += `*Contact:* ${contact}\n`;
+            message += `*Email:* ${email}\n`;
+            message += `*What I Need Help With:* ${marriageNeeds}\n`;
+            if (personOfInterest) {
+                message += `*Person of Interest:* ${personOfInterest}\n`;
+            }
+            message += `\n*Details:*\n${details}\n\n`;
+            message += `_I need marriage counselling support._`;
+            
+            return message;
+        }
+
+        document.getElementById('marriageCounsellingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            // Validate required fields
+            if (!formData.get('name') || !formData.get('gender') || !formData.get('contact') || !formData.get('details')) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            
+            // Check if at least one need is selected
+            const needs = formData.getAll('marriageNeeds');
+            if (needs.length === 0) {
+                alert('Please select at least one area where you need help.');
+                return;
+            }
+            
+            const message = formatMarriageCounsellingMessage(formData);
+            const encodedMsg = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMsg}`;
+            
+            window.open(whatsappUrl, '_blank');
+            
+            document.getElementById('marriageSuccess').classList.add('show');
+            this.reset();
+            document.getElementById('suggestPersonGroup').style.display = 'none';
+            setTimeout(() => {
+                document.getElementById('marriageSuccess').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        });
+
+        // Format WhatsApp message for Academic Counselling
+        function formatAcademicCounsellingMessage(formData) {
+            const name = formData.get('name');
+            const regNumber = formData.get('regNumber');
+            const course = formData.get('course');
+            const year = formData.get('year');
+            const contact = formData.get('contact');
+            const email = formData.get('email') || 'Not provided';
+            const academicNeeds = Array.from(formData.getAll('academicNeeds')).join(', ') || 'Not specified';
+            const description = formData.get('description');
+            const contactMethod = formData.get('contactMethod');
+            
+            let message = `*Academic Counselling Request*\n\n`;
+            message += `*Name:* ${name}\n`;
+            message += `*Registration Number:* ${regNumber}\n`;
+            message += `*Course/Program:* ${course}\n`;
+            message += `*Current Year/Semester:* ${year}\n`;
+            message += `*Contact:* ${contact}\n`;
+            message += `*Email:* ${email}\n`;
+            message += `*What I Need Help With:* ${academicNeeds}\n`;
+            message += `*Preferred Contact Method:* ${contactMethod}\n\n`;
+            message += `*Description:*\n${description}\n\n`;
+            message += `_I need academic counselling support._`;
+            
+            return message;
+        }
+
+        document.getElementById('academicCounsellingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            // Validate required fields
+            if (!formData.get('name') || !formData.get('regNumber') || !formData.get('course') || 
+                !formData.get('year') || !formData.get('contact') || !formData.get('description')) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            
+            // Check if at least one need is selected
+            const needs = formData.getAll('academicNeeds');
+            if (needs.length === 0) {
+                alert('Please select at least one area where you need help.');
+                return;
+            }
+            
+            const message = formatAcademicCounsellingMessage(formData);
+            const encodedMsg = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMsg}`;
+            
+            window.open(whatsappUrl, '_blank');
+            
+            document.getElementById('academicSuccess').classList.add('show');
+            this.reset();
+            setTimeout(() => {
+                document.getElementById('academicSuccess').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        });
+    </script>
+
+    <!-- Floating Did You Know Button -->
+    <div class="floating-dyk-btn" onclick="showDykModal()">
+        <i class="fas fa-lightbulb"></i>
+        <span>Did You Know?</span>
+    </div>
+    <div class="modal-overlay" id="dykModal" style="display: none;">
+        <div class="modal-content activities-modal">
+            <div class="modal-header" style="background: linear-gradient(135deg, #1565C0, #0D47A1);">
+                <h3><i class="fas fa-lightbulb"></i> Did You Know?</h3>
+                <button class="modal-close" onclick="closeDykModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="activities-modal-list">
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-tongue'" style="border-left: 4px solid #C62828;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #C62828, #B71C1C);"><i class="fas fa-comment-slash"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #C62828;">Backbiting & The Tongue</h4><p>Terrifying hadiths about gheebah, slander & idle talk</p></div>
+                    <i class="fas fa-chevron-right" style="color: #C62828;"></i>
+                </div>
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-dress'" style="border-left: 4px solid #6A1B9A;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #6A1B9A, #4A148C);"><i class="fas fa-user-shield"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #6A1B9A;">Dress, Hair & Modesty</h4><p>What Islam says about hair, hijab & clothing</p></div>
+                    <i class="fas fa-chevron-right" style="color: #6A1B9A;"></i>
+                </div>
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-warnings'" style="border-left: 4px solid #E65100;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #E65100, #BF360C);"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #E65100;">Warnings People Ignore</h4><p>Lying, hypocrisy, arrogance, riba & more</p></div>
+                    <i class="fas fa-chevron-right" style="color: #E65100;"></i>
+                </div>
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html'" style="border-left: 4px solid #1565C0;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #1565C0, #0D47A1);"><i class="fas fa-book-open"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #1565C0;">View All Sections</h4><p>Deeds, character, worship & more authentic knowledge</p></div>
+                    <i class="fas fa-chevron-right" style="color: #1565C0;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    function showDykModal(){document.getElementById('dykModal').style.display='flex';}
+    function closeDykModal(){document.getElementById('dykModal').style.display='none';}
+    document.addEventListener('DOMContentLoaded',function(){var o=document.getElementById('dykModal');if(o)o.addEventListener('click',function(e){if(e.target===this)closeDykModal();});});
+    </script>
+
+    <!-- Floating Important Lessons Button -->
+    <div class="floating-lessons-btn" onclick="showLessonsModal()">
+        <i class="fas fa-fire"></i>
+        <span>Important Lessons</span>
+    </div>
+
+    <!-- Floating Hot Events Button -->
+    <div class="floating-kizumu-btn" onclick="showActivitiesModal()" style="background: linear-gradient(135deg, #ff6b35, #e74c3c); animation: pulse-hot 1.5s infinite; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5);">
+        <i class="fas fa-fire" style="color: #fff;"></i>
+        <span style="font-weight: bold;">HOT EVENTS!</span>
+    </div>
+    <style>
+    @keyframes pulse-hot {
+        0%, 100% { transform: scale(1); box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5); }
+        50% { transform: scale(1.05); box-shadow: 0 6px 20px rgba(231, 76, 60, 0.7); }
+    }
+    </style>
+
+    <!-- Important Lessons Modal -->
+    <div class="modal-overlay" id="lessonsModal" style="display: none;">
+        <div class="modal-content activities-modal">
+            <div class="modal-header" style="background: linear-gradient(135deg, #F44336, #C62828);">
+                <h3><i class="fas fa-fire"></i> Important Lessons</h3>
+                <button class="modal-close" onclick="closeLessonsModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="activities-modal-list">
+                <div class="activity-modal-item" onclick="navigateToLesson('learn-prayer')">
+                    <div class="activity-modal-icon" style="background: var(--primary-green);">
+                        <i class="fas fa-pray"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Learn the Prayer</h4>
+                        <p>How to perform Salah correctly</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="navigateToLesson('misunderstood-concepts')">
+                    <div class="activity-modal-icon" style="background: #FF9800;">
+                        <i class="fas fa-lightbulb"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Misunderstood Concepts</h4>
+                        <p>Clarifying common misconceptions</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="navigateToLesson('important-hadiths')">
+                    <div class="activity-modal-icon" style="background: #9C27B0;">
+                        <i class="fas fa-book-quran"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Important Hadiths</h4>
+                        <p>Essential sayings of the Prophet (PBUH)</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="navigateToLesson('did-you-know')">
+                    <div class="activity-modal-icon" style="background: #2196F3;">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Did You Know</h4>
+                        <p>Interesting Islamic facts</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="navigateToLesson('akhlaq-series')">
+                    <div class="activity-modal-icon" style="background: #E91E63;">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Islamic Character (Akhlaq)</h4>
+                        <p>Essential character traits and virtues</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activities Modal -->
+    <div class="modal-overlay" id="activitiesModal" style="display: none;">
+        <div class="modal-content activities-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-fire" style="color: #ff6b35;"></i> Hot Events - Act Now!</h3>
+                <button class="modal-close" onclick="closeActivitiesModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="activities-modal-list">
+                <div class="activity-modal-item" onclick="window.location.href='activities.html#charity-visit'" style="border-left: 4px solid #ff6b35;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #ff6b35, #e74c3c);">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4 style="color: #2e7d32;">Kizumu Tahfiz Visit — Ongoing</h4>
+                        <p>JazakAllahu Khairan! Program continues individually & in communities.</p>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color: #e74c3c;"></i>
+                </div>
+
+                <div class="activity-modal-item" onclick="window.location.href='activities.html#quran-competition'" style="border-left: 4px solid #9c27b0;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #9c27b0, #673ab7);">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4 style="color: #9c27b0;">Quran Competition — FINISHED</h4>
+                        <p>Thank you for participating! Results and media released soon.</p>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color: #9c27b0;"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="contactTuition()">
+                    <div class="activity-modal-icon" style="background: var(--primary-green);">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Tuition Brothers & Sisters</h4>
+                        <p>Support brothers' and sisters' education</p>
+                    </div>
+                    <i class="fab fa-whatsapp" style="color: #25D366; font-size: 18px;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+<script src="js/app-bridge.js" defer></script></body>
+</html>

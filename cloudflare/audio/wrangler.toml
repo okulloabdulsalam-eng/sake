@@ -1,0 +1,10 @@
+name = "kiuma-audio"
+main = "../worker.js"
+compatibility_date = "2024-01-01"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "kiuma-audio"
+
+# Set ADMIN_TOKEN as a secret via:
+#   cd cloudflare/audio && npx wrangler secret put ADMIN_TOKEN

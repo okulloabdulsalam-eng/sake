@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Us - KIUMA</title>
+    <script>
+        (function() {
+            var t;
+            try { t = localStorage.getItem('themePreference'); } catch(e) {}
+            if (t === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="styles.min.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    <!-- Font Awesome: CDN primary, local fallback -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="fonts/fontawesome.min.css">
+    <script>
+        // Check if all required scripts (Firebase + script.min.js) are ready
+        function isScriptsReady() {
+            return typeof firebase !== 'undefined' && firebase.auth && typeof injectAccountModal === 'function' && typeof window.handleLogin === 'function';
+        }
+
+        // Wait for all scripts to load, then call callback
+        function waitForScripts(callback, retries) {
+            retries = retries || 0;
+            if (isScriptsReady()) {
+                if (!document.getElementById('accountModal') && typeof injectAccountModal === 'function') {
+                    injectAccountModal();
+                }
+                var modal = document.getElementById('accountModal');
+                if (modal) { callback(modal); return; }
+            }
+            if (retries < 30) {
+                setTimeout(function() { waitForScripts(callback, retries + 1); }, 200);
+            } else {
+                alert('Still loading... Please try again in a moment.');
+            }
+        }
+
+        // Open signup modal
+        function openSignupModal() {
+            waitForScripts(function(modal) {
+                document.getElementById('accountTabs').style.display = 'block';
+                document.getElementById('accountModalTitle').innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
+                document.getElementById('loginTab').classList.remove('active');
+                document.getElementById('signupTab').classList.add('active');
+                document.getElementById('loginFormElement').style.display = 'none';
+                document.getElementById('signupFormElement').style.display = 'block';
+                document.getElementById('accountInfo').style.display = 'none';
+                if (document.getElementById('editProfileForm')) document.getElementById('editProfileForm').style.display = 'none';
+                modal.style.display = 'flex';
+            });
+        }
+
+        // Open login modal
+        function openLoginModal() {
+            waitForScripts(function(modal) {
+                document.getElementById('accountTabs').style.display = 'block';
+                document.getElementById('accountModalTitle').innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+                document.getElementById('loginTab').classList.add('active');
+                document.getElementById('signupTab').classList.remove('active');
+                document.getElementById('loginFormElement').style.display = 'block';
+                document.getElementById('signupFormElement').style.display = 'none';
+                document.getElementById('accountInfo').style.display = 'none';
+                if (document.getElementById('editProfileForm')) document.getElementById('editProfileForm').style.display = 'none';
+                modal.style.display = 'flex';
+            });
+        }
+
+        // Check login state and update UI
+        function updateJoinPageUI() {
+            var userData = localStorage.getItem('userData');
+            var notLoggedInSection = document.getElementById('notLoggedInSection');
+            var loggedInSection = document.getElementById('loggedInSection');
+            var settingsSection = document.getElementById('settingsSection');
+            var welcomeUserName = document.getElementById('welcomeUserName');
+            var pageTitle = document.querySelector('.hero-page-title');
+
+            if (userData) {
+                try { var user = JSON.parse(userData); } catch(e) { return; }
+                if (notLoggedInSection) notLoggedInSection.style.display = 'none';
+                if (loggedInSection) loggedInSection.style.display = 'block';
+                if (settingsSection) settingsSection.style.display = 'block';
+                if (pageTitle) pageTitle.textContent = 'Settings & Profile';
+
+                var fullName = user.firstName && user.lastName
+                    ? user.firstName + ' ' + user.lastName
+                    : (user.firstName || user.name || 'Member');
+                if (welcomeUserName) welcomeUserName.textContent = fullName;
+
+                var profileEmail = document.getElementById('profileEmail');
+                if (profileEmail) profileEmail.textContent = user.email || '';
+
+                var detailFullName = document.getElementById('detailFullName');
+                var detailEmail = document.getElementById('detailEmail');
+                var detailPhone = document.getElementById('detailPhone');
+                var detailRegNo = document.getElementById('detailRegNo');
+                var detailGender = document.getElementById('detailGender');
+
+                if (detailFullName) detailFullName.textContent = fullName;
+                if (detailEmail) detailEmail.textContent = user.email || '-';
+                if (detailPhone) detailPhone.textContent = user.phone || user.phoneNumber || '-';
+                if (detailRegNo) detailRegNo.textContent = user.regNo || user.registrationNumber || '-';
+                if (detailGender) detailGender.textContent = user.gender || '-';
+
+                updateBottomNav(true);
+            } else {
+                if (notLoggedInSection) notLoggedInSection.style.display = 'block';
+                if (loggedInSection) loggedInSection.style.display = 'none';
+                if (settingsSection) settingsSection.style.display = 'none';
+                if (pageTitle) pageTitle.textContent = 'Join Our Community';
+                updateBottomNav(false);
+            }
+        }
+
+        // Update bottom navigation
+        function updateBottomNav(isLoggedIn) {
+            var bottomNavItems = document.querySelectorAll('.bottom-nav .nav-item');
+            bottomNavItems.forEach(function(item) {
+                var span = item.querySelector('span');
+                var icon = item.querySelector('i');
+                if (span && (span.textContent === 'Join' || span.textContent === 'Settings')) {
+                    if (isLoggedIn) {
+                        span.textContent = 'Settings';
+                        if (icon) icon.className = 'fas fa-cog';
+                    } else {
+                        span.textContent = 'Join';
+                        if (icon) icon.className = 'fas fa-user-plus';
+                    }
+                }
+            });
+        }
+
+        // Once Firebase loads, listen for auth state changes to auto-update UI
+        function setupAuthListener() {
+            if (typeof firebase !== 'undefined' && firebase.auth) {
+                firebase.auth().onAuthStateChanged(function() {
+                    updateJoinPageUI();
+                });
+            } else {
+                setTimeout(setupAuthListener, 300);
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateJoinPageUI();
+            setupAuthListener();
+
+            var urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('action') === 'signup') {
+                setTimeout(function() { openSignupModal(); }, 500);
+            } else if (urlParams.get('action') === 'login') {
+                setTimeout(function() { openLoginModal(); }, 500);
+            }
+        });
+
+        // Listen for storage changes (login/logout from other tabs)
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'userData') {
+                updateJoinPageUI();
+            }
+        });
+    </script>
+</head>
+<body>
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="counselling.html" class="nav-link"><i class="fas fa-hands-helping"></i> Counselling</a></li>
+            <li><a href="library.html" class="nav-link"><i class="fas fa-book-open"></i> Library</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="media-settings.html" class="nav-link"><i class="fas fa-sliders-h"></i> Media Settings</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link active"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="page-hero">
+            <div class="hero-deco"></div>
+            <nav class="hero-nav">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <span class="hero-nav-title" id="heroNavPageTitle"></span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="notifications-btn" id="notificationsBtn">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge" style="display:none;"></span>
+                    </button>
+                    <div class="hero-profile-avatar" onclick="if(typeof toggleAccountModal==='function')toggleAccountModal()"><i class="fas fa-user"></i></div>
+                </div>
+            </nav>
+            <div class="hero-logo-row">
+                <div class="hero-logo-ring">
+                    <img src="logo.png" alt="KIUMA" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="logo-fallback" style="display:none;">KU</div>
+                </div>
+            </div>
+            <div class="hero-title-area">
+                <div class="hero-org-name">KIUMA</div>
+                <h1 class="hero-page-title">Join Our Community</h1>
+                <p class="hero-subtitle">Be part of the KIUMA family</p>
+                <div class="hero-accent-line"></div>
+            </div>
+        </div>
+
+        <main class="main-content">
+            <div style="height:8px;"></div>
+
+            <section class="page-content">
+                <!-- Not Logged In Section -->
+                <div id="notLoggedInSection">
+                    <div class="info-card">
+                        <h3><i class="fas fa-users"></i> Welcome to KIUMA</h3>
+                        <p>Become part of a vibrant Islamic community dedicated to faith, knowledge, and service. Join Muslim students at Kampala International University who are making a difference.</p>
+                    </div>
+
+                    <div class="info-card" style="text-align: center; padding: 30px;">
+                        <h3 style="margin-bottom: 20px; color: var(--dark-green);"><i class="fas fa-user-plus"></i> Join Our Community</h3>
+                        <p style="color: var(--text-gray); margin-bottom: 25px;">Create an account to become a member of KIUMA</p>
+                        
+                        <button onclick="openSignupModal()" class="btn btn-primary" style="width: 100%; max-width: 300px; padding: 15px 30px; font-size: 16px; margin-bottom: 15px;">
+                            <i class="fas fa-user-plus"></i> Create Account
+                        </button>
+                        
+                        <p style="color: var(--text-gray); margin-top: 20px;">
+                            Already have an account? 
+                            <a href="#" onclick="openLoginModal(); return false;" style="color: var(--primary-green); font-weight: 600;">Login here</a>
+                        </p>
+                    </div>
+
+                    <div class="info-card" style="margin-top: 20px; background: var(--lighter-green);">
+                        <h3 style="color: var(--dark-green); margin-bottom: 10px;"><i class="fas fa-heart"></i> Why Join?</h3>
+                        <ul class="info-list" style="margin: 0;">
+                            <li><i class="fas fa-check-circle" style="color: var(--primary-green);"></i> Access to educational programs and resources</li>
+                            <li><i class="fas fa-check-circle" style="color: var(--primary-green);"></i> Connect with a supportive community</li>
+                            <li><i class="fas fa-check-circle" style="color: var(--primary-green);"></i> Participate in events and activities</li>
+                            <li><i class="fas fa-check-circle" style="color: var(--primary-green);"></i> Get Islamic guidance and support</li>
+                            <li><i class="fas fa-check-circle" style="color: var(--primary-green);"></i> Make a positive impact in society</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Logged In Section - Profile & Settings -->
+                <div id="loggedInSection" style="display: none;">
+                    <!-- Profile Card -->
+                    <div class="info-card" style="padding: 25px; text-align: center; background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);">
+                        <div style="width: 100px; height: 100px; margin: 0 auto 15px; background: var(--primary-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);">
+                            <i class="fas fa-user" style="font-size: 50px; color: var(--white);"></i>
+                        </div>
+                        <h2 id="welcomeUserName" style="margin-bottom: 5px; color: var(--dark-green);">Welcome!</h2>
+                        <p id="profileEmail" style="color: var(--text-gray); font-size: 14px; margin-bottom: 15px;"></p>
+                        <span style="display: inline-block; padding: 5px 15px; background: var(--primary-green); color: var(--white); border-radius: 20px; font-size: 12px; font-weight: 600;">
+                            <i class="fas fa-check-circle"></i> KIUMA Member
+                        </span>
+                    </div>
+
+                    <!-- Account Details Card -->
+                    <div class="info-card" style="margin-top: 15px;">
+                        <h3 style="color: var(--dark-green); margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-id-card"></i> Account Details
+                        </h3>
+                        <div id="accountDetailsContainer">
+                            <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--light-gray);">
+                                <span style="color: var(--text-gray);"><i class="fas fa-user" style="width: 20px; color: var(--primary-green);"></i> Full Name</span>
+                                <span id="detailFullName" style="font-weight: 600; color: var(--dark-gray);">-</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--light-gray);">
+                                <span style="color: var(--text-gray);"><i class="fas fa-envelope" style="width: 20px; color: var(--primary-green);"></i> Email</span>
+                                <span id="detailEmail" style="font-weight: 600; color: var(--dark-gray);">-</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--light-gray);">
+                                <span style="color: var(--text-gray);"><i class="fas fa-phone" style="width: 20px; color: var(--primary-green);"></i> Phone</span>
+                                <span id="detailPhone" style="font-weight: 600; color: var(--dark-gray);">-</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--light-gray);">
+                                <span style="color: var(--text-gray);"><i class="fas fa-id-badge" style="width: 20px; color: var(--primary-green);"></i> Reg Number</span>
+                                <span id="detailRegNo" style="font-weight: 600; color: var(--dark-gray);">-</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 12px 0;">
+                                <span style="color: var(--text-gray);"><i class="fas fa-venus-mars" style="width: 20px; color: var(--primary-green);"></i> Gender</span>
+                                <span id="detailGender" style="font-weight: 600; color: var(--dark-gray);">-</span>
+                            </div>
+                        </div>
+                        <button onclick="showEditProfile()" class="btn btn-secondary" style="width: 100%; margin-top: 20px;">
+                            <i class="fas fa-edit"></i> Edit Profile
+                        </button>
+                    </div>
+
+                    <!-- Settings Section -->
+                    <div id="settingsSection" style="margin-top: 15px;">
+                        <div class="info-card">
+                            <h3 style="color: var(--dark-green); margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-cog"></i> Settings
+                            </h3>
+                            
+                            <div class="settings-item" onclick="window.location.href='notifications.html'" style="display: flex; align-items: center; padding: 15px; background: var(--gray); border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: all 0.3s ease;">
+                                <div style="width: 45px; height: 45px; background: #E3F2FD; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+                                    <i class="fas fa-bell" style="color: #1976D2; font-size: 20px;"></i>
+                                </div>
+                                <div style="flex: 1;">
+                                    <h4 style="margin: 0; color: var(--dark-gray); font-size: 15px;">Notifications</h4>
+                                    <p style="margin: 0; color: var(--text-gray); font-size: 12px;">View your notifications</p>
+                                </div>
+                                <i class="fas fa-chevron-right" style="color: var(--muted-icon);"></i>
+                            </div>
+
+                            <div class="settings-item" onclick="window.location.href='pay.html'" style="display: flex; align-items: center; padding: 15px; background: var(--gray); border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: all 0.3s ease;">
+                                <div style="width: 45px; height: 45px; background: #E8F5E9; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+                                    <i class="fas fa-credit-card" style="color: var(--primary-green); font-size: 20px;"></i>
+                                </div>
+                                <div style="flex: 1;">
+                                    <h4 style="margin: 0; color: var(--dark-gray); font-size: 15px;">Payments & Donations</h4>
+                                    <p style="margin: 0; color: var(--text-gray); font-size: 12px;">Manage subscriptions & donations</p>
+                                </div>
+                                <i class="fas fa-chevron-right" style="color: var(--muted-icon);"></i>
+                            </div>
+
+                            <div class="settings-item" onclick="window.location.href='join-programs.html'" style="display: flex; align-items: center; padding: 15px; background: var(--gray); border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: all 0.3s ease;">
+                                <div style="width: 45px; height: 45px; background: #FFF3E0; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+                                    <i class="fas fa-graduation-cap" style="color: #F57C00; font-size: 20px;"></i>
+                                </div>
+                                <div style="flex: 1;">
+                                    <h4 style="margin: 0; color: var(--dark-gray); font-size: 15px;">My Programs</h4>
+                                    <p style="margin: 0; color: var(--text-gray); font-size: 12px;">View enrolled programs</p>
+                                </div>
+                                <i class="fas fa-chevron-right" style="color: var(--muted-icon);"></i>
+                            </div>
+
+                            <div class="settings-item" onclick="window.location.href='counselling.html'" style="display: flex; align-items: center; padding: 15px; background: var(--gray); border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: all 0.3s ease;">
+                                <div style="width: 45px; height: 45px; background: #FCE4EC; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+                                    <i class="fas fa-hands-helping" style="color: #C2185B; font-size: 20px;"></i>
+                                </div>
+                                <div style="flex: 1;">
+                                    <h4 style="margin: 0; color: var(--dark-gray); font-size: 15px;">Counselling</h4>
+                                    <p style="margin: 0; color: var(--text-gray); font-size: 12px;">Get support & guidance</p>
+                                </div>
+                                <i class="fas fa-chevron-right" style="color: var(--muted-icon);"></i>
+                            </div>
+
+                            <div class="settings-item" onclick="window.location.href='contact.html'" style="display: flex; align-items: center; padding: 15px; background: var(--gray); border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: all 0.3s ease;">
+                                <div style="width: 45px; height: 45px; background: #E1BEE7; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+                                    <i class="fas fa-phone" style="color: #7B1FA2; font-size: 20px;"></i>
+                                </div>
+                                <div style="flex: 1;">
+                                    <h4 style="margin: 0; color: var(--dark-gray); font-size: 15px;">Contact Us</h4>
+                                    <p style="margin: 0; color: var(--text-gray); font-size: 12px;">Get in touch with KIUMA</p>
+                                </div>
+                                <i class="fas fa-chevron-right" style="color: var(--muted-icon);"></i>
+                            </div>
+
+                            <div class="settings-item" onclick="window.location.href='about.html'" style="display: flex; align-items: center; padding: 15px; background: var(--gray); border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: all 0.3s ease;">
+                                <div style="width: 45px; height: 45px; background: #E0F7FA; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+                                    <i class="fas fa-info-circle" style="color: #00838F; font-size: 20px;"></i>
+                                </div>
+                                <div style="flex: 1;">
+                                    <h4 style="margin: 0; color: var(--dark-gray); font-size: 15px;">About KIUMA</h4>
+                                    <p style="margin: 0; color: var(--text-gray); font-size: 12px;">Learn more about us</p>
+                                </div>
+                                <i class="fas fa-chevron-right" style="color: var(--muted-icon);"></i>
+                            </div>
+
+                            <div class="settings-item" style="display: flex; align-items: center; padding: 15px; background: var(--gray); border-radius: 10px; margin-bottom: 10px;">
+                                <div style="width: 45px; height: 45px; background: #FFF8E1; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+                                    <i class="fas fa-adjust" style="color: #FFA000; font-size: 20px;"></i>
+                                </div>
+                                <div style="flex: 1;">
+                                    <h4 style="margin: 0; color: var(--dark-gray); font-size: 15px;">Theme</h4>
+                                    <p style="margin: 0; color: var(--text-gray); font-size: 12px;">Choose app appearance</p>
+                                </div>
+                                <select id="settingsThemeSelect" style="padding: 8px 12px; border: 1px solid var(--light-gray); border-radius: 8px; background: var(--card-bg); color: var(--dark-gray); font-size: 14px; cursor: pointer;">
+                                    <option value="light">Light</option>
+                                    <option value="dark">Dark</option>
+                                    <option value="system">System</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Logout Button -->
+                        <div class="info-card" style="margin-top: 15px; background: var(--danger-bg);">
+                            <button onclick="handleLogout()" class="btn" style="width: 100%; background: var(--danger-red); color: var(--white); border: none; padding: 15px; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                                <i class="fas fa-sign-out-alt"></i> Log Out
+                            </button>
+                        </div>
+
+                        <!-- App Info -->
+                        <div style="text-align: center; margin-top: 25px; padding: 15px; color: var(--muted-icon); font-size: 12px;">
+                            <p style="margin: 0;">KIUMA App v1.0.0</p>
+                            <p style="margin: 5px 0 0 0;">© 2026 KIUMA - All Rights Reserved</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
+            <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
+            <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
+            <a href="join-us.html" class="nav-item active"><i class="fas fa-user-plus"></i><span>Join</span></a>
+        </nav>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js" defer></script>
+    <script src="firebase-config.js" defer></script>
+    <script src="script.min.js" defer></script>
+
+    <!-- Floating Did You Know Button -->
+    <div class="floating-dyk-btn" onclick="showDykModal()">
+        <i class="fas fa-lightbulb"></i>
+        <span>Did You Know?</span>
+    </div>
+    <div class="modal-overlay" id="dykModal" style="display: none;">
+        <div class="modal-content activities-modal">
+            <div class="modal-header" style="background: linear-gradient(135deg, #1565C0, #0D47A1);">
+                <h3><i class="fas fa-lightbulb"></i> Did You Know?</h3>
+                <button class="modal-close" onclick="closeDykModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="activities-modal-list">
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-tongue'" style="border-left: 4px solid #C62828;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #C62828, #B71C1C);"><i class="fas fa-comment-slash"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #C62828;">Backbiting & The Tongue</h4><p>Terrifying hadiths about gheebah, slander & idle talk</p></div>
+                    <i class="fas fa-chevron-right" style="color: #C62828;"></i>
+                </div>
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-dress'" style="border-left: 4px solid #6A1B9A;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #6A1B9A, #4A148C);"><i class="fas fa-user-shield"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #6A1B9A;">Dress, Hair & Modesty</h4><p>What Islam says about hair, hijab & clothing</p></div>
+                    <i class="fas fa-chevron-right" style="color: #6A1B9A;"></i>
+                </div>
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-warnings'" style="border-left: 4px solid #E65100;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #E65100, #BF360C);"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #E65100;">Warnings People Ignore</h4><p>Lying, hypocrisy, arrogance, riba & more</p></div>
+                    <i class="fas fa-chevron-right" style="color: #E65100;"></i>
+                </div>
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html'" style="border-left: 4px solid #1565C0;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #1565C0, #0D47A1);"><i class="fas fa-book-open"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #1565C0;">View All Sections</h4><p>Deeds, character, worship & more authentic knowledge</p></div>
+                    <i class="fas fa-chevron-right" style="color: #1565C0;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    function showDykModal(){document.getElementById('dykModal').style.display='flex';}
+    function closeDykModal(){document.getElementById('dykModal').style.display='none';}
+    document.addEventListener('DOMContentLoaded',function(){var o=document.getElementById('dykModal');if(o)o.addEventListener('click',function(e){if(e.target===this)closeDykModal();});});
+    </script>
+
+    <!-- Floating Hot Events Button -->
+    <div class="floating-kizumu-btn" onclick="showActivitiesModal()" style="background: linear-gradient(135deg, #ff6b35, #e74c3c); animation: pulse-hot 1.5s infinite; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5);">
+        <i class="fas fa-fire" style="color: var(--white);"></i>
+        <span style="font-weight: bold;">HOT EVENTS!</span>
+    </div>
+    <style>
+    @keyframes pulse-hot {
+        0%, 100% { transform: scale(1); box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5); }
+        50% { transform: scale(1.05); box-shadow: 0 6px 20px rgba(231, 76, 60, 0.7); }
+    }
+    .settings-item:hover {
+        background: var(--light-gray) !important;
+        transform: translateX(5px);
+    }
+    .settings-item:active {
+        transform: scale(0.98);
+    }
+    </style>
+
+    <!-- Activities Modal -->
+    <div class="modal-overlay" id="activitiesModal" style="display: none;">
+        <div class="modal-content activities-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-fire" style="color: #ff6b35;"></i> Hot Events - Act Now!</h3>
+                <button class="modal-close" onclick="closeActivitiesModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="activities-modal-list">
+                <div class="activity-modal-item" onclick="window.location.href='activities.html#charity-visit'" style="border-left: 4px solid #ff6b35;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #ff6b35, #e74c3c);">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4 style="color: #2e7d32;">Kizumu Tahfiz Visit — Ongoing</h4>
+                        <p>JazakAllahu Khairan! Program continues individually & in communities.</p>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color: #e74c3c;"></i>
+                </div>
+
+                <div class="activity-modal-item" onclick="window.location.href='activities.html#quran-competition'" style="border-left: 4px solid #9c27b0;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #9c27b0, #673ab7);">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4 style="color: #9c27b0;">Quran Competition — FINISHED</h4>
+                        <p>Thank you for participating! Results and media released soon.</p>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color: #9c27b0;"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="contactTuition()">
+                    <div class="activity-modal-icon" style="background: var(--primary-green);">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Tuition Brothers & Sisters</h4>
+                        <p>Support brothers' and sisters' education</p>
+                    </div>
+                    <i class="fab fa-whatsapp" style="color: #25D366; font-size: 18px;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+<script src="js/app-bridge.js" defer></script></body>
+</html>

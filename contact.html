@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - KIUMA</title>
+    <script>
+        (function() {
+            var t;
+            try { t = localStorage.getItem('themePreference'); } catch(e) {}
+            if (t === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="styles.min.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    <!-- Font Awesome: CDN primary, local fallback -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="fonts/fontawesome.min.css">
+</head>
+<body>
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link active"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="counselling.html" class="nav-link"><i class="fas fa-hands-helping"></i> Counselling</a></li>
+            <li><a href="library.html" class="nav-link"><i class="fas fa-book-open"></i> Library</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="media-settings.html" class="nav-link"><i class="fas fa-sliders-h"></i> Media Settings</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="page-hero">
+            <div class="hero-deco"></div>
+            <nav class="hero-nav">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <span class="hero-nav-title" id="heroNavPageTitle"></span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="notifications-btn" id="notificationsBtn">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge" style="display:none;"></span>
+                    </button>
+                    <div class="hero-profile-avatar" onclick="if(typeof toggleAccountModal==='function')toggleAccountModal()"><i class="fas fa-user"></i></div>
+                </div>
+            </nav>
+            <div class="hero-logo-row">
+                <div class="hero-logo-ring">
+                    <img src="logo.png" alt="KIUMA" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="logo-fallback" style="display:none;">KU</div>
+                </div>
+            </div>
+            <div class="hero-title-area">
+                <div class="hero-org-name">KIUMA</div>
+                <h1 class="hero-page-title">Contact Us</h1>
+                <p class="hero-subtitle">Get in touch with KIUMA</p>
+                <div class="hero-accent-line"></div>
+            </div>
+        </div>
+
+        <main class="main-content">
+            <div style="height:8px;"></div>
+
+            <section class="page-content">
+                <div class="info-card">
+                    <h3><i class="fas fa-map-marker-alt"></i> Address</h3>
+                    <p>Kampala International University (WC)<br>
+                    Ishaka, Uganda</p>
+                </div>
+
+                <div class="info-card">
+                    <h3><i class="fas fa-phone"></i> Phone</h3>
+                    <p>General Inquiries: <a href="tel:+256768829144" target="_blank" style="color: var(--primary-green);" class="phone-link">+256 768 829 144</a><br>
+                    Emergency: <a href="tel:+256768829144" target="_blank" style="color: var(--primary-green);" class="phone-link">+256 768 829 144</a><br>
+                    WhatsApp: <a href="https://wa.me/256768829144" target="_blank" rel="noopener noreferrer" style="color: #25D366; display: inline-flex; align-items: center; gap: 5px;" class="whatsapp-link"><i class="fab fa-whatsapp"></i> +256 768 829 144 @kiumasupport</a></p>
+                </div>
+
+                <div class="info-card">
+                    <h3><i class="fas fa-envelope"></i> Email</h3>
+                    <p>General: <a href="mailto:info@kiuma.kiu.ac.ug?subject=General%20Inquiry" target="_blank" rel="noopener noreferrer" style="color: var(--primary-green);" class="email-link">info@kiuma.kiu.ac.ug</a><br>
+                    Programs: <a href="mailto:programs@kiuma.kiu.ac.ug?subject=Programs%20Inquiry" target="_blank" rel="noopener noreferrer" style="color: var(--primary-green);" class="email-link">programs@kiuma.kiu.ac.ug</a><br>
+                    Support: <a href="mailto:support@kiuma.kiu.ac.ug?subject=Support%20Request" target="_blank" rel="noopener noreferrer" style="color: var(--primary-green);" class="email-link">support@kiuma.kiu.ac.ug</a></p>
+                </div>
+
+                <div class="info-card">
+                    <h3><i class="fas fa-clock"></i> Office Hours</h3>
+                    <p>Monday - Friday: 9:00 AM - 6:00 PM<br>
+                    Saturday - Sunday: 10:00 AM - 4:00 PM<br>
+                    Closed during prayer times</p>
+                </div>
+
+                <div class="info-card">
+                    <div onclick="toggleMessageForm()" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="margin: 0;"><i class="fas fa-comments"></i> Send Us a Message</h3>
+                        <i class="fas fa-chevron-down" id="messageFormArrow" style="transition: transform 0.3s ease;"></i>
+                    </div>
+                    <div id="messageFormContent" style="display: none; margin-top: 15px;">
+                        <form id="contactForm" onsubmit="handleContactSubmit(event)">
+                            <div class="form-group">
+                                <label class="form-label">Your Name</label>
+                                <input type="text" class="form-input" id="contactName" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Your Email</label>
+                                <input type="email" class="form-input" id="contactEmail" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Subject</label>
+                                <select class="form-input" id="contactSubject" required>
+                                    <option value="">Select a subject</option>
+                                    <option value="general">General Inquiry</option>
+                                    <option value="programs">Programs</option>
+                                    <option value="events">Events</option>
+                                    <option value="support">Support</option>
+                                    <option value="donation">Donation</option>
+                                    <option value="volunteer">Volunteering</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Message</label>
+                                <textarea class="form-input" id="contactMessage" rows="5" required></textarea>
+                            </div>
+                            <button type="submit" class="btn" style="width: 100%; padding: 15px; background: linear-gradient(135deg, #25D366, #128C7E); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                                <i class="fab fa-whatsapp"></i> Send via WhatsApp
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h3><i class="fas fa-code"></i> Contact Developers</h3>
+                    <p style="margin-bottom: 15px;">Need technical support or want to report a bug? Contact our developers directly:</p>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <a href="https://wa.me/256703268522" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; background: #25D366; color: white; text-decoration: none; border-radius: 10px; font-weight: 600; transition: all 0.3s ease;" class="whatsapp-link">
+                            <i class="fab fa-whatsapp" style="font-size: 20px;"></i>
+                            <span>Developer 1</span>
+                        </a>
+                        <a href="https://wa.me/256744950690" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; background: #25D366; color: white; text-decoration: none; border-radius: 10px; font-weight: 600; transition: all 0.3s ease;" class="whatsapp-link">
+                            <i class="fab fa-whatsapp" style="font-size: 20px;"></i>
+                            <span>Developer 2</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h3><i class="fab fa-whatsapp"></i> Join Our WhatsApp Group</h3>
+                    <p>Stay connected with the KIUMA community. Join our WhatsApp group for updates, announcements, and discussions.</p>
+                    <a href="https://chat.whatsapp.com/E8trhzVIxGxC3kaxglaJ6N" target="_blank" rel="noopener noreferrer" class="btn btn-primary whatsapp-link" style="margin-top: 15px; background: #25D366; border: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; width: 100%; padding: 15px; font-size: 16px; font-weight: 600; border-radius: 10px; transition: all 0.3s ease;">
+                        <i class="fab fa-whatsapp" style="font-size: 20px;"></i> Join KIUMA WhatsApp Group
+                    </a>
+                    <p style="font-size: 12px; color: var(--text-gray); margin-top: 12px; text-align: center;">
+                        <em>Click the button above to join our community group on WhatsApp</em>
+                    </p>
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
+            <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
+            <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
+        </nav>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js" defer></script>
+    <script src="firebase-config.js" defer></script>
+    <script src="js/app-bridge.js" defer></script>
+    <script src="script.min.js" defer></script>
+    <script>
+        // Amir Fahad Kiwuuwa WhatsApp number
+        const AMIR_CONTACT_WHATSAPP = '256768829144';
+
+        function handleContactSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('contactName').value.trim();
+            const email = document.getElementById('contactEmail').value.trim();
+            const subjectSelect = document.getElementById('contactSubject');
+            const subject = subjectSelect.options[subjectSelect.selectedIndex].text;
+            const message = document.getElementById('contactMessage').value.trim();
+
+            // Build WhatsApp message
+            let whatsappMessage = `*KIUMA Contact Message*\n\n`;
+            whatsappMessage += `👤 *Name:* ${name}\n`;
+            whatsappMessage += `📧 *Email:* ${email}\n`;
+            whatsappMessage += `📋 *Subject:* ${subject}\n`;
+            whatsappMessage += `\n📝 *Message:*\n${message}\n`;
+            whatsappMessage += `\n_Sent via KIUMA App_`;
+
+            // Encode and open WhatsApp
+            const encodedMessage = encodeURIComponent(whatsappMessage);
+            const whatsappUrl = `https://wa.me/${AMIR_CONTACT_WHATSAPP}?text=${encodedMessage}`;
+            // Use native bridge if inside the APK iframe, otherwise open normally
+            window.open(whatsappUrl, '_blank');
+
+            // Reset form
+            document.getElementById('contactForm').reset();
+        }
+        
+        // Toggle message form dropdown
+        function toggleMessageForm() {
+            const content = document.getElementById('messageFormContent');
+            const arrow = document.getElementById('messageFormArrow');
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                arrow.style.transform = 'rotate(180deg)';
+            } else {
+                content.style.display = 'none';
+                arrow.style.transform = 'rotate(0deg)';
+            }
+        }
+    </script>
+
+    <!-- Floating Did You Know Button -->
+    <div class="floating-dyk-btn" onclick="showDykModal()">
+        <i class="fas fa-lightbulb"></i>
+        <span>Did You Know?</span>
+    </div>
+    <div class="modal-overlay" id="dykModal" style="display: none;">
+        <div class="modal-content activities-modal">
+            <div class="modal-header" style="background: linear-gradient(135deg, #1565C0, #0D47A1);">
+                <h3><i class="fas fa-lightbulb"></i> Did You Know?</h3>
+                <button class="modal-close" onclick="closeDykModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="activities-modal-list">
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-tongue'" style="border-left: 4px solid #C62828;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #C62828, #B71C1C);"><i class="fas fa-comment-slash"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #C62828;">Backbiting & The Tongue</h4><p>Terrifying hadiths about gheebah, slander & idle talk</p></div>
+                    <i class="fas fa-chevron-right" style="color: #C62828;"></i>
+                </div>
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-dress'" style="border-left: 4px solid #6A1B9A;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #6A1B9A, #4A148C);"><i class="fas fa-user-shield"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #6A1B9A;">Dress, Hair & Modesty</h4><p>What Islam says about hair, hijab & clothing</p></div>
+                    <i class="fas fa-chevron-right" style="color: #6A1B9A;"></i>
+                </div>
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-warnings'" style="border-left: 4px solid #E65100;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #E65100, #BF360C);"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #E65100;">Warnings People Ignore</h4><p>Lying, hypocrisy, arrogance, riba & more</p></div>
+                    <i class="fas fa-chevron-right" style="color: #E65100;"></i>
+                </div>
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html'" style="border-left: 4px solid #1565C0;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #1565C0, #0D47A1);"><i class="fas fa-book-open"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #1565C0;">View All Sections</h4><p>Deeds, character, worship & more authentic knowledge</p></div>
+                    <i class="fas fa-chevron-right" style="color: #1565C0;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    function showDykModal(){document.getElementById('dykModal').style.display='flex';}
+    function closeDykModal(){document.getElementById('dykModal').style.display='none';}
+    document.addEventListener('DOMContentLoaded',function(){var o=document.getElementById('dykModal');if(o)o.addEventListener('click',function(e){if(e.target===this)closeDykModal();});});
+    </script>
+
+    <!-- Floating Hot Events Button -->
+    <div class="floating-kizumu-btn" onclick="showActivitiesModal()" style="background: linear-gradient(135deg, #ff6b35, #e74c3c); animation: pulse-hot 1.5s infinite; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5);">
+        <i class="fas fa-fire" style="color: #fff;"></i>
+        <span style="font-weight: bold;">HOT EVENTS!</span>
+    </div>
+    <style>
+    @keyframes pulse-hot {
+        0%, 100% { transform: scale(1); box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5); }
+        50% { transform: scale(1.05); box-shadow: 0 6px 20px rgba(231, 76, 60, 0.7); }
+    }
+    </style>
+
+    <!-- Activities Modal -->
+    <div class="modal-overlay" id="activitiesModal" style="display: none;">
+        <div class="modal-content activities-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-fire" style="color: #ff6b35;"></i> Hot Events - Act Now!</h3>
+                <button class="modal-close" onclick="closeActivitiesModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="activities-modal-list">
+                <div class="activity-modal-item" onclick="window.location.href='activities.html#charity-visit'" style="border-left: 4px solid #ff6b35;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #ff6b35, #e74c3c);">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4 style="color: #2e7d32;">Kizumu Tahfiz Visit — Ongoing</h4>
+                        <p>JazakAllahu Khairan! Program continues individually & in communities.</p>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color: #e74c3c;"></i>
+                </div>
+
+                <div class="activity-modal-item" onclick="window.location.href='activities.html#quran-competition'" style="border-left: 4px solid #9c27b0;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #9c27b0, #673ab7);">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4 style="color: #9c27b0;">Quran Competition — FINISHED</h4>
+                        <p>Thank you for participating! Results and media released soon.</p>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color: #9c27b0;"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="contactTuition()">
+                    <div class="activity-modal-icon" style="background: var(--primary-green);">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Tuition Brothers & Sisters</h4>
+                        <p>Support brothers' and sisters' education</p>
+                    </div>
+                    <i class="fab fa-whatsapp" style="color: #25D366; font-size: 18px;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

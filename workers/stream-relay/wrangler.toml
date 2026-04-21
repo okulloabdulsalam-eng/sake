@@ -1,0 +1,15 @@
+name = "kiuma-stream-relay"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[[kv_namespaces]]
+binding = "YOUTUBE_TOKENS"
+id = "8843a750d1c14434b04b49c508fbea06"
+
+[[r2_buckets]]
+binding = "STREAMS"
+bucket_name = "kiuma-streams"
+
+[vars]
+# Set these via: wrangler secret put GOOGLE_CLIENT_ID
+# and: wrangler secret put GOOGLE_CLIENT_SECRET

@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="description" content="KIUMA Live Broadcast - Go live for your community">
+    <title>Go Live - KIUMA</title>
+    <link rel="icon" href="logo.png" type="image/png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+        :root{--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);--safe-left:env(safe-area-inset-left,0px);--safe-right:env(safe-area-inset-right,0px);--red:#e53935;--green:#4CAF50;--glass:rgba(0,0,0,0.45);--glass-border:rgba(255,255,255,0.08)}
+        html,body{width:100%;height:100%;overflow:hidden;background:#000;color:#fff;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+
+        /* ===== CAMERA STAGE ===== */
+        .stage{position:fixed;inset:0;background:#111;display:flex;align-items:center;justify-content:center}
+        #cameraFeed{width:100%;height:100%;object-fit:cover;display:block;transform:scaleX(-1)}
+
+        /* ===== PRE-STREAM SETUP OVERLAY ===== */
+        .setup-overlay{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;transition:opacity .35s,transform .35s}
+        .setup-overlay.hiding{opacity:0;transform:scale(1.05);pointer-events:none}
+        .setup-card{width:100%;max-width:400px}
+        .setup-header{text-align:center;margin-bottom:32px}
+        .setup-header h1{font-size:24px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px}
+        .setup-header p{font-size:13px;color:rgba(255,255,255,.5)}
+        .setup-header .cam-circle{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--red),#ff5722);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:32px;box-shadow:0 4px 24px rgba(229,57,53,.3)}
+        .field{margin-bottom:16px}
+        .field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,.45);margin-bottom:6px}
+        .field input,.field select,.field textarea{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px 16px;color:#fff;font-size:15px;font-family:inherit;outline:none;transition:border .2s}
+        .field input:focus,.field select:focus,.field textarea:focus{border-color:rgba(76,175,80,.5)}
+        .field input::placeholder,.field textarea::placeholder{color:rgba(255,255,255,.25)}
+        .field select option{background:#1a1a1a;color:#fff}
+        .field textarea{resize:none;min-height:60px}
+        .go-live-btn{width:100%;padding:16px;border:none;border-radius:14px;background:linear-gradient(135deg,var(--red),#d32f2f);color:#fff;font-size:16px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-top:8px;transition:transform .15s,box-shadow .15s;box-shadow:0 4px 20px rgba(229,57,53,.35)}
+        .go-live-btn:hover{transform:scale(1.02);box-shadow:0 6px 28px rgba(229,57,53,.45)}
+        .go-live-btn:active{transform:scale(.98)}
+        .go-live-btn:disabled{opacity:.5;pointer-events:none}
+        .go-live-btn i{font-size:14px}
+        .setup-back{position:absolute;top:calc(16px + var(--safe-top));left:16px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid var(--glass-border);color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;text-decoration:none;z-index:101}
+        .setup-back:hover{background:rgba(255,255,255,.2)}
+
+        /* ===== TOP BAR (live mode) ===== */
+        .top-bar{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:calc(12px + var(--safe-top)) 16px 12px;background:linear-gradient(to bottom,rgba(0,0,0,.65) 0%,rgba(0,0,0,.25) 60%,transparent 100%);z-index:20;opacity:0;pointer-events:none;transition:opacity .3s}
+        .top-bar.visible{opacity:1;pointer-events:auto}
+        .top-left{display:flex;align-items:center;gap:8px}
+        .end-btn{padding:7px 16px;border-radius:20px;background:var(--red);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;transition:background .2s}
+        .end-btn:hover{background:#c62828}
+        .live-badge{display:flex;align-items:center;gap:5px;background:var(--red);padding:5px 12px;border-radius:20px;font-size:11px;font-weight:800;letter-spacing:1px;box-shadow:0 0 12px rgba(229,57,53,.5)}
+        .live-badge .dot{width:6px;height:6px;background:#fff;border-radius:50%;animation:pulse-dot 1.4s ease-in-out infinite}
+        @keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.7)}}
+        .timer-badge{background:var(--glass);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid var(--glass-border);font-variant-numeric:tabular-nums}
+        .top-right{display:flex;align-items:center;gap:8px}
+        .stat-pill{background:var(--glass);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:5px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid var(--glass-border);display:flex;align-items:center;gap:5px;color:rgba(255,255,255,.85)}
+        .stat-pill i{font-size:10px}
+        .stat-pill.good{border-color:rgba(76,175,80,.3);color:#81C784}
+        .stat-pill.medium{border-color:rgba(255,152,0,.3);color:#FFB74D}
+        .stat-pill.poor{border-color:rgba(244,67,54,.3);color:#E57373}
+
+        /* ===== BOTTOM INFO (live mode) ===== */
+        .bottom-bar{position:fixed;bottom:0;left:0;right:0;padding:40px 16px calc(16px + var(--safe-bottom));background:linear-gradient(to top,rgba(0,0,0,.6) 0%,rgba(0,0,0,.25) 50%,transparent 100%);z-index:20;opacity:0;pointer-events:none;transition:opacity .3s;display:flex;align-items:flex-end;justify-content:space-between}
+        .bottom-bar.visible{opacity:1;pointer-events:auto}
+        .stream-info-bar{flex:1;min-width:0;padding-right:16px}
+        .stream-title-bar{font-size:15px;font-weight:700;margin-bottom:3px;text-shadow:0 1px 4px rgba(0,0,0,.5);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+        .stream-meta-bar{font-size:11px;color:rgba(255,255,255,.55);display:flex;gap:8px;align-items:center}
+        .stream-meta-bar i{font-size:9px;color:rgba(255,255,255,.35)}
+
+        /* ===== SIDE CONTROLS (right edge) ===== */
+        .side-controls{display:flex;flex-direction:column;align-items:center;gap:18px;flex-shrink:0}
+        .ctrl{display:flex;flex-direction:column;align-items:center}
+        .ctrl-btn{width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.1);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.1);color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;position:relative}
+        .ctrl-btn:hover{background:rgba(255,255,255,.22);transform:scale(1.08)}
+        .ctrl-btn:active{transform:scale(.95)}
+        .ctrl-btn.active{background:rgba(76,175,80,.2);color:var(--green);border-color:rgba(76,175,80,.3)}
+        .ctrl-btn.danger{background:rgba(229,57,53,.15);color:#E57373;border-color:rgba(229,57,53,.3)}
+        .ctrl-btn.off{color:#E57373;border-color:rgba(229,57,53,.25)}
+        .ctrl-lbl{font-size:9px;font-weight:600;margin-top:3px;color:rgba(255,255,255,.45);text-align:center;letter-spacing:.3px}
+
+        /* ===== STATS PANEL ===== */
+        .stats-panel{position:fixed;top:calc(70px + var(--safe-top));right:12px;width:220px;background:rgba(15,15,15,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--glass-border);border-radius:16px;padding:14px;z-index:30;opacity:0;transform:translateX(20px);pointer-events:none;transition:all .25s cubic-bezier(.32,.72,0,1)}
+        .stats-panel.visible{opacity:1;transform:translateX(0);pointer-events:auto}
+        .stats-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.4);margin-bottom:10px}
+        .stat-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px}
+        .stat-label{color:rgba(255,255,255,.5)}
+        .stat-value{font-weight:700;font-variant-numeric:tabular-nums}
+        .stat-value.good{color:#81C784}
+        .stat-value.medium{color:#FFB74D}
+        .stat-value.poor{color:#E57373}
+
+        /* ===== END CONFIRM ===== */
+        .end-confirm-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;opacity:0;pointer-events:none;transition:opacity .2s;display:flex;align-items:center;justify-content:center}
+        .end-confirm-backdrop.open{opacity:1;pointer-events:auto}
+        .end-confirm{background:#1a1a1a;border-radius:20px;padding:28px 24px;max-width:320px;width:90%;text-align:center}
+        .end-confirm h3{font-size:18px;font-weight:800;margin-bottom:6px}
+        .end-confirm p{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:20px;line-height:1.5}
+        .end-confirm-btns{display:flex;gap:10px}
+        .end-confirm-btns button{flex:1;padding:14px;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;transition:background .15s}
+        .ec-cancel{background:rgba(255,255,255,.08);color:#fff}
+        .ec-cancel:hover{background:rgba(255,255,255,.14)}
+        .ec-end{background:var(--red);color:#fff}
+        .ec-end:hover{background:#c62828}
+
+        /* ===== TOAST ===== */
+        .toast{position:fixed;top:calc(70px + var(--safe-top));left:50%;transform:translateX(-50%) translateY(-20px);background:rgba(30,30,30,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--glass-border);padding:10px 20px;border-radius:28px;font-size:12px;font-weight:600;color:rgba(255,255,255,.85);z-index:300;opacity:0;pointer-events:none;transition:all .3s cubic-bezier(.32,.72,0,1);white-space:nowrap;display:flex;align-items:center;gap:8px;max-width:90vw}
+        .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+        .toast i{font-size:14px}
+        .toast.success i{color:var(--green)}
+        .toast.error i{color:#E57373}
+        .toast.info i{color:#64B5F6}
+
+        /* ===== LATENCY OVERLAY ===== */
+        .latency-overlay{position:fixed;bottom:calc(80px + var(--safe-bottom));left:12px;display:flex;gap:6px;z-index:15;opacity:0;pointer-events:none;transition:opacity .3s}
+        .latency-overlay.visible{opacity:1}
+        .lat-pill{background:rgba(0,0,0,.55);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--glass-border);padding:4px 10px;border-radius:16px;font-size:10px;font-weight:600;display:flex;align-items:center;gap:4px;color:rgba(255,255,255,.7);font-variant-numeric:tabular-nums}
+        .lat-pill i{font-size:8px}
+        .lat-pill.good{border-color:rgba(76,175,80,.3);color:#81C784}
+        .lat-pill.medium{border-color:rgba(255,152,0,.3);color:#FFB74D}
+        .lat-pill.poor{border-color:rgba(244,67,54,.3);color:#E57373}
+
+        /* ===== LANDSCAPE ===== */
+        @media(orientation:landscape){.side-controls{gap:12px}.ctrl-btn{width:42px;height:42px;font-size:16px}.ctrl-lbl{font-size:8px}.top-bar{padding-top:calc(8px + var(--safe-top))}.bottom-bar{padding-bottom:calc(10px + var(--safe-bottom))}}
+        @media(min-width:768px){.ctrl-btn{width:52px;height:52px;font-size:20px}.side-controls{gap:20px}.setup-card{max-width:440px}}
+    </style>
+</head>
+<body>
+
+    <!-- ===== CAMERA STAGE ===== -->
+    <div class="stage">
+        <video id="cameraFeed" playsinline autoplay muted></video>
+    </div>
+
+    <!-- ===== PRE-STREAM SETUP ===== -->
+    <div class="setup-overlay" id="setupOverlay">
+        <a href="admin.html" class="setup-back"><i class="fas fa-arrow-left"></i></a>
+        <div class="setup-card">
+            <div class="setup-header">
+                <div class="cam-circle"><i class="fas fa-video"></i></div>
+                <h1>Go Live</h1>
+                <p>Your camera preview is behind this screen</p>
+            </div>
+            <div class="field">
+                <label>Stream Title</label>
+                <input type="text" id="inputTitle" placeholder="What are you streaming?" maxlength="100">
+            </div>
+            <div class="field">
+                <label>Category</label>
+                <select id="inputCategory">
+                    <option value="lecture">Islamic Lecture</option>
+                    <option value="quran">Quran Recitation</option>
+                    <option value="dhikr">Dhikr Session</option>
+                    <option value="event">Community Event</option>
+                    <option value="workshop">Workshop</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Description (optional)</label>
+                <textarea id="inputDesc" placeholder="Brief description..." rows="2"></textarea>
+            </div>
+            <button class="go-live-btn" id="btnGoLive">
+                <i class="fas fa-broadcast-tower"></i>
+                Go Live
+            </button>
+        </div>
+    </div>
+
+    <!-- ===== TOP BAR (visible when live) ===== -->
+    <div class="top-bar" id="topBar">
+        <div class="top-left">
+            <button class="end-btn" id="btnEndStream"><i class="fas fa-stop"></i> End</button>
+            <div class="live-badge"><span class="dot"></span> LIVE</div>
+            <div class="timer-badge" id="timerBadge">00:00</div>
+        </div>
+        <div class="top-right">
+            <div class="stat-pill" id="viewerPill"><i class="fas fa-eye"></i> <span id="viewerNum">0</span></div>
+            <div class="stat-pill" id="netPill"><i class="fas fa-wifi"></i> <span id="netText">--</span></div>
+        </div>
+    </div>
+
+    <!-- ===== BOTTOM BAR (visible when live) ===== -->
+    <div class="bottom-bar" id="bottomBar">
+        <div class="stream-info-bar">
+            <div class="stream-title-bar" id="liveTitle">Stream Title</div>
+            <div class="stream-meta-bar" id="liveMeta">
+                <span><i class="fas fa-tag"></i> Category</span>
+                <span><i class="fas fa-broadcast-tower"></i> KIUMA</span>
+            </div>
+        </div>
+        <div class="side-controls">
+            <div class="ctrl">
+                <button class="ctrl-btn" id="btnFlip" title="Flip Camera"><i class="fas fa-sync-alt"></i></button>
+                <span class="ctrl-lbl">Flip</span>
+            </div>
+            <div class="ctrl">
+                <button class="ctrl-btn" id="btnMic" title="Mute Mic"><i class="fas fa-microphone"></i></button>
+                <span class="ctrl-lbl">Mic</span>
+            </div>
+            <div class="ctrl">
+                <button class="ctrl-btn" id="btnCam" title="Camera On/Off"><i class="fas fa-video"></i></button>
+                <span class="ctrl-lbl">Camera</span>
+            </div>
+            <div class="ctrl">
+                <button class="ctrl-btn" id="btnStats" title="Stats"><i class="fas fa-chart-bar"></i></button>
+                <span class="ctrl-lbl">Stats</span>
+            </div>
+            <div class="ctrl">
+                <button class="ctrl-btn" id="btnShare" title="Share"><i class="fas fa-share"></i></button>
+                <span class="ctrl-lbl">Share</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== STATS PANEL ===== -->
+    <div class="stats-panel" id="statsPanel">
+        <div class="stats-title">Stream Stats</div>
+        <div class="stat-row"><span class="stat-label">Resolution</span><span class="stat-value" id="statRes">--</span></div>
+        <div class="stat-row"><span class="stat-label">FPS</span><span class="stat-value" id="statFps">--</span></div>
+        <div class="stat-row"><span class="stat-label">Bitrate</span><span class="stat-value" id="statBitrate">--</span></div>
+        <div class="stat-row"><span class="stat-label">Viewers</span><span class="stat-value" id="statViewers">0</span></div>
+        <div class="stat-row"><span class="stat-label">Duration</span><span class="stat-value" id="statDuration">00:00</span></div>
+        <div class="stat-row"><span class="stat-label">Network</span><span class="stat-value" id="statNetwork">--</span></div>
+        <div class="stat-row"><span class="stat-label">RTT</span><span class="stat-value" id="statRtt">--</span></div>
+        <div class="stat-row"><span class="stat-label">Packets Lost</span><span class="stat-value" id="statLost">0</span></div>
+    </div>
+
+    <!-- ===== LATENCY OVERLAY (always visible when live) ===== -->
+    <div class="latency-overlay" id="latencyOverlay">
+        <div class="lat-pill" id="latBitratePill"><i class="fas fa-arrow-up"></i> <span id="latBitrate">--</span></div>
+        <div class="lat-pill" id="latRttPill"><i class="fas fa-clock"></i> <span id="latRtt">--</span></div>
+    </div>
+
+    <!-- ===== END CONFIRM DIALOG ===== -->
+    <div class="end-confirm-backdrop" id="endConfirm">
+        <div class="end-confirm">
+            <h3>End Stream?</h3>
+            <p>Your viewers will be disconnected and the stream will be marked as ended.</p>
+            <div class="end-confirm-btns">
+                <button class="ec-cancel" id="ecCancel">Keep Going</button>
+                <button class="ec-end" id="ecEnd">End Stream</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TOAST ===== -->
+    <div class="toast" id="toast"><i class="fas fa-info-circle"></i><span id="toastText"></span></div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+    (() => {
+        'use strict';
+
+        // ---- DOM ----
+        const $ = s => document.querySelector(s);
+        const cameraFeed     = $('#cameraFeed');
+        const setupOverlay   = $('#setupOverlay');
+        const inputTitle     = $('#inputTitle');
+        const inputCategory  = $('#inputCategory');
+        const inputDesc      = $('#inputDesc');
+        const btnGoLive      = $('#btnGoLive');
+        const topBar         = $('#topBar');
+        const bottomBar      = $('#bottomBar');
+        const btnEndStream   = $('#btnEndStream');
+        const timerBadge     = $('#timerBadge');
+        const viewerNum      = $('#viewerNum');
+        const netPill        = $('#netPill');
+        const netText        = $('#netText');
+        const liveTitle      = $('#liveTitle');
+        const liveMeta       = $('#liveMeta');
+        const btnFlip        = $('#btnFlip');
+        const btnMic         = $('#btnMic');
+        const btnCam         = $('#btnCam');
+        const btnStats       = $('#btnStats');
+        const btnShare       = $('#btnShare');
+        const statsPanel     = $('#statsPanel');
+        const endConfirm     = $('#endConfirm');
+        const ecCancel       = $('#ecCancel');
+        const ecEnd          = $('#ecEnd');
+        const toast          = $('#toast');
+        const toastText      = $('#toastText');
+
+        // ---- State ----
+        let mediaStream      = null;
+        let streamId         = null;
+        let streamDoc        = null;
+        let mediaRecorder    = null;  // MediaRecorder for capturing video
+        let relaySocket      = null;  // WebSocket to RTMP relay server
+        let ytBroadcastId    = null;  // YouTube broadcast ID
+        let ytStreamKey      = null;  // YouTube RTMP stream key
+        let ytVideoId        = null;  // YouTube video ID for embed
+        let streamDocUnsub   = null;
+        let timerInterval    = null;
+        let statsInterval    = null;
+        let thumbInterval    = null;
+        let timerSeconds     = 0;
+        let isMuted          = false;
+        let isVideoOff       = false;
+        let videoDevices     = [];
+        let currentDeviceIdx = 0;
+        let statsVisible     = false;
+        let wakeLock         = null;
+        let toastTimer       = null;
+        let heartbeatInterval = null;
+        let relayPingInterval = null;
+        let bytesSentTotal    = 0;
+        let lastBytesSent     = 0;
+        let lastBytesTime     = 0;
+        let cfStreamId        = null;  // R2 chunk stream ID for in-app playback
+        let chunkQueue        = [];    // Queue of chunks to upload to R2
+        let chunkUploading    = false; // R2 upload lock
+        let adaptiveTimer     = null;
+        let currentBitrate    = 2500000; // default Medium
+        let intentionalRelayClose = false;
+        const BITRATE_PRESETS = {
+            Low:    { video: 1000000, audio: 96000, label: 'Low (1 Mbps)' },
+            Medium: { video: 2500000, audio: 128000, label: 'Medium (2.5 Mbps)' },
+            High:   { video: 4000000, audio: 128000, label: 'High (4 Mbps)' }
+        };
+
+        // Worker URL (YouTube API proxy) - set in admin panel Settings tab
+        function getRelayWorkerUrl() {
+            return localStorage.getItem('kiuma_stream_relay_url') || 'https://kiuma-stream-relay.kiuma4.workers.dev';
+        }
+
+        // Railway relay server URL (WebSocket RTMP relay)
+        function getRelayServerUrl() {
+            return localStorage.getItem('kiuma_relay_server_url') || 'https://invigorating-love-production.up.railway.app';
+        }
+
+        // ============================================================
+        //  INIT
+        // ============================================================
+        async function init() {
+            setupButtons();
+            await startCameraPreview();
+            
+            // Check if relay worker is configured
+            const relayUrl = getRelayWorkerUrl();
+            if (!relayUrl) {
+                console.warn('[BROADCAST] Stream relay worker URL not configured. Set it in Admin > Settings.');
+            }
+        }
+
+        // ============================================================
+        //  CAMERA PREVIEW (before going live)
+        // ============================================================
+        async function startCameraPreview() {
+            // Try up to 2 attempts — first with ideal settings, then with minimal constraints
+            const configs = [
+                {
+                    video: {
+                        width: { ideal: 1280, max: 1920 },
+                        height: { ideal: 720, max: 1080 },
+                        frameRate: { ideal: 30, max: 30 },
+                        facingMode: 'user'
+                    },
+                    audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+                },
+                {
+                    video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+                    audio: true
+                },
+                {
+                    video: true,
+                    audio: true
+                }
+            ];
+
+            for (let i = 0; i < configs.length; i++) {
+                try {
+                    console.log(`[BROADCAST] Camera attempt ${i + 1}/${configs.length}`);
+                    mediaStream = await navigator.mediaDevices.getUserMedia(configs[i]);
+
+                    cameraFeed.srcObject = mediaStream;
+                    console.log('[BROADCAST] Camera preview started');
+
+                    // Monitor track ended events (OS revocation, phone call, etc.)
+                    attachTrackEndedHandlers(mediaStream);
+
+                    // Enumerate devices for flip
+                    const devices = await navigator.mediaDevices.enumerateDevices();
+                    videoDevices = devices.filter(d => d.kind === 'videoinput');
+                    console.log('[BROADCAST] Found', videoDevices.length, 'cameras');
+                    return; // success
+                } catch(err) {
+                    console.warn(`[BROADCAST] Camera attempt ${i + 1} failed:`, err.message);
+                    if (i === configs.length - 1) {
+                        console.error('[BROADCAST] All camera attempts failed:', err);
+                        showToast('Camera access failed: ' + err.message, 'error');
+                    }
+                }
+            }
+        }
+
+        // ============================================================
+        //  TRACK ENDED RECOVERY — re-acquire media if OS kills tracks
+        // ============================================================
+        function attachTrackEndedHandlers(stream) {
+            stream.getTracks().forEach(track => {
+                track.onended = () => {
+                    console.log(`[BROADCAST] Track ended: ${track.kind} (${track.label})`);
+                    if (streamId) {
+                        showToast(`${track.kind === 'video' ? 'Camera' : 'Microphone'} interrupted, recovering...`, 'error');
+                        reacquireMedia();
+                    }
+                };
+            });
+        }
+
+        async function reacquireMedia() {
+            try {
+                const conn = navigator.connection;
+                const speed = conn ? conn.downlink : 5;
+                const vw = speed > 3 ? 1280 : speed > 1 ? 640 : 320;
+                const vh = speed > 3 ? 720 : speed > 1 ? 480 : 240;
+
+                const newStream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: vw }, height: { ideal: vh }, facingMode: 'user' },
+                    audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+                });
+
+                // Update local preview
+                cameraFeed.srcObject = newStream;
+                mediaStream = newStream;
+                attachTrackEndedHandlers(newStream);
+
+                // Restart MediaRecorder with new stream if active
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    try {
+                        mediaRecorder.stop();
+                        startMediaRecorder(newStream);
+                        console.log('[BROADCAST] MediaRecorder restarted with new stream');
+                    } catch(e) { console.warn('[BROADCAST] MediaRecorder restart error:', e); }
+                }
+
+                showToast('Camera/mic recovered', 'success');
+                console.log('[BROADCAST] Media re-acquired successfully');
+            } catch(e) {
+                console.error('[BROADCAST] Media re-acquire failed:', e);
+                showToast('Could not recover camera: ' + e.message, 'error');
+            }
+        }
+
+        // ============================================================
+        //  BUTTONS
+        // ============================================================
+        function setupButtons() {
+            btnGoLive.addEventListener('click', goLive);
+            btnEndStream.addEventListener('click', () => endConfirm.classList.add('open'));
+            ecCancel.addEventListener('click', () => endConfirm.classList.remove('open'));
+            ecEnd.addEventListener('click', endStream);
+            btnFlip.addEventListener('click', flipCamera);
+            btnMic.addEventListener('click', toggleMic);
+            btnCam.addEventListener('click', toggleCamera);
+            btnStats.addEventListener('click', toggleStats);
+            btnShare.addEventListener('click', shareStream);
+        }
+
+        // ============================================================
+        //  GO LIVE
+        // ============================================================
+        async function goLive() {
+            const title = inputTitle.value.trim();
+            if (!title) { showToast('Enter a stream title', 'error'); inputTitle.focus(); return; }
+
+            const workerUrl = getRelayWorkerUrl();
+            if (!workerUrl) {
+                showToast('Stream relay worker not configured. Go to Admin > Settings.', 'error');
+                return;
+            }
+            const relayServerUrl = getRelayServerUrl();
+            if (!relayServerUrl) {
+                showToast('RTMP relay server not configured. Go to Admin > Settings.', 'error');
+                return;
+            }
+
+            btnGoLive.disabled = true;
+            btnGoLive.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparing camera...';
+
+            // Guard: if camera stream is not available, retry acquisition
+            if (!mediaStream || mediaStream.getTracks().every(t => t.readyState === 'ended')) {
+                console.log('[BROADCAST] MediaStream not available, retrying camera...');
+                try {
+                    await startCameraPreview();
+                } catch(e) {}
+                // Still no stream? Bail out.
+                if (!mediaStream || mediaStream.getTracks().every(t => t.readyState === 'ended')) {
+                    showToast('Camera not available. Please allow camera access and try again.', 'error');
+                    btnGoLive.disabled = false;
+                    btnGoLive.innerHTML = '<i class="fas fa-broadcast-tower"></i> Go Live';
+                    return;
+                }
+            }
+
+            btnGoLive.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating YouTube broadcast...';
+
+            try {
+                // Wait for Firebase
+                let attempts = 0;
+                while (!window.firebaseDb && attempts < 20) {
+                    await new Promise(r => setTimeout(r, 300));
+                    attempts++;
+                }
+                if (!window.firebaseDb) throw new Error('Firebase not available');
+
+                // Keep local preview muted to avoid echo
+                cameraFeed.muted = true;
+
+                // 1. Create YouTube broadcast via Worker
+                btnGoLive.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating broadcast...';
+                const createRes = await fetch(`${workerUrl}/api/create-broadcast`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: title,
+                        description: inputDesc.value.trim() || 'Live stream from KIUMA',
+                        privacy: 'unlisted'
+                    })
+                });
+                if (!createRes.ok) {
+                    const err = await createRes.json().catch(() => ({}));
+                    throw new Error(err.error || 'Failed to create YouTube broadcast');
+                }
+                const broadcastData = await createRes.json();
+                ytBroadcastId = broadcastData.broadcastId;
+                ytStreamKey = broadcastData.streamKey;
+                ytVideoId = broadcastData.videoId;
+                console.log('[BROADCAST] YouTube broadcast created:', ytBroadcastId);
+
+                // 1b. Also start R2 chunk stream for in-app playback
+                const actualMimeType = detectRecorderMimeType();
+                try {
+                    const r2Res = await fetch(`${workerUrl}/stream/start`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            title: title,
+                            mimeType: actualMimeType
+                        })
+                    });
+                    if (r2Res.ok) {
+                        const r2Data = await r2Res.json();
+                        cfStreamId = r2Data.streamId;
+                        console.log('[BROADCAST] R2 stream started:', cfStreamId);
+                    } else {
+                        console.warn('[BROADCAST] R2 stream start failed, in-app playback unavailable');
+                    }
+                } catch(e) {
+                    console.warn('[BROADCAST] R2 stream start error:', e);
+                }
+
+                // 2. Try connecting RTMP relay (optional — R2 streaming works without it)
+                let relayConnected = false;
+                btnGoLive.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting relay...';
+                try {
+                    await connectRelaySocket(relayServerUrl, ytStreamKey, broadcastData.rtmpUrl);
+                    relayConnected = true;
+                } catch(relayErr) {
+                    console.warn('[BROADCAST] Relay unavailable, continuing with R2 only:', relayErr.message);
+                }
+
+                // 3. Start MediaRecorder (sends to relay if connected + R2 chunks)
+                btnGoLive.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting stream...';
+                startMediaRecorder(mediaStream, actualMimeType);
+
+                // 4. Create Firestore doc
+                const data = {
+                    title,
+                    description: inputDesc.value.trim(),
+                    category: inputCategory.value,
+                    status: 'live',
+                    startedAt: new Date().toISOString(),
+                    startedBy: 'admin',
+                    viewerCount: 0,
+                    youtubeVideoId: ytVideoId,
+                    youtubeBroadcastId: ytBroadcastId,
+                    youtubeUrl: broadcastData.youtubeUrl,
+                    embedUrl: broadcastData.embedUrl,
+                    streamType: 'youtube-live',
+                    cfStreamId: cfStreamId || null,
+                    workerUrl: workerUrl,
+                    cameraActive: true
+                };
+
+                const docRef = await window.firebaseDb.collection('liveStreams').add(data);
+                streamId = docRef.id;
+                streamDoc = data;
+                console.log('[BROADCAST] Stream created:', streamId);
+
+                // Capture initial thumbnail
+                captureThumbnail();
+
+                // Show live UI
+                setupOverlay.classList.add('hiding');
+                topBar.classList.add('visible');
+                bottomBar.classList.add('visible');
+                liveTitle.textContent = title;
+                const relayTag = relayConnected
+                    ? '<span><i class="fab fa-youtube" style="color:#ff0000"></i> YouTube Live</span>'
+                    : '<span><i class="fas fa-cloud"></i> In-App Only</span>';
+                liveMeta.innerHTML = `<span><i class="fas fa-tag"></i> ${escHtml(inputCategory.value)}</span>${relayTag}`;
+
+                // Start timers
+                startTimer();
+                startStatsPolling();
+                startThumbnailCapture();
+                startViewerCountPolling();
+                startHeartbeat();
+                if (relayConnected) startRelayPing();
+                startAdaptiveBitrate();
+                acquireWakeLock();
+                $('#latencyOverlay').classList.add('visible');
+
+                showToast(relayConnected ? 'You are now live!' : 'You are now live (in-app only, YouTube relay unavailable)', 'success');
+
+            } catch(err) {
+                console.error('[BROADCAST] Go live error:', err);
+                showToast('Failed to start: ' + err.message, 'error');
+                btnGoLive.disabled = false;
+                btnGoLive.innerHTML = '<i class="fas fa-broadcast-tower"></i> Go Live';
+                cleanupRelay();
+            }
+        }
+
+        // ============================================================
+        //  YOUTUBE LIVE RTMP RELAY
+        //  Browser → MediaRecorder → WebSocket → Railway FFmpeg → RTMP → YouTube
+        // ============================================================
+
+        function connectRelaySocket(serverUrl, streamKey, rtmpUrl) {
+            return new Promise((resolve, reject) => {
+                const wsProtocol = serverUrl.startsWith('https') ? 'wss' : 'ws';
+                const wsHost = serverUrl.replace(/^https?:\/\//, '');
+                const params = new URLSearchParams({ key: streamKey });
+                if (rtmpUrl) params.set('rtmpUrl', rtmpUrl);
+                const wsUrl = `${wsProtocol}://${wsHost}/rtmp-relay?${params}`;
+
+                console.log('[BROADCAST] Connecting to relay:', wsUrl.replace(streamKey, '****'));
+                relaySocket = new WebSocket(wsUrl);
+                relaySocket.binaryType = 'arraybuffer';
+
+                const timeout = setTimeout(() => { reject(new Error('Relay connection timeout')); relaySocket.close(); }, 15000);
+
+                relaySocket.onopen = () => { clearTimeout(timeout); console.log('[BROADCAST] Relay connected'); resolve(); };
+
+                relaySocket.onmessage = (evt) => {
+                    try {
+                        const msg = JSON.parse(evt.data);
+                        console.log('[BROADCAST] Relay:', msg.type, msg.message);
+                        if (msg.type === 'streaming') { showToast('Streaming to YouTube!', 'success'); transitionToLive(); }
+                        else if (msg.type === 'error' || msg.type === 'ffmpeg-error') { showToast('Relay: ' + msg.message, 'error'); }
+                    } catch(e) {}
+                };
+
+                relaySocket.onclose = () => {
+                    if (streamId && !intentionalRelayClose) { showToast('Relay lost, reconnecting...', 'error'); setTimeout(() => reconnectRelay(), 3000); }
+                    intentionalRelayClose = false;
+                };
+
+                relaySocket.onerror = () => { clearTimeout(timeout); if (!streamId) reject(new Error('Failed to connect to relay')); };
+            });
+        }
+
+        async function reconnectRelay() {
+            if (!streamId || !ytStreamKey) return;
+            const relayServerUrl = getRelayServerUrl();
+            if (!relayServerUrl) return;
+            try {
+                await connectRelaySocket(relayServerUrl, ytStreamKey);
+                // Do NOT restart MediaRecorder — it would create a new WebM init segment
+                // and corrupt the R2 stream. The existing MediaRecorder keeps running;
+                // ondataavailable will send through the new relaySocket automatically.
+                showToast('Relay reconnected', 'success');
+            } catch(e) {
+                console.error('[BROADCAST] Reconnect failed:', e);
+                setTimeout(() => reconnectRelay(), 10000);
+            }
+        }
+
+        async function transitionToLive() {
+            if (!ytBroadcastId) return;
+            const workerUrl = getRelayWorkerUrl();
+            if (!workerUrl) return;
+            try {
+                // Request YouTube to transition to live
+                const res = await fetch(`${workerUrl}/api/go-live`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ broadcastId: ytBroadcastId })
+                });
+                if (!res.ok) {
+                    console.warn('[BROADCAST] Go-live request failed:', res.status);
+                    return;
+                }
+                console.log('[BROADCAST] Go-live requested, polling for YouTube ready...');
+                showToast('Waiting for YouTube to go live...', 'info');
+
+                // Poll YouTube stream status until it's actually live (max 60s)
+                const maxAttempts = 20;
+                for (let i = 0; i < maxAttempts; i++) {
+                    await new Promise(r => setTimeout(r, 3000));
+                    try {
+                        const statusRes = await fetch(`${workerUrl}/api/stream-status/${ytBroadcastId}`);
+                        if (statusRes.ok) {
+                            const statusData = await statusRes.json();
+                            const lifecycleStatus = statusData.lifeCycleStatus || statusData.status;
+                            console.log('[BROADCAST] YouTube status:', lifecycleStatus);
+                            if (lifecycleStatus === 'live') {
+                                showToast('YouTube broadcast is LIVE!', 'success');
+                                return;
+                            }
+                            if (lifecycleStatus === 'complete' || lifecycleStatus === 'revoked') {
+                                showToast('YouTube broadcast ended unexpectedly', 'error');
+                                return;
+                            }
+                        }
+                    } catch(pollErr) {
+                        console.warn('[BROADCAST] Status poll error:', pollErr);
+                    }
+                }
+                showToast('YouTube may still be starting — viewers can join', 'info');
+            } catch(e) { console.warn('[BROADCAST] Go-live transition error:', e); }
+        }
+
+        function detectRecorderMimeType() {
+            // VP8/VP9+opus in WebM — works with both MediaRecorder AND MSE playback
+            // H.264 in WebM is NOT supported by MSE, so avoid it
+            const mimeTypes = [
+                'video/webm;codecs=vp8,opus',
+                'video/webm;codecs=vp8',
+                'video/webm;codecs=vp9,opus',
+                'video/webm;codecs=vp9',
+                'video/webm',
+            ];
+            for (const mt of mimeTypes) {
+                if (MediaRecorder.isTypeSupported(mt)) return mt;
+            }
+            return 'video/webm';
+        }
+
+        function startMediaRecorder(stream, mimeType) {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                try { mediaRecorder.stop(); } catch(e) {}
+            }
+            if (!mimeType) mimeType = detectRecorderMimeType();
+            console.log('[BROADCAST] MediaRecorder using:', mimeType);
+
+            mediaRecorder = new MediaRecorder(stream, {
+                mimeType,
+                videoBitsPerSecond: currentBitrate,
+                audioBitsPerSecond: BITRATE_PRESETS[currentBitrate === 1000000 ? 'Low' : currentBitrate === 2500000 ? 'Medium' : 'High'].audio,
+            });
+
+            mediaRecorder.ondataavailable = (evt) => {
+                if (evt.data && evt.data.size > 0) {
+                    // Send to RTMP relay via WebSocket
+                    if (relaySocket && relaySocket.readyState === WebSocket.OPEN) {
+                        relaySocket.send(evt.data);
+                    }
+                    bytesSentTotal += evt.data.size;
+                    // Also queue for R2 chunk upload (in-app playback)
+                    if (cfStreamId) {
+                        chunkQueue.push(evt.data);
+                        processR2ChunkQueue();
+                    }
+                }
+            };
+
+            mediaRecorder.onerror = (evt) => {
+                console.error('[BROADCAST] MediaRecorder error:', evt.error);
+                showToast('Recording error: ' + (evt.error?.message || 'Unknown'), 'error');
+            };
+
+            mediaRecorder.start(1000);
+            console.log('[BROADCAST] MediaRecorder started (1s chunks)');
+        }
+
+        // R2 chunk upload queue processor
+        async function processR2ChunkQueue() {
+            if (chunkUploading || chunkQueue.length === 0 || !cfStreamId) return;
+            chunkUploading = true;
+            const workerUrl = getRelayWorkerUrl();
+            while (chunkQueue.length > 0) {
+                const chunk = chunkQueue.shift();
+                try {
+                    await fetch(`${workerUrl}/stream/${cfStreamId}/chunk`, {
+                        method: 'POST',
+                        body: chunk
+                    });
+                } catch(e) {
+                    console.warn('[BROADCAST] R2 chunk upload failed:', e);
+                }
+            }
+            chunkUploading = false;
+        }
+
+        function startAdaptiveBitrate() {
+            stopAdaptiveBitrate();
+            adaptiveTimer = setInterval(async () => {
+                if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
+                const conn = navigator.connection;
+                if (!conn) return;
+
+                let targetPreset = 'Medium';
+                const et = conn.effectiveType;
+                const dl = conn.downlink;
+                const rtt = conn.rtt;
+
+                // Choose preset based on network quality
+                if (et === 'slow-2g' || et === '2g' || dl < 1.5) {
+                    targetPreset = 'Low';
+                } else if (et === '3g' || (dl >= 1.5 && dl < 4)) {
+                    targetPreset = 'Medium';
+                } else if (et === '4g' || et === '5g' || dl >= 4) {
+                    targetPreset = 'High';
+                }
+
+                // Adjust for high RTT
+                if (rtt > 800 && targetPreset === 'High') targetPreset = 'Medium';
+                if (rtt > 1200 && targetPreset === 'Medium') targetPreset = 'Low';
+
+                const targetBitrate = BITRATE_PRESETS[targetPreset].video;
+                if (targetBitrate !== currentBitrate) {
+                    console.log(`[BROADCAST] Adaptive bitrate: ${Object.keys(BITRATE_PRESETS).find(k => BITRATE_PRESETS[k].video === currentBitrate)} → ${targetPreset}`);
+                    currentBitrate = targetBitrate;
+                    // To change bitrate we must restart MediaRecorder, which emits a new
+                    // WebM header.  FFmpeg can't handle a second header mid-stream, so we
+                    // also need to close the old relay socket (killing the old FFmpeg) and
+                    // open a fresh one so the new MediaRecorder output arrives cleanly.
+                    try {
+                        if (mediaRecorder.state === 'recording') mediaRecorder.stop();
+                        // Close old relay so server kills the old FFmpeg process
+                        if (relaySocket && relaySocket.readyState === WebSocket.OPEN) {
+                            intentionalRelayClose = true;
+                            try { relaySocket.send(JSON.stringify({ type: 'stop' })); } catch(e) {}
+                            relaySocket.close();
+                        }
+                        // Open a fresh relay → fresh FFmpeg
+                        const relayServerUrl = getRelayServerUrl();
+                        if (relayServerUrl && ytStreamKey) {
+                            try {
+                                await connectRelaySocket(relayServerUrl, ytStreamKey, 'rtmp://a.rtmp.youtube.com/live2');
+                            } catch(e) {
+                                console.warn('[BROADCAST] Relay reconnect after bitrate change failed:', e);
+                            }
+                        }
+                        // Now start MediaRecorder — its fresh WebM header goes to the fresh FFmpeg
+                        startMediaRecorder(mediaStream);
+                        showToast(`Quality: ${BITRATE_PRESETS[targetPreset].label}`, 'info');
+                    } catch(e) {
+                        console.warn('[BROADCAST] Failed to restart for adaptive bitrate:', e);
+                    }
+                }
+            }, 10000);
+        }
+
+        function stopAdaptiveBitrate() {
+            if (adaptiveTimer) { clearInterval(adaptiveTimer); adaptiveTimer = null; }
+        }
+
+        function cleanupRelay() {
+            stopAdaptiveBitrate();
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                try { mediaRecorder.stop(); } catch(e) {}
+            }
+            mediaRecorder = null;
+
+            if (relaySocket) {
+                try { relaySocket.send(JSON.stringify({ type: 'stop' })); } catch(e) {}
+                try { relaySocket.close(); } catch(e) {}
+                relaySocket = null;
+            }
+
+            // Stop R2 stream
+            if (cfStreamId) {
+                const workerUrl = getRelayWorkerUrl();
+                fetch(`${workerUrl}/stream/${cfStreamId}/stop`, { method: 'POST' }).catch(() => {});
+                cfStreamId = null;
+                chunkQueue = [];
+                chunkUploading = false;
+            }
+
+            if (relayPingInterval) { clearInterval(relayPingInterval); relayPingInterval = null; }
+            ytBroadcastId = null;
+            ytStreamKey = null;
+            ytVideoId = null;
+        }
+
+        function startRelayPing() {
+            if (relayPingInterval) clearInterval(relayPingInterval);
+            relayPingInterval = setInterval(() => {
+                if (relaySocket && relaySocket.readyState === WebSocket.OPEN) {
+                    try { relaySocket.send(JSON.stringify({ type: 'ping' })); } catch(e) {}
+                }
+            }, 30000);
+        }
+
+        // ============================================================
+        //  THUMBNAIL CAPTURE — periodic frame capture to Firestore
+        // ============================================================
+        function captureThumbnail() {
+            try {
+                const canvas = document.createElement('canvas');
+                const vTrack = mediaStream.getVideoTracks()[0];
+                if (!vTrack) return;
+                const settings = vTrack.getSettings();
+                canvas.width = 160;
+                canvas.height = Math.round(160 * (settings.height || 720) / (settings.width || 1280));
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(cameraFeed, 0, 0, canvas.width, canvas.height);
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
+
+                if (streamId && window.firebaseDb) {
+                    window.firebaseDb.collection('liveStreams').doc(streamId).update({
+                        thumbnail: dataUrl,
+                        lastThumbAt: new Date().toISOString()
+                    }).catch(() => {});
+                }
+            } catch(e) {}
+        }
+
+        function startThumbnailCapture() {
+            thumbInterval = setInterval(captureThumbnail, 30000); // Every 30s
+        }
+
+        // ============================================================
+        //  BROADCASTER CONTROLS
+        // ============================================================
+        function toggleMic() {
+            const audioTracks = mediaStream.getAudioTracks();
+            if (audioTracks.length === 0) return;
+            isMuted = !isMuted;
+            audioTracks[0].enabled = !isMuted;
+            btnMic.querySelector('i').className = isMuted ? 'fas fa-microphone-slash' : 'fas fa-microphone';
+            btnMic.classList.toggle('off', isMuted);
+            showToast(isMuted ? 'Mic muted' : 'Mic on', 'info');
+        }
+
+        function toggleCamera() {
+            const videoTracks = mediaStream.getVideoTracks();
+            if (videoTracks.length === 0) return;
+            isVideoOff = !isVideoOff;
+            videoTracks[0].enabled = !isVideoOff;
+            btnCam.querySelector('i').className = isVideoOff ? 'fas fa-video-slash' : 'fas fa-video';
+            btnCam.classList.toggle('off', isVideoOff);
+            showToast(isVideoOff ? 'Camera off' : 'Camera on', 'info');
+        }
+
+        async function flipCamera() {
+            if (videoDevices.length < 2) { showToast('Only one camera', 'error'); return; }
+
+            try {
+                // Stop current tracks
+                mediaStream.getTracks().forEach(t => t.stop());
+
+                currentDeviceIdx = (currentDeviceIdx + 1) % videoDevices.length;
+                const nextDev = videoDevices[currentDeviceIdx];
+
+                const newStream = await navigator.mediaDevices.getUserMedia({
+                    video: { deviceId: { exact: nextDev.deviceId } },
+                    audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+                });
+
+                cameraFeed.srcObject = newStream;
+                mediaStream = newStream;
+
+                // Mirror front camera, don't mirror back
+                cameraFeed.style.transform = currentDeviceIdx === 0 ? 'scaleX(-1)' : 'scaleX(1)';
+
+                // Restart MediaRecorder with new stream
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    try { mediaRecorder.stop(); } catch(e) {}
+                    startMediaRecorder(newStream);
+                }
+
+                showToast('Camera flipped', 'success');
+            } catch(err) {
+                showToast('Flip failed: ' + err.message, 'error');
+            }
+        }
+
+        function toggleStats() {
+            statsVisible = !statsVisible;
+            statsPanel.classList.toggle('visible', statsVisible);
+            btnStats.classList.toggle('active', statsVisible);
+        }
+
+        function shareStream() {
+            const url = window.location.origin + '/live-streaming.html';
+            const title = liveTitle.textContent || 'KIUMA Live';
+            if (navigator.share) {
+                navigator.share({ title, text: `Watch "${title}" live on KIUMA`, url });
+            } else {
+                navigator.clipboard.writeText(url).then(() => showToast('Link copied!', 'success'));
+            }
+        }
+
+        // ============================================================
+        //  END STREAM
+        // ============================================================
+        async function endStream() {
+            endConfirm.classList.remove('open');
+
+            try {
+                // Stop timers
+                clearInterval(timerInterval);
+                clearInterval(statsInterval);
+                clearInterval(thumbInterval);
+                stopHeartbeat();
+
+                // Stop camera
+                if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+
+                // Save broadcast ID before cleanup nulls it
+                const savedBroadcastId = ytBroadcastId;
+
+                // Cleanup relay (MediaRecorder + WebSocket)
+                cleanupRelay();
+                if (streamDocUnsub) { streamDocUnsub(); streamDocUnsub = null; }
+
+                // End YouTube broadcast
+                const workerUrl = getRelayWorkerUrl();
+                if (workerUrl && savedBroadcastId) {
+                    try {
+                        await fetch(`${workerUrl}/api/end-stream`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ broadcastId: savedBroadcastId })
+                        });
+                    } catch(e) { console.warn('[BROADCAST] End YouTube broadcast error:', e); }
+                }
+
+                // Update Firestore
+                if (streamId && window.firebaseDb) {
+                    await window.firebaseDb.collection('liveStreams').doc(streamId).update({
+                        status: 'ended',
+                        endedAt: new Date().toISOString(),
+                        cameraActive: false,
+                        viewerCount: 0
+                    });
+                }
+
+                releaseWakeLock();
+                $('#latencyOverlay').classList.remove('visible');
+                showToast('Stream ended', 'info');
+
+                // Redirect back to admin after a short delay
+                setTimeout(() => { window.location.href = 'admin.html'; }, 1500);
+
+            } catch(err) {
+                console.error('[BROADCAST] End error:', err);
+                window.location.href = 'admin.html';
+            }
+        }
+
+        // ============================================================
+        //  TIMER
+        // ============================================================
+        function startTimer() {
+            timerSeconds = 0;
+            timerInterval = setInterval(() => {
+                timerSeconds++;
+                const m = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+                const s = (timerSeconds % 60).toString().padStart(2, '0');
+                const display = timerSeconds >= 3600
+                    ? `${Math.floor(timerSeconds/3600)}:${m.slice(-2)}:${s}`
+                    : `${m}:${s}`;
+                timerBadge.textContent = display;
+                $('#statDuration').textContent = display;
+            }, 1000);
+        }
+
+        // ============================================================
+        //  STATS POLLING — WebRTC getStats + network API
+        // ============================================================
+        function startStatsPolling() {
+            statsInterval = setInterval(async () => {
+                // Network speed
+                const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+                if (conn && conn.downlink) {
+                    const s = conn.downlink;
+                    netPill.className = 'stat-pill' + (s > 5 ? ' good' : s > 1 ? ' medium' : ' poor');
+                    netText.textContent = s.toFixed(s > 5 ? 0 : 1) + ' Mbps';
+                    const statNet = $('#statNetwork');
+                    statNet.textContent = s.toFixed(1) + ' Mbps';
+                    statNet.className = 'stat-value' + (s > 5 ? ' good' : s > 1 ? ' medium' : ' poor');
+                }
+
+                // Video track info
+                if (mediaStream) {
+                    const vTrack = mediaStream.getVideoTracks()[0];
+                    if (vTrack) {
+                        const settings = vTrack.getSettings();
+                        if (settings.width) $('#statRes').textContent = `${settings.width}x${settings.height}`;
+                        if (settings.frameRate) $('#statFps').textContent = Math.round(settings.frameRate) + ' fps';
+                    }
+                }
+
+                // Relay upload stats (from MediaRecorder bytes sent)
+                if (bytesSentTotal > 0 && lastBytesTime > 0) {
+                    const elapsed = (Date.now() - lastBytesTime) / 1000;
+                    if (elapsed > 0) {
+                        const bps = ((bytesSentTotal - lastBytesSent) * 8) / elapsed;
+                        const kbps = Math.round(bps / 1000);
+                        const statBr = $('#statBitrate');
+                        statBr.textContent = kbps > 1000 ? (kbps/1000).toFixed(1) + ' Mbps' : kbps + ' kbps';
+                        statBr.className = 'stat-value' + (kbps > 500 ? ' good' : kbps > 100 ? ' medium' : ' poor');
+                        const latBrEl = $('#latBitrate');
+                        latBrEl.textContent = kbps > 1000 ? (kbps/1000).toFixed(1) + ' Mbps' : kbps + ' kbps';
+                        const latBrPill = $('#latBitratePill');
+                        latBrPill.className = 'lat-pill' + (kbps > 500 ? ' good' : kbps > 100 ? ' medium' : ' poor');
+                    }
+                }
+                lastBytesSent = bytesSentTotal;
+                lastBytesTime = Date.now();
+
+                // Relay connection status
+                const relayConnected = relaySocket && relaySocket.readyState === WebSocket.OPEN;
+                const statRttEl = $('#statRtt');
+                statRttEl.textContent = relayConnected ? 'Connected' : 'Disconnected';
+                statRttEl.className = 'stat-value' + (relayConnected ? ' good' : ' poor');
+                const latRttEl = $('#latRtt');
+                latRttEl.textContent = relayConnected ? 'OK' : 'Down';
+                const latRttPill = $('#latRttPill');
+                latRttPill.className = 'lat-pill' + (relayConnected ? ' good' : ' poor');
+                $('#statLost').textContent = relayConnected ? '0' : 'N/A';
+            }, 3000);
+        }
+
+        // ============================================================
+        //  VIEWER COUNT POLLING
+        // ============================================================
+        function startViewerCountPolling() {
+            // Poll viewer count from Firestore
+            setInterval(async () => {
+                if (!streamId || !window.firebaseDb) return;
+                try {
+                    const doc = await window.firebaseDb.collection('liveStreams').doc(streamId).get();
+                    const d = doc.data();
+                    if (d) {
+                        viewerNum.textContent = Math.max(0, d.viewerCount || 0);
+                        $('#statViewers').textContent = Math.max(0, d.viewerCount || 0);
+                    }
+                } catch(e) {}
+            }, 10000);
+        }
+
+        // ============================================================
+        //  BROADCASTER HEARTBEAT — write timestamp every 15s
+        // ============================================================
+        function startHeartbeat() {
+            stopHeartbeat();
+            writeHeartbeat(); // Write immediately
+            heartbeatInterval = setInterval(writeHeartbeat, 15000);
+        }
+
+        function stopHeartbeat() {
+            if (heartbeatInterval) { clearInterval(heartbeatInterval); heartbeatInterval = null; }
+        }
+
+        function writeHeartbeat() {
+            if (!streamId || !window.firebaseDb) return;
+            window.firebaseDb.collection('liveStreams').doc(streamId).update({
+                lastHeartbeat: new Date().toISOString()
+            }).catch(() => {});
+        }
+
+        // ============================================================
+        //  WAKE LOCK
+        // ============================================================
+        async function acquireWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLock.addEventListener('release', () => { wakeLock = null; });
+                }
+            } catch(e) {}
+        }
+        function releaseWakeLock() {
+            if (wakeLock) { try { wakeLock.release(); } catch(e) {} wakeLock = null; }
+        }
+
+        // Re-acquire on visibility change
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && streamId) acquireWakeLock();
+        });
+
+        // Online/offline awareness
+        window.addEventListener('offline', () => {
+            console.log('[BROADCAST] Network offline');
+            if (streamId) {
+                showToast('Network offline — stream may be interrupted', 'error');
+                stopHeartbeat(); // Pause heartbeat to avoid queueing writes
+            }
+        });
+
+        window.addEventListener('online', () => {
+            console.log('[BROADCAST] Network back online');
+            if (streamId) {
+                showToast('Network restored', 'success');
+                startHeartbeat(); // Resume heartbeat
+                writeHeartbeat(); // Immediately signal liveness
+            }
+        });
+
+        // Cleanup on page leave — use sendBeacon + keepalive fetch for reliability
+        window.addEventListener('beforeunload', () => {
+            // 1. Beacon R2 worker to mark stream ended (survives tab close)
+            if (cfStreamId) {
+                const workerUrl = getRelayWorkerUrl();
+                if (workerUrl) {
+                    const beaconUrl = `${workerUrl}/stream/${cfStreamId}/end-notify`;
+                    // sendBeacon is fire-and-forget, survives page unload
+                    if (navigator.sendBeacon) {
+                        navigator.sendBeacon(beaconUrl, '{}');
+                    }
+                    // Backup: keepalive fetch (works on browsers without sendBeacon)
+                    try {
+                        fetch(beaconUrl, {
+                            method: 'POST',
+                            body: '{}',
+                            keepalive: true,
+                            headers: { 'Content-Type': 'application/json' }
+                        }).catch(() => {});
+                    } catch(e) {}
+                }
+            }
+
+            // 2. Best-effort Firestore update (may not complete on tab close, but helps)
+            if (streamId && window.firebaseDb) {
+                try {
+                    window.firebaseDb.collection('liveStreams').doc(streamId).update({
+                        status: 'ended', endedAt: new Date().toISOString(), cameraActive: false, viewerCount: 0
+                    });
+                } catch(e) {}
+            }
+
+            cleanupRelay();
+            if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+            releaseWakeLock();
+        });
+
+        // Also handle pagehide for mobile browsers (more reliable than beforeunload on iOS/Android)
+        window.addEventListener('pagehide', () => {
+            if (cfStreamId) {
+                const workerUrl = getRelayWorkerUrl();
+                if (workerUrl && navigator.sendBeacon) {
+                    navigator.sendBeacon(`${workerUrl}/stream/${cfStreamId}/end-notify`, '{}');
+                }
+            }
+            if (streamId && window.firebaseDb) {
+                try {
+                    window.firebaseDb.collection('liveStreams').doc(streamId).update({
+                        status: 'ended', endedAt: new Date().toISOString(), cameraActive: false, viewerCount: 0
+                    });
+                } catch(e) {}
+            }
+        });
+
+        // ============================================================
+        //  UTILS
+        // ============================================================
+        function showToast(msg, type = 'info') {
+            clearTimeout(toastTimer);
+            toast.querySelector('i').className = 'fas ' + (type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
+            toast.className = 'toast ' + type;
+            toastText.textContent = msg;
+            requestAnimationFrame(() => toast.classList.add('show'));
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        function escHtml(s) {
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        // ============================================================
+        //  BOOT
+        // ============================================================
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    })();
+    </script>
+</body>
+</html>

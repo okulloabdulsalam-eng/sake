@@ -1,0 +1,20 @@
+name = "kiuma-storage"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# R2 bucket binding
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "kiuma-files"
+
+# Set ADMIN_TOKEN as a secret via:
+#   npx wrangler secret put ADMIN_TOKEN
+# Then enter your chosen password when prompted
+
+# Optional: Direct R2 upload (presigned URLs, no 100MB proxy limit)
+# Add these for Option 2 — create R2 API token in Dashboard → R2 → Manage R2 API Tokens
+# [vars]
+# R2_ACCOUNT_ID = "your-cloudflare-account-id"
+# R2_BUCKET_NAME = "kiuma-files"
+# npx wrangler secret put R2_ACCESS_KEY_ID
+# npx wrangler secret put R2_SECRET_ACCESS_KEY

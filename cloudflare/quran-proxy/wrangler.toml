@@ -1,0 +1,16 @@
+# Quran.Foundation API proxy — deploy with:
+#   wrangler secret put QF_CLIENT_ID
+#   wrangler secret put QF_CLIENT_SECRET
+# Optional: create KV namespace and set kv_namespaces below as QURAN_KV
+
+name = "kiuma-quran"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# [[kv_namespaces]]
+# binding = "QURAN_KV"
+# id = "YOUR_KV_ID"
+
+[vars]
+# production = live Quran.Foundation OAuth + APIs (see dashboard). Use prelive + prelive credentials for test app.
+QF_ENV = "production"

@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subscription Form - KIUMA</title>
+    <script>
+        (function() {
+            var t;
+            try { t = localStorage.getItem('themePreference'); } catch(e) {}
+            if (t === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="styles.min.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    <!-- Font Awesome: CDN primary, local fallback -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="fonts/fontawesome.min.css">
+    <style>
+        .subscription-form-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .plan-summary-card {
+            background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        
+        .plan-summary-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.4rem;
+        }
+        
+        .plan-summary-card .plan-amount {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        
+        .plan-summary-card .plan-type {
+            opacity: 0.9;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        
+        .form-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .form-section h4 {
+            color: var(--dark-green);
+            margin: 0 0 20px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--light-green);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark-gray);
+        }
+        
+        .form-group label .optional-tag {
+            font-weight: normal;
+            color: #888;
+            font-size: 0.85rem;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            box-sizing: border-box;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-green);
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+        }
+        
+        .form-group.hidden {
+            display: none;
+        }
+        
+        .specify-input {
+            margin-top: 10px;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(76, 175, 80, 0.4);
+        }
+        
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+        
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary-green);
+            text-decoration: none;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        .info-note {
+            background: #E3F2FD;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
+        .info-note i {
+            color: #1976D2;
+            margin-top: 2px;
+        }
+        
+        .info-note p {
+            margin: 0;
+            color: #1565C0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="counselling.html" class="nav-link"><i class="fas fa-hands-helping"></i> Counselling</a></li>
+            <li><a href="library.html" class="nav-link"><i class="fas fa-book-open"></i> Library</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="media-settings.html" class="nav-link"><i class="fas fa-sliders-h"></i> Media Settings</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link active"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="page-hero">
+            <div class="hero-deco"></div>
+            <nav class="hero-nav">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <span class="hero-nav-title" id="heroNavPageTitle"></span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="notifications-btn" id="notificationsBtn">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge" style="display:none;"></span>
+                    </button>
+                    <div class="hero-profile-avatar" onclick="if(typeof toggleAccountModal==='function')toggleAccountModal()"><i class="fas fa-user"></i></div>
+                </div>
+            </nav>
+            <div class="hero-logo-row">
+                <div class="hero-logo-ring">
+                    <img src="logo.png" alt="KIUMA" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="logo-fallback" style="display:none;">KU</div>
+                </div>
+            </div>
+            <div class="hero-title-area">
+                <div class="hero-org-name">KIUMA</div>
+                <h1 class="hero-page-title">Subscription</h1>
+                <p class="hero-subtitle">Subscribe to support KIUMA</p>
+                <div class="hero-accent-line"></div>
+            </div>
+        </div>
+
+        <main class="main-content">
+            <div style="height:8px;"></div>
+            <div class="subscription-form-container">
+                <a href="pay.html" class="back-link">
+                    <i class="fas fa-arrow-left"></i> Back to Payment Options
+                </a>
+
+                <!-- Plan Summary -->
+                <div class="plan-summary-card">
+                    <h3 id="planTitle">Subscription Plan</h3>
+                    <div class="plan-amount"><span id="planAmount">0</span> UGX</div>
+                    <div class="plan-type"><span id="planType">Per Semester</span></div>
+                </div>
+
+                <!-- Pay box: amount + subscription category + name, email, phone, Pay -->
+                <div class="form-section">
+                    <h4 style="margin: 0 0 16px 0; color: #1565C0;"><i class="fas fa-lock"></i> Pay</h4>
+                    <div style="border: 2px solid #0066B2; border-radius: 12px; padding: 18px; background: linear-gradient(135deg, #F5FAFF, #E3F2FD);">
+                        <p style="margin:0 0 14px 0; font-size:13px; color:#333;">Pay securely with card or mobile money.</p>
+                        <!-- Amount and category inside box -->
+                        <div class="form-group" style="margin-bottom:12px;">
+                            <label style="font-size:12px;">Subscription</label>
+                            <div id="subscriptionCategoryDisplay" style="padding: 12px 15px; background: rgba(255,255,255,0.8); border-radius: 8px; font-weight: 600; color: var(--dark-green); border: 1px solid #e0e0e0;"></div>
+                        </div>
+                        <div class="form-group" style="margin-bottom:12px;">
+                            <label style="font-size:12px;">Amount (UGX)</label>
+                            <input type="text" id="subscriptionAmountDisplay" readonly style="width:100%; padding:10px; border:2px solid #e0e0e0; border-radius:8px; box-sizing:border-box; background:#f5f5f5; font-weight:600;">
+                        </div>
+                        <div class="form-group" style="margin-bottom:12px;">
+                            <label style="font-size:12px;">Your name <span style="color:#888; font-weight:normal;">(optional)</span></label>
+                            <input type="text" id="pesapalName" placeholder="Auto-filled from account" style="width:100%; padding:10px; border:2px solid #e0e0e0; border-radius:8px; box-sizing:border-box;">
+                        </div>
+                        <div class="form-group" style="margin-bottom:12px;">
+                            <label style="font-size:12px;">Email <span style="color:#888; font-weight:normal;">(optional)</span></label>
+                            <input type="email" id="pesapalEmail" placeholder="your@email.com" style="width:100%; padding:10px; border:2px solid #e0e0e0; border-radius:8px; box-sizing:border-box;">
+                        </div>
+                        <div class="form-group" style="margin-bottom:14px;">
+                            <label style="font-size:12px;">Phone number <span style="color:#888; font-weight:normal;">(optional)</span></label>
+                            <input type="tel" id="pesapalPhone" placeholder="e.g. 256700000000 or 07XX XXX XXX" style="width:100%; padding:10px; border:2px solid #e0e0e0; border-radius:8px; box-sizing:border-box;">
+                            <p style="margin:6px 0 0 0; font-size:11px; color:#666;">Used to pre-fill your number when you confirm payment method on Pesapal.</p>
+                        </div>
+                        <button type="button" class="submit-btn" id="pesapalPayBtn" onclick="submitPesapalSubscription()" style="background: linear-gradient(135deg, #1976D2, #1565C0); border: none; color: #fff;">
+                            <i class="fas fa-lock"></i> Pay
+                        </button>
+                    </div>
+                </div>
+
+                    <!-- Pay using Code: Airtel & MTN slide-down with Copy -->
+                    <div class="form-group" style="margin-top: 24px; padding-top: 20px; border-top: 2px solid #e0e0e0;">
+                        <h4 style="margin: 0 0 16px 0; color: #333;"><i class="fas fa-mobile-alt"></i> Pay using Code</h4>
+                        <div style="border: 2px solid #e0e0e0; border-radius: 12px; padding: 0; background: #fafafa; overflow: hidden;">
+                            <p style="margin:12px 18px 10px; font-size:13px; color:#555;">Send mobile money to the number below and use your name or student ID as reference.</p>
+                            <div class="pay-code-item" style="border-top: 1px solid #e0e0e0;">
+                                <button type="button" class="pay-code-toggle" onclick="togglePayCodeSub('airtelSub')" style="width:100%; padding:14px 18px; text-align:left; background:none; border:none; font-size:14px; font-weight:600; color:#333; cursor:pointer; display:flex; align-items:center; justify-content:space-between;">
+                                    <span><i class="fas fa-mobile-alt" style="margin-right:8px; color:#E31837;"></i>Airtel Money</span>
+                                    <i class="fas fa-chevron-down pay-code-icon" id="airtelSubIcon" style="transition: transform 0.3s;"></i>
+                                </button>
+                                <div id="airtelSubPanel" class="pay-code-panel" style="max-height:0; overflow:hidden; transition: max-height 0.3s ease;">
+                                    <div style="padding:12px 18px 16px; background:#fff; border-top:1px solid #eee;">
+                                        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                                            <span style="font-size:14px; color:#333;">KIMULI NAJIIBU (Amir Finance) - 0757 591 824</span>
+                                            <button type="button" onclick="copyPayCodeSub('0757591824', 'airtelSubBtn')" id="airtelSubBtn" style="padding:6px 12px; border-radius:8px; border:1px solid #1565C0; background:#E3F2FD; color:#1565C0; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap;"><i class="fas fa-copy"></i> Copy</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="pay-code-item" style="border-top: 1px solid #e0e0e0;">
+                                <button type="button" class="pay-code-toggle" onclick="togglePayCodeSub('mtnSub')" style="width:100%; padding:14px 18px; text-align:left; background:none; border:none; font-size:14px; font-weight:600; color:#333; cursor:pointer; display:flex; align-items:center; justify-content:space-between;">
+                                    <span><i class="fas fa-mobile-alt" style="margin-right:8px; color:#FFCC00;"></i>MTN Mobile Money</span>
+                                    <i class="fas fa-chevron-down pay-code-icon" id="mtnSubIcon" style="transition: transform 0.3s;"></i>
+                                </button>
+                                <div id="mtnSubPanel" class="pay-code-panel" style="max-height:0; overflow:hidden; transition: max-height 0.3s ease;">
+                                    <div style="padding:12px 18px 16px; background:#fff; border-top:1px solid #eee;">
+                                        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                                            <span style="font-size:14px; color:#333;">KIMULI NAJIIBU (Amir Finance) - 0757 591 824</span>
+                                            <button type="button" onclick="copyPayCodeSub('0757591824', 'mtnSubBtn')" id="mtnSubBtn" style="padding:6px 12px; border-radius:8px; border:1px solid #1565C0; background:#E3F2FD; color:#1565C0; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap;"><i class="fas fa-copy"></i> Copy</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-note">
+                        <i class="fas fa-info-circle"></i>
+                        <p>Pay via <strong>Pesapal</strong> or <strong>Pay using Code</strong> (Airtel/MTN above). Use your name or student ID as reference when paying.</p>
+                    </div>
+            </div>
+        </main>
+
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
+            <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
+            <a href="pay.html" class="nav-item active"><i class="fas fa-credit-card"></i><span>Pay</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
+        </nav>
+    </div>
+
+    <!-- Firebase SDK (for auth/email and payment fallback) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-functions-compat.js" defer></script>
+    <script src="firebase-config.js" defer></script>
+    <script src="public/payment.js" defer></script>
+    <script src="script.min.js" defer></script>
+    <script>
+        // Get plan details from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const planName = urlParams.get('plan') || 'Subscription';
+        const planAmount = urlParams.get('amount') || '0';
+        const subscriptionType = urlParams.get('type') || 'semester';
+
+        // Update plan summary
+        document.getElementById('planTitle').textContent = formatPlanName(planName);
+        document.getElementById('planAmount').textContent = parseInt(planAmount).toLocaleString();
+        document.getElementById('planType').textContent = subscriptionType === 'monthly' ? 'Per Month' : 'Per Semester (and above)';
+
+        // Subscription category for display and Pesapal (autofilled from URL)
+        const subscriptionCategoryText = (subscriptionType === 'monthly' ? 'Monthly' : 'Semester') + ' - ' + formatPlanName(planName);
+        var subscriptionCategoryDisplayEl = document.getElementById('subscriptionCategoryDisplay');
+        if (subscriptionCategoryDisplayEl) subscriptionCategoryDisplayEl.textContent = subscriptionCategoryText;
+        var subscriptionAmountDisplayEl = document.getElementById('subscriptionAmountDisplay');
+        if (subscriptionAmountDisplayEl) subscriptionAmountDisplayEl.value = parseInt(planAmount).toLocaleString() + ' UGX';
+
+        function formatPlanName(name) {
+            const planNames = {
+                'undergraduate': 'Undergraduate Plan',
+                'postgraduate': 'Postgraduate Plan',
+                'university-staff': 'University Staff Plan',
+                'elders': 'Elders Plan'
+            };
+            return planNames[name] || name;
+        }
+
+        // Autofill name and phone from localStorage (if user is logged in)
+        function autofillUserData() {
+            try {
+                const userData = localStorage.getItem('userData') || localStorage.getItem('kiuma_user') || localStorage.getItem('user');
+                if (userData) {
+                    const user = JSON.parse(userData);
+                    const name = user.firstName && user.lastName 
+                        ? user.firstName + ' ' + user.lastName 
+                        : (user.name || user.displayName || user.fullName || '');
+                    if (name) {
+                        var pesapalNameEl = document.getElementById('pesapalName');
+                        if (pesapalNameEl) pesapalNameEl.value = name;
+                    }
+                    var phone = (user.phone || user.whatsapp || '').toString().trim();
+                    if (phone) {
+                        var pesapalPhoneEl = document.getElementById('pesapalPhone');
+                        if (pesapalPhoneEl) pesapalPhoneEl.value = phone;
+                    }
+                }
+            } catch (e) {
+                console.log('Could not autofill user data:', e);
+            }
+        }
+
+        async function submitPesapalSubscription() {
+            var amount = parseFloat(planAmount);
+            if (!amount || amount <= 0) {
+                alert('Invalid subscription amount. Use the Pay page to choose a plan.');
+                return;
+            }
+            var emailEl = document.getElementById('pesapalEmail');
+            var email = emailEl && emailEl.value.trim();
+            if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+                email = email || firebase.auth().currentUser.email || '';
+            }
+            // Email is optional — Pesapal handles it
+            var name = (document.getElementById('pesapalName') && document.getElementById('pesapalName').value.trim()) || 'Subscriber';
+            var nameParts = name.split(/\s+/);
+            var first = nameParts[0] || 'User';
+            var last = nameParts.slice(1).join(' ') || '';
+            var base = window.location.origin;
+            if (base.endsWith('/')) base = base.slice(0, -1);
+            if (typeof sessionStorage !== 'undefined') {
+                sessionStorage.setItem('pesapal_payer_name', name);
+                sessionStorage.setItem('pesapal_category', subscriptionCategoryText);
+                sessionStorage.setItem('pesapal_amount', String(amount));
+                sessionStorage.setItem('pesapal_currency', 'UGX');
+            }
+            var payBtn = document.getElementById('pesapalPayBtn');
+            if (payBtn) {
+                window._pesapalPayBtnOriginal = payBtn.innerHTML;
+                payBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting to Pesapal';
+                payBtn.disabled = true;
+            }
+            var phone = '';
+            var pesapalPhoneEl = document.getElementById('pesapalPhone');
+            if (pesapalPhoneEl && pesapalPhoneEl.value.trim()) phone = pesapalPhoneEl.value.trim();
+            try {
+                await window.processPayment({
+                    amount: amount,
+                    currency: 'UGX',
+                    description: subscriptionCategoryText,
+                    email: email,
+                    phone: phone,
+                    first_name: first,
+                    last_name: last,
+                    name: name,
+                    category: subscriptionCategoryText,
+                    callback_url: base + '/payment/callback.html',
+                    cancel_url: base + '/subscription-form.html?plan=' + encodeURIComponent(planName) + '&amount=' + encodeURIComponent(planAmount) + '&type=' + encodeURIComponent(subscriptionType)
+                });
+            } catch (err) {
+                alert(err.message || 'Payment could not be started. Try again.');
+            }
+            if (payBtn && window._pesapalPayBtnOriginal) {
+                payBtn.innerHTML = window._pesapalPayBtnOriginal;
+                payBtn.disabled = false;
+            }
+        }
+
+        function showPesapalConnecting() {
+            var el = document.getElementById('pesapalConnectingOverlay');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'pesapalConnectingOverlay';
+                el.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;';
+                el.innerHTML = '<div style="background:#fff;padding:24px 32px;border-radius:12px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.2);"><i class="fas fa-spinner fa-spin" style="font-size:28px;color:#1565C0;margin-bottom:12px;display:block;"></i><div style="font-size:16px;font-weight:600;color:#333;">Connecting to Pesapal</div><div style="font-size:13px;color:#666;margin-top:6px;">Opening payment page…</div></div>';
+                document.body.appendChild(el);
+            }
+            el.style.display = 'flex';
+        }
+        function hidePesapalConnecting() {
+            var el = document.getElementById('pesapalConnectingOverlay');
+            if (el) el.style.display = 'none';
+            var btn = document.getElementById('pesapalPayBtn');
+            if (btn && window._pesapalPayBtnOriginal) {
+                btn.innerHTML = window._pesapalPayBtnOriginal;
+                btn.disabled = false;
+            }
+        }
+        window.showPesapalConnecting = showPesapalConnecting;
+        window.hidePesapalConnecting = hidePesapalConnecting;
+
+        function togglePayCodeSub(id) {
+            var panel = document.getElementById(id + 'Panel');
+            var icon = document.getElementById(id + 'Icon');
+            if (!panel || !icon) return;
+            var isOpen = panel.style.maxHeight && panel.style.maxHeight !== '0px';
+            if (isOpen) {
+                panel.style.maxHeight = '0';
+                icon.style.transform = 'rotate(0deg)';
+            } else {
+                panel.style.maxHeight = (panel.scrollHeight || 80) + 'px';
+                icon.style.transform = 'rotate(180deg)';
+            }
+        }
+
+        function copyPayCodeSub(number, btnId) {
+            var btn = document.getElementById(btnId);
+            var text = (number || '').replace(/\s/g, '');
+            navigator.clipboard.writeText(text).then(function() {
+                if (btn) {
+                    var orig = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-check"></i> Copied';
+                    btn.style.background = '#1565C0';
+                    btn.style.color = '#fff';
+                    btn.style.borderColor = '#1565C0';
+                    setTimeout(function() { btn.innerHTML = orig; btn.style.background = '#E3F2FD'; btn.style.color = '#1565C0'; btn.style.borderColor = '#1565C0'; }, 2000);
+                }
+            }).catch(function() { alert('Copy failed. Number: ' + number); });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            autofillUserData();
+        });
+    </script>
+<script src="js/app-bridge.js" defer></script></body>
+</html>
+
+

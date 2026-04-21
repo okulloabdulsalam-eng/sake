@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="description" content="Search KIUMA - Find books, events, activities, and more">
+    <title>Search - KIUMA</title>
+    <script>
+        (function() {
+            var t;
+            try { t = localStorage.getItem('themePreference'); } catch(e) {}
+            if (t === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="styles.min.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    <link rel="stylesheet" href="css/search.min.css">
+    <!-- Font Awesome: CDN primary, local fallback -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="fonts/fontawesome.min.css">
+</head>
+<body class="search-page">
+    <!-- Navigation Menu -->
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="counselling.html" class="nav-link"><i class="fas fa-hands-helping"></i> Counselling</a></li>
+            <li><a href="library.html" class="nav-link"><i class="fas fa-book-open"></i> Library</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="media-settings.html" class="nav-link"><i class="fas fa-sliders-h"></i> Media Settings</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <div class="page-hero">
+            <div class="hero-deco"></div>
+            <nav class="hero-nav">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <span class="hero-nav-title" id="heroNavPageTitle"></span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="notifications-btn" id="notificationsBtn">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge" style="display:none;"></span>
+                    </button>
+                    <div class="hero-profile-avatar" onclick="if(typeof toggleAccountModal==='function')toggleAccountModal()"><i class="fas fa-user"></i></div>
+                </div>
+            </nav>
+            <div class="hero-logo-row">
+                <div class="hero-logo-ring">
+                    <img src="logo.png" alt="KIUMA" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="logo-fallback" style="display:none;">KU</div>
+                </div>
+            </div>
+            <div class="hero-title-area">
+                <div class="hero-org-name">KIUMA</div>
+                <h1 class="hero-page-title">Search</h1>
+                <p class="hero-subtitle">Find books, events, activities &amp; more</p>
+                <div class="hero-accent-line"></div>
+            </div>
+        </div>
+
+        <main class="main-content">
+            <div style="height:8px;"></div>
+            <section class="search-section-full">
+                
+                <div class="search-bar-container">
+                    <div class="search-bar-large">
+                        <i class="fas fa-search"></i>
+                        <input 
+                            type="text" 
+                            placeholder="Search here..." 
+                            id="searchInput"
+                            autocomplete="off"
+                            autofocus
+                        >
+                        <button class="search-clear-btn" id="searchClear" style="display: none;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Search Results Container -->
+                <div id="searchContainer" style="display: none;">
+                    <div id="searchLoading" class="search-loading" style="display: none;">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Searching...</p>
+                    </div>
+                    
+                    <div id="searchResults" class="search-results"></div>
+                    
+                    <div id="searchPagination" class="search-pagination-container"></div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="searchEmptyState" class="search-empty-state">
+                    <i class="fas fa-search"></i>
+                    <h2>Start Searching</h2>
+                    <p>Enter a search term above to find content across the site</p>
+                    <div class="search-suggestions">
+                        <h3>Popular Searches:</h3>
+                        <div class="search-tags">
+                            <span class="search-tag" onclick="document.getElementById('searchInput').value='Quran'; document.getElementById('searchInput').dispatchEvent(new Event('input'))">Quran</span>
+                            <span class="search-tag" onclick="document.getElementById('searchInput').value='Hadith'; document.getElementById('searchInput').dispatchEvent(new Event('input'))">Hadith</span>
+                            <span class="search-tag" onclick="document.getElementById('searchInput').value='Prayer'; document.getElementById('searchInput').dispatchEvent(new Event('input'))">Prayer</span>
+                            <span class="search-tag" onclick="document.getElementById('searchInput').value='Events'; document.getElementById('searchInput').dispatchEvent(new Event('input'))">Events</span>
+                            <span class="search-tag" onclick="document.getElementById('searchInput').value='Programs'; document.getElementById('searchInput').dispatchEvent(new Event('input'))">Programs</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="supabase-config.js" defer></script>
+    <script type="module" src="services/supabaseClient.js"></script>
+    <script src="js/search-data.js" defer></script>
+    <script src="js/search.js" defer></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js" defer></script>
+    <script src="firebase-config.js" defer></script>
+    <script src="script.min.js" defer></script>
+    <script src="update-navigation.js" defer></script>
+    <script>
+        // Navigation toggle
+        document.getElementById('menuToggle')?.addEventListener('click', () => {
+            document.getElementById('navMenu').classList.add('active');
+        });
+        document.getElementById('navClose')?.addEventListener('click', () => {
+            document.getElementById('navMenu').classList.remove('active');
+        });
+
+        // Update empty state visibility
+        const searchInput = document.getElementById('searchInput');
+        const searchContainer = document.getElementById('searchContainer');
+        const searchEmptyState = document.getElementById('searchEmptyState');
+        
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                const hasValue = searchInput.value.trim().length > 0;
+                if (hasValue) {
+                    searchEmptyState.style.display = 'none';
+                } else {
+                    searchEmptyState.style.display = 'block';
+                    searchContainer.style.display = 'none';
+                }
+            });
+        }
+
+        // Handle URL query parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const query = urlParams.get('q');
+        if (query && searchInput) {
+            searchInput.value = query;
+            searchInput.dispatchEvent(new Event('input'));
+        }
+    </script>
+
+    <!-- Floating Important Lessons Button -->
+    <div class="floating-lessons-btn" onclick="showLessonsModal()">
+        <i class="fas fa-fire"></i>
+        <span>Important Lessons</span>
+    </div>
+
+    <!-- Floating Did You Know Button -->
+    <div class="floating-dyk-btn" onclick="showDykModal()">
+        <i class="fas fa-lightbulb"></i>
+        <span>Did You Know?</span>
+    </div>
+    <div class="modal-overlay" id="dykModal" style="display: none;">
+        <div class="modal-content activities-modal">
+            <div class="modal-header" style="background: linear-gradient(135deg, #1565C0, #0D47A1);">
+                <h3><i class="fas fa-lightbulb"></i> Did You Know?</h3>
+                <button class="modal-close" onclick="closeDykModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="activities-modal-list">
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-tongue'" style="border-left: 4px solid #C62828;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #C62828, #B71C1C);"><i class="fas fa-comment-slash"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #C62828;">Backbiting & The Tongue</h4><p>Terrifying hadiths about gheebah, slander & idle talk</p></div>
+                    <i class="fas fa-chevron-right" style="color: #C62828;"></i>
+                </div>
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-dress'" style="border-left: 4px solid #6A1B9A;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #6A1B9A, #4A148C);"><i class="fas fa-user-shield"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #6A1B9A;">Dress, Hair & Modesty</h4><p>What Islam says about hair, hijab & clothing</p></div>
+                    <i class="fas fa-chevron-right" style="color: #6A1B9A;"></i>
+                </div>
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-warnings'" style="border-left: 4px solid #E65100;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #E65100, #BF360C);"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #E65100;">Warnings People Ignore</h4><p>Lying, hypocrisy, arrogance, riba & more</p></div>
+                    <i class="fas fa-chevron-right" style="color: #E65100;"></i>
+                </div>
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html'" style="border-left: 4px solid #1565C0;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #1565C0, #0D47A1);"><i class="fas fa-book-open"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #1565C0;">View All Sections</h4><p>Deeds, character, worship & more authentic knowledge</p></div>
+                    <i class="fas fa-chevron-right" style="color: #1565C0;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    function showDykModal(){document.getElementById('dykModal').style.display='flex';}
+    function closeDykModal(){document.getElementById('dykModal').style.display='none';}
+    document.addEventListener('DOMContentLoaded',function(){var o=document.getElementById('dykModal');if(o)o.addEventListener('click',function(e){if(e.target===this)closeDykModal();});});
+    </script>
+
+    <!-- Floating Hot Events Button -->
+    <div class="floating-kizumu-btn" onclick="showActivitiesModal()" style="background: linear-gradient(135deg, #ff6b35, #e74c3c); animation: pulse-hot 1.5s infinite; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5);">
+        <i class="fas fa-fire" style="color: #fff;"></i>
+        <span style="font-weight: bold;">HOT EVENTS!</span>
+    </div>
+    <style>
+    @keyframes pulse-hot {
+        0%, 100% { transform: scale(1); box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5); }
+        50% { transform: scale(1.05); box-shadow: 0 6px 20px rgba(231, 76, 60, 0.7); }
+    }
+    </style>
+
+    <!-- Important Lessons Modal -->
+    <div class="modal-overlay" id="lessonsModal" style="display: none;">
+        <div class="modal-content activities-modal">
+            <div class="modal-header" style="background: linear-gradient(135deg, #F44336, #C62828);">
+                <h3><i class="fas fa-fire"></i> Important Lessons</h3>
+                <button class="modal-close" onclick="closeLessonsModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="activities-modal-list">
+                <div class="activity-modal-item" onclick="navigateToLesson('learn-prayer')">
+                    <div class="activity-modal-icon" style="background: var(--primary-green);">
+                        <i class="fas fa-pray"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Learn the Prayer</h4>
+                        <p>How to perform Salah correctly</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="navigateToLesson('misunderstood-concepts')">
+                    <div class="activity-modal-icon" style="background: #FF9800;">
+                        <i class="fas fa-lightbulb"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Misunderstood Concepts</h4>
+                        <p>Clarifying common misconceptions</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="navigateToLesson('important-hadiths')">
+                    <div class="activity-modal-icon" style="background: #9C27B0;">
+                        <i class="fas fa-book-quran"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Important Hadiths</h4>
+                        <p>Essential sayings of the Prophet (PBUH)</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="navigateToLesson('did-you-know')">
+                    <div class="activity-modal-icon" style="background: #2196F3;">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Did You Know</h4>
+                        <p>Interesting Islamic facts</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="navigateToLesson('akhlaq-series')">
+                    <div class="activity-modal-icon" style="background: #E91E63;">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Islamic Character (Akhlaq)</h4>
+                        <p>Essential character traits and virtues</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script src="js/app-bridge.js" defer></script></body>
+</html>

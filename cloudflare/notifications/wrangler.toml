@@ -1,0 +1,21 @@
+name = "kiuma-notifications"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# KV Namespace for storing FCM device tokens
+[[kv_namespaces]]
+binding = "FCM_TOKENS"
+id = "1876969cec50417d857ab09695662b0d"
+
+# Secrets (set via wrangler secret put):
+#   npx wrangler secret put FCM_CLIENT_EMAIL
+#   npx wrangler secret put FCM_PRIVATE_KEY
+#   npx wrangler secret put ADMIN_KEY
+
+[vars]
+FCM_PROJECT_ID = "kiuma-mob-app"
+
+# Cron Triggers — runs every minute for prayer reminders (5 min before iqaama)
+# and Hijri white days fasting reminders
+[triggers]
+crons = ["* * * * *"]

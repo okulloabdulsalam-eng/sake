@@ -1,0 +1,18 @@
+name = "kiuma-stream-worker"
+main = "cloudflare-stream-worker.js"
+compatibility_date = "2023-12-01"
+
+[vars]
+# Environment variables for the worker
+ACCOUNT_ID = "a0b979e121807698afc575b837400f51"
+WORKER_NAME = "kiuma-stream-worker"
+
+# Route configuration - commented out for initial deploy
+# [[routes]]
+# pattern = "kiuma-storage-kiuma4.kiuma4.workers.dev/*"
+# zone_name = "kiuma4.workers.dev"
+
+# KV namespace for stream storage (optional)
+# [[kv_namespaces]]
+# binding = "STREAMS"
+# id = "your-kv-namespace-id"

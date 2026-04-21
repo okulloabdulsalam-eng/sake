@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Al Quran - KIUMA</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.min.css">
+    <link rel="stylesheet" href="css/fonts-quran.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+    /* Full-screen reader: hide site chrome */
+    body.quran-standalone .page-hero { display: none !important; }
+    body.quran-standalone .bottom-nav { display: none !important; }
+    body.quran-standalone .main-content { padding: 0 !important; margin: 0 !important; }
+    body.quran-standalone .container { max-width: 100% !important; padding: 0 !important; }
+
+    #quranApp {
+      --bg: #000; --bg2: #0a0a0a; --txt: #fff; --muted: #9e9e9e; --accent: #64B5F6; --green: #22c55e; --green2: #4ade80;
+      --ribbon: #1a237e; --card: #121212; --line: #2a2a2a;
+      max-width: 480px; margin: 0 auto; min-height: 100vh; background: var(--bg); color: var(--txt);
+      font-family: 'Poppins', sans-serif; position: relative;
+    }
+    #quranApp[data-theme="light"] {
+      --bg: #fafafa; --bg2: #fff; --txt: #111; --muted: #666; --ribbon: #e8eaf6; --card: #fff; --line: #e0e0e0;
+    }
+    #quranApp[data-theme="sepia"] {
+      --bg: #1c1410; --bg2: #2a2018; --txt: #f0e6d8; --muted: #a89880; --ribbon: #3d2e22; --card: #252018; --line: #4a3c32;
+    }
+
+    .qr-view { display: none; flex-direction: column; min-height: 100vh; }
+    .qr-view.active { display: flex; }
+
+    /* Home */
+    .qr-top {
+      display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--bg); position: sticky; top: 0; z-index: 40;
+      border-bottom: 1px solid var(--line);
+    }
+    .qr-top h1 { flex: 1; font-size: 18px; font-weight: 600; margin: 0; }
+    .qr-top button { background: none; border: none; color: var(--txt); font-size: 18px; cursor: pointer; padding: 8px; position: relative; }
+    .qr-dot { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; background: #e53935; border-radius: 50%; }
+    .qr-streak { display: flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 600; color: var(--txt); }
+
+    .qr-scroll-h { padding: 12px 0 8px; border-bottom: 1px solid var(--line); }
+    .qr-scroll-h h2 { font-size: 13px; font-weight: 600; margin: 0 16px 8px; color: var(--txt); }
+    .qr-chip-row { display: flex; gap: 8px; overflow-x: auto; padding: 0 16px 4px; -webkit-overflow-scrolling: touch; }
+    .qr-chip {
+      flex-shrink: 0; padding: 8px 14px; border-radius: 20px; border: 1px solid var(--line); background: var(--card);
+      color: var(--accent); font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
+    }
+
+    .qr-cats { display: flex; gap: 4px; overflow-x: auto; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+    .qr-cat-tab {
+      flex-shrink: 0; padding: 8px 14px; border-radius: 20px; border: none; background: transparent; color: var(--muted);
+      font-size: 13px; font-weight: 500; cursor: pointer;
+    }
+    .qr-cat-tab.on { background: var(--card); color: var(--txt); font-weight: 600; }
+
+    .qr-search { position: relative; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+    .qr-search input {
+      width: 100%; box-sizing: border-box; padding: 10px 14px 10px 38px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg2);
+      color: var(--txt); font-size: 14px; outline: none;
+    }
+    .qr-search i { position: absolute; left: 28px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; pointer-events: none; }
+
+    .qr-list { flex: 1; padding: 0 16px 120px; overflow-y: auto; }
+    .qr-surah-row {
+      display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); cursor: pointer;
+    }
+    .qr-sn { width: 28px; font-size: 15px; font-weight: 600; color: var(--txt); }
+    .qr-smid { flex: 1; min-width: 0; }
+    .qr-sname { font-size: 15px; font-weight: 600; color: var(--accent); }
+    .qr-str { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .qr-sar { font-family: 'Amiri', serif; font-size: 20px; color: var(--txt); }
+
+    .qr-juz-row { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+    .qr-jn { width: 32px; height: 32px; border-radius: 50%; background: var(--green); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
+    .qr-jname { font-weight: 600; }
+    .qr-jmeta { font-size: 12px; color: var(--muted); }
+
+    .qr-page-box { padding: 16px 0; }
+    .qr-page-row { display: flex; gap: 8px; margin-top: 8px; }
+    .qr-page-in { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg2); color: var(--txt); text-align: center; font-size: 16px; }
+    .qr-page-go { padding: 12px 20px; background: var(--green); color: #fff; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; }
+    .qr-jgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 16px; }
+    .qr-jc { padding: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; color: var(--accent); font-weight: 700; cursor: pointer; }
+
+    .qr-continue-pill {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 35;
+      background: rgba(30,30,30,.92); border: 1px solid var(--line); border-radius: 24px; padding: 12px 22px;
+      display: none; align-items: center; gap: 10px; cursor: pointer; max-width: 90%;
+    }
+    .qr-continue-pill.show { display: flex; }
+    .qr-pill-text { color: var(--accent); font-weight: 600; font-size: 14px; }
+    .qr-pill-sub { font-size: 11px; color: var(--muted); }
+
+    /* Reader */
+    .qr-r-head {
+      display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--bg); border-bottom: 1px solid var(--line);
+      position: sticky; top: 0; z-index: 30;
+    }
+    .qr-r-head .qr-back { background: none; border: none; color: var(--txt); font-size: 20px; cursor: pointer; padding: 6px; }
+    .qr-r-center { flex: 1; text-align: center; cursor: pointer; min-width: 0; }
+    .qr-r-title { font-size: 15px; font-weight: 600; display: block; }
+    .qr-r-sub { font-size: 11px; color: var(--muted); }
+    .qr-r-actions { display: flex; gap: 2px; }
+    .qr-r-actions button { background: none; border: none; color: var(--txt); font-size: 16px; padding: 8px; cursor: pointer; }
+
+    .qr-ribbon {
+      background: var(--ribbon); color: #fff; padding: 8px 14px; font-size: 12px; display: flex; justify-content: space-between; align-items: center;
+    }
+    #quranApp[data-theme="light"] .qr-ribbon { color: #1a237e; }
+
+    .qr-r-body { flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 200px; }
+
+    .qr-m-body {
+      flex: 1; overflow-y: auto; padding: 0 0 200px; background: #000;
+    }
+    #quranApp[data-theme="light"] .qr-m-body { background: #e8e4dc; }
+    #quranApp[data-theme="sepia"] .qr-m-body { background: #1a1510; }
+
+    .qr-mushaf-sheet {
+      max-width: 440px; margin: 0 auto; padding: 16px 12px 24px;
+    }
+    .qr-mushaf-page {
+      background: #0c0c0c; border-radius: 2px; padding: 20px 10px 16px;
+      border: 1px solid #252525; box-shadow: 0 4px 24px rgba(0,0,0,.45);
+    }
+    #quranApp[data-theme="light"] .qr-mushaf-page {
+      background: #faf8f3; border-color: #d4cfc4; box-shadow: 0 2px 12px rgba(0,0,0,.06);
+    }
+    #quranApp[data-theme="sepia"] .qr-mushaf-page {
+      background: #221c16; border-color: #3d342a;
+    }
+
+    .qr-mushaf-surah-wrap { margin: 0 auto 18px; max-width: 92%; }
+    .qr-mushaf-surah-frame {
+      border: 1px solid #9a7b4a; padding: 14px 18px; text-align: center;
+      box-shadow: inset 0 0 0 1px #2a2218, 0 0 0 1px #1a1510;
+      background: linear-gradient(180deg, rgba(255,255,255,.04) 0%, transparent 100%);
+    }
+    #quranApp[data-theme="light"] .qr-mushaf-surah-frame {
+      border-color: #8b7355; box-shadow: inset 0 0 0 1px #e8e0d4, 0 0 0 1px #cfc7ba;
+      background: linear-gradient(180deg, #fff 0%, #f5f2eb 100%);
+    }
+    .qr-mushaf-surah-title {
+      font-family: 'Amiri', 'Traditional Arabic', serif; font-size: clamp(20px, 5.2vw, 26px);
+      font-weight: 400; color: #f0ebe3; line-height: 1.5; letter-spacing: 0.02em;
+    }
+    #quranApp[data-theme="light"] .qr-mushaf-surah-title { color: #1a1510; }
+
+    .qr-mushaf-print { display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+    .qr-mushaf-line {
+      display: block; width: 100%; padding: 0; margin: 0; border: none; background: transparent;
+      cursor: pointer; line-height: 0;
+    }
+    .qr-mushaf-line.playing { box-shadow: inset 0 0 0 2px var(--green2); border-radius: 2px; }
+    .qr-mushaf-img {
+      width: 100%; height: auto; display: block; max-width: 100%; margin: 0;
+      vertical-align: top;
+    }
+    #quranApp[data-theme="dark"] .qr-mushaf-img,
+    #quranApp[data-theme="sepia"] .qr-mushaf-img {
+      filter: invert(1) hue-rotate(180deg) brightness(1.06) contrast(1.03);
+    }
+
+    .qr-mushaf-page .qr-pagenum {
+      text-align: center; font-family: 'Amiri', serif; font-size: 16px; margin: 18px 0 6px; color: #8a8070;
+    }
+    #quranApp[data-theme="light"] .qr-mushaf-page .qr-pagenum { color: #5c564c; }
+
+    .qr-mushaf-page .qr-print-hint {
+      font-size: 10px; color: #5c564c; line-height: 1.45; padding: 8px 6px 0; text-align: center; margin: 0;
+    }
+    #quranApp[data-theme="light"] .qr-mushaf-page .qr-print-hint { color: #7a7268; }
+    .qr-mushaf-page .qr-link { color: #b8a074; font-size: 10px; }
+    #quranApp[data-theme="light"] .qr-mushaf-page .qr-link { color: var(--accent); }
+
+    .qr-info-card {
+      display: flex; align-items: center; gap: 12px; padding: 14px; background: var(--card); border-radius: 12px; margin-bottom: 16px; border: 1px solid var(--line);
+    }
+    .qr-info-thumb { width: 56px; height: 56px; border-radius: 10px; background-size: cover; background-position: center; }
+    .qr-info-thumb.kaaba { background: linear-gradient(160deg, #1a1a2e, #16213e); }
+    .qr-info-thumb.madina { background: linear-gradient(160deg, #2e4a3e, #1b2e22); }
+    .qr-info-txt { flex: 1; }
+    .qr-info-name { font-weight: 700; font-size: 16px; }
+    .qr-info-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    a.qr-link { color: var(--accent); font-size: 13px; text-decoration: none; white-space: nowrap; }
+
+    .qr-verse { border-bottom: 1px solid var(--line); padding: 16px 0; }
+    .qr-verse.playing { background: rgba(34,197,94,.08); }
+    .qr-vhead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .qr-vn { font-size: 12px; color: var(--muted); }
+    .qr-vmenu { background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px 8px; }
+    .qr-wbw { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 10px; direction: rtl; margin: 12px 0; }
+    .qr-w { display: inline-flex; flex-direction: column; align-items: center; text-align: center; max-width: 88px; }
+    .qr-wa { font-family: 'Amiri', serif; font-size: 22px; line-height: 1.5; color: var(--txt); }
+    .qr-we { font-size: 9px; color: var(--muted); line-height: 1.2; max-width: 84px; }
+    .qr-ayah-ar { font-family: 'Amiri', serif; font-size: 24px; line-height: 2; direction: rtl; text-align: center; color: var(--txt); }
+    .qr-ayah-en { font-size: 15px; line-height: 1.6; color: var(--txt); margin-top: 10px; }
+    .qr-vactions { display: flex; gap: 16px; margin-top: 12px; }
+    .qr-vactions button { background: none; border: none; color: var(--txt); font-size: 20px; cursor: pointer; opacity: .85; }
+    .qr-verse.qr-memo .qr-wa, .qr-verse.qr-memo .qr-ayah-ar { filter: blur(7px); }
+    .qr-verse.qr-memo:active .qr-wa, .qr-verse.qr-memo:active .qr-ayah-ar { filter: none; }
+
+    /* Bottom bar */
+    .qr-botbar {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px;
+      background: var(--bg); border-top: 1px solid var(--line); display: flex; justify-content: space-around;
+      padding: 10px 8px calc(14px + env(safe-area-inset-bottom)); z-index: 50;
+    }
+    .qr-botbar button {
+      display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none;
+      color: var(--txt); font-size: 10px; cursor: pointer; opacity: .9;
+    }
+    .qr-botbar button i { font-size: 20px; }
+    .qr-botbar button.on { color: var(--green2); }
+
+    .qr-fab {
+      position: fixed; bottom: 88px; right: 18px; width: 58px; height: 58px; border-radius: 50%; border: none; z-index: 55;
+      background: linear-gradient(145deg, var(--green2), var(--green)); color: #fff; font-size: 22px; cursor: pointer;
+      box-shadow: 0 4px 20px rgba(34,197,94,.45);
+    }
+
+    /* Audio */
+    .qr-audio {
+      position: fixed; bottom: 72px; left: 50%; transform: translateX(-50%); width: calc(100% - 24px); max-width: 440px;
+      background: #1a1a1a; border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; z-index: 52;
+      display: none; flex-direction: column; gap: 6px;
+    }
+    .qr-audio.show { display: flex; }
+    .qr-au-row { display: flex; align-items: center; gap: 10px; }
+    .qr-au-row button { background: none; border: none; color: #fff; font-size: 18px; cursor: pointer; }
+    .qr-au-info { flex: 1; min-width: 0; }
+    .qr-au-title { font-size: 13px; font-weight: 600; }
+    .qr-au-sub { font-size: 11px; color: #aaa; }
+    .qr-au-bar { height: 3px; background: #333; border-radius: 2px; overflow: hidden; cursor: pointer; }
+    .qr-au-fill { height: 100%; background: var(--green); width: 0; }
+
+    /* Sheets */
+    .qr-bd { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200; opacity: 0; pointer-events: none; transition: opacity .2s; }
+    .qr-bd.show { opacity: 1; pointer-events: auto; }
+    .qr-sheet {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%) translateY(100%); width: 100%; max-width: 480px;
+      background: var(--card); border-radius: 20px 20px 0 0; z-index: 201; max-height: 75vh; overflow-y: auto;
+      padding: 20px 20px 28px; transition: transform .3s;
+    }
+    .qr-sheet.show { transform: translateX(-50%) translateY(0); }
+    .qr-pick-item { padding: 12px 8px; border-bottom: 1px solid var(--line); cursor: pointer; font-size: 14px; }
+
+    .qr-picker {
+      position: fixed; top: 56px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 400px; max-height: 50vh;
+      overflow-y: auto; background: var(--card); border: 1px solid var(--line); border-radius: 12px; z-index: 190;
+      display: none; box-shadow: 0 8px 32px rgba(0,0,0,.35);
+    }
+    .qr-picker.show { display: block; }
+
+    .qr-theme-row { display: flex; gap: 10px; align-items: center; }
+    .qr-theme-dot { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--line); cursor: pointer; }
+    .qr-theme-dot.on { box-shadow: 0 0 0 2px var(--green); }
+    .qr-theme-dot[data-t="dark"] { background: #000; }
+    .qr-theme-dot[data-t="light"] { background: #fff; }
+    .qr-theme-dot[data-t="sepia"] { background: #5d4a3a; }
+    .qr-set-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+    .qr-toggle { width: 44px; height: 24px; background: var(--line); border-radius: 12px; border: none; position: relative; cursor: pointer; }
+    .qr-toggle.on { background: var(--green); }
+    .qr-toggle::after { content: ''; position: absolute; width: 20px; height: 20px; background: #fff; border-radius: 50%; top: 2px; left: 2px; transition: transform .2s; }
+    .qr-toggle.on::after { transform: translateX(20px); }
+    .qr-sel { padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg2); color: var(--txt); font-size: 13px; max-width: 180px; }
+
+    /* Recite overlay */
+    .qr-recite {
+      position: fixed; inset: 0; background: var(--bg); z-index: 300; max-width: 480px; margin: 0 auto;
+      display: none; flex-direction: column;
+    }
+    .qr-recite.show { display: flex; }
+    .qr-rec-top { display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--line); gap: 12px; }
+    .qr-rec-top h3 { flex: 1; margin: 0; font-size: 16px; }
+    .qr-rec-mist { padding: 6px 12px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; font-size: 13px; }
+    .qr-rec-body { flex: 1; overflow-y: auto; padding: 16px; }
+    .qr-rec-exp { font-family: 'Amiri', serif; font-size: 24px; line-height: 2; direction: rtl; text-align: right; padding: 16px; background: var(--card); border-radius: 12px; }
+    .qr-rec-exp .ok { color: var(--green2); }
+    .qr-rec-exp .bad { color: #ef5350; text-decoration: underline; }
+    .qr-rec-trans { font-family: 'Amiri', serif; font-size: 18px; color: var(--muted); min-height: 48px; margin-top: 12px; padding: 12px; border: 1px dashed var(--line); border-radius: 8px; direction: rtl; text-align: right; }
+    .qr-rec-bot { display: flex; align-items: center; justify-content: center; gap: 20px; padding: 20px; border-top: 1px solid var(--line); }
+    .qr-rec-bot button { background: var(--card); border: 1px solid var(--line); color: var(--txt); padding: 10px 16px; border-radius: 10px; cursor: pointer; }
+    .qr-mic-big {
+      width: 72px; height: 72px; border-radius: 50%; border: none; background: linear-gradient(145deg, var(--green2), var(--green));
+      color: #fff; font-size: 28px; cursor: pointer; box-shadow: 0 4px 24px rgba(34,197,94,.5);
+    }
+    .qr-mic-big.rec { background: #e53935; animation: pulse 1.2s infinite; }
+    @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(229,57,53,.5)} 50%{box-shadow:0 0 0 12px rgba(229,57,53,0)} }
+
+    .qr-toast {
+      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 20px;
+      border-radius: 20px; font-size: 13px; z-index: 400; opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    .qr-toast.show { opacity: 1; }
+    .qr-muted { color: var(--muted); font-size: 13px; }
+    .qr-skel { text-align: center; padding: 40px; color: var(--muted); }
+    </style>
+</head>
+<body>
+    <script src="js/quran-maintenance.js"></script>
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header"><span class="nav-close" id="navClose"><i class="fas fa-times"></i></span></div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="quran-reader.html" class="nav-link active"><i class="fas fa-book-quran"></i> Al Quran</a></li>
+            <li><a href="quran.html" class="nav-link"><i class="fas fa-chalkboard-teacher"></i> Quran Study</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="library.html" class="nav-link"><i class="fas fa-book-open"></i> Library</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+        </ul>
+    </nav>
+    <div class="container">
+        <div class="page-hero">
+            <div class="hero-deco"></div>
+            <nav class="hero-nav">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <span class="hero-nav-title" id="heroNavPageTitle"></span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="notifications-btn" id="notificationsBtn"><i class="fas fa-bell"></i><span class="badge" style="display:none;"></span></button>
+                    <div class="hero-profile-avatar" onclick="if(typeof toggleAccountModal==='function')toggleAccountModal()"><i class="fas fa-user"></i></div>
+                </div>
+            </nav>
+            <div class="hero-logo-row"><div class="hero-logo-ring"><img src="logo.png" alt="KIUMA" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div class="logo-fallback" style="display:none;">KU</div></div></div>
+            <div class="hero-title-area">
+                <div class="hero-org-name">KIUMA</div>
+                <h1 class="hero-page-title">Al Quran</h1>
+                <p class="hero-subtitle">Read, listen & recite</p>
+                <div class="hero-accent-line"></div>
+            </div>
+        </div>
+        <main class="main-content">
+<div id="quranApp" data-theme="dark">
+
+    <div class="qr-view active" id="qrHome">
+        <header class="qr-top">
+            <button type="button" id="qrMenuBtn" aria-label="Menu"><i class="fas fa-bars"></i><span class="qr-dot"></span></button>
+            <h1>Al Quran</h1>
+            <div class="qr-streak"><i class="fas fa-bolt"></i> <span id="qrStreak">1</span></div>
+            <button type="button" id="qrBtnMushafHome" aria-label="Open mushaf" title="Mushaf (in app)"><i class="fas fa-book-open"></i></button>
+            <button type="button" onclick="document.getElementById('qrSearchRow').scrollIntoView({behavior:'smooth'})" aria-label="Search"><i class="fas fa-search"></i></button>
+        </header>
+        <div class="qr-scroll-h">
+            <h2>Last Read</h2>
+            <div class="qr-chip-row" id="qrLastReadRow"></div>
+        </div>
+        <div class="qr-scroll-h">
+            <h2>Quick Links</h2>
+            <div class="qr-chip-row">
+                <button type="button" class="qr-chip" onclick="window.qrQuick(67,1)">AL-MULK</button>
+                <button type="button" class="qr-chip" onclick="window.qrQuick(18,1)">AL-KAHF</button>
+                <button type="button" class="qr-chip" onclick="window.qrQuick(2,255)">AYATUL KURSI</button>
+                <button type="button" class="qr-chip" onclick="window.qrQuick(36,1)">YA SIN</button>
+            </div>
+        </div>
+        <div class="qr-cats">
+            <button type="button" class="qr-cat-tab on" data-tab="surah" onclick="window.qrSwitchTab('surah')">Surah</button>
+            <button type="button" class="qr-cat-tab" data-tab="page" onclick="window.qrSwitchTab('page')">Page</button>
+            <button type="button" class="qr-cat-tab" data-tab="juz" onclick="window.qrSwitchTab('juz')">Juz</button>
+            <button type="button" class="qr-cat-tab" data-tab="hizb" onclick="window.qrSwitchTab('hizb')">Hizb</button>
+            <button type="button" class="qr-cat-tab" data-tab="ruku" onclick="window.qrSwitchTab('ruku')">Ruku</button>
+        </div>
+        <div class="qr-search" id="qrSearchRow"><i class="fas fa-search"></i><input type="search" id="qrSearchInput" placeholder="Search surah…" oninput="window.qrFilterList()"></div>
+        <div class="qr-list" id="qrList"><div class="qr-skel">Loading…</div></div>
+        <div class="qr-continue-pill" id="qrContinuePill" onclick="window.qrResume()">
+            <div><div class="qr-pill-text">Continue Reading</div><div class="qr-pill-sub"></div></div>
+            <i class="fas fa-chevron-right" style="color:var(--muted)"></i>
+        </div>
+    </div>
+
+    <div class="qr-view" id="qrReader">
+        <header class="qr-r-head">
+            <button type="button" class="qr-back" onclick="window.qrShowHome()"><i class="fas fa-arrow-left"></i></button>
+            <div class="qr-r-center" onclick="window.qrTogglePicker()">
+                <span class="qr-r-title" id="qrReaderTitle">Al-Fatihah</span>
+                <span class="qr-r-sub" id="qrReaderSub">Page 1</span>
+            </div>
+            <div class="qr-r-actions">
+                <button type="button" onclick="window.qrEnterMushafFromReader()" aria-label="Mushaf this page" title="Mushaf view"><i class="fas fa-book-open"></i></button>
+                <button type="button" onclick="window.qrOpenQuranComMushaf()" aria-label="Open on Quran.com" title="Quran.com"><i class="fas fa-external-link-alt"></i></button>
+                <button type="button" onclick="window.qrOpenSettings()"><i class="fas fa-sliders-h"></i></button>
+            </div>
+        </header>
+        <div class="qr-ribbon"><span id="qrRibbon">Juz 1 · Ḥizb 1 · Page 1</span><a href="#" class="qr-link" onclick="event.preventDefault();window.qrOpenSettings()" style="color:#90caf9">Juz info</a></div>
+        <div class="qr-r-body" id="qrRBody"></div>
+        <nav class="qr-botbar">
+            <button type="button" onclick="window.qrOpenContents()"><i class="fas fa-language"></i><span>Contents</span></button>
+            <button type="button" id="qrAutoBtn" onclick="window.qrToggleAuto()"><i class="fas fa-angles-down"></i><span>Auto Scroll</span></button>
+            <button type="button" onclick="window.qrToggleAudio()"><i class="fas fa-play"></i><span>Play Audio</span></button>
+        </nav>
+        <button type="button" class="qr-fab" onclick="window.qrStartRecite()" aria-label="Recite"><i class="fas fa-microphone"></i></button>
+    </div>
+
+    <div class="qr-view" id="qrMushaf">
+        <header class="qr-r-head">
+            <button type="button" class="qr-back" onclick="window.qrShowHome()"><i class="fas fa-arrow-left"></i></button>
+            <div class="qr-r-center" onclick="window.qrTogglePicker()">
+                <span class="qr-r-title" id="qrMTitle">Al-Fatihah</span>
+                <span class="qr-r-sub" id="qrMSub">Page 1</span>
+            </div>
+            <div class="qr-r-actions">
+                <button type="button" onclick="window.qrOpenQuranComMushaf()" aria-label="Open on Quran.com" title="Quran.com"><i class="fas fa-external-link-alt"></i></button>
+                <button type="button" onclick="window.qrOpenSettings()"><i class="fas fa-sliders-h"></i></button>
+            </div>
+        </header>
+        <div class="qr-ribbon"><span id="qrMRibbon">Juz 1 · Ḥizb 1 · Page 1</span><a href="#" class="qr-link" onclick="event.preventDefault();window.qrOpenSettings()" style="color:#90caf9">Juz info</a></div>
+        <div class="qr-m-body" id="qrMBody"></div>
+        <nav class="qr-botbar">
+            <button type="button" onclick="window.qrOpenContents()"><i class="fas fa-language"></i><span>Contents</span></button>
+            <button type="button" id="qrMAutoBtn" onclick="window.qrToggleAuto()"><i class="fas fa-angles-down"></i><span>Auto Scroll</span></button>
+            <button type="button" onclick="window.qrToggleAudio()"><i class="fas fa-play"></i><span>Play Audio</span></button>
+        </nav>
+        <button type="button" class="qr-fab" onclick="window.qrStartRecite()" aria-label="Recite"><i class="fas fa-microphone"></i></button>
+    </div>
+
+    <div class="qr-bd" id="qrPickBD" onclick="window.qrClosePicker()"></div>
+    <div class="qr-picker" id="qrPicker"></div>
+
+    <div class="qr-bd" id="qrContBD" onclick="window.qrCloseContents()"></div>
+    <div class="qr-sheet" id="qrContentsSheet">
+        <h3 style="margin-top:0">Contents</h3>
+        <div id="qrContentsList"></div>
+    </div>
+
+    <div class="qr-audio" id="qrAudio">
+        <div class="qr-au-row">
+            <button type="button" onclick="window.qrAudioToggle()"><i class="fas fa-pause" id="qrAudioIcon"></i></button>
+            <div class="qr-au-info"><div class="qr-au-title" id="qrAudioTitle">Ayah</div><div class="qr-au-sub" id="qrAudioSub"></div></div>
+            <button type="button" onclick="window.qrCycleSpeed()" id="qrSpeedBtn">1x</button>
+            <button type="button" onclick="window.qrAudioClose()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="qr-au-bar" onclick="window.qrAudioSeek(event)"><div class="qr-au-fill" id="qrAudioFill"></div></div>
+    </div>
+
+    <div class="qr-bd" id="qrSetBD" onclick="window.qrCloseSettings()"></div>
+    <div class="qr-sheet" id="qrSetSheet">
+        <h3 style="margin-top:0">Settings</h3>
+        <div class="qr-set-row"><span>Reading</span>
+            <select id="qrModeSel" class="qr-sel" onchange="window.qrSetMode(this.value)">
+                <option value="adaptive">Adaptive reader</option>
+                <option value="mushaf">Mushaf (pages 1–604)</option>
+            </select>
+        </div>
+        <p class="qr-muted" style="font-size:11px;line-height:1.45;margin:-4px 0 12px">Mushaf uses Madinah line images from Quran.com; requires internet. Use <i class="fas fa-external-link-alt" style="font-size:10px"></i> to open the same page on their site.</p>
+        <div class="qr-set-row"><span>Theme</span><div class="qr-theme-row">
+            <button type="button" class="qr-theme-dot on" data-t="dark" onclick="window.qrSetTheme('dark')"></button>
+            <button type="button" class="qr-theme-dot" data-t="light" onclick="window.qrSetTheme('light')"></button>
+            <button type="button" class="qr-theme-dot" data-t="sepia" onclick="window.qrSetTheme('sepia')"></button>
+        </div></div>
+        <div class="qr-set-row"><span>Font size <small id="qrFsVal">22px</small></span>
+            <input type="range" id="qrFs" min="16" max="32" value="22" oninput="window.qrSetFs(this.value)">
+        </div>
+        <div class="qr-set-row"><span>Translation</span><button type="button" class="qr-toggle on" id="qrTransT" onclick="window.qrToggleTrans()"></button></div>
+        <div class="qr-set-row"><span>Edition</span>
+            <select id="qrTransSel" class="qr-sel" onchange="window.qrSetTrans(this.value)">
+                <option value="en.asad">Asad</option><option value="en.sahih">Saheeh</option><option value="en.pickthall">Pickthall</option><option value="en.yusufali">Yusuf Ali</option>
+            </select>
+        </div>
+        <div class="qr-set-row"><span>Tajweed colors</span><button type="button" class="qr-toggle" id="qrTajT" onclick="window.qrToggleTaj()"></button></div>
+        <div class="qr-set-row"><span>Memorization blur</span><button type="button" class="qr-toggle" id="qrMemoT" onclick="window.qrToggleMemo()"></button></div>
+        <div class="qr-set-row"><span>Reciter</span>
+            <select id="qrRecSel" class="qr-sel" onchange="window.qrSetRec(this.value)">
+                <option value="ar.alafasy">Al-Afasy</option><option value="ar.abdulbasitmurattal">Abdul Basit</option><option value="ar.husary">Husary</option><option value="ar.minshawi">Minshawi</option><option value="ar.abdurrahmaanas-sudais">Sudais</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="qr-bd" id="qrActBD" onclick="window.qrCloseAct()"></div>
+    <div class="qr-sheet" id="qrActSheet">
+        <div id="qrActVerse" style="font-family:Amiri,serif;font-size:20px;direction:rtl;text-align:right;line-height:1.8"></div>
+        <div id="qrActRef" class="qr-muted" style="margin:8px 0"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+            <button type="button" class="qr-chip" onclick="window.qrActCopy('ar')">Copy Arabic</button>
+            <button type="button" class="qr-chip" onclick="window.qrActCopy('en')">Copy translation</button>
+            <button type="button" class="qr-chip" onclick="window.qrActBm()">Bookmark</button>
+            <button type="button" class="qr-chip" onclick="window.qrActShare()">Share</button>
+            <button type="button" class="qr-chip" onclick="window.qrActPlay()">Play</button>
+        </div>
+    </div>
+
+    <div class="qr-recite" id="qrRecite">
+        <div class="qr-rec-top">
+            <button type="button" onclick="window.qrStopRecite()"><i class="fas fa-times"></i></button>
+            <h3>Recite</h3>
+            <div class="qr-rec-mist">Mistakes: <span id="qrRecMistakes">0</span></div>
+        </div>
+        <div class="qr-rec-body">
+            <p class="qr-muted" style="text-align:center">Read this ayah aloud</p>
+            <div class="qr-rec-exp" id="qrRecExp"></div>
+            <p class="qr-muted" style="text-align:center;margin-top:12px">Your recitation</p>
+            <div class="qr-rec-trans" id="qrRecTrans"></div>
+            <p class="qr-muted" style="text-align:center" id="qrRecStat">Tap mic</p>
+        </div>
+        <div class="qr-rec-bot">
+            <button type="button" onclick="window.qrRecPrev()"><i class="fas fa-chevron-left"></i> Prev</button>
+            <button type="button" class="qr-mic-big" id="qrMicInner" onclick="window.qrToggleMic()"><i class="fas fa-microphone"></i></button>
+            <button type="button" onclick="window.qrRecNext()">Next <i class="fas fa-chevron-right"></i></button>
+        </div>
+    </div>
+
+    <div class="qr-toast" id="qrToast"></div>
+</div>
+        </main>
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
+            <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
+            <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
+        </nav>
+    </div>
+
+    <script src="js/app-bridge.js" defer></script>
+    <script src="js/router-bridge.js" defer></script>
+    <script src="script.min.js" defer></script>
+    <script src="js/quran-reader-main.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "versionCode": 6,
+  "version": "1.6.0",
+  "build": "2026-03-07",
+  "minAppVersion": "1.0.0",
+  "changelog": "Fix notification sync and offline PDF access issues - Notifications now appear in app list when sent from admin panel, downloaded PDFs accessible offline without webpage errors, better offline experience and sync reliability",
+  "downloadUrl": "https://kiuma-storage-kiuma4.kiuma4.workers.dev/file/releases/kiuma-v1.6.apk"
+}

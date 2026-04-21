@@ -1,0 +1,1829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Mosques & Qibla - KIUMA</title>
+    <link rel="manifest" href="manifest.json">
+    <script>
+        (function() {
+            var t;
+            try { t = localStorage.getItem('themePreference'); } catch(e) {}
+            if (t === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="styles.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+    <style>
+        body {
+            background: var(--gray);
+            padding-bottom: 0;
+        }
+        .container {
+            max-width: 428px;
+            margin: 0 auto;
+            background: var(--white);
+            min-height: 100vh;
+        }
+        .page-header {
+            background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
+            color: white;
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .page-header::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 100%;
+            height: 20px;
+            background: var(--white);
+            border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+        }
+        .header-top {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+            z-index: 1;
+        }
+        .back-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px;
+        }
+        .page-title {
+            font-size: 18px;
+            font-weight: 600;
+            flex: 1;
+        }
+        .tab-bar {
+            display: flex;
+            background: var(--lighter-green);
+            border-radius: 10px;
+            margin: 20px 15px 15px;
+            padding: 4px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--dark-green);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .tab-btn.active {
+            background: var(--primary-green);
+            color: white;
+        }
+        .tab-content {
+            display: none;
+            padding: 0 15px 30px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .location-banner {
+            background: linear-gradient(135deg, var(--lighter-green), var(--white));
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .location-banner i {
+            font-size: 40px;
+            color: var(--primary-green);
+            margin-bottom: 10px;
+        }
+        .location-banner h2 {
+            font-size: 18px;
+            color: var(--dark-gray);
+            margin-bottom: 5px;
+        }
+        .location-banner p {
+            font-size: 13px;
+            color: var(--text-gray);
+            margin-bottom: 15px;
+        }
+        .location-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--primary-green);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+        .location-status.error {
+            background: #f44336;
+        }
+        .location-status.pending {
+            background: var(--text-gray);
+        }
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .search-box input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid var(--light-gray);
+            border-radius: 10px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary-green);
+        }
+        .search-box button {
+            padding: 12px 18px;
+            background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .map-container {
+            height: 350px;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            background: var(--light-gray);
+            position: relative;
+            z-index: 1;
+            transition: height 0.3s ease;
+        }
+        #mosqueMap {
+            width: 100%;
+            height: 100%;
+        }
+        .my-location-btn {
+            position: absolute;
+            bottom: 14px;
+            right: 14px;
+            z-index: 1000;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--white);
+            border: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 18px;
+            transition: background 0.2s, color 0.2s;
+        }
+        .my-location-btn:active {
+            background: #e8f5e9;
+            color: var(--primary-green);
+        }
+        .my-location-btn.located {
+            color: #2196F3;
+        }
+        .user-marker {
+            background: #2196F3;
+            border: 3px solid white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            box-shadow: 0 2px 8px rgba(33,150,243,0.5);
+        }
+        .mosque-marker {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .mosque-marker-dot {
+            background: var(--primary-green);
+            border: 2px solid white;
+            border-radius: 50%;
+            width: 12px;
+            height: 12px;
+            box-shadow: 0 2px 6px rgba(76,175,80,0.5);
+            flex-shrink: 0;
+        }
+        .mosque-marker-label {
+            background: rgba(255,255,255,0.92);
+            color: #2E7D32;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 1px 5px;
+            border-radius: 4px;
+            margin-top: 2px;
+            white-space: nowrap;
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+            line-height: 1.3;
+            text-align: center;
+        }
+        .leaflet-popup-content-wrapper {
+            border-radius: 10px;
+        }
+        .leaflet-popup-content {
+            margin: 10px 12px;
+        }
+        .popup-mosque-name {
+            font-weight: 600;
+            color: var(--dark-green);
+            margin-bottom: 4px;
+        }
+        .popup-mosque-distance {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+        .popup-directions-btn {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 6px 12px;
+            background: var(--primary-green);
+            color: white;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 12px;
+        }
+        .map-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-gray);
+        }
+        .map-placeholder i {
+            font-size: 40px;
+            color: var(--primary-green);
+            opacity: 0.5;
+            margin-bottom: 10px;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--dark-gray);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-title i {
+            color: var(--primary-green);
+        }
+        .mosque-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .mosque-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: var(--shadow);
+            border-left: 3px solid var(--primary-green);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .mosque-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        .mosque-card-header {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        .mosque-icon {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .mosque-info {
+            flex: 1;
+        }
+        .mosque-name {
+            font-weight: 600;
+            color: var(--dark-gray);
+            font-size: 15px;
+            margin-bottom: 3px;
+        }
+        .mosque-address {
+            font-size: 12px;
+            color: var(--text-gray);
+            display: flex;
+            align-items: flex-start;
+            gap: 5px;
+        }
+        .mosque-address i {
+            margin-top: 2px;
+            color: var(--primary-green);
+        }
+        .mosque-distance {
+            font-size: 12px;
+            color: var(--primary-green);
+            font-weight: 500;
+            margin-top: 5px;
+        }
+        .mosque-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--light-gray);
+        }
+        .mosque-action-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .mosque-action-btn.primary {
+            background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
+            color: white;
+        }
+        .mosque-action-btn.secondary {
+            background: var(--gray);
+            color: var(--dark-gray);
+        }
+        .loading-container {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .loading-container i {
+            font-size: 40px;
+            color: var(--primary-green);
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .error-box {
+            background: #fff3e0;
+            border: 1px solid #ff9800;
+            color: #e65100;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .error-box i {
+            margin-right: 8px;
+        }
+        .enable-location-btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-gray);
+        }
+        .empty-state i {
+            font-size: 50px;
+            opacity: 0.3;
+            margin-bottom: 15px;
+        }
+        /* Qibla Finder Styles */
+        .qibla-container {
+            text-align: center;
+            padding: 20px 0;
+        }
+        .compass-wrapper {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            margin: 0 auto 20px;
+        }
+        .compass {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--lighter-green), var(--white));
+            box-shadow: var(--shadow), inset 0 0 30px rgba(0,0,0,0.05);
+            position: relative;
+            transition: transform 0.3s ease-out;
+        }
+        .compass-directions {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+        .compass-direction {
+            position: absolute;
+            font-weight: 600;
+            font-size: 16px;
+            color: var(--dark-gray);
+        }
+        .compass-direction.n { top: 15px; left: 50%; transform: translateX(-50%); color: var(--primary-green); }
+        .compass-direction.s { bottom: 15px; left: 50%; transform: translateX(-50%); }
+        .compass-direction.e { right: 15px; top: 50%; transform: translateY(-50%); }
+        .compass-direction.w { left: 15px; top: 50%; transform: translateY(-50%); }
+        .qibla-arrow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 8px;
+            height: 120px;
+            margin-left: -4px;
+            margin-top: -100px;
+            transform-origin: bottom center;
+        }
+        .qibla-arrow::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-bottom: 25px solid var(--primary-green);
+        }
+        .qibla-arrow::after {
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 95px;
+            background: linear-gradient(to bottom, var(--primary-green), var(--dark-green));
+            border-radius: 3px;
+        }
+        .compass-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            background: var(--dark-green);
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 5;
+        }
+        .kaaba-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: var(--dark-green);
+        }
+        .qibla-info {
+            background: var(--gray);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .qibla-info h3 {
+            color: var(--dark-gray);
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        .qibla-degree {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--primary-green);
+            margin-bottom: 5px;
+        }
+        .qibla-direction-text {
+            font-size: 14px;
+            color: var(--text-gray);
+        }
+        .compass-status {
+            padding: 10px 15px;
+            background: var(--lighter-green);
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--dark-green);
+            margin-bottom: 15px;
+        }
+        .compass-status.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .compass-status i {
+            margin-right: 8px;
+        }
+        .add-mosque-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .add-mosque-btn:hover { opacity: 0.9; }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-overlay.show { display: flex; }
+        .mosque-form-modal {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .mosque-form-modal h3 {
+            font-size: 18px;
+            color: var(--dark-gray);
+            margin-bottom: 15px;
+        }
+        .form-group {
+            margin-bottom: 14px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--dark-gray);
+            margin-bottom: 5px;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid var(--light-gray);
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-green);
+        }
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 18px;
+        }
+        .form-actions button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .form-actions .btn-submit {
+            background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
+            color: white;
+        }
+        .form-actions .btn-cancel {
+            background: var(--gray);
+            color: var(--dark-gray);
+        }
+        .community-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+            background: #e8f5e9;
+            color: var(--primary-green);
+            margin-top: 4px;
+        }
+        .form-hint {
+            font-size: 11px;
+            color: var(--text-gray);
+            margin-top: 4px;
+        }
+        .calibrate-btn {
+            padding: 12px 24px;
+            background: var(--gray);
+            color: var(--dark-gray);
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .route-info-bar {
+            display: none;
+            background: linear-gradient(135deg, #1565c0, #0d47a1);
+            color: white;
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 15px;
+            animation: slideDown 0.3s ease;
+        }
+        .route-info-bar.show { display: block; }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .route-info-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .route-info-top .route-dest {
+            font-weight: 600;
+            font-size: 14px;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 10px;
+        }
+        .route-close-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        .route-stats {
+            display: flex;
+            gap: 16px;
+        }
+        .route-stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+        }
+        .route-stat i { opacity: 0.8; }
+        .route-stat strong { font-size: 15px; }
+        .mosque-card.active-route {
+            border-left-color: #1565c0;
+            background: #e3f2fd;
+        }
+        .mosque-action-btn.walk {
+            background: linear-gradient(135deg, #1565c0, #0d47a1);
+            color: white;
+        }
+        .mosque-action-btn.walk.loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        .map-container.route-active {
+            height: 400px;
+        }
+        .mosque-walk-time {
+            font-size: 11px;
+            color: #1565c0;
+            margin-top: 2px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="counselling.html" class="nav-link"><i class="fas fa-hands-helping"></i> Counselling</a></li>
+            <li><a href="library.html" class="nav-link"><i class="fas fa-book-open"></i> Library</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="media-settings.html" class="nav-link"><i class="fas fa-sliders-h"></i> Media Settings</a></li>
+            <li><a href="mosques.html" class="nav-link active"><i class="fas fa-mosque"></i> Mosques</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+    <div class="container">
+        <div class="page-hero">
+            <div class="hero-deco"></div>
+            <nav class="hero-nav">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <span class="hero-nav-title" id="heroNavPageTitle"></span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="notifications-btn" id="notificationsBtn"><i class="fas fa-bell"></i><span class="badge" style="display:none;"></span></button>
+                    <div class="hero-profile-avatar" onclick="if(typeof toggleAccountModal==='function')toggleAccountModal()"><i class="fas fa-user"></i></div>
+                </div>
+            </nav>
+            <div class="hero-logo-row">
+                <div class="hero-logo-ring">
+                    <img src="logo.png" alt="KIUMA" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="logo-fallback" style="display:none;">KU</div>
+                </div>
+            </div>
+            <div class="hero-title-area">
+                <div class="hero-org-name">KIUMA</div>
+                <h1 class="hero-page-title">Mosques &amp; Qibla</h1>
+                <p class="hero-subtitle">Find nearby mosques &amp; Qibla direction</p>
+                <div class="hero-accent-line"></div>
+            </div>
+        </div>
+        <main class="main-content">
+
+        <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('mosques')">
+                <i class="fas fa-mosque"></i> Mosques
+            </button>
+            <button class="tab-btn" onclick="switchTab('qibla')">
+                <i class="fas fa-kaaba"></i> Qibla Finder
+            </button>
+        </div>
+
+        <!-- Mosques Tab -->
+        <div class="tab-content active" id="mosquesTab">
+            <div class="location-banner">
+                <i class="fas fa-mosque"></i>
+                <h2>Find Nearby Mosques</h2>
+                <p>Discover mosques in your area</p>
+                <div class="location-status pending" id="locationStatus">
+                    <i class="fas fa-location-crosshairs"></i>
+                    <span id="locationText">Detecting location...</span>
+                </div>
+            </div>
+
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search location or mosque...">
+                <button onclick="searchMosques()"><i class="fas fa-search"></i></button>
+            </div>
+
+            <div class="route-info-bar" id="routeInfoBar">
+                <div class="route-info-top">
+                    <span class="route-dest" id="routeDest"></span>
+                    <button class="route-close-btn" onclick="clearRoute()"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="route-stats">
+                    <div class="route-stat"><i class="fas fa-walking"></i> <strong id="routeTime">--</strong> min</div>
+                    <div class="route-stat"><i class="fas fa-road"></i> <strong id="routeDist">--</strong></div>
+                </div>
+            </div>
+
+            <div class="map-container" id="mapContainer">
+                <div id="mosqueMap"></div>
+                <button class="my-location-btn" id="myLocationBtn" onclick="goToMyLocation()" title="My location">
+                    <i class="fas fa-location-crosshairs"></i>
+                </button>
+            </div>
+
+            <button class="add-mosque-btn" onclick="showAddMosqueForm()">
+                <i class="fas fa-plus-circle"></i> Add a Mosque
+            </button>
+
+            <h3 class="section-title"><i class="fas fa-list"></i> Nearby Mosques</h3>
+            
+            <div id="mosquesList">
+                <div class="loading-container">
+                    <i class="fas fa-spinner"></i>
+                    <p>Finding mosques near you...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Qibla Finder Tab -->
+        <div class="tab-content" id="qiblaTab">
+            <div class="qibla-container">
+                <div class="qibla-info">
+                    <h3><i class="fas fa-kaaba"></i> Qibla Direction</h3>
+                    <div class="qibla-degree" id="qiblaDegree">--°</div>
+                    <div class="qibla-direction-text" id="qiblaDirectionText">Enable location to find Qibla</div>
+                </div>
+
+                <div class="compass-status" id="compassStatus">
+                    <i class="fas fa-info-circle"></i>
+                    <span id="compassStatusText">Initializing compass...</span>
+                </div>
+
+                <div class="compass-wrapper">
+                    <div class="compass" id="compass">
+                        <div class="compass-directions">
+                            <span class="compass-direction n">N</span>
+                            <span class="compass-direction s">S</span>
+                            <span class="compass-direction e">E</span>
+                            <span class="compass-direction w">W</span>
+                        </div>
+                        <div class="qibla-arrow" id="qiblaArrow"></div>
+                        <div class="compass-center"></div>
+                    </div>
+                </div>
+
+                <p style="font-size:13px;color:var(--text-gray);margin-bottom:15px;">
+                    Point your phone towards the arrow direction to face the Kaaba in Mecca
+                </p>
+
+                <button class="calibrate-btn" onclick="calibrateCompass()">
+                    <i class="fas fa-sync-alt"></i> Calibrate Compass
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Mosque Modal -->
+    <div class="modal-overlay" id="addMosqueModal">
+        <div class="mosque-form-modal">
+            <h3><i class="fas fa-mosque" style="color:var(--primary-green);margin-right:8px;"></i> Add a Mosque</h3>
+            <div class="form-group">
+                <label>Mosque Name *</label>
+                <input type="text" id="mosqueName" placeholder="e.g. Masjid Al-Noor">
+            </div>
+            <div class="form-group">
+                <label>Address / Description</label>
+                <input type="text" id="mosqueAddress" placeholder="e.g. Wandegeya, Kampala">
+            </div>
+            <div class="form-group">
+                <label>Location</label>
+                <div class="form-hint">Tap the map to set location, or we'll use your current position</div>
+                <div id="pickLocationMap" style="height:180px;border-radius:10px;margin-top:8px;background:var(--light-gray);"></div>
+                <input type="hidden" id="mosqueLat">
+                <input type="hidden" id="mosqueLng">
+            </div>
+            <div class="form-group">
+                <label>Your Name (optional)</label>
+                <input type="text" id="submitterName" placeholder="Your name">
+            </div>
+            <div class="form-actions">
+                <button class="btn-cancel" onclick="hideAddMosqueForm()">Cancel</button>
+                <button class="btn-submit" onclick="submitMosque()"><i class="fas fa-paper-plane"></i> Submit</button>
+            </div>
+            <div class="form-hint" style="margin-top:10px;text-align:center;">Submitted mosques are reviewed before appearing on the map</div>
+        </div>
+    </div>
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
+            <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
+            <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
+        </nav>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js" defer></script>
+    <script src="firebase-config.js" defer></script>
+    <script src="js/app-bridge.js" defer></script>
+    <script src="js/router-bridge.js" defer></script>
+    <script src="script.min.js" defer></script>
+    <script>
+        let userLat = null;
+        let userLng = null;
+        let qiblaAngle = 0;
+        let compassHeading = 0;
+        let hasCompass = false;
+        let map = null;
+        let userMarker = null;
+        let mosqueMarkers = [];
+        let routeLayer = null;
+        let allMosques = [];
+        let activeRouteId = null;
+        let locationWatchId = null;
+        let firestoreUnsub = null;
+        let mosquesLoaded = false;
+
+        // Kaaba coordinates
+        const KAABA_LAT = 21.4225;
+        const KAABA_LNG = 39.8262;
+
+        // Detect Capacitor WebView (APK)
+        function isCapacitorApp() {
+            return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+        }
+        function isInAppWebView() {
+            var ua = navigator.userAgent || '';
+            return isCapacitorApp() || /wv\)|WebView/i.test(ua) || (window.KiumaBridge && window.KiumaBridge.isInApp && window.KiumaBridge.isInApp());
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            requestLocation();
+        });
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', ['mosques', 'qibla'][i] === tabName);
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            
+            if (tabName === 'qibla') {
+                initCompass();
+            }
+        }
+
+        function requestLocation() {
+            userLat = null;
+            userLng = null;
+            updateLocationStatus('Detecting location...', 'pending');
+            console.log('[Mosques] Requesting location... (inApp:', isInAppWebView(), ')');
+
+            // Strategy 1: Try Capacitor Geolocation plugin (APK)
+            if (isCapacitorApp() && window.Capacitor.Plugins && window.Capacitor.Plugins.Geolocation) {
+                console.log('[Mosques] Trying Capacitor Geolocation plugin');
+                window.Capacitor.Plugins.Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 15000 })
+                    .then(function(pos) {
+                        onLocationSuccess({ coords: { latitude: pos.coords.latitude, longitude: pos.coords.longitude } });
+                        startLocationWatch();
+                    })
+                    .catch(function(e) {
+                        console.warn('[Mosques] Capacitor geo failed:', e);
+                        tryBrowserGeolocation();
+                    });
+                return;
+            }
+
+            // Strategy 2: Try KiumaBridge (APK iframe mode)
+            if (window.KiumaBridge && window.KiumaBridge.isInApp && window.KiumaBridge.isInApp()) {
+                try {
+                    window.parent.postMessage({ type: 'GET_LOCATION', requestId: 'mosques_loc_' + Date.now() }, '*');
+                } catch(e) {}
+            }
+
+            tryBrowserGeolocation();
+        }
+
+        function tryBrowserGeolocation() {
+            if (!navigator.geolocation) {
+                tryIPFallback('Geolocation not supported by browser');
+                return;
+            }
+
+            // Always call geolocation API to trigger the browser's permission prompt
+            // This ensures web browser users are always asked to allow location access
+            doGeolocationRequest();
+        }
+
+        function doGeolocationRequest() {
+            navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                    onLocationSuccess(pos);
+                    startLocationWatch();
+                },
+                function(error) {
+                    console.warn('[Mosques] High accuracy failed:', error.code, error.message);
+                    // Permission denied — show a clear prompt, don't silently fall back to IP
+                    if (error.code === 1) {
+                        showLocationPermissionPrompt();
+                        return;
+                    }
+                    // Retry with lower accuracy for non-permission errors
+                    navigator.geolocation.getCurrentPosition(
+                        function(pos) {
+                            onLocationSuccess(pos);
+                            startLocationWatch();
+                        },
+                        function(error2) {
+                            console.error('[Mosques] Low accuracy also failed:', error2.code, error2.message);
+                            if (error2.code === 1) {
+                                showLocationPermissionPrompt();
+                            } else {
+                                tryIPFallback(getLocationErrorMessage(error2));
+                            }
+                        },
+                        { enableHighAccuracy: false, timeout: 20000, maximumAge: 600000 }
+                    );
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+            );
+        }
+
+        function showLocationPermissionPrompt() {
+            updateLocationStatus('Location permission required', 'error');
+            document.getElementById('mosquesList').innerHTML = `
+                <div style="text-align:center;padding:30px 15px;">
+                    <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--lighter-green),var(--white));display:flex;align-items:center;justify-content:center;margin:0 auto 15px;">
+                        <i class="fas fa-location-crosshairs" style="font-size:36px;color:var(--primary-green);"></i>
+                    </div>
+                    <h3 style="color:var(--dark-gray);margin-bottom:8px;font-size:17px;">Location Permission Required</h3>
+                    <p style="color:var(--text-gray);font-size:14px;margin-bottom:6px;">To find mosques near you, we need access to your location.</p>
+                    <p style="color:var(--text-gray);font-size:13px;margin-bottom:20px;">Please allow location access when your browser asks, or enable it in your browser settings.</p>
+                    <button onclick="requestLocation()" style="padding:14px 30px;background:linear-gradient(135deg,var(--primary-green),var(--dark-green));color:white;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:12px;width:100%;">
+                        <i class="fas fa-location-crosshairs"></i> Allow Location Access
+                    </button>
+                    <div style="background:var(--gray);border-radius:10px;padding:14px;margin-top:10px;text-align:left;">
+                        <p style="font-size:13px;font-weight:600;color:var(--dark-gray);margin-bottom:8px;"><i class="fas fa-info-circle" style="color:var(--primary-green);margin-right:6px;"></i> How to enable location:</p>
+                        <p style="font-size:12px;color:var(--text-gray);margin-bottom:4px;"><b>Chrome:</b> Tap the lock icon in the address bar → Site settings → Location → Allow</p>
+                        <p style="font-size:12px;color:var(--text-gray);margin-bottom:4px;"><b>Safari:</b> Settings → Safari → Location Services → Allow</p>
+                        <p style="font-size:12px;color:var(--text-gray);"><b>Firefox:</b> Tap the lock icon → Permissions → Location → Allow</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Continuous location tracking — updates map without page refresh
+        function startLocationWatch() {
+            if (locationWatchId) return;
+            try {
+                locationWatchId = navigator.geolocation.watchPosition(
+                    function(pos) {
+                        userLat = pos.coords.latitude;
+                        userLng = pos.coords.longitude;
+                        updateUserMarker();
+                    },
+                    function() {},
+                    { enableHighAccuracy: false, maximumAge: 30000 }
+                );
+            } catch(e) {}
+        }
+
+        // IP-based geolocation fallback (rough city-level)
+        function tryIPFallback(originalError) {
+            console.log('[Mosques] Trying IP-based geolocation fallback...');
+            updateLocationStatus('Trying approximate location...', 'pending');
+            fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(8000) })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data && data.latitude && data.longitude) {
+                        console.log('[Mosques] IP location:', data.city, data.latitude, data.longitude);
+                        onLocationSuccess({ coords: { latitude: data.latitude, longitude: data.longitude } });
+                        updateLocationStatus('Approximate location (IP)', 'success');
+                    } else {
+                        throw new Error('No IP location data');
+                    }
+                })
+                .catch(function() {
+                    onLocationError({ code: 0, message: originalError || 'All location methods failed' });
+                });
+        }
+
+        function getLocationErrorMessage(error) {
+            if (error.code === 1) return 'Location permission denied. Please allow location access in your app/browser settings.';
+            if (error.code === 2) return 'Location unavailable. Make sure GPS is enabled in your phone settings.';
+            if (error.code === 3) return 'Location timed out. Check your GPS signal and try again.';
+            return 'Unable to get location';
+        }
+
+        // Listen for location response from APK bridge
+        window.addEventListener('message', function(e) {
+            if (e.data && e.data.type === 'BRIDGE_RESPONSE' && e.data.requestId && e.data.requestId.startsWith('mosques_loc_')) {
+                if (e.data.success && e.data.data && e.data.data.latitude) {
+                    onLocationSuccess({ coords: { latitude: e.data.data.latitude, longitude: e.data.data.longitude } });
+                }
+            }
+        });
+
+        function onLocationSuccess(position) {
+            if (userLat && userLng) return; // Prevent duplicate init
+            userLat = position.coords.latitude;
+            userLng = position.coords.longitude;
+            console.log('[Mosques] Location found:', userLat, userLng);
+            updateLocationStatus('Location found', 'success');
+            try { showMap(); } catch(e) { console.error('[Mosques] Map error:', e); }
+            loadAllMosques();
+            startFirestoreListener();
+            calculateQibla();
+            setTimeout(function() { if (map) map.setView([userLat, userLng], 15); }, 1500);
+        }
+
+        async function loadAllMosques() {
+            const listEl = document.getElementById('mosquesList');
+            listEl.innerHTML = '<div class="loading-container"><i class="fas fa-spinner"></i><p>Finding mosques near you...</p></div>';
+
+            const [osmMosques, fbMosques] = await Promise.all([
+                fetchOSMMosques().catch(e => { console.warn('OSM error:', e); return []; }),
+                fetchFirestoreMosques().catch(e => { console.warn('Firestore error:', e); return []; })
+            ]);
+
+            mergeMosquesAndRender(osmMosques, fbMosques);
+            mosquesLoaded = true;
+        }
+
+        function mergeMosquesAndRender(osmMosques, fbMosques) {
+            const combined = [...osmMosques];
+            fbMosques.forEach(fb => {
+                const isDuplicate = combined.some(m =>
+                    calculateDistance(m.lat, m.lng, fb.lat, fb.lng) < 0.05
+                );
+                if (!isDuplicate) combined.push(fb);
+            });
+
+            combined.forEach((m, i) => {
+                m.distance = calculateDistance(userLat, userLng, m.lat, m.lng);
+                m._id = m._id || ('m-' + i);
+            });
+            combined.sort((a, b) => a.distance - b.distance);
+
+            allMosques = combined.slice(0, 30);
+
+            if (allMosques.length > 0) {
+                renderMosqueList(allMosques);
+                addMosqueMarkers(allMosques);
+            } else {
+                loadDefaultMosques();
+            }
+        }
+
+        // Real-time Firestore listener — updates mosque list live without refresh
+        function startFirestoreListener() {
+            if (firestoreUnsub) return;
+            if (!window.firebaseDb) {
+                // Retry after Firebase loads
+                setTimeout(startFirestoreListener, 2000);
+                return;
+            }
+            firestoreUnsub = window.firebaseDb.collection('mosques')
+                .where('status', '==', 'approved')
+                .onSnapshot(function(snapshot) {
+                    if (!mosquesLoaded) return; // Wait for initial load
+                    console.log('[Mosques] Firestore update — refreshing list live');
+                    const fbMosques = [];
+                    snapshot.forEach(function(doc) {
+                        var d = doc.data();
+                        fbMosques.push({
+                            _id: 'fb-' + doc.id,
+                            name: d.name,
+                            lat: d.latitude,
+                            lng: d.longitude,
+                            address: d.address || '',
+                            source: 'firebase'
+                        });
+                    });
+                    // Re-merge with cached OSM data
+                    var osmCached = allMosques.filter(function(m) { return m.source === 'osm'; });
+                    mergeMosquesAndRender(osmCached, fbMosques);
+                }, function(err) {
+                    console.warn('[Mosques] Firestore listener error:', err);
+                });
+        }
+
+        function onLocationError(error) {
+            console.error('[Mosques] Location error:', error.code, error.message);
+            showLocationError(error.message || getLocationErrorMessage(error));
+        }
+
+        function updateLocationStatus(text, type) {
+            const statusEl = document.getElementById('locationStatus');
+            const textEl = document.getElementById('locationText');
+            textEl.textContent = text;
+            statusEl.className = 'location-status ' + (type === 'success' ? '' : type === 'error' ? 'error' : 'pending');
+        }
+
+        function showLocationError(message) {
+            updateLocationStatus(message, 'error');
+            document.getElementById('mosquesList').innerHTML = `
+                <div class="error-box">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    ${message}
+                </div>
+                <button class="enable-location-btn" onclick="requestLocation()">
+                    <i class="fas fa-location-crosshairs"></i> Try Again
+                </button>
+                <div style="text-align:center;margin-bottom:15px;">
+                    <p style="color:var(--text-gray);font-size:14px;margin-bottom:8px;">Or search for mosques manually below</p>
+                    <p style="color:var(--text-gray);font-size:12px;"><b>Tip:</b> On mobile, check that Location/GPS is turned on in your phone's quick settings, then allow this site to access your location when prompted.</p>
+                </div>
+            `;
+            loadDefaultMosques();
+        }
+
+        function showMap() {
+            if (map) {
+                map.setView([userLat, userLng], 14);
+                updateUserMarker();
+                return;
+            }
+
+            map = L.map('mosqueMap').setView([userLat, userLng], 14);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            updateUserMarker();
+        }
+
+        function goToMyLocation() {
+            if (userLat && userLng && map) {
+                map.setView([userLat, userLng], 16);
+                if (userMarker) userMarker.openPopup();
+                document.getElementById('myLocationBtn').classList.add('located');
+                setTimeout(function() { document.getElementById('myLocationBtn').classList.remove('located'); }, 1500);
+            } else {
+                requestLocation();
+            }
+        }
+
+        function updateUserMarker() {
+            if (!map || !userLat || !userLng) return;
+
+            const userIcon = L.divIcon({
+                className: 'user-marker',
+                iconSize: [16, 16],
+                iconAnchor: [8, 8]
+            });
+
+            if (userMarker) {
+                userMarker.setLatLng([userLat, userLng]);
+            } else {
+                userMarker = L.marker([userLat, userLng], { icon: userIcon })
+                    .addTo(map)
+                    .bindPopup('<b>You are here</b>');
+            }
+        }
+
+        async function fetchOSMMosques() {
+            const radius = 5000;
+            const query = `
+                [out:json][timeout:45];
+                (
+                    node["amenity"="place_of_worship"]["religion"="muslim"](around:${radius},${userLat},${userLng});
+                    way["amenity"="place_of_worship"]["religion"="muslim"](around:${radius},${userLat},${userLng});
+                );
+                out body center;
+            `;
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000);
+            try {
+                const response = await fetch('https://overpass-api.de/api/interpreter', {
+                    method: 'POST',
+                    body: query,
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                if (!response.ok) throw new Error('OSM fetch failed');
+                const data = await response.json();
+                return data.elements.map((el, i) => ({
+                    _id: 'osm-' + i,
+                    name: el.tags?.name || 'Mosque',
+                    lat: el.lat || el.center?.lat,
+                    lng: el.lon || el.center?.lon,
+                    address: el.tags?.['addr:street'] || el.tags?.['addr:full'] || '',
+                    source: 'osm'
+                })).filter(m => m.lat && m.lng);
+            } catch (e) {
+                clearTimeout(timeoutId);
+                if (e.name === 'AbortError') {
+                    console.warn('OSM request timed out, using defaults');
+                    return [];
+                }
+                throw e;
+            }
+        }
+
+        async function fetchFirestoreMosques() {
+            if (!window.firebaseDb) return [];
+            const snapshot = await window.firebaseDb.collection('mosques')
+                .where('status', '==', 'approved')
+                .get();
+            const mosques = [];
+            snapshot.forEach(doc => {
+                const d = doc.data();
+                mosques.push({
+                    _id: 'fb-' + doc.id,
+                    name: d.name,
+                    lat: d.latitude,
+                    lng: d.longitude,
+                    address: d.address || '',
+                    source: 'firebase'
+                });
+            });
+            return mosques;
+        }
+
+        function loadDefaultMosques() {
+            const defaultMosques = [
+                { _id: 'def-0', name: 'Uganda National Mosque (Gaddafi Mosque)', address: 'Old Kampala Hill, Kampala', lat: 0.3136, lng: 32.5711, source: 'default' },
+                { _id: 'def-1', name: 'Wandegeya Mosque', address: 'Wandegeya, Kampala', lat: 0.3389, lng: 32.5714, source: 'default' },
+                { _id: 'def-2', name: 'Kibuli Mosque', address: 'Kibuli Hill, Kampala', lat: 0.3028, lng: 32.5889, source: 'default' },
+                { _id: 'def-3', name: 'Nakasero Mosque', address: 'Nakasero, Kampala', lat: 0.3189, lng: 32.5825, source: 'default' },
+                { _id: 'def-4', name: 'William Street Mosque', address: 'William Street, Kampala', lat: 0.3147, lng: 32.5794, source: 'default' }
+            ];
+            
+            defaultMosques.forEach(m => {
+                m.distance = (userLat && userLng) ? calculateDistance(userLat, userLng, m.lat, m.lng) : null;
+            });
+            defaultMosques.sort((a, b) => (a.distance || 999) - (b.distance || 999));
+            
+            allMosques = defaultMosques;
+            renderMosqueList(allMosques);
+            addMosqueMarkers(allMosques);
+        }
+
+        function renderMosqueList(mosques) {
+            const listEl = document.getElementById('mosquesList');
+            
+            if (!mosques.length) {
+                listEl.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-mosque"></i>
+                        <p>No mosques found nearby</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            listEl.innerHTML = mosques.map(mosque => {
+                const walkMin = mosque.distance != null ? Math.max(1, Math.round(mosque.distance * 1000 / 80)) : null;
+                const isActive = activeRouteId === mosque._id;
+                const escapedName = (mosque.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                return `
+                <div class="mosque-card${isActive ? ' active-route' : ''}" id="card-${mosque._id}" onclick="focusMosque('${mosque._id}')">
+                    <div class="mosque-card-header">
+                        <div class="mosque-icon">
+                            <i class="fas fa-mosque"></i>
+                        </div>
+                        <div class="mosque-info">
+                            <div class="mosque-name">${mosque.name}${mosque.source === 'firebase' ? ' <span class="community-badge">Community</span>' : ''}</div>
+                            ${mosque.address ? `<div class="mosque-address"><i class="fas fa-map-marker-alt"></i><span>${mosque.address}</span></div>` : ''}
+                            ${mosque.distance != null ? `<div class="mosque-distance"><i class="fas fa-route"></i> ${formatDistance(mosque.distance)}</div>` : ''}
+                            ${walkMin ? `<div class="mosque-walk-time"><i class="fas fa-walking"></i> ~${walkMin} min walk</div>` : ''}
+                        </div>
+                    </div>
+                    <div class="mosque-actions">
+                        <button class="mosque-action-btn walk" id="walkBtn-${mosque._id}" onclick="event.stopPropagation(); showWalkingRoute('${mosque._id}')">
+                            <i class="fas fa-walking"></i> Walk
+                        </button>
+                        <button class="mosque-action-btn primary" onclick="event.stopPropagation(); getDirections(${mosque.lat}, ${mosque.lng})">
+                            <i class="fas fa-directions"></i> Google Maps
+                        </button>
+                        <button class="mosque-action-btn secondary" onclick="event.stopPropagation(); shareMosque('${escapedName}', ${mosque.lat}, ${mosque.lng})">
+                            <i class="fas fa-share-alt"></i> Share
+                        </button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function calculateDistance(lat1, lng1, lat2, lng2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLng/2) * Math.sin(dLng/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        function formatDistance(km) {
+            if (km < 1) return Math.round(km * 1000) + ' m away';
+            return km.toFixed(1) + ' km away';
+        }
+
+        function focusMosque(mosqueId) {
+            const mosque = allMosques.find(m => m._id === mosqueId);
+            if (!mosque || !map) return;
+            map.setView([mosque.lat, mosque.lng], 16);
+            // Open the marker popup
+            mosqueMarkers.forEach(marker => {
+                if (marker._mosqueId === mosqueId) marker.openPopup();
+            });
+        }
+
+        async function showWalkingRoute(mosqueId) {
+            if (!userLat || !userLng) { alert('Location not available'); return; }
+            const mosque = allMosques.find(m => m._id === mosqueId);
+            if (!mosque) return;
+
+            // Show loading state
+            const btn = document.getElementById('walkBtn-' + mosqueId);
+            if (btn) { btn.classList.add('loading'); btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...'; }
+
+            try {
+                const url = `https://router.project-osrm.org/route/v1/foot/${userLng},${userLat};${mosque.lng},${mosque.lat}?overview=full&geometries=geojson&steps=true`;
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('Route fetch failed');
+                const data = await res.json();
+
+                if (!data.routes || !data.routes.length) throw new Error('No route found');
+
+                const route = data.routes[0];
+                const distKm = route.distance / 1000;
+                const walkMins = Math.round(route.duration / 60);
+
+                // Clear old route
+                if (routeLayer) { map.removeLayer(routeLayer); routeLayer = null; }
+
+                // Draw the route
+                routeLayer = L.geoJSON(route.geometry, {
+                    style: { color: '#1565c0', weight: 5, opacity: 0.8, dashArray: '10, 6' }
+                }).addTo(map);
+
+                // Fit map to route
+                const bounds = routeLayer.getBounds();
+                bounds.extend([userLat, userLng]);
+                map.fitBounds(bounds, { padding: [40, 40] });
+
+                // Show route info bar
+                document.getElementById('routeDest').textContent = mosque.name;
+                document.getElementById('routeTime').textContent = walkMins;
+                document.getElementById('routeDist').textContent = distKm < 1 ? Math.round(distKm * 1000) + ' m' : distKm.toFixed(1) + ' km';
+                document.getElementById('routeInfoBar').classList.add('show');
+                document.getElementById('mapContainer').classList.add('route-active');
+
+                // Highlight active card
+                activeRouteId = mosqueId;
+                renderMosqueList(allMosques);
+
+                // Scroll map into view
+                document.getElementById('routeInfoBar').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            } catch(e) {
+                console.error('Route error:', e);
+                alert('Could not load walking route. Opening Google Maps instead.');
+                getDirections(mosque.lat, mosque.lng);
+            } finally {
+                if (btn) { btn.classList.remove('loading'); btn.innerHTML = '<i class="fas fa-walking"></i> Walk'; }
+            }
+        }
+
+        function clearRoute() {
+            if (routeLayer) { map.removeLayer(routeLayer); routeLayer = null; }
+            document.getElementById('routeInfoBar').classList.remove('show');
+            document.getElementById('mapContainer').classList.remove('route-active');
+            activeRouteId = null;
+            renderMosqueList(allMosques);
+            if (userLat && userLng && allMosques.length) {
+                const bounds = L.latLngBounds([[userLat, userLng]]);
+                allMosques.slice(0, 10).forEach(m => bounds.extend([m.lat, m.lng]));
+                map.fitBounds(bounds, { padding: [30, 30] });
+            }
+        }
+
+        function getDirections(lat, lng) {
+            if (userLat && userLng) {
+                window.location.href = `https://www.google.com/maps/dir/${userLat},${userLng}/${lat},${lng}/@${userLat},${userLng},14z/data=!3m1!4b1!4m2!4m1!3e2`;
+            } else {
+                window.location.href = `https://www.google.com/maps/dir//${lat},${lng}`;
+            }
+        }
+
+        function shareMosque(name, lat, lng) {
+            const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+            const text = `${name} - ${url}`;
+            if (navigator.share) {
+                navigator.share({ title: name, text: name, url: url });
+            } else {
+                navigator.clipboard.writeText(text);
+                alert('Link copied to clipboard!');
+            }
+        }
+
+        function searchMosques() {
+            const query = document.getElementById('searchInput').value.trim().toLowerCase();
+            if (!query) return;
+            // Filter the current mosque list
+            if (allMosques.length) {
+                const filtered = allMosques.filter(m =>
+                    m.name.toLowerCase().includes(query) ||
+                    (m.address && m.address.toLowerCase().includes(query))
+                );
+                if (filtered.length) {
+                    renderMosqueList(filtered);
+                    if (map && filtered[0]) map.setView([filtered[0].lat, filtered[0].lng], 15);
+                    return;
+                }
+            }
+            // Fallback: open Google Maps search
+            window.location.href = `https://www.google.com/maps/search/mosque+${encodeURIComponent(query)}`;
+        }
+
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') searchMosques();
+        });
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            if (!e.target.value.trim() && allMosques.length) renderMosqueList(allMosques);
+        });
+
+        // Qibla Finder Functions
+        function calculateQibla() {
+            if (!userLat || !userLng) return;
+            
+            const latRad = userLat * Math.PI / 180;
+            const lngRad = userLng * Math.PI / 180;
+            const kaabaLatRad = KAABA_LAT * Math.PI / 180;
+            const kaabaLngRad = KAABA_LNG * Math.PI / 180;
+            
+            const dLng = kaabaLngRad - lngRad;
+            
+            const x = Math.sin(dLng) * Math.cos(kaabaLatRad);
+            const y = Math.cos(latRad) * Math.sin(kaabaLatRad) - 
+                      Math.sin(latRad) * Math.cos(kaabaLatRad) * Math.cos(dLng);
+            
+            qiblaAngle = Math.atan2(x, y) * 180 / Math.PI;
+            qiblaAngle = (qiblaAngle + 360) % 360;
+            
+            document.getElementById('qiblaDegree').textContent = Math.round(qiblaAngle) + '°';
+            document.getElementById('qiblaDirectionText').textContent = getDirectionName(qiblaAngle) + ' from North';
+            
+            updateQiblaArrow();
+        }
+
+        function getDirectionName(angle) {
+            const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+            const index = Math.round(angle / 22.5) % 16;
+            return directions[index];
+        }
+
+        function initCompass() {
+            if (!userLat || !userLng) {
+                updateCompassStatus('Enable location first to find Qibla direction', 'error');
+                return;
+            }
+
+            if (window.DeviceOrientationEvent) {
+                // Check if we need to request permission (iOS 13+)
+                if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    updateCompassStatus('Tap calibrate to enable compass', 'info');
+                } else {
+                    startCompass();
+                }
+            } else {
+                updateCompassStatus('Compass not available on this device. Arrow shows Qibla direction from North.', 'error');
+                hasCompass = false;
+            }
+        }
+
+        function calibrateCompass() {
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission()
+                    .then(response => {
+                        if (response === 'granted') {
+                            startCompass();
+                        } else {
+                            updateCompassStatus('Compass permission denied', 'error');
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Compass permission error:', err);
+                        startCompass(); // Try anyway for non-iOS
+                    });
+            } else {
+                startCompass();
+            }
+        }
+
+        var _compassEventReceived = false;
+        var _compassCheckTimer = null;
+
+        // Listen for relayed sensor data from parent (compass doesn't work in iframes)
+        window.addEventListener('message', function(evt) {
+            if (evt.data && evt.data.type === 'SENSOR_ORIENTATION') {
+                handleOrientation(evt.data);
+            }
+        });
+
+        function startCompass() {
+            _compassEventReceived = false;
+            // Listen for native events (works outside iframe or with permissions)
+            window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+            window.addEventListener('deviceorientation', handleOrientation, true);
+            // Also request parent to relay sensor events (for iframe context)
+            if (window !== window.parent) {
+                try { window.parent.postMessage({ type: 'REQUEST_SENSOR_RELAY' }, '*'); } catch(e) {}
+            }
+            updateCompassStatus('Waiting for compass data...', 'info');
+            
+            // Check after 3 seconds if we actually got any events
+            if (_compassCheckTimer) clearTimeout(_compassCheckTimer);
+            _compassCheckTimer = setTimeout(function() {
+                if (!_compassEventReceived) {
+                    hasCompass = false;
+                    updateCompassStatus('Compass sensor not available. Arrow shows static Qibla direction from North.', 'error');
+                    updateQiblaArrow();
+                }
+            }, 3000);
+        }
+
+        function handleOrientation(event) {
+            let heading;
+            
+            if (event.webkitCompassHeading !== undefined) {
+                // iOS
+                heading = event.webkitCompassHeading;
+            } else if (event.absolute && event.alpha !== null) {
+                // Android with absolute orientation (true north)
+                heading = 360 - event.alpha;
+            } else if (event.alpha !== null) {
+                // Fallback - may not be true north
+                heading = 360 - event.alpha;
+            } else {
+                return;
+            }
+            
+            if (!_compassEventReceived) {
+                _compassEventReceived = true;
+                hasCompass = true;
+                if (_compassCheckTimer) { clearTimeout(_compassCheckTimer); _compassCheckTimer = null; }
+                updateCompassStatus('Compass active - rotate your device', 'success');
+            }
+            
+            compassHeading = heading;
+            updateQiblaArrow();
+        }
+
+        function updateQiblaArrow() {
+            const arrow = document.getElementById('qiblaArrow');
+            const compass = document.getElementById('compass');
+            
+            if (hasCompass) {
+                // Rotate compass to match device heading
+                compass.style.transform = `rotate(${-compassHeading}deg)`;
+                // Arrow points to Qibla
+                arrow.style.transform = `rotate(${qiblaAngle}deg)`;
+            } else {
+                // No compass - just show static Qibla direction
+                compass.style.transform = 'rotate(0deg)';
+                arrow.style.transform = `rotate(${qiblaAngle}deg)`;
+            }
+        }
+
+        function updateCompassStatus(text, type) {
+            const statusEl = document.getElementById('compassStatus');
+            const textEl = document.getElementById('compassStatusText');
+            textEl.textContent = text;
+            statusEl.className = 'compass-status' + (type === 'error' ? ' error' : '');
+        }
+        // ==============================
+        // Map Markers & Routing
+        // ==============================
+        let pickMap = null;
+        let pickMarker = null;
+
+        function addMosqueMarkers(mosques) {
+            if (!map) return;
+            mosqueMarkers.forEach(m => map.removeLayer(m));
+            mosqueMarkers = [];
+
+            mosques.forEach(mosque => {
+                const walkMin = mosque.distance != null ? Math.max(1, Math.round(mosque.distance * 1000 / 80)) : null;
+                const labelIcon = L.divIcon({
+                    className: 'mosque-marker',
+                    html: '<div class="mosque-marker-dot"></div><div class="mosque-marker-label">' + mosque.name.replace(/</g, '&lt;') + '</div>',
+                    iconSize: [12, 12],
+                    iconAnchor: [6, 6]
+                });
+                const marker = L.marker([mosque.lat, mosque.lng], { icon: labelIcon })
+                    .addTo(map)
+                    .bindPopup(`
+                        <div class="popup-mosque-name">${mosque.name}</div>
+                        <div class="popup-mosque-distance">
+                            ${mosque.distance ? formatDistance(mosque.distance) : ''}
+                            ${walkMin ? ' · ~' + walkMin + ' min walk' : ''}
+                            ${mosque.source === 'firebase' ? ' <span style="color:var(--primary-green);font-weight:600;">Community</span>' : ''}
+                        </div>
+                        <div style="display:flex;gap:6px;margin-top:8px;">
+                            <a href="#" onclick="event.preventDefault();showWalkingRoute('${mosque._id}')" class="popup-directions-btn" style="background:#1565c0;">
+                                <i class="fas fa-walking"></i> Walk
+                            </a>
+                            <a href="https://www.google.com/maps/dir/${userLat},${userLng}/${mosque.lat},${mosque.lng}" 
+                               target="_blank" rel="noopener noreferrer" class="popup-directions-btn">
+                                <i class="fas fa-directions"></i> Maps
+                            </a>
+                        </div>
+                    `);
+                marker._mosqueId = mosque._id;
+                mosqueMarkers.push(marker);
+            });
+            if (mosques.length > 0 && userLat && userLng) {
+                const bounds = L.latLngBounds([[userLat, userLng]]);
+                mosques.slice(0, 10).forEach(m => bounds.extend([m.lat, m.lng]));
+                map.fitBounds(bounds, { padding: [30, 30] });
+            }
+        }
+
+        function showAddMosqueForm() {
+            document.getElementById('addMosqueModal').classList.add('show');
+            // Set default location
+            if (userLat && userLng) {
+                document.getElementById('mosqueLat').value = userLat;
+                document.getElementById('mosqueLng').value = userLng;
+            }
+            setTimeout(() => initPickMap(), 200);
+        }
+
+        function hideAddMosqueForm() {
+            document.getElementById('addMosqueModal').classList.remove('show');
+        }
+
+        function initPickMap() {
+            const container = document.getElementById('pickLocationMap');
+            if (pickMap) { pickMap.invalidateSize(); return; }
+            const lat = userLat || 0.3136;
+            const lng = userLng || 32.5711;
+            pickMap = L.map(container).setView([lat, lng], 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OSM',
+                maxZoom: 19
+            }).addTo(pickMap);
+            pickMarker = L.marker([lat, lng], { draggable: true }).addTo(pickMap);
+            pickMarker.on('dragend', function() {
+                const pos = pickMarker.getLatLng();
+                document.getElementById('mosqueLat').value = pos.lat;
+                document.getElementById('mosqueLng').value = pos.lng;
+            });
+            pickMap.on('click', function(e) {
+                pickMarker.setLatLng(e.latlng);
+                document.getElementById('mosqueLat').value = e.latlng.lat;
+                document.getElementById('mosqueLng').value = e.latlng.lng;
+            });
+        }
+
+        async function submitMosque() {
+            const name = document.getElementById('mosqueName').value.trim();
+            const address = document.getElementById('mosqueAddress').value.trim();
+            const lat = parseFloat(document.getElementById('mosqueLat').value);
+            const lng = parseFloat(document.getElementById('mosqueLng').value);
+            const submitter = document.getElementById('submitterName').value.trim();
+
+            if (!name) { alert('Please enter the mosque name'); return; }
+            if (!lat || !lng) { alert('Please set the mosque location on the map'); return; }
+
+            try {
+                if (!window.firebaseDb) { alert('Firebase not available. Try again later.'); return; }
+                await window.firebaseDb.collection('mosques').add({
+                    name: name,
+                    address: address,
+                    latitude: lat,
+                    longitude: lng,
+                    submittedBy: submitter || 'Anonymous',
+                    status: 'pending',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert('Mosque submitted for review! It will appear on the map once approved.');
+                hideAddMosqueForm();
+                document.getElementById('mosqueName').value = '';
+                document.getElementById('mosqueAddress').value = '';
+                document.getElementById('submitterName').value = '';
+            } catch(e) {
+                console.error('Submit mosque error:', e);
+                alert('Failed to submit. Please try again.');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "kiuma-reminders",
+  "version": "1.0.0",
+  "main": "plugin.js",
+  "files": [
+    "plugin.js",
+    "android",
+    "package.json"
+  ],
+  "capacitor": {
+    "android": {
+      "src": "android"
+    }
+  },
+  "peerDependencies": {
+    "@capacitor/android": "^8.1.0",
+    "@capacitor/core": "^8.1.0"
+  }
+}

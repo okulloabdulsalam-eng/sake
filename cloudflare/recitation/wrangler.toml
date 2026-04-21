@@ -1,0 +1,27 @@
+name = "kiuma-recitation"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+
+# Deploy:
+#   cd cloudflare/recitation
+#   npx wrangler secret put OPENAI_API_KEY
+#   npx wrangler secret put ADMIN_TOKEN
+#   npx wrangler deploy
+
+[durable_objects]
+bindings = [
+  { name = "RECITATION_SESSION", class_name = "RecitationSession" }
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["RecitationSession"]
+
+# Optional: R2 bucket for storing session recordings and progress
+# Create first: npx wrangler r2 bucket create kiuma-recitation
+# [[r2_buckets]]
+# binding = "RECITATION_BUCKET"
+# bucket_name = "kiuma-recitation"
+
+[vars]
+WHISPER_MODEL = "whisper-1"

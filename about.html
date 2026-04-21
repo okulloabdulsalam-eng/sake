@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - KIUMA</title>
+    <script>
+        (function() {
+            var t;
+            try { t = localStorage.getItem('themePreference'); } catch(e) {}
+            if (t === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="styles.min.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    <!-- Font Awesome: CDN primary, local fallback -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="fonts/fontawesome.min.css">
+</head>
+<body>
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link active"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="counselling.html" class="nav-link"><i class="fas fa-hands-helping"></i> Counselling</a></li>
+            <li><a href="library.html" class="nav-link"><i class="fas fa-book-open"></i> Library</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="media-settings.html" class="nav-link"><i class="fas fa-sliders-h"></i> Media Settings</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="page-hero">
+            <div class="hero-deco"></div>
+            <nav class="hero-nav">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <span class="hero-nav-title" id="heroNavPageTitle"></span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="notifications-btn" id="notificationsBtn">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge" style="display:none;"></span>
+                    </button>
+                    <div class="hero-profile-avatar" onclick="if(typeof toggleAccountModal==='function')toggleAccountModal()"><i class="fas fa-user"></i></div>
+                </div>
+            </nav>
+            <div class="hero-logo-row">
+                <div class="hero-logo-ring">
+                    <img src="logo.png" alt="KIUMA" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="logo-fallback" style="display:none;">KU</div>
+                </div>
+            </div>
+            <div class="hero-title-area">
+                <div class="hero-org-name">KIUMA</div>
+                <h1 class="hero-page-title">About Us</h1>
+                <p class="hero-subtitle">Learn about KIUMA mission &amp; history</p>
+                <div class="hero-accent-line"></div>
+            </div>
+        </div>
+
+        <main class="main-content">
+            <div style="height:8px;"></div>
+
+            <section class="page-content">
+                <div class="info-card">
+                    <h3><i class="fas fa-mosque"></i> Our Mission</h3>
+                    <p>KIUMA (Kampala International University Muslim Association) is dedicated to fostering a strong, vibrant Islamic community at Kampala International University. We aim to provide spiritual guidance, educational resources, and social support to Muslim students while promoting understanding and harmony in our diverse university community.</p>
+                </div>
+
+                <div class="info-card">
+                    <h3><i class="fas fa-eye"></i> Our Vision</h3>
+                    <p>To be the leading platform for Islamic education, community engagement, and spiritual growth at Kampala International University, creating a welcoming space where every Muslim student can thrive and contribute positively to the university and society.</p>
+                </div>
+
+                <div class="info-card">
+                    <h3><i class="fas fa-history"></i> Our History</h3>
+                    <p>Founded with a vision to unite Muslim students at Kampala International University, KIUMA has been serving the Muslim student community for many years. We started as a small initiative and have grown into a comprehensive platform offering various programs and services to support students in their faith and education.</p>
+                </div>
+
+                <div class="info-card">
+                    <h3><i class="fas fa-users"></i> Our Community</h3>
+                    <p>We serve Muslim students at Kampala International University, providing educational programs, religious services, community events, and support networks. Our community includes students from diverse backgrounds and various programs of study.</p>
+                </div>
+
+                <div class="info-card">
+                    <h3><i class="fas fa-handshake"></i> Get Involved</h3>
+                    <p>Join us in building a stronger Islamic community. Whether you want to participate in programs, volunteer, or support our initiatives, there's a place for everyone at KIUMA.</p>
+                    <a href="join-us.html" class="btn btn-primary" style="margin-top: 15px;">Join Our Community</a>
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
+            <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
+            <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
+        </nav>
+    </div>
+
+    <!-- Floating Did You Know Button -->
+    <div class="floating-dyk-btn" onclick="showDykModal()">
+        <i class="fas fa-lightbulb"></i>
+        <span>Did You Know?</span>
+    </div>
+    <div class="modal-overlay" id="dykModal" style="display: none;">
+        <div class="modal-content activities-modal">
+            <div class="modal-header" style="background: linear-gradient(135deg, #1565C0, #0D47A1);">
+                <h3><i class="fas fa-lightbulb"></i> Did You Know?</h3>
+                <button class="modal-close" onclick="closeDykModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="activities-modal-list">
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-tongue'" style="border-left: 4px solid #C62828;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #C62828, #B71C1C);"><i class="fas fa-comment-slash"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #C62828;">Backbiting & The Tongue</h4><p>Terrifying hadiths about gheebah, slander & idle talk</p></div>
+                    <i class="fas fa-chevron-right" style="color: #C62828;"></i>
+                </div>
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-dress'" style="border-left: 4px solid #6A1B9A;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #6A1B9A, #4A148C);"><i class="fas fa-user-shield"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #6A1B9A;">Dress, Hair & Modesty</h4><p>What Islam says about hair, hijab & clothing</p></div>
+                    <i class="fas fa-chevron-right" style="color: #6A1B9A;"></i>
+                </div>
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-warnings'" style="border-left: 4px solid #E65100;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #E65100, #BF360C);"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #E65100;">Warnings People Ignore</h4><p>Lying, hypocrisy, arrogance, riba & more</p></div>
+                    <i class="fas fa-chevron-right" style="color: #E65100;"></i>
+                </div>
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html'" style="border-left: 4px solid #1565C0;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #1565C0, #0D47A1);"><i class="fas fa-book-open"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #1565C0;">View All Sections</h4><p>Deeds, character, worship & more authentic knowledge</p></div>
+                    <i class="fas fa-chevron-right" style="color: #1565C0;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    function showDykModal(){document.getElementById('dykModal').style.display='flex';}
+    function closeDykModal(){document.getElementById('dykModal').style.display='none';}
+    document.addEventListener('DOMContentLoaded',function(){var o=document.getElementById('dykModal');if(o)o.addEventListener('click',function(e){if(e.target===this)closeDykModal();});});
+    </script>
+
+    <!-- Floating Hot Events Button -->
+    <div class="floating-kizumu-btn" onclick="showActivitiesModal()" style="background: linear-gradient(135deg, #ff6b35, #e74c3c); animation: pulse-hot 1.5s infinite; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5);">
+        <i class="fas fa-fire" style="color: #fff;"></i>
+        <span style="font-weight: bold;">HOT EVENTS!</span>
+    </div>
+    <style>
+    @keyframes pulse-hot {
+        0%, 100% { transform: scale(1); box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5); }
+        50% { transform: scale(1.05); box-shadow: 0 6px 20px rgba(231, 76, 60, 0.7); }
+    }
+    </style>
+
+    <!-- Activities Modal -->
+    <div class="modal-overlay" id="activitiesModal" style="display: none;">
+        <div class="modal-content activities-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-fire" style="color: #ff6b35;"></i> Hot Events - Act Now!</h3>
+                <button class="modal-close" onclick="closeActivitiesModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="activities-modal-list">
+                <div class="activity-modal-item" onclick="window.location.href='activities.html#charity-visit'" style="border-left: 4px solid #ff6b35;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #ff6b35, #e74c3c);">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4 style="color: #2e7d32;">Kizumu Tahfiz Visit — Ongoing</h4>
+                        <p>JazakAllahu Khairan! Program continues individually & in communities.</p>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color: #e74c3c;"></i>
+                </div>
+
+                <div class="activity-modal-item" onclick="window.location.href='activities.html#quran-competition'" style="border-left: 4px solid #9c27b0;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #9c27b0, #673ab7);">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4 style="color: #9c27b0;">Quran Competition — FINISHED</h4>
+                        <p>Thank you for participating! Results and media released soon.</p>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color: #9c27b0;"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="contactTuition()">
+                    <div class="activity-modal-icon" style="background: var(--primary-green);">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Tuition Brothers & Sisters</h4>
+                        <p>Support brothers' and sisters' education</p>
+                    </div>
+                    <i class="fab fa-whatsapp" style="color: #25D366; font-size: 18px;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js" defer></script>
+    <script src="firebase-config.js" defer></script>
+    <script src="script.min.js" defer></script>
+<script src="js/app-bridge.js" defer></script></body>
+</html>
+
+
+

@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications - KIUMA</title>
+    <script>
+        (function() {
+            var t;
+            try { t = localStorage.getItem('themePreference'); } catch(e) {}
+            if (t === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="styles.min.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    <!-- Font Awesome: CDN primary, local fallback -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="fonts/fontawesome.min.css">
+</head>
+<body>
+    <nav class="nav-menu" id="navMenu">
+        <div class="nav-header">
+            <span class="nav-close" id="navClose"><i class="fas fa-times"></i></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="values.html" class="nav-link"><i class="fas fa-heart"></i> Values</a></li>
+            <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Programs</a></li>
+            <li><a href="activities.html" class="nav-link"><i class="fas fa-running"></i> Activities</a></li>
+            <li><a href="events.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="leadership.html" class="nav-link"><i class="fas fa-users"></i> Leadership</a></li>
+            <li><a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact</a></li>
+            <li><a href="counselling.html" class="nav-link"><i class="fas fa-hands-helping"></i> Counselling</a></li>
+            <li><a href="library.html" class="nav-link"><i class="fas fa-book-open"></i> Library</a></li>
+            <li><a href="media.html" class="nav-link"><i class="fas fa-photo-video"></i> Media</a></li>
+            <li><a href="media-settings.html" class="nav-link"><i class="fas fa-sliders-h"></i> Media Settings</a></li>
+            <li><a href="ask-question.html" class="nav-link"><i class="fas fa-question-circle"></i> Ask Question</a></li>
+            <li><a href="join-programs.html" class="nav-link"><i class="fas fa-user-plus"></i> Join Programs</a></li>
+            <li><a href="notifications.html" class="nav-link active"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="pay.html" class="nav-link"><i class="fas fa-credit-card"></i> Pay</a></li>
+            <li><a href="join-us.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i> Join Us</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="page-hero">
+            <div class="hero-deco"></div>
+            <nav class="hero-nav">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <span class="hero-nav-title" id="heroNavPageTitle"></span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="notifications-btn" id="notificationsBtn">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge" style="display:none;"></span>
+                    </button>
+                    <div class="hero-profile-avatar" onclick="if(typeof toggleAccountModal==='function')toggleAccountModal()"><i class="fas fa-user"></i></div>
+                </div>
+            </nav>
+            <div class="hero-logo-row">
+                <div class="hero-logo-ring">
+                    <img src="logo.png" alt="KIUMA" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="logo-fallback" style="display:none;">KU</div>
+                </div>
+            </div>
+            <div class="hero-title-area">
+                <div class="hero-org-name">KIUMA</div>
+                <h1 class="hero-page-title">Notifications</h1>
+                <p class="hero-subtitle">Stay informed with updates</p>
+                <div class="hero-accent-line"></div>
+            </div>
+        </div>
+
+        <main class="main-content">
+            <div style="height:8px;"></div>
+
+            <section class="page-content">
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <button class="btn btn-primary" style="flex: 1; padding: 12px;" onclick="filterNotifications('all')">All</button>
+                    <button class="btn btn-outline" style="flex: 1; padding: 12px;" onclick="filterNotifications('unread')">Unread</button>
+                </div>
+
+                <div id="notificationsList"></div>
+                <div id="notificationsEmptyState" style="text-align: center; color: #888; padding: 30px; display: none;">
+                    <i class="fas fa-bell-slash" style="font-size: 48px; margin-bottom: 10px;"></i>
+                    <p>No notifications yet. Check back later.</p>
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="programs.html" class="nav-item"><i class="fas fa-book"></i><span>Programs</span></a>
+            <a href="events.html" class="nav-item"><i class="fas fa-calendar"></i><span>Events</span></a>
+            <a href="pay.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Pay</span></a>
+            <a href="join-us.html" class="nav-item"><i class="fas fa-user-plus"></i><span>Join</span></a>
+        </nav>
+    </div>
+
+    <!-- Firebase SDK (SAKE notification system: same order and no defer for FCM) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="js/router-bridge.js"></script>
+    <script src="script.js"></script>
+    <script>
+        const notificationsEmptyState = document.getElementById('notificationsEmptyState');
+        const notificationsListEl = document.getElementById('notificationsList');
+        let currentNotifications = [];
+        let notificationsFilter = 'all';
+        const NOTIFICATION_STATUS_KEY = 'notificationStatusOverrides';
+        let notificationStatusOverrides = {};
+
+        try {
+            notificationStatusOverrides = JSON.parse(localStorage.getItem(NOTIFICATION_STATUS_KEY) || '{}');
+        } catch (error) {
+            notificationStatusOverrides = {};
+        }
+
+        window.addEventListener('DOMContentLoaded', function() {
+            initializeNotifications();
+            setTimeout(function() {
+                if (typeof updateDates === 'function') {
+                    updateDates();
+                }
+            }, 1000);
+        });
+
+        let firestoreUnsubscribe = null;
+
+        // Wait for Firebase to be ready before loading
+        async function waitForFirebase(maxWait) {
+            if (window.firebaseDb) return true;
+            var start = Date.now();
+            return new Promise(function(resolve) {
+                var iv = setInterval(function() {
+                    if (window.firebaseDb) { clearInterval(iv); resolve(true); }
+                    else if (Date.now() - start > (maxWait || 8000)) { clearInterval(iv); resolve(false); }
+                }, 300);
+            });
+        }
+        async function initializeNotifications() {
+            // Load from localStorage as instant cache while Firestore connects
+            loadNotificationsFromLocalStorage();
+            renderNotificationList();
+
+            // Wait for Firebase then start real-time listener
+            var ready = await waitForFirebase(8000);
+            if (ready) {
+                startFirestoreListener();
+            } else {
+                console.warn('Firebase not available after timeout, using cached notifications');
+            }
+
+            updateActiveFilterButtons();
+        }
+
+        function startFirestoreListener() {
+            try {
+                // Enable Firestore persistence for offline access
+                if (window.firebase && window.firebase.firestore) {
+                    window.firebase.firestore().enablePersistence()
+                        .then(() => {
+                            console.log('Firestore persistence enabled - notifications available offline');
+                        })
+                        .catch(err => {
+                            if (err.code === 'failed-precondition') {
+                                console.warn('Firestore persistence failed - multiple tabs open');
+                            } else if (err.code === 'unavailable') {
+                                console.warn('Firestore persistence unavailable - using cache');
+                            } else {
+                                console.warn('Firestore persistence error:', err);
+                            }
+                        });
+                }
+
+                console.log('Starting Firestore notifications listener...');
+                firestoreUnsubscribe = window.firebaseDb.collection('notifications')
+                    .orderBy('createdAt', 'desc')
+                    .limit(50)
+                    .onSnapshot(function(snapshot) {
+                        console.log('Firestore snapshot received:', snapshot.size, 'notifications, fromCache:', snapshot.metadata.fromCache);
+                        const firestoreNotifs = [];
+                        snapshot.forEach(function(doc) {
+                            const data = doc.data();
+                            // Handle Firestore Timestamp, ISO string, or missing createdAt
+                            var dateStr;
+                            var ts = data.createdAt || data.created_at;
+                            if (ts && typeof ts.toDate === 'function') {
+                                dateStr = ts.toDate().toISOString();
+                            } else if (ts && ts.seconds) {
+                                dateStr = new Date(ts.seconds * 1000).toISOString();
+                            } else if (ts) {
+                                dateStr = new Date(ts).toISOString();
+                            } else if (data.date) {
+                                dateStr = new Date(data.date).toISOString();
+                            } else {
+                                dateStr = new Date().toISOString();
+                            }
+                            firestoreNotifs.push({
+                                id: doc.id,
+                                title: data.title || 'Notification',
+                                message: data.message || data.body || '',
+                                icon: data.icon || 'fas fa-bell',
+                                image: data.image || '',
+                                category: data.category || data.type || 'general',
+                                status: data.status || (data.is_read ? 'read' : 'unread'),
+                                date: dateStr,
+                                source: 'firebase'
+                            });
+                        });
+
+                        // Server snapshots are authoritative for Firestore-sourced notifications.
+                        // But we must preserve local-only notifications (FCM, admin drafts)
+                        // that are stored in localStorage but don't exist in Firestore.
+                        var fromCache = snapshot.metadata && snapshot.metadata.fromCache;
+                        var filtered = removeLegacyOldNotifications(firestoreNotifs);
+                        if (!fromCache) {
+                            // Server snapshot — merge with local-only notifications
+                            var firestoreIds = {};
+                            filtered.forEach(function(n) { firestoreIds[n.id] = true; });
+                            var localOnly = currentNotifications.filter(function(n) {
+                                return n.source !== 'firebase' && !firestoreIds[n.id];
+                            });
+                            currentNotifications = filtered.concat(localOnly);
+                            localStorage.setItem('notificationsData', JSON.stringify(currentNotifications));
+                            // Update notification badge when new notifications arrive
+                            if (typeof updateNotificationBadge === 'function') {
+                                updateNotificationBadge();
+                            }
+                        } else if (currentNotifications.length === 0 && filtered.length > 0) {
+                            // Cache snapshot, but only use if we have nothing yet
+                            currentNotifications = filtered;
+                            localStorage.setItem('notificationsData', JSON.stringify(currentNotifications));
+                        } else {
+                            // Cache snapshot but we already have localStorage data — skip
+                            // This prevents deleted notifications from reappearing
+                            return;
+                        }
+                        renderNotificationList();
+                    }, function(error) {
+                        console.warn('Firestore notifications listener error:', error);
+                    });
+            } catch(e) {
+                console.warn('Could not start Firestore listener:', e);
+            }
+        }
+
+        async function fetchNotificationsFromGitHub() {
+            const url = `${githubNotificationsUrl}?t=${Date.now()}`;
+            const response = await fetch(url, { cache: 'no-cache' });
+            if (!response.ok) {
+                throw new Error('Failed to load notifications');
+            }
+            const text = await response.text();
+            try {
+                return JSON.parse(text || '[]');
+            } catch (error) {
+                console.warn('Invalid notifications JSON:', error);
+                throw error;
+            }
+        }
+
+        function removeLegacyOldNotifications(list) {
+            if (!Array.isArray(list)) return list;
+            return list.filter(function(n) {
+                var title = (n.title || '').trim();
+                var msg = (n.message || '').toLowerCase();
+                if (title === 'Ramadan' && msg.indexOf('waiting for the moon') !== -1) return false;
+                if (title === 'KIUMA App launch' && msg.indexOf('28th february 2026') !== -1) return false;
+                return true;
+            });
+        }
+
+        function loadNotificationsFromLocalStorage() {
+            try {
+                const localData = JSON.parse(localStorage.getItem('notificationsData') || '[]');
+                currentNotifications = removeLegacyOldNotifications(Array.isArray(localData) ? localData : []);
+                localStorage.setItem('notificationsData', JSON.stringify(currentNotifications));
+            } catch (error) {
+                currentNotifications = [];
+            }
+        }
+
+        function setNotificationsEmptyState(isEmpty) {
+            if (notificationsEmptyState) {
+                notificationsEmptyState.style.display = isEmpty ? 'block' : 'none';
+            }
+            if (notificationsListEl) {
+                notificationsListEl.style.display = isEmpty ? 'none' : 'block';
+            }
+        }
+
+        function filterNotifications(status) {
+            notificationsFilter = status;
+            updateActiveFilterButtons();
+            renderNotificationList();
+        }
+
+        function updateActiveFilterButtons() {
+            const buttons = document.querySelectorAll('.page-content > div button');
+            buttons.forEach(btn => {
+                const label = btn.textContent.trim().toLowerCase();
+                const isActive = (notificationsFilter === 'all' && label === 'all') || (notificationsFilter === 'unread' && label === 'unread');
+                btn.className = isActive ? 'btn btn-primary' : 'btn btn-outline';
+            });
+        }
+
+        function renderNotificationList() {
+            if (!notificationsListEl) return;
+            const sorted = [...currentNotifications].map(normalizeNotification).sort(sortNotifications);
+            const filtered = sorted.filter(notif => notificationsFilter === 'all' ? true : getNotificationDisplayStatus(notif) === 'unread');
+            notificationsListEl.innerHTML = '';
+            if (!filtered.length) {
+                setNotificationsEmptyState(true);
+                return;
+            }
+            setNotificationsEmptyState(false);
+            filtered.forEach(notif => notificationsListEl.appendChild(createNotificationElement(notif)));
+        }
+
+        function sortNotifications(a, b) {
+            const statusA = getNotificationDisplayStatus(a);
+            const statusB = getNotificationDisplayStatus(b);
+            if (statusA === 'unread' && statusB !== 'unread') return -1;
+            if (statusA !== 'unread' && statusB === 'unread') return 1;
+            const dateA = Date.parse(a.date || a.createdAt || 0);
+            const dateB = Date.parse(b.date || b.createdAt || 0);
+            return dateB - dateA;
+        }
+
+        function getNotificationDisplayStatus(notification) {
+            return (notificationStatusOverrides[notification.id] || notification.status || 'read').toLowerCase();
+        }
+
+        function normalizeNotification(notification) {
+            const normalizedDate = notification.date || notification.createdAt || new Date().toISOString();
+            return {
+                ...notification,
+                date: normalizedDate,
+                status: (notification.status || 'read').toLowerCase()
+            };
+        }
+
+        function createNotificationElement(notification) {
+            const status = getNotificationDisplayStatus(notification);
+            const item = document.createElement('div');
+            item.className = 'notification-item';
+            item.dataset.status = status;
+            item.dataset.id = notification.id;
+            item.dataset.date = notification.date;
+            if (status !== 'unread') {
+                item.style.opacity = '0.7';
+            }
+            var imageHtml = '';
+            if (notification.image) {
+                imageHtml = `<img src="${notification.image}" alt="" style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;margin:8px 0 4px;" onerror="this.style.display='none'">`;
+            }
+            item.innerHTML = `
+                <div class="notification-icon">
+                    <i class="${notification.icon || 'fas fa-bell'}"></i>
+                </div>
+                <div class="notification-content">
+                    <h4>${notification.title}</h4>
+                    <p>${notification.message}</p>
+                    ${imageHtml}
+                    <span class="notification-time">${formatTimeAgo(notification.date)}</span>
+                </div>
+            `;
+            item.addEventListener('click', function() {
+                if (getNotificationDisplayStatus(notification) === 'unread') {
+                    updateNotificationStatus(notification.id, 'read');
+                    item.dataset.status = 'read';
+                    item.style.opacity = '0.7';
+                }
+            });
+            return item;
+        }
+
+        function updateNotificationStatus(id, status) {
+            notificationStatusOverrides[id] = status;
+            localStorage.setItem(NOTIFICATION_STATUS_KEY, JSON.stringify(notificationStatusOverrides));
+            // Also update the global read list for badge sync
+            if (status === 'read' && typeof markNotificationAsRead === 'function') {
+                markNotificationAsRead(id);
+            }
+            if (typeof updateNotificationBadge === 'function') {
+                updateNotificationBadge();
+            }
+        }
+
+        function formatTimeAgo(dateInput) {
+            const now = new Date();
+            const date = dateInput ? new Date(dateInput) : new Date();
+            const diffInSeconds = Math.floor((now - date) / 1000);
+            if (diffInSeconds < 60) return 'Just now';
+            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+            if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+            return date.toLocaleDateString();
+        }
+    </script>
+
+    <!-- Floating Did You Know Button -->
+    <div class="floating-dyk-btn" onclick="showDykModal()">
+        <i class="fas fa-lightbulb"></i>
+        <span>Did You Know?</span>
+    </div>
+    <div class="modal-overlay" id="dykModal" style="display: none;">
+        <div class="modal-content activities-modal">
+            <div class="modal-header" style="background: linear-gradient(135deg, #1565C0, #0D47A1);">
+                <h3><i class="fas fa-lightbulb"></i> Did You Know?</h3>
+                <button class="modal-close" onclick="closeDykModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="activities-modal-list">
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-tongue'" style="border-left: 4px solid #C62828;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #C62828, #B71C1C);"><i class="fas fa-comment-slash"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #C62828;">Backbiting & The Tongue</h4><p>Terrifying hadiths about gheebah, slander & idle talk</p></div>
+                    <i class="fas fa-chevron-right" style="color: #C62828;"></i>
+                </div>
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-dress'" style="border-left: 4px solid #6A1B9A;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #6A1B9A, #4A148C);"><i class="fas fa-user-shield"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #6A1B9A;">Dress, Hair & Modesty</h4><p>What Islam says about hair, hijab & clothing</p></div>
+                    <i class="fas fa-chevron-right" style="color: #6A1B9A;"></i>
+                </div>
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html#section-warnings'" style="border-left: 4px solid #E65100;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #E65100, #BF360C);"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #E65100;">Warnings People Ignore</h4><p>Lying, hypocrisy, arrogance, riba & more</p></div>
+                    <i class="fas fa-chevron-right" style="color: #E65100;"></i>
+                </div>
+                <div class="activity-modal-item" onclick="window.location.href='did-you-know.html'" style="border-left: 4px solid #1565C0;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #1565C0, #0D47A1);"><i class="fas fa-book-open"></i></div>
+                    <div class="activity-modal-text"><h4 style="color: #1565C0;">View All Sections</h4><p>Deeds, character, worship & more authentic knowledge</p></div>
+                    <i class="fas fa-chevron-right" style="color: #1565C0;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    function showDykModal(){document.getElementById('dykModal').style.display='flex';}
+    function closeDykModal(){document.getElementById('dykModal').style.display='none';}
+    document.addEventListener('DOMContentLoaded',function(){var o=document.getElementById('dykModal');if(o)o.addEventListener('click',function(e){if(e.target===this)closeDykModal();});});
+    </script>
+
+    <!-- Floating Hot Events Button -->
+    <div class="floating-kizumu-btn" onclick="showActivitiesModal()" style="background: linear-gradient(135deg, #ff6b35, #e74c3c); animation: pulse-hot 1.5s infinite; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5);">
+        <i class="fas fa-fire" style="color: #fff;"></i>
+        <span style="font-weight: bold;">HOT EVENTS!</span>
+    </div>
+    <style>
+    @keyframes pulse-hot {
+        0%, 100% { transform: scale(1); box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5); }
+        50% { transform: scale(1.05); box-shadow: 0 6px 20px rgba(231, 76, 60, 0.7); }
+    }
+    </style>
+
+    <!-- Activities Modal -->
+    <div class="modal-overlay" id="activitiesModal" style="display: none;">
+        <div class="modal-content activities-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-fire" style="color: #ff6b35;"></i> Hot Events - Act Now!</h3>
+                <button class="modal-close" onclick="closeActivitiesModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="activities-modal-list">
+                <div class="activity-modal-item" onclick="window.location.href='activities.html#charity-visit'" style="border-left: 4px solid #ff6b35;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #ff6b35, #e74c3c);">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4 style="color: #2e7d32;">Kizumu Tahfiz Visit — Ongoing</h4>
+                        <p>JazakAllahu Khairan! Program continues individually & in communities.</p>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color: #e74c3c;"></i>
+                </div>
+
+                <div class="activity-modal-item" onclick="window.location.href='activities.html#quran-competition'" style="border-left: 4px solid #9c27b0;">
+                    <div class="activity-modal-icon" style="background: linear-gradient(135deg, #9c27b0, #673ab7);">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4 style="color: #9c27b0;">Quran Competition — FINISHED</h4>
+                        <p>Thank you for participating! Results and media released soon.</p>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color: #9c27b0;"></i>
+                </div>
+                
+                <div class="activity-modal-item" onclick="contactTuition()">
+                    <div class="activity-modal-icon" style="background: var(--primary-green);">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="activity-modal-text">
+                        <h4>Tuition Brothers & Sisters</h4>
+                        <p>Support brothers' and sisters' education</p>
+                    </div>
+                    <i class="fab fa-whatsapp" style="color: #25D366; font-size: 18px;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+<script src="js/app-bridge.js" defer></script></body>
+</html>
+
+
+

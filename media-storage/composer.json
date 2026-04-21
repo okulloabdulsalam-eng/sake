@@ -1,0 +1,15 @@
+{
+    "name": "kiuma/media-storage",
+    "description": "KIUMA Media Storage System with Google Drive Integration",
+    "type": "project",
+    "require": {
+        "php": ">=7.4",
+        "google/apiclient": "^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "KIUMA\\MediaStorage\\": "src/"
+        }
+    }
+}
+

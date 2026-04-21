@@ -1,0 +1,2317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="description" content="KIUMA Live - Watch live Islamic lectures and events">
+    <title>Live - KIUMA</title>
+    <link rel="icon" href="logo.png" type="image/png">
+    <script>
+        (function() {
+            var t;
+            try { t = localStorage.getItem('themePreference'); } catch(e) {}
+            // Force dark for streaming page
+            document.documentElement.setAttribute('data-theme', 'dark');
+        })();
+    </script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-left: env(safe-area-inset-left, 0px);
+            --safe-right: env(safe-area-inset-right, 0px);
+        }
+
+        html, body {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background: #000;
+            color: #fff;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* ========== FULL-VIEWPORT STAGE ========== */
+        .stage {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #videoPlayer {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            background: #000;
+            display: block;
+        }
+
+        /* ========== OVERLAY LAYER (controls on top of video) ========== */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 10;
+            transition: opacity 0.35s ease;
+        }
+        .overlay.hidden { opacity: 0; }
+        .overlay.hidden .top-bar,
+        .overlay.hidden .bottom-bar,
+        .overlay.hidden .side-controls { pointer-events: none; }
+
+        /* allow clicks to pass through to toggle area */
+        .overlay > * { pointer-events: auto; }
+
+        /* Tap zone to toggle controls */
+        .tap-zone {
+            position: fixed;
+            inset: 0;
+            z-index: 9;
+            cursor: pointer;
+        }
+
+        /* ========== TOP BAR ========== */
+        .top-bar {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: calc(12px + var(--safe-top)) 16px 12px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 60%, transparent 100%);
+            z-index: 12;
+        }
+
+        .back-btn {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.12);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #fff;
+            font-size: 16px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+            text-decoration: none;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.22); }
+
+        .top-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .live-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #e53935;
+            color: #fff;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            box-shadow: 0 0 12px rgba(229,57,53,0.5);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .live-pill.visible { opacity: 1; }
+        .live-pill .dot {
+            width: 6px; height: 6px;
+            background: #fff;
+            border-radius: 50%;
+            animation: pulse-dot 1.4s ease-in-out infinite;
+        }
+        @keyframes pulse-dot {
+            0%,100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(0.7); }
+        }
+
+        .viewer-count {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(0,0,0,0.45);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.9);
+            border: 1px solid rgba(255,255,255,0.08);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .viewer-count.visible { opacity: 1; }
+        .viewer-count i { font-size: 10px; }
+
+        .network-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(0,0,0,0.45);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.8);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .network-pill.good { border-color: rgba(76,175,80,0.4); color: #81C784; }
+        .network-pill.medium { border-color: rgba(255,152,0,0.4); color: #FFB74D; }
+        .network-pill.poor { border-color: rgba(244,67,54,0.4); color: #E57373; }
+
+        /* ========== BOTTOM BAR ========== */
+        .bottom-bar {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            padding: 60px 16px calc(16px + var(--safe-bottom));
+            background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.35) 50%, transparent 100%);
+            z-index: 12;
+        }
+
+        /* Stream info — bottom left */
+        .stream-info {
+            flex: 1;
+            min-width: 0;
+            padding-right: 16px;
+            opacity: 0;
+            transform: translateY(6px);
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        .stream-info.visible { opacity: 1; transform: translateY(0); }
+
+        .stream-title {
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1.3;
+            margin-bottom: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+        }
+        .stream-meta-text {
+            font-size: 12px;
+            color: rgba(255,255,255,0.6);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .stream-meta-text i { font-size: 10px; color: rgba(255,255,255,0.4); }
+
+        /* ========== SIDE CONTROLS — right edge ========== */
+        .side-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            flex-shrink: 0;
+        }
+
+        .ctrl-btn {
+            width: 46px; height: 46px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.10);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255,255,255,0.10);
+            color: #fff;
+            font-size: 18px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .ctrl-btn:hover { background: rgba(255,255,255,0.22); transform: scale(1.08); }
+        .ctrl-btn:active { transform: scale(0.95); }
+        .ctrl-btn.active { background: rgba(255,255,255,0.25); color: #4CAF50; border-color: rgba(76,175,80,0.3); }
+        .ctrl-btn.muted { color: #E57373; border-color: rgba(229,57,53,0.3); }
+
+        .ctrl-label {
+            font-size: 9px;
+            font-weight: 600;
+            margin-top: 3px;
+            color: rgba(255,255,255,0.5);
+            text-align: center;
+            letter-spacing: 0.3px;
+        }
+
+        .ctrl-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* ========== QUALITY SHEET ========== */
+        .quality-sheet-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s;
+        }
+        .quality-sheet-backdrop.open { opacity: 1; pointer-events: auto; }
+
+        .quality-sheet {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: #1a1a1a;
+            border-radius: 20px 20px 0 0;
+            padding: 16px 16px calc(20px + var(--safe-bottom));
+            z-index: 101;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .quality-sheet-backdrop.open .quality-sheet { transform: translateY(0); }
+
+        .sheet-handle {
+            width: 36px; height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+            margin: 0 auto 16px;
+        }
+        .sheet-title {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            text-align: center;
+            color: rgba(255,255,255,0.9);
+        }
+
+        .quality-option {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.15s;
+            margin-bottom: 4px;
+        }
+        .quality-option:hover { background: rgba(255,255,255,0.06); }
+        .quality-option.selected { background: rgba(76,175,80,0.12); }
+
+        .quality-option .q-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.9);
+        }
+        .quality-option .q-desc {
+            font-size: 11px;
+            color: rgba(255,255,255,0.4);
+            margin-top: 2px;
+        }
+        .quality-option .q-check {
+            color: #4CAF50;
+            font-size: 16px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .quality-option.selected .q-check { opacity: 1; }
+
+        /* ========== STREAM PICKER (when no stream is playing) ========== */
+        .stream-picker {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            transition: opacity 0.35s, transform 0.35s;
+        }
+        .stream-picker.hiding {
+            opacity: 0;
+            transform: scale(1.04);
+            pointer-events: none;
+        }
+
+        .picker-header {
+            padding: calc(16px + var(--safe-top)) 20px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .picker-header h1 {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        .picker-header h1 i { color: #e53935; margin-right: 8px; font-size: 18px; }
+
+        .picker-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 16px 20px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .picker-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 70%;
+            text-align: center;
+            color: rgba(255,255,255,0.35);
+        }
+        .picker-empty i { font-size: 56px; margin-bottom: 18px; opacity: 0.4; }
+        .picker-empty h3 { font-size: 17px; font-weight: 700; color: rgba(255,255,255,0.5); margin-bottom: 6px; }
+        .picker-empty p { font-size: 13px; max-width: 260px; line-height: 1.5; }
+
+        .picker-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 60%;
+            color: rgba(255,255,255,0.4);
+            gap: 14px;
+        }
+        .picker-loading i { font-size: 32px; }
+
+        /* Add-stream button in picker header */
+        .add-stream-btn {
+            display: flex; align-items: center; gap: 6px;
+            padding: 8px 14px;
+            border-radius: 20px;
+            background: rgba(76,175,80,0.15);
+            border: 1px solid rgba(76,175,80,0.3);
+            color: #81C784;
+            font-size: 12px; font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .add-stream-btn:hover { background: rgba(76,175,80,0.25); }
+        .add-stream-btn i { font-size: 11px; }
+
+        /* Manual stream form card */
+        .add-stream-form {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(76,175,80,0.2);
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 16px;
+            display: none;
+            animation: fadeSlideIn 0.25s ease;
+        }
+        .add-stream-form.open { display: block; }
+        @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+        .add-stream-form h3 {
+            font-size: 14px; font-weight: 700;
+            margin-bottom: 14px;
+            color: rgba(255,255,255,0.85);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .add-stream-form h3 i { color: #81C784; font-size: 13px; }
+
+        .form-field {
+            margin-bottom: 12px;
+        }
+        .form-field label {
+            display: block;
+            font-size: 10px; font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 6px;
+        }
+        .form-field input, .form-field select {
+            width: 100%;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 11px 14px;
+            color: #fff;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: border 0.2s;
+        }
+        .form-field input:focus, .form-field select:focus {
+            border-color: rgba(76,175,80,0.5);
+        }
+        .form-field input::placeholder { color: rgba(255,255,255,0.2); }
+        .form-field select option { background: #1a1a1a; color: #fff; }
+        .form-field .url-hint {
+            font-size: 10px;
+            color: rgba(255,255,255,0.3);
+            margin-top: 5px;
+        }
+        .form-actions {
+            display: flex; gap: 10px; margin-top: 14px;
+        }
+        .form-actions button {
+            flex: 1;
+            padding: 11px;
+            border-radius: 10px;
+            border: none;
+            font-size: 13px; font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .form-submit-btn {
+            background: linear-gradient(135deg, #4CAF50, #388E3C);
+            color: #fff;
+            box-shadow: 0 2px 12px rgba(76,175,80,0.3);
+        }
+        .form-submit-btn:hover { box-shadow: 0 4px 18px rgba(76,175,80,0.4); }
+        .form-submit-btn:disabled { opacity: 0.5; pointer-events: none; }
+        .form-cancel-btn {
+            background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.6);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .form-cancel-btn:hover { background: rgba(255,255,255,0.1); }
+
+        /* Section divider */
+        .picker-divider {
+            font-size: 11px; font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.3);
+            margin: 8px 0 12px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .picker-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255,255,255,0.08);
+        }
+
+        .stream-item {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            gap: 14px;
+            align-items: center;
+        }
+        .stream-item:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.12); }
+        .stream-item:active { transform: scale(0.98); }
+
+        .stream-thumb {
+            width: 72px; height: 72px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #e53935, #ff5722);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            position: relative;
+            overflow: hidden;
+        }
+        .stream-thumb i { font-size: 26px; color: rgba(255,255,255,0.9); z-index: 1; }
+        .stream-thumb img {
+            position: absolute;
+            inset: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+        }
+        .stream-thumb .thumb-live {
+            position: absolute;
+            bottom: 4px; left: 50%;
+            transform: translateX(-50%);
+            background: #e53935;
+            font-size: 8px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 4px;
+            letter-spacing: 0.8px;
+        }
+
+        .stream-detail { flex: 1; min-width: 0; }
+        .stream-detail h3 {
+            font-size: 14px; font-weight: 700;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: rgba(255,255,255,0.95);
+        }
+        .stream-detail .s-meta {
+            font-size: 11px;
+            color: rgba(255,255,255,0.4);
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .stream-detail .s-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .stream-detail .s-meta i { font-size: 9px; }
+
+        .stream-play-icon {
+            width: 42px; height: 42px;
+            border-radius: 50%;
+            background: rgba(76,175,80,0.15);
+            border: 1px solid rgba(76,175,80,0.25);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            color: #4CAF50;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+        .stream-item:hover .stream-play-icon {
+            background: rgba(76,175,80,0.25);
+            transform: scale(1.08);
+        }
+
+        /* ========== CONNECTION STATE OVERLAY ========== */
+        .connection-state {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 30;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .connection-state.visible { opacity: 1; }
+
+        .conn-spinner {
+            width: 48px; height: 48px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: #4CAF50;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .conn-text {
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.7);
+            text-align: center;
+            text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+        }
+
+        /* ========== STATUS TOAST ========== */
+        .toast {
+            position: fixed;
+            top: calc(70px + var(--safe-top));
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: rgba(30,30,30,0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 10px 20px;
+            border-radius: 28px;
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.85);
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            max-width: 90vw;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .toast i { font-size: 14px; }
+        .toast.success i { color: #4CAF50; }
+        .toast.error i { color: #E57373; }
+        .toast.info i { color: #64B5F6; }
+
+        /* ========== DOUBLE-TAP ANIMATION ========== */
+        .seek-indicator {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 25;
+            width: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.15s;
+            color: rgba(255,255,255,0.85);
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .seek-indicator.left { left: 30px; }
+        .seek-indicator.right { right: 30px; }
+        .seek-indicator.visible { opacity: 1; }
+        .seek-indicator i { font-size: 28px; }
+
+        /* ========== LANDSCAPE TWEAKS ========== */
+        @media (orientation: landscape) {
+            .side-controls { gap: 14px; }
+            .ctrl-btn { width: 40px; height: 40px; font-size: 16px; }
+            .ctrl-label { font-size: 8px; }
+            .stream-title { font-size: 14px; }
+            .top-bar { padding-top: calc(8px + var(--safe-top)); padding-bottom: 8px; }
+            .bottom-bar { padding-top: 40px; padding-bottom: calc(10px + var(--safe-bottom)); }
+        }
+
+        /* ========== DESKTOP (wider screens) ========== */
+        @media (min-width: 768px) {
+            .ctrl-btn { width: 50px; height: 50px; font-size: 20px; }
+            .stream-title { font-size: 17px; }
+            .side-controls { gap: 22px; }
+        }
+
+        /* Scrollbar for picker */
+        .picker-body::-webkit-scrollbar { width: 4px; }
+        .picker-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+    </style>
+</head>
+<body>
+
+    <!-- ===== STAGE: Full-viewport video ===== -->
+    <div class="stage">
+        <video id="videoPlayer" playsinline autoplay></video>
+        <div id="ytPlayerWrap" style="display:none;width:100%;height:100%;position:absolute;inset:0;z-index:1;">
+            <div id="ytPlayer" style="width:100%;height:100%;"></div>
+        </div>
+    </div>
+
+    <!-- ===== TAP ZONE: toggle controls visibility ===== -->
+    <div class="tap-zone" id="tapZone"></div>
+
+    <!-- ===== CONNECTION STATE ===== -->
+    <div class="connection-state" id="connState">
+        <div class="conn-spinner"></div>
+        <div class="conn-text" id="connText">Connecting...</div>
+    </div>
+
+    <!-- ===== OVERLAY: controls on top of video ===== -->
+    <div class="overlay" id="overlay">
+
+        <!-- Top bar -->
+        <div class="top-bar">
+            <a href="index.html" class="back-btn" id="backBtn">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div class="top-info">
+                <div class="live-pill" id="livePill">
+                    <span class="dot"></span>
+                    LIVE
+                </div>
+                <div class="viewer-count" id="viewerCount">
+                    <i class="fas fa-eye"></i>
+                    <span id="viewerNum">0</span>
+                </div>
+                <div class="network-pill" id="networkPill">
+                    <i class="fas fa-wifi"></i>
+                    <span id="networkText">--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom bar -->
+        <div class="bottom-bar">
+            <!-- Left: stream info -->
+            <div class="stream-info" id="streamInfo">
+                <div class="stream-title" id="streamTitle">Select a stream</div>
+                <div class="stream-meta-text" id="streamMeta">
+                    <span><i class="fas fa-broadcast-tower"></i> KIUMA Live</span>
+                </div>
+            </div>
+
+            <!-- Right: controls -->
+            <div class="side-controls">
+                <div class="ctrl-group">
+                    <button class="ctrl-btn" id="btnMute" title="Mute / Unmute">
+                        <i class="fas fa-volume-up"></i>
+                    </button>
+                    <span class="ctrl-label">Sound</span>
+                </div>
+                <div class="ctrl-group">
+                    <button class="ctrl-btn" id="btnQuality" title="Quality">
+                        <i class="fas fa-sliders-h"></i>
+                    </button>
+                    <span class="ctrl-label">Quality</span>
+                </div>
+                <div class="ctrl-group">
+                    <button class="ctrl-btn" id="btnPip" title="Picture in Picture">
+                        <i class="fas fa-clone"></i>
+                    </button>
+                    <span class="ctrl-label">PiP</span>
+                </div>
+                <div class="ctrl-group">
+                    <button class="ctrl-btn" id="btnFullscreen" title="Fullscreen">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <span class="ctrl-label">Full</span>
+                </div>
+                <div class="ctrl-group">
+                    <button class="ctrl-btn" id="btnShare" title="Share">
+                        <i class="fas fa-share"></i>
+                    </button>
+                    <span class="ctrl-label">Share</span>
+                </div>
+                <div class="ctrl-group">
+                    <button class="ctrl-btn" id="btnStreams" title="Browse Streams">
+                        <i class="fas fa-list"></i>
+                    </button>
+                    <span class="ctrl-label">Streams</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== QUALITY SHEET ===== -->
+    <div class="quality-sheet-backdrop" id="qualityBackdrop">
+        <div class="quality-sheet" id="qualitySheet">
+            <div class="sheet-handle"></div>
+            <div class="sheet-title">Video Quality</div>
+            <div id="qualityOptions">
+                <div class="quality-option selected" data-quality="auto">
+                    <div>
+                        <div class="q-label">Auto</div>
+                        <div class="q-desc">Recommended - adjusts to your connection</div>
+                    </div>
+                    <i class="fas fa-check q-check"></i>
+                </div>
+                <div class="quality-option" data-quality="1080">
+                    <div>
+                        <div class="q-label">1080p</div>
+                        <div class="q-desc">Full HD</div>
+                    </div>
+                    <i class="fas fa-check q-check"></i>
+                </div>
+                <div class="quality-option" data-quality="720">
+                    <div>
+                        <div class="q-label">720p</div>
+                        <div class="q-desc">HD</div>
+                    </div>
+                    <i class="fas fa-check q-check"></i>
+                </div>
+                <div class="quality-option" data-quality="480">
+                    <div>
+                        <div class="q-label">480p</div>
+                        <div class="q-desc">Standard</div>
+                    </div>
+                    <i class="fas fa-check q-check"></i>
+                </div>
+                <div class="quality-option" data-quality="360">
+                    <div>
+                        <div class="q-label">360p</div>
+                        <div class="q-desc">Low data</div>
+                    </div>
+                    <i class="fas fa-check q-check"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== STREAM PICKER ===== -->
+    <div class="stream-picker" id="streamPicker">
+        <div class="picker-header">
+            <h1><i class="fas fa-circle"></i> Live Now</h1>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <button class="add-stream-btn" id="btnAddStream"><i class="fas fa-plus"></i> Add Stream</button>
+                <button class="back-btn" id="pickerCloseBtn"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <div class="picker-body" id="pickerBody">
+            <!-- Manual stream form -->
+            <div class="add-stream-form" id="addStreamForm">
+                <h3><i class="fas fa-link"></i> Add External Stream</h3>
+                <div class="form-field">
+                    <label>Stream URL</label>
+                    <input type="url" id="manualStreamUrl" placeholder="https://youtube.com/watch?v=... or YouTube live link" autocomplete="off" spellcheck="false">
+                    <div class="url-hint">Supports YouTube links (watch, live, youtu.be, embed)</div>
+                </div>
+                <div class="form-field">
+                    <label>Title</label>
+                    <input type="text" id="manualStreamTitle" placeholder="e.g. Friday Khutbah" maxlength="100">
+                </div>
+                <div class="form-field">
+                    <label>Category</label>
+                    <select id="manualStreamCategory">
+                        <option value="Lecture">Lecture</option>
+                        <option value="Khutbah">Khutbah</option>
+                        <option value="Quran">Quran Recitation</option>
+                        <option value="Dua">Dua / Dhikr</option>
+                        <option value="Event">Event</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button class="form-cancel-btn" id="btnCancelAdd">Cancel</button>
+                    <button class="form-submit-btn" id="btnSubmitStream"><i class="fas fa-broadcast-tower"></i> Add to Live</button>
+                </div>
+            </div>
+
+            <!-- Stream list populated by JS -->
+            <div id="streamListArea">
+                <div class="picker-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>Finding live streams...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TOAST ===== -->
+    <div class="toast" id="toast">
+        <i class="fas fa-info-circle"></i>
+        <span id="toastText">Message</span>
+    </div>
+
+    <!-- YouTube IFrame Player API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+    // ============================================================
+    //  KIUMA Live — Immersive Stream Viewer
+    // ============================================================
+    (() => {
+        'use strict';
+
+        // ---- DOM refs ----
+        const $ = (sel) => document.querySelector(sel);
+        const video        = $('#videoPlayer');
+        const overlay      = $('#overlay');
+        const tapZone      = $('#tapZone');
+        const connState    = $('#connState');
+        const connText     = $('#connText');
+        const livePill     = $('#livePill');
+        const viewerCount  = $('#viewerCount');
+        const viewerNum    = $('#viewerNum');
+        const networkPill  = $('#networkPill');
+        const networkText  = $('#networkText');
+        const streamInfo   = $('#streamInfo');
+        const streamTitle  = $('#streamTitle');
+        const streamMeta   = $('#streamMeta');
+        const btnMute      = $('#btnMute');
+        const btnQuality   = $('#btnQuality');
+        const btnPip       = $('#btnPip');
+        const btnFullscreen = $('#btnFullscreen');
+        const btnShare     = $('#btnShare');
+        const btnStreams    = $('#btnStreams');
+        const qualityBackdrop = $('#qualityBackdrop');
+        const streamPicker = $('#streamPicker');
+        const pickerBody   = $('#pickerBody');
+        const pickerCloseBtn = $('#pickerCloseBtn');
+        const toast        = $('#toast');
+        const toastText    = $('#toastText');
+        const ytPlayerWrap = $('#ytPlayerWrap');
+        const btnAddStream = $('#btnAddStream');
+        const addStreamForm = $('#addStreamForm');
+        const manualStreamUrl = $('#manualStreamUrl');
+        const manualStreamTitle = $('#manualStreamTitle');
+        const manualStreamCategory = $('#manualStreamCategory');
+        const btnCancelAdd = $('#btnCancelAdd');
+        const btnSubmitStream = $('#btnSubmitStream');
+        const streamListArea = $('#streamListArea');
+
+        // ---- State ----
+        let ytPlayer         = null;   // YouTube IFrame Player instance
+        let usingYouTube     = false;  // true when playing via YouTube embed
+        let ytApiReady       = false;  // set by onYouTubeIframeAPIReady
+        let currentStreamId  = null;
+        let currentQuality   = 'auto';
+        let controlsVisible  = true;
+        let hideTimer        = null;
+        let retryCount       = 0;
+        const MAX_RETRIES    = 10;
+        let streamDocUnsubscribe = null;
+        let reconnectTimer   = null;
+        let viewerInterval   = null;
+        let networkSpeed     = 0;
+        let toastTimer       = null;
+        let isStreamActive   = false;
+        let wakeLock         = null;
+        let stallCheckInterval = null;
+        let stallCount       = 0;
+
+        // MSE/R2 chunk playback state
+        let mediaSource      = null;
+        let sourceBuffer     = null;
+        let chunkPollTimer   = null;
+        let nextChunkNum     = 0;
+        let currentWorkerUrl = null;
+        let currentCfStreamId = null;
+        let mseReady         = false;
+        let appendQueue      = [];
+        let connectionGen    = 0;  // incremented on each connect; stale async ops bail out
+        let useBlobMode      = false; // fallback: blob URL playback for MSE-incompatible codecs
+        let blobChunks       = [];    // accumulated chunk data for blob mode
+        let lastNewChunkTime = 0;     // for secondary stream-end detection
+        let streamEndHandled = false; // guard: prevents multiple end-handlers racing
+        let chunkFetchInFlight = false; // prevents overlapping chunk fetches
+        let chunkAbortController = null; // AbortController for chunk fetches
+        let blobRebuildTimer = null;  // debounce timer for blob mode rebuilds
+        let blobDirty = false;        // flag: new chunks accumulated since last blob rebuild
+        let bufferTrimTimer = null;   // proactive buffer trimming interval
+        let adaptivePollTimer = null; // adaptive poll timer (replaces fixed setInterval)
+
+        function getRelayWorkerUrl() {
+            return localStorage.getItem('kiuma_stream_relay_url') || 'https://kiuma-stream-relay.kiuma4.workers.dev';
+        }
+
+        // ============================================================
+        //  YOUTUBE IFRAME PLAYER
+        // ============================================================
+
+        // Global callback required by YouTube IFrame API
+        window.onYouTubeIframeAPIReady = () => {
+            ytApiReady = true;
+            console.log('[LIVE] YouTube IFrame API ready');
+        };
+
+        function createYouTubePlayer(videoId) {
+            return new Promise((resolve, reject) => {
+                if (!ytApiReady || !window.YT || !window.YT.Player) {
+                    reject(new Error('YouTube API not loaded'));
+                    return;
+                }
+
+                destroyYouTubePlayer();
+
+                // Show YouTube container, hide native video
+                ytPlayerWrap.style.display = 'block';
+                video.style.display = 'none';
+
+                ytPlayer = new YT.Player('ytPlayer', {
+                    videoId: videoId,
+                    width: '100%',
+                    height: '100%',
+                    playerVars: {
+                        autoplay: 1,
+                        playsinline: 1,
+                        controls: 0,
+                        modestbranding: 1,
+                        rel: 0,
+                        showinfo: 0,
+                        iv_load_policy: 3,
+                        disablekb: 1,
+                        fs: 0,
+                        origin: window.location.origin,
+                    },
+                    events: {
+                        onReady: (evt) => {
+                            console.log('[LIVE] YouTube player ready');
+                            evt.target.setVolume(100);
+                            evt.target.unMute();
+                            resolve(evt.target);
+                        },
+                        onStateChange: (evt) => {
+                            // YT.PlayerState: PLAYING=1, PAUSED=2, BUFFERING=3, ENDED=0
+                            if (evt.data === YT.PlayerState.ENDED) {
+                                handleStreamEnd('youtube-ended');
+                            }
+                        },
+                        onError: (evt) => {
+                            console.error('[LIVE] YouTube player error:', evt.data);
+                            // Error codes: 2=invalid id, 5=HTML5 error, 100=not found, 101/150=restricted
+                            showToast('YouTube playback error, trying fallback...', 'error');
+                            // Fall back to R2 if YouTube fails
+                            destroyYouTubePlayer();
+                            reject(new Error('YouTube player error: ' + evt.data));
+                        }
+                    }
+                });
+            });
+        }
+
+        function destroyYouTubePlayer() {
+            if (ytPlayer) {
+                try { ytPlayer.destroy(); } catch(e) {}
+                ytPlayer = null;
+            }
+            usingYouTube = false;
+            ytPlayerWrap.style.display = 'none';
+            video.style.display = 'block';
+            // Recreate the ytPlayer div (destroy removes it)
+            if (!document.getElementById('ytPlayer')) {
+                const div = document.createElement('div');
+                div.id = 'ytPlayer';
+                div.style.cssText = 'width:100%;height:100%;';
+                ytPlayerWrap.appendChild(div);
+            }
+        }
+
+        async function connectToYouTubeStream(streamData) {
+            const videoId = streamData.youtubeVideoId;
+            if (!videoId) throw new Error('No YouTube video ID');
+
+            console.log('[LIVE] Connecting via YouTube embed:', videoId);
+            showConnecting('Loading YouTube stream...');
+
+            // Wait for YouTube API if not ready yet (max 5s)
+            let waitCount = 0;
+            while (!ytApiReady && waitCount < 25) {
+                await new Promise(r => setTimeout(r, 200));
+                waitCount++;
+            }
+            if (!ytApiReady) throw new Error('YouTube API failed to load');
+
+            await createYouTubePlayer(videoId);
+            usingYouTube = true;
+
+            // YouTube handles everything — mark as active
+            isStreamActive = true;
+            hideConnecting();
+            showToast('You are watching live', 'success');
+            startAutoHide();
+            livePill.classList.add('visible');
+            viewerCount.classList.add('visible');
+            streamInfo.classList.add('visible');
+            acquireWakeLock();
+        }
+
+        // ============================================================
+        //  INIT
+        // ============================================================
+        function init() {
+            setupControls();
+            setupAddStreamForm();
+            setupTapToggle();
+            setupNetworkMonitor();
+            setupLifecycle();
+            loadStreams();
+        }
+
+        // ============================================================
+        //  CONTROLS
+        // ============================================================
+        function setupControls() {
+            // Mute
+            btnMute.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (usingYouTube && ytPlayer) {
+                    if (ytPlayer.isMuted()) { ytPlayer.unMute(); } else { ytPlayer.mute(); }
+                    updateMuteUI();
+                    showToast(ytPlayer.isMuted() ? 'Muted' : 'Unmuted', 'info');
+                } else {
+                    video.muted = !video.muted;
+                    updateMuteUI();
+                    showToast(video.muted ? 'Muted' : 'Unmuted', 'info');
+                }
+            });
+
+            // Quality
+            btnQuality.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openQualitySheet();
+            });
+            qualityBackdrop.addEventListener('click', (e) => {
+                if (e.target === qualityBackdrop) closeQualitySheet();
+            });
+            document.querySelectorAll('.quality-option').forEach(opt => {
+                opt.addEventListener('click', () => {
+                    setQuality(opt.dataset.quality);
+                    closeQualitySheet();
+                });
+            });
+
+            // PiP
+            btnPip.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                try {
+                    if (document.pictureInPictureElement) {
+                        await document.exitPictureInPicture();
+                        showToast('Exited Picture-in-Picture', 'info');
+                    } else if (video.requestPictureInPicture) {
+                        await video.requestPictureInPicture();
+                        showToast('Picture-in-Picture', 'success');
+                    } else {
+                        showToast('PiP not supported', 'error');
+                    }
+                } catch (err) {
+                    showToast('PiP unavailable', 'error');
+                }
+            });
+
+            // Fullscreen
+            btnFullscreen.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleFullscreen();
+            });
+
+            // Share
+            btnShare.addEventListener('click', (e) => {
+                e.stopPropagation();
+                shareStream();
+            });
+
+            // Browse streams
+            btnStreams.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showPicker();
+            });
+
+            // Picker close button — go back to stream if active, otherwise go home
+            pickerCloseBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (isStreamActive) {
+                    hidePicker();
+                } else {
+                    window.location.href = 'index.html';
+                }
+            });
+
+            // Video events
+            video.addEventListener('play', () => updateMuteUI());
+            video.addEventListener('volumechange', () => updateMuteUI());
+        }
+
+        function updateMuteUI() {
+            const icon = btnMute.querySelector('i');
+            const isMuted = (usingYouTube && ytPlayer) ? ytPlayer.isMuted() : video.muted;
+            if (isMuted) {
+                icon.className = 'fas fa-volume-mute';
+                btnMute.classList.add('muted');
+            } else {
+                icon.className = 'fas fa-volume-up';
+                btnMute.classList.remove('muted');
+            }
+        }
+
+        // ============================================================
+        //  TAP-TO-TOGGLE CONTROLS
+        // ============================================================
+        function setupTapToggle() {
+            let tapTimeout = null;
+
+            tapZone.addEventListener('click', () => {
+                if (tapTimeout) { clearTimeout(tapTimeout); tapTimeout = null; return; }
+                tapTimeout = setTimeout(() => {
+                    tapTimeout = null;
+                    toggleControls();
+                }, 220);
+            });
+
+            // Auto-hide after 4s when stream is playing
+            startAutoHide();
+        }
+
+        function toggleControls() {
+            controlsVisible = !controlsVisible;
+            overlay.classList.toggle('hidden', !controlsVisible);
+            if (controlsVisible) startAutoHide();
+        }
+
+        function showControls() {
+            controlsVisible = true;
+            overlay.classList.remove('hidden');
+            startAutoHide();
+        }
+
+        function startAutoHide() {
+            clearTimeout(hideTimer);
+            if (isStreamActive) {
+                hideTimer = setTimeout(() => {
+                    controlsVisible = false;
+                    overlay.classList.add('hidden');
+                }, 4000);
+            }
+        }
+
+        // ============================================================
+        //  QUALITY
+        // ============================================================
+        function openQualitySheet() {
+            qualityBackdrop.classList.add('open');
+        }
+        function closeQualitySheet() {
+            qualityBackdrop.classList.remove('open');
+        }
+
+        function setQuality(quality) {
+            currentQuality = quality;
+            document.querySelectorAll('.quality-option').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.quality === quality);
+            });
+            // R2 streams are single quality — selector is informational only
+            showToast(`Quality: ${quality === 'auto' ? 'Auto' : quality + 'p'}`, 'info');
+        }
+
+        // ============================================================
+        //  FULLSCREEN
+        // ============================================================
+        function toggleFullscreen() {
+            const el = document.documentElement;
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+            } else {
+                (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+            }
+        }
+
+        // ============================================================
+        //  SHARE
+        // ============================================================
+        function shareStream() {
+            const title = streamTitle.textContent || 'KIUMA Live';
+            if (navigator.share) {
+                navigator.share({ title, text: `Watch "${title}" live on KIUMA`, url: window.location.href });
+            } else {
+                navigator.clipboard.writeText(window.location.href).then(() => {
+                    showToast('Link copied!', 'success');
+                });
+            }
+        }
+
+        // ============================================================
+        //  TOAST
+        // ============================================================
+        function showToast(msg, type = 'info') {
+            clearTimeout(toastTimer);
+            const icon = toast.querySelector('i');
+            icon.className = 'fas ' + (type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
+            toast.className = 'toast ' + type;
+            toastText.textContent = msg;
+            requestAnimationFrame(() => toast.classList.add('show'));
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        // ============================================================
+        //  CONNECTION STATE INDICATOR
+        // ============================================================
+        function showConnecting(msg = 'Connecting...') {
+            connText.textContent = msg;
+            connState.classList.add('visible');
+        }
+        function hideConnecting() {
+            connState.classList.remove('visible');
+        }
+
+        // ============================================================
+        //  NETWORK MONITOR
+        // ============================================================
+        function setupNetworkMonitor() {
+            measureNetwork();
+            setInterval(measureNetwork, 12000);
+            navigator.connection?.addEventListener('change', measureNetwork);
+        }
+
+        function measureNetwork() {
+            const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            if (conn && conn.downlink) {
+                networkSpeed = conn.downlink;
+            }
+            updateNetworkUI();
+        }
+
+        function updateNetworkUI() {
+            const s = networkSpeed;
+            networkPill.className = 'network-pill';
+            if (s > 5) {
+                networkPill.classList.add('good');
+                networkText.textContent = s.toFixed(0) + ' Mbps';
+            } else if (s > 1) {
+                networkPill.classList.add('medium');
+                networkText.textContent = s.toFixed(1) + ' Mbps';
+            } else if (s > 0) {
+                networkPill.classList.add('poor');
+                networkText.textContent = s.toFixed(1) + ' Mbps';
+            } else {
+                networkText.textContent = '--';
+            }
+        }
+
+        // ============================================================
+        //  STREAM PICKER
+        // ============================================================
+        function showPicker() {
+            streamPicker.classList.remove('hiding');
+            streamPicker.style.display = 'flex';
+            loadStreams();
+        }
+        function hidePicker() {
+            streamPicker.classList.add('hiding');
+            setTimeout(() => {
+                if (streamPicker.classList.contains('hiding')) {
+                    streamPicker.style.display = 'none';
+                }
+            }, 350);
+        }
+
+        async function loadStreams() {
+            streamListArea.innerHTML = `<div class="picker-loading"><i class="fas fa-spinner fa-spin"></i><span>Finding live streams...</span></div>`;
+
+            // Wait for Firebase
+            let attempts = 0;
+            while (!window.firebaseDb && attempts < 20) {
+                await new Promise(r => setTimeout(r, 300));
+                attempts++;
+            }
+
+            if (!window.firebaseDb) {
+                streamListArea.innerHTML = `<div class="picker-empty"><i class="fas fa-wifi-slash"></i><h3>Connection issue</h3><p>Could not connect to the server. Pull down to retry.</p></div>`;
+                return;
+            }
+
+            try {
+                const snapshot = await window.firebaseDb
+                    .collection('liveStreams')
+                    .where('status', '==', 'live')
+                    .limit(20)
+                    .get();
+
+                const streams = [];
+                snapshot.forEach(doc => streams.push({ id: doc.id, ...doc.data() }));
+
+                if (streams.length === 0) {
+                    streamListArea.innerHTML = `
+                        <div class="picker-empty">
+                            <i class="fas fa-satellite-dish"></i>
+                            <h3>No live streams</h3>
+                            <p>There are no live streams at the moment. Check back later or add one above.</p>
+                        </div>`;
+                    return;
+                }
+
+                streamListArea.innerHTML = `<div class="picker-divider">Live Now</div>` + streams.map(s => `
+                    <div class="stream-item" data-id="${s.id}">
+                        <div class="stream-thumb">
+                            ${s.thumbnail ? `<img src="${s.thumbnail}" alt="">` : `<i class="fas ${s.source === 'manual' ? 'fa-link' : 'fa-broadcast-tower'}"></i>`}
+                            <span class="thumb-live">${s.source === 'manual' ? 'EXTERNAL' : 'LIVE'}</span>
+                        </div>
+                        <div class="stream-detail">
+                            <h3>${escHtml(s.title || 'Live Stream')}</h3>
+                            <div class="s-meta">
+                                <span><i class="fas fa-eye"></i> ${s.viewerCount || 0}</span>
+                                <span><i class="fas fa-clock"></i> ${timeAgo(s.startedAt)}</span>
+                                ${s.category ? `<span><i class="fas fa-tag"></i> ${escHtml(s.category)}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="stream-play-icon"><i class="fas fa-play"></i></div>
+                    </div>
+                `).join('');
+
+                // Bind clicks
+                streamListArea.querySelectorAll('.stream-item').forEach(el => {
+                    el.addEventListener('click', () => watchStream(el.dataset.id));
+                });
+
+            } catch (err) {
+                console.error('Error loading streams:', err);
+                streamListArea.innerHTML = `<div class="picker-empty"><i class="fas fa-exclamation-triangle"></i><h3>Error</h3><p>Could not load streams. Tap to retry.</p></div>`;
+                streamListArea.querySelector('.picker-empty').addEventListener('click', loadStreams);
+            }
+        }
+
+        // ============================================================
+        //  MANUAL STREAM — add external YouTube / video link
+        // ============================================================
+
+        function setupAddStreamForm() {
+            btnAddStream.addEventListener('click', (e) => {
+                e.stopPropagation();
+                addStreamForm.classList.toggle('open');
+                if (addStreamForm.classList.contains('open')) {
+                    manualStreamUrl.focus();
+                }
+            });
+
+            btnCancelAdd.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeAddForm();
+            });
+
+            btnSubmitStream.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                await submitManualStream();
+            });
+
+            // Auto-fill title from URL paste
+            manualStreamUrl.addEventListener('input', () => {
+                const vid = extractYouTubeVideoId(manualStreamUrl.value.trim());
+                if (vid && !manualStreamTitle.value.trim()) {
+                    manualStreamTitle.placeholder = 'YouTube stream detected — add a title';
+                } else {
+                    manualStreamTitle.placeholder = 'e.g. Friday Khutbah';
+                }
+            });
+        }
+
+        function closeAddForm() {
+            addStreamForm.classList.remove('open');
+            manualStreamUrl.value = '';
+            manualStreamTitle.value = '';
+            manualStreamCategory.value = 'Lecture';
+        }
+
+        // Extract YouTube video ID from various URL formats
+        function extractYouTubeVideoId(url) {
+            if (!url) return null;
+            // youtube.com/watch?v=ID
+            let m = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+            if (m) return m[1];
+            // youtube.com/live/ID
+            m = url.match(/youtube\.com\/live\/([a-zA-Z0-9_-]{11})/);
+            if (m) return m[1];
+            // youtu.be/ID
+            m = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+            if (m) return m[1];
+            // youtube.com/embed/ID
+            m = url.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/);
+            if (m) return m[1];
+            // youtube.com/shorts/ID (unlikely for live but handle it)
+            m = url.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/);
+            if (m) return m[1];
+            // bare video ID (11 chars)
+            m = url.match(/^([a-zA-Z0-9_-]{11})$/);
+            if (m) return m[1];
+            return null;
+        }
+
+        async function submitManualStream() {
+            const url = manualStreamUrl.value.trim();
+            const title = manualStreamTitle.value.trim() || 'External Live Stream';
+            const category = manualStreamCategory.value;
+
+            if (!url) {
+                showToast('Please paste a stream URL', 'error');
+                manualStreamUrl.focus();
+                return;
+            }
+
+            const videoId = extractYouTubeVideoId(url);
+            if (!videoId) {
+                showToast('Could not detect a YouTube video ID from this URL', 'error');
+                manualStreamUrl.focus();
+                return;
+            }
+
+            btnSubmitStream.disabled = true;
+            btnSubmitStream.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+
+            try {
+                // Wait for Firebase
+                let waitAttempts = 0;
+                while (!window.firebaseDb && waitAttempts < 10) {
+                    await new Promise(r => setTimeout(r, 300));
+                    waitAttempts++;
+                }
+                if (!window.firebaseDb) throw new Error('Firebase not available');
+
+                // Check for duplicate — same YouTube video ID already live
+                const existing = await window.firebaseDb
+                    .collection('liveStreams')
+                    .where('youtubeVideoId', '==', videoId)
+                    .where('status', '==', 'live')
+                    .limit(1)
+                    .get();
+
+                if (!existing.empty) {
+                    // Already listed — just watch it
+                    const existId = existing.docs[0].id;
+                    showToast('Stream already listed — opening it now', 'info');
+                    closeAddForm();
+                    watchStream(existId);
+                    return;
+                }
+
+                // Create Firestore document
+                const docRef = await window.firebaseDb.collection('liveStreams').add({
+                    title: title,
+                    category: category,
+                    status: 'live',
+                    source: 'manual',
+                    youtubeVideoId: videoId,
+                    youtubeUrl: url,
+                    viewerCount: 0,
+                    startedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    heartbeat: firebase.firestore.FieldValue.serverTimestamp(),
+                    createdBy: 'manual',
+                });
+
+                console.log('[LIVE] Manual stream added:', docRef.id, 'videoId:', videoId);
+                showToast('Stream added! Opening...', 'success');
+                closeAddForm();
+
+                // Refresh the list then auto-play the new stream
+                await loadStreams();
+                watchStream(docRef.id);
+
+            } catch (err) {
+                console.error('[LIVE] Failed to add manual stream:', err);
+                showToast('Failed to add stream: ' + err.message, 'error');
+            } finally {
+                btnSubmitStream.disabled = false;
+                btnSubmitStream.innerHTML = '<i class="fas fa-broadcast-tower"></i> Add to Live';
+            }
+        }
+
+        // ============================================================
+        //  WATCH STREAM — main entry point
+        // ============================================================
+        async function watchStream(streamId) {
+            console.log('[LIVE] watchStream:', streamId);
+            currentStreamId = streamId;
+            retryCount = 0;
+            streamEndHandled = false; // reset guard for new stream
+
+            // Cleanup
+            cleanup();
+
+            // Hide picker, show connecting
+            hidePicker();
+            showConnecting('Connecting to stream...');
+            showControls();
+
+            try {
+                // Fetch stream doc to check for YouTube video ID
+                const streamDoc = await window.firebaseDb.collection('liveStreams').doc(streamId).get();
+                const streamData = streamDoc.data();
+                if (!streamData) throw new Error('Stream not found');
+                if (streamData.status === 'ended') throw new Error('Stream has ended');
+
+                setStreamInfo(streamData);
+
+                // Try YouTube first (if broadcast has a YouTube video ID)
+                if (streamData.youtubeVideoId) {
+                    try {
+                        await connectToYouTubeStream(streamData);
+                        // Set up Firestore listener for stream end + viewer count
+                        setupStreamListener(streamId);
+                        startViewerPolling(streamId);
+                        // Increment viewer count
+                        try {
+                            await window.firebaseDb.collection('liveStreams').doc(streamId).update({
+                                viewerCount: firebase.firestore.FieldValue.increment(1)
+                            });
+                        } catch(e) {}
+                        return; // YouTube connected successfully
+                    } catch (ytErr) {
+                        console.warn('[LIVE] YouTube failed, falling back to R2:', ytErr.message);
+                        destroyYouTubePlayer();
+                        showConnecting('YouTube unavailable, trying direct stream...');
+                    }
+                }
+
+                // Fallback: R2 chunk streaming
+                if (streamData.cfStreamId) {
+                    await connectToR2Stream(streamId);
+                } else {
+                    throw new Error('No stream source available');
+                }
+            } catch (err) {
+                console.error('[LIVE] Connection failed:', err);
+                showToast('Connection failed: ' + err.message, 'error');
+                scheduleReconnect(streamId);
+            }
+        }
+
+        function cleanup() {
+            // Stop YouTube player if active
+            destroyYouTubePlayer();
+
+            // Stop MSE/R2 playback
+            if (chunkPollTimer) { clearInterval(chunkPollTimer); chunkPollTimer = null; }
+            if (adaptivePollTimer) { clearTimeout(adaptivePollTimer); adaptivePollTimer = null; }
+            if (blobRebuildTimer) { clearTimeout(blobRebuildTimer); blobRebuildTimer = null; }
+            if (bufferTrimTimer) { clearInterval(bufferTrimTimer); bufferTrimTimer = null; }
+            if (chunkAbortController) { try { chunkAbortController.abort(); } catch(e) {} chunkAbortController = null; }
+            chunkFetchInFlight = false;
+            blobDirty = false;
+
+            if (mediaSource && mediaSource.readyState === 'open') {
+                try { mediaSource.endOfStream(); } catch(e) {}
+            }
+            mediaSource = null;
+            sourceBuffer = null;
+            mseReady = false;
+            appendQueue = [];
+            nextChunkNum = 0;
+            currentCfStreamId = null;
+            currentWorkerUrl = null;
+            useBlobMode = false;
+            blobChunks = [];
+            lastNewChunkTime = 0;
+            lastBlobRebuildTime = 0;
+            pendingBlobMime = null;
+
+            // Reset playback rate to normal
+            try { video.playbackRate = 1.0; } catch(e) {}
+
+            // Remove video event listeners for stall recovery
+            try {
+                video.removeEventListener('waiting', onVideoWaiting);
+                video.removeEventListener('stalled', onVideoStalled);
+                video.removeEventListener('playing', onVideoPlaying);
+            } catch(e) {}
+
+            if (streamDocUnsubscribe) { streamDocUnsubscribe(); streamDocUnsubscribe = null; }
+            if (viewerInterval) { clearInterval(viewerInterval); viewerInterval = null; }
+            if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+            stopStallDetection();
+            stopLiveEdgeSync();
+            video.src = '';
+            video.srcObject = null;
+            isStreamActive = false;
+            releaseWakeLock();
+
+            // Decrement viewer count (non-blocking)
+            if (currentStreamId && window.firebaseDb) {
+                try {
+                    window.firebaseDb.collection('liveStreams').doc(currentStreamId).update({
+                        viewerCount: firebase.firestore.FieldValue.increment(-1)
+                    }).catch(() => {});
+                } catch(e) {}
+            }
+        }
+
+        // Centralized stream-end handler — prevents multiple end-detection paths from racing
+        function handleStreamEnd(reason) {
+            if (streamEndHandled) return; // guard: only run once
+            streamEndHandled = true;
+            console.log('[LIVE] Stream ended — reason:', reason);
+
+            // Mark manual streams as ended in Firestore so they don't linger in the list
+            if (currentStreamId && window.firebaseDb) {
+                window.firebaseDb.collection('liveStreams').doc(currentStreamId).get().then(doc => {
+                    if (doc.exists && doc.data().source === 'manual') {
+                        doc.ref.update({ status: 'ended', endedAt: firebase.firestore.FieldValue.serverTimestamp() }).catch(() => {});
+                    }
+                }).catch(() => {});
+            }
+
+            cleanup();
+            isStreamActive = false;
+            hideConnecting();
+            livePill.classList.remove('visible');
+            viewerCount.classList.remove('visible');
+            showToast('Stream has ended', 'info');
+            setTimeout(() => showPicker(), 1500);
+        }
+
+        // ============================================================
+        //  R2 CHUNK PLAYBACK via Media Source Extensions (MSE)
+        //
+        //  Flow:
+        //  1. Get stream doc from Firestore — contains cfStreamId + workerUrl
+        //  2. Create MediaSource, attach to <video>, add SourceBuffer
+        //  3. Poll /stream/:id/playlist every 2s for new chunk count
+        //  4. Fetch new chunks, append to SourceBuffer
+        // ============================================================
+        async function connectToR2Stream(streamId) {
+            const myGen = ++connectionGen;
+
+            const streamDoc = await window.firebaseDb.collection('liveStreams').doc(streamId).get();
+            const streamData = streamDoc.data();
+
+            if (!streamData) throw new Error('Stream not found');
+            if (streamData.status === 'ended') throw new Error('Stream has ended');
+            if (!streamData.cfStreamId) throw new Error('Stream not ready (no R2 stream)');
+            if (myGen !== connectionGen) return;
+
+            setStreamInfo(streamData);
+            currentCfStreamId = streamData.cfStreamId;
+            currentWorkerUrl = streamData.workerUrl || getRelayWorkerUrl();
+            console.log('[LIVE] Connecting to R2 stream:', currentCfStreamId);
+
+            if (retryCount === 0) {
+                try {
+                    await window.firebaseDb.collection('liveStreams').doc(streamId).update({
+                        viewerCount: firebase.firestore.FieldValue.increment(1)
+                    });
+                } catch(e) {}
+            }
+
+            showConnecting('Loading stream...');
+
+            // Get stream info from worker
+            const playlistRes = await fetch(`${currentWorkerUrl}/stream/${currentCfStreamId}/playlist`);
+            if (!playlistRes.ok) throw new Error('Stream not available');
+            const playlist = await playlistRes.json();
+            if (playlist.status === 'ended') throw new Error('Stream has ended');
+            if (myGen !== connectionGen) return;
+
+            const storedMime = playlist.mimeType || 'video/webm;codecs=vp8,opus';
+
+            // Fetch chunk 0 (init segment) — needed for both MSE and blob modes
+            console.log('[LIVE] Fetching init segment (chunk 0)');
+            const initRes = await fetch(`${currentWorkerUrl}/stream/${currentCfStreamId}/chunk/0`);
+            if (!initRes.ok) throw new Error('Failed to fetch init segment');
+            const initData = await initRes.arrayBuffer();
+            if (myGen !== connectionGen) return;
+
+            // Try MSE first, fall back to blob URL if codec is incompatible
+            let mseOk = false;
+            if ('MediaSource' in window) {
+                const candidates = [storedMime, 'video/webm;codecs=vp8,opus', 'video/webm;codecs=vp9,opus', 'video/webm'];
+                let mseMime = null;
+                for (const mt of candidates) {
+                    if (MediaSource.isTypeSupported(mt)) { mseMime = mt; break; }
+                }
+                if (mseMime) {
+                    console.log('[LIVE] Trying MSE with:', mseMime);
+                    try {
+                        mediaSource = new MediaSource();
+                        video.src = URL.createObjectURL(mediaSource);
+                        await new Promise((resolve, reject) => {
+                            const t = setTimeout(() => reject(new Error('timeout')), 8000);
+                            mediaSource.addEventListener('sourceopen', () => {
+                                clearTimeout(t);
+                                try {
+                                    sourceBuffer = mediaSource.addSourceBuffer(mseMime);
+                                    sourceBuffer.mode = 'sequence';
+                                    sourceBuffer.addEventListener('updateend', processAppendQueue);
+                                    resolve();
+                                } catch(e) { reject(e); }
+                            }, { once: true });
+                        });
+                        // Try appending init segment — this is where H.264 will fail
+                        await new Promise((resolve, reject) => {
+                            const onDone = () => { sourceBuffer.removeEventListener('updateend', onDone); resolve(); };
+                            const onErr = () => { sourceBuffer.removeEventListener('error', onErr); reject(new Error('Init rejected')); };
+                            sourceBuffer.addEventListener('updateend', onDone);
+                            sourceBuffer.addEventListener('error', onErr);
+                            sourceBuffer.appendBuffer(initData);
+                        });
+                        mseReady = true;
+                        mseOk = true;
+                        console.log('[LIVE] MSE init segment accepted');
+                    } catch(e) {
+                        console.warn('[LIVE] MSE failed, falling back to blob playback:', e.message);
+                        // Tear down failed MSE
+                        if (mediaSource && mediaSource.readyState === 'open') {
+                            try { mediaSource.endOfStream(); } catch(ex) {}
+                        }
+                        mediaSource = null;
+                        sourceBuffer = null;
+                        mseReady = false;
+                    }
+                }
+            }
+            if (myGen !== connectionGen) return;
+
+            if (!mseOk) {
+                // Blob fallback — Chrome's native <video> decoder handles H.264 in WebM
+                console.log('[LIVE] Using blob URL fallback for:', storedMime);
+                useBlobMode = true;
+                blobChunks = [initData];
+            }
+
+            // Skip to recent chunks for low latency (chunk 0 already handled)
+            nextChunkNum = Math.max(1, playlist.chunkCount - 3);
+
+            // Pre-buffer: fetch initial chunks before playing
+            await fetchNewChunks(myGen);
+            if (myGen !== connectionGen) return;
+
+            // Wait for a second poll to have ≥2s of buffer before play
+            if (!useBlobMode && appendQueue.length < 2 && playlist.chunkCount > nextChunkNum) {
+                await new Promise(r => setTimeout(r, 1200));
+                await fetchNewChunks(myGen);
+                if (myGen !== connectionGen) return;
+            }
+
+            // In blob mode, build initial blob and set as src
+            if (useBlobMode) {
+                rebuildBlobSrc(storedMime);
+            }
+
+            // Start playing
+            try { await video.play(); } catch(e) {
+                video.muted = true;
+                try { await video.play(); } catch(e2) {}
+            }
+
+            // Connected!
+            retryCount = 0;
+            isStreamActive = true;
+            hideConnecting();
+            showToast('You are watching live', 'success');
+            startAutoHide();
+            livePill.classList.add('visible');
+            viewerCount.classList.add('visible');
+            streamInfo.classList.add('visible');
+            startStallDetection();
+            startLiveEdgeSync();
+            setupStreamListener(streamId);
+            startViewerPolling(streamId);
+            acquireWakeLock();
+
+            // Poll for new chunks every 1s (matches broadcaster's 1s MediaRecorder timeslice)
+            const gen = myGen;
+            chunkPollTimer = setInterval(() => fetchNewChunks(gen), 1000);
+        }
+
+        // Blob fallback: rebuild video src from accumulated chunks
+        // Debounced — only rebuild every 5s to avoid constant freeze/reload
+        let lastBlobRebuildTime = 0;
+        let pendingBlobMime = null;
+
+        function rebuildBlobSrc(mimeType) {
+            if (!blobChunks.length) return;
+            pendingBlobMime = mimeType;
+            const now = Date.now();
+            const timeSinceLast = now - lastBlobRebuildTime;
+
+            // First build (initial) — do immediately
+            if (lastBlobRebuildTime === 0) {
+                doRebuildBlob(mimeType);
+                return;
+            }
+
+            // Subsequent builds — debounce to every 5s
+            if (timeSinceLast < 5000) {
+                if (!blobRebuildTimer) {
+                    blobRebuildTimer = setTimeout(() => {
+                        blobRebuildTimer = null;
+                        if (pendingBlobMime) doRebuildBlob(pendingBlobMime);
+                    }, 5000 - timeSinceLast);
+                }
+                return;
+            }
+            doRebuildBlob(mimeType);
+        }
+
+        function doRebuildBlob(mimeType) {
+            lastBlobRebuildTime = Date.now();
+            const blob = new Blob(blobChunks, { type: mimeType || 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const oldUrl = video.src;
+            video.src = url;
+            video.addEventListener('loadeddata', () => {
+                // Jump to near live edge
+                try { video.currentTime = Math.max(0, video.duration - 2); } catch(e) {}
+                video.play().catch(() => { video.muted = true; video.play().catch(() => {}); });
+            }, { once: true });
+            if (oldUrl && oldUrl.startsWith('blob:')) {
+                setTimeout(() => { try { URL.revokeObjectURL(oldUrl); } catch(e) {} }, 1000);
+            }
+        }
+
+        async function fetchNewChunks(gen) {
+            if (gen !== undefined && gen !== connectionGen) return;
+            if (!currentCfStreamId || !currentWorkerUrl) return;
+            if (!useBlobMode && (!mseReady || !mediaSource || mediaSource.readyState !== 'open')) return;
+            try {
+                const res = await fetch(`${currentWorkerUrl}/stream/${currentCfStreamId}/playlist`);
+                if (!res.ok) return;
+                const playlist = await res.json();
+
+                if (playlist.status === 'ended' && nextChunkNum >= playlist.chunkCount) {
+                    if (chunkPollTimer) { clearInterval(chunkPollTimer); chunkPollTimer = null; }
+                    return;
+                }
+
+                // Secondary stream-end detection: if worker says ended AND no new chunks for 6s, end stream
+                if (playlist.status === 'ended') {
+                    const now = Date.now();
+                    if (!lastNewChunkTime) lastNewChunkTime = now;
+                    if (now - lastNewChunkTime > 6000) {
+                        console.log('[LIVE] Stream ended (worker ended + no new chunks for 6s)');
+                        cleanup();
+                        isStreamActive = false;
+                        hideConnecting();
+                        livePill.classList.remove('visible');
+                        viewerCount.classList.remove('visible');
+                        showToast('Stream has ended', 'info');
+                        setTimeout(() => showPicker(), 1500);
+                        return;
+                    }
+                } else {
+                    lastNewChunkTime = Date.now(); // reset timer when we get new chunks
+                }
+
+                // Fetch all new chunks in parallel for minimum latency
+                const toFetch = [];
+                while (nextChunkNum < playlist.chunkCount) {
+                    toFetch.push(nextChunkNum);
+                    nextChunkNum++;
+                }
+                if (toFetch.length === 0) return;
+
+                const results = await Promise.all(
+                    toFetch.map(n =>
+                        fetch(`${currentWorkerUrl}/stream/${currentCfStreamId}/chunk/${n}`)
+                            .then(r => r.ok ? r.arrayBuffer() : null)
+                            .catch(() => null)
+                    )
+                );
+                if (gen !== undefined && gen !== connectionGen) return;
+
+                let newChunks = false;
+                for (const chunkData of results) {
+                    if (!chunkData) continue;
+                    if (useBlobMode) {
+                        blobChunks.push(chunkData);
+                        newChunks = true;
+                    } else {
+                        appendQueue.push(chunkData);
+                    }
+                }
+
+                if (useBlobMode && newChunks) {
+                    rebuildBlobSrc(playlist.mimeType);
+                } else if (!useBlobMode) {
+                    processAppendQueue();
+                }
+            } catch(e) {
+                console.warn('[LIVE] Chunk fetch error:', e);
+            }
+        }
+
+        function processAppendQueue() {
+            if (!sourceBuffer || appendQueue.length === 0) return;
+            if (sourceBuffer.updating) return;
+            if (!mediaSource || mediaSource.readyState !== 'open') {
+                appendQueue = [];
+                return;
+            }
+
+            const data = appendQueue.shift();
+            try {
+                sourceBuffer.appendBuffer(data);
+            } catch(e) {
+                if (e.name === 'QuotaExceededError') {
+                    try {
+                        const buffered = sourceBuffer.buffered;
+                        if (buffered.length > 0) {
+                            const removeEnd = buffered.end(buffered.length - 1) - 30;
+                            if (removeEnd > buffered.start(0)) {
+                                sourceBuffer.remove(buffered.start(0), removeEnd);
+                            }
+                        }
+                    } catch(re) {}
+                    appendQueue.unshift(data);
+                } else {
+                    console.error('[LIVE] SourceBuffer append error:', e);
+                    appendQueue = [];
+                }
+            }
+        }
+
+        // Keep video at live edge — prevents drift and buffer underruns
+        let liveEdgeTimer = null;
+        function startLiveEdgeSync() {
+            stopLiveEdgeSync();
+            liveEdgeTimer = setInterval(() => {
+                if (!video || !isStreamActive || useBlobMode) return;
+                try {
+                    const buf = video.buffered;
+                    if (buf.length > 0) {
+                        const liveEdge = buf.end(buf.length - 1);
+                        const behind = liveEdge - video.currentTime;
+                        if (behind > 2.5) {
+                            video.currentTime = liveEdge - 0.5;
+                        }
+                    }
+                } catch(e) {}
+            }, 3000);
+        }
+        function stopLiveEdgeSync() {
+            if (liveEdgeTimer) { clearInterval(liveEdgeTimer); liveEdgeTimer = null; }
+        }
+
+        // ============================================================
+        //  RECONNECT
+        // ============================================================
+        function getBackoffDelay(attempt) {
+            // Exponential backoff: 2s, 4s, 8s, 16s, 30s (capped)
+            return Math.min(2000 * Math.pow(2, attempt - 1), 30000);
+        }
+
+        function scheduleReconnect(streamId) {
+            if (retryCount >= MAX_RETRIES) {
+                hideConnecting();
+                showToast('Connection lost. Tap Streams to retry.', 'error');
+                return;
+            }
+            retryCount++;
+            const delay = getBackoffDelay(retryCount);
+            showConnecting(`Reconnecting (${retryCount}/${MAX_RETRIES})...`);
+            console.log(`[LIVE] Reconnect attempt ${retryCount} in ${delay}ms`);
+            clearTimeout(reconnectTimer);
+            reconnectTimer = setTimeout(async () => {
+                try {
+                    cleanup();
+                    await connectToR2Stream(streamId);
+                } catch (err) {
+                    console.error('[LIVE] Reconnect failed:', err);
+                    scheduleReconnect(streamId);
+                }
+            }, delay);
+        }
+
+        // ============================================================
+        //  VIDEO STALL DETECTION
+        // ============================================================
+        function startStallDetection() {
+            stopStallDetection();
+            stallCount = 0;
+            stallCheckInterval = setInterval(() => {
+                if (!isStreamActive || !video) return;
+                try {
+                    if (video.readyState < 3) { // HAVE_FUTURE_DATA
+                        stallCount++;
+                        // After 4 checks (12s): try seeking to live edge
+                        if (stallCount === 4) {
+                            console.log('[LIVE] Trying to seek to live edge');
+                            try {
+                                const buf = video.buffered;
+                                if (buf.length > 0) {
+                                    video.currentTime = buf.end(buf.length - 1) - 0.5;
+                                }
+                            } catch(e) {}
+                        }
+                        // After 8 checks (24s): full reconnect as last resort
+                        if (stallCount >= 8) {
+                            console.log('[LIVE] Video stalled for 24s, reconnecting');
+                            showToast('Stream stalled, reconnecting...', 'error');
+                            stallCount = 0;
+                            scheduleReconnect(currentStreamId);
+                        }
+                    } else {
+                        stallCount = 0;
+                    }
+                } catch(e) {}
+            }, 3000);
+        }
+
+        function stopStallDetection() {
+            if (stallCheckInterval) { clearInterval(stallCheckInterval); stallCheckInterval = null; }
+            stallCount = 0;
+        }
+
+        // ============================================================
+        //  STREAM LISTENER — detect stream end + viewer count updates
+        // ============================================================
+        function setupStreamListener(streamId) {
+            if (streamDocUnsubscribe) streamDocUnsubscribe();
+
+            let heartbeatWarned = false;
+            let heartbeatMissCount = 0; // track consecutive missed heartbeats
+
+            streamDocUnsubscribe = window.firebaseDb.collection('liveStreams').doc(streamId)
+                .onSnapshot((doc) => {
+                    const d = doc.data();
+                    if (!d) return;
+
+                    if (d.status === 'ended') {
+                        handleStreamEnd('firestore-status-ended');
+                        return;
+                    }
+
+                    // Update viewer count in real-time
+                    if (d.viewerCount !== undefined) {
+                        viewerNum.textContent = Math.max(0, d.viewerCount);
+                    }
+
+                    // Broadcaster heartbeat check — auto-end after 60s of silence
+                    if (d.lastHeartbeat && isStreamActive) {
+                        const hbAge = (Date.now() - new Date(d.lastHeartbeat).getTime()) / 1000;
+                        if (hbAge > 45 && !heartbeatWarned) {
+                            heartbeatWarned = true;
+                            heartbeatMissCount++;
+                            showToast('Broadcaster may be offline', 'error');
+                            showConnecting('Broadcaster unresponsive...');
+                        } else if (hbAge <= 45 && heartbeatWarned) {
+                            heartbeatWarned = false;
+                            heartbeatMissCount = 0;
+                            hideConnecting();
+                            showToast('Broadcaster back', 'success');
+                        }
+
+                        // Auto-end: heartbeat stale for >60s means broadcaster is gone
+                        if (hbAge > 60) {
+                            console.log('[LIVE] Heartbeat stale for ' + Math.round(hbAge) + 's — auto-ending');
+                            // Also update Firestore so other viewers see it
+                            try {
+                                window.firebaseDb.collection('liveStreams').doc(streamId).update({
+                                    status: 'ended',
+                                    endedAt: new Date().toISOString(),
+                                    viewerCount: 0
+                                }).catch(() => {});
+                            } catch(e) {}
+                            handleStreamEnd('heartbeat-timeout-' + Math.round(hbAge) + 's');
+                        }
+                    }
+                });
+        }
+
+        // ============================================================
+        //  VIEWER POLLING (fallback for viewer count)
+        // ============================================================
+        function startViewerPolling(streamId) {
+            if (viewerInterval) clearInterval(viewerInterval);
+            viewerInterval = setInterval(async () => {
+                try {
+                    const doc = await window.firebaseDb.collection('liveStreams').doc(streamId).get();
+                    const d = doc.data();
+                    if (d) viewerNum.textContent = Math.max(0, d.viewerCount || 0);
+                } catch(e) {}
+            }, 8000);
+        }
+
+        // ============================================================
+        //  WAKE LOCK — prevent screen dimming during stream
+        // ============================================================
+        async function acquireWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('[LIVE] Wake lock acquired');
+                    wakeLock.addEventListener('release', () => { wakeLock = null; });
+                }
+            } catch(e) { console.log('[LIVE] Wake lock not available'); }
+        }
+        function releaseWakeLock() {
+            if (wakeLock) { try { wakeLock.release(); } catch(e) {} wakeLock = null; }
+        }
+
+        // ============================================================
+        //  LIFECYCLE — visibility, beforeunload, wake lock re-acquire
+        // ============================================================
+        function setupLifecycle() {
+            // Re-acquire wake lock when tab becomes visible again
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible' && isStreamActive) {
+                    acquireWakeLock();
+                }
+            });
+
+            // Auto-resume when network comes back online
+            window.addEventListener('online', () => {
+                console.log('[LIVE] Network back online');
+                if (currentStreamId && !isStreamActive) {
+                    showToast('Network restored, reconnecting...', 'info');
+                    retryCount = 0; // Reset retries on fresh network
+                    clearTimeout(reconnectTimer);
+                    scheduleReconnect(currentStreamId);
+                }
+            });
+
+            window.addEventListener('offline', () => {
+                console.log('[LIVE] Network offline');
+                if (isStreamActive || currentStreamId) {
+                    showToast('Network offline', 'error');
+                    showConnecting('Waiting for network...');
+                    // Pause retries while offline
+                    clearTimeout(reconnectTimer);
+                }
+            });
+
+            // Cleanup on page unload
+            window.addEventListener('beforeunload', () => {
+                if (currentStreamId && window.firebaseDb) {
+                    try {
+                        window.firebaseDb.collection('liveStreams').doc(currentStreamId).update({
+                            viewerCount: firebase.firestore.FieldValue.increment(-1)
+                        });
+                    } catch(e) {}
+                }
+                cleanup();
+                releaseWakeLock();
+            });
+
+            // Handle page hide (mobile browsers)
+            window.addEventListener('pagehide', () => {
+                if (currentStreamId && window.firebaseDb) {
+                    try {
+                        window.firebaseDb.collection('liveStreams').doc(currentStreamId).update({
+                            viewerCount: firebase.firestore.FieldValue.increment(-1)
+                        });
+                    } catch(e) {}
+                }
+            });
+        }
+
+        // ============================================================
+        //  STREAM INFO
+        // ============================================================
+        function setStreamInfo(data) {
+            streamTitle.textContent = data.title || 'Live Stream';
+            const parts = [];
+            if (data.category) parts.push(`<span><i class="fas fa-tag"></i> ${escHtml(data.category)}</span>`);
+            if (data.startedAt) parts.push(`<span><i class="fas fa-clock"></i> Started ${timeAgo(data.startedAt)}</span>`);
+            parts.push(`<span><i class="fas fa-broadcast-tower"></i> KIUMA</span>`);
+            streamMeta.innerHTML = parts.join('');
+            livePill.classList.add('visible');
+            viewerCount.classList.add('visible');
+            streamInfo.classList.add('visible');
+            viewerNum.textContent = data.viewerCount || 0;
+        }
+
+        // ============================================================
+        //  UTILS
+        // ============================================================
+        function escHtml(s) {
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        function timeAgo(ts) {
+            if (!ts) return 'just now';
+            const date = ts.toDate ? ts.toDate() : new Date(ts);
+            const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+            if (diff < 60) return 'just now';
+            if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+            if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+            return date.toLocaleDateString();
+        }
+
+        // ============================================================
+        //  BOOT
+        // ============================================================
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+
+        // Expose for external use (e.g. deep links)
+        window.streamPlayer = { watchStream, showPicker };
+    })();
+    </script>
+</body>
+</html>

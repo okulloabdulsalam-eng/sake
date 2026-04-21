@@ -1,0 +1,58 @@
+========================================
+KIUMA Firebase + Site Diagnostic Report
+Generated: 2026-03-03T14:27:10.347Z
+========================================
+
+SUMMARY
+-------
+- Firebase project: kiuma-mob-app (OK in firebase-config.js)
+- FCM token path: OK in script.js; VAPID key is set (not placeholder)
+- Service workers: sw.js and firebase-messaging-sw.js exist; /sake/firebase-messaging-sw.js returns 200 live
+- Authorized domain: Add okulloabdulsalam-eng.github.io in Firebase Console if not already
+- PHP APIs: GitHub Pages does not run PHP. get_all_users.php and send_notifications_to_all.php must be hosted elsewhere (e.g. separate server, or use Firebase Functions/Cloud Run) and set window.API_BASE_URL in the app to that host
+- app-bridge.js: Present locally at js/app-bridge.js; ensure it is deployed under your site base path (e.g. /sake/js/app-bridge.js)
+
+VAPID key in code (script.js): BBlGfYuqflABo9cV8c4N6Tl1RZtsH0Cf1w3k-WILIz4i9EroLvzcWY2S_V0ue-t5Thp4R_0UCWA5tWX_8jIBOT0
+Replace YOUR_PUBLIC_VAPID_KEY_HERE only if you use a different key from Firebase Console.
+
+--- 1. Firebase project (kiuma-mob-app) ---
+OK: firebase-config.js found with projectId: kiuma-mob-app
+
+--- 2. FCM token & VAPID key ---
+OK: FCM getToken path present in script.js
+OK: VAPID key found in script.js (length 87)
+    Value: BBlGfYuqflABo9cV8c4N6Tl1RZtsH0Cf1w3k-WIL...
+
+--- 3. Service worker ---
+OK: sw.js (main) exists (contains Firebase messaging)
+OK: firebase-messaging-sw.js exists (contains Firebase messaging)
+Live check: https://okulloabdulsalam-eng.github.io/sake/firebase-messaging-sw.js
+  Live: OK (200)
+
+--- 4. VAPID key (for Firebase Console) ---
+Ensure Firebase Console > Project Settings > Cloud Messaging > Web Push certificates has this key added and that okulloabdulsalam-eng.github.io is an authorized domain.
+
+--- 5. Authorized domain (okulloabdulsalam-eng.github.io) ---
+Manual: In Firebase Console > Authentication > Settings > Authorized domains, add: okulloabdulsalam-eng.github.io
+Live: Site reachable at https://okulloabdulsalam-eng.github.io
+  Fetch: HTTP 404
+
+--- 6. PHP / API endpoints ---
+GET  https://okulloabdulsalam-eng.github.io/api/get_all_users.php
+  Status: 404
+  JSON response: no (or not detected)
+POST https://okulloabdulsalam-eng.github.io/api/send_notifications_to_all.php
+  Status: 405
+  JSON response: no (or not detected)
+
+--- 7. js/app-bridge.js ---
+OK: js/app-bridge.js exists (KiumaBridge/KiumaApp)
+Live: https://okulloabdulsalam-eng.github.io/sake/js/app-bridge.js
+  Live: HTTP 404
+
+--- 8. JSON response check ---
+get_all_users.php and send_notifications_to_all.php should return JSON (e.g. { success, users } or { success, totalUsers }). See section 6 above.
+
+========================================
+End of report
+========================================
