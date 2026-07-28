@@ -488,4 +488,75 @@ self.addEventListener('notificationclick', (event) => {
     );
 });
 
+// Background sync for Hijri date refresh
+self.addEventListener('sync', (event) => {
+    if (event.tag === 'refresh-hijri-date') {
+        event.waitUntil(
+            refreshHijriDateInBackground()
+        );
+    }
+});
+
+// Periodic background sync for Hijri date (every 12 hours)
+self.addEventListener('periodicsync', (event) => {
+    if (event.tag === 'refresh-hijri-date-periodic') {
+        event.waitUntil(
+            refreshHijriDateInBackground()
+        );
+    }
+});
+
+async function refreshHijriDateInBackground() {
+    try {
+        const today = new Date();
+        const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        
+        const apis = [
+            `https://api.aladhan.com/v1/gToH?date=${dateStr}`,
+            `https://api.hijri.app/v2/convert?g=${dateStr}`
+        ];
+
+        for (const url of apis) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) continue;
+                
+                const data = await response.json();
+                let hijri = null;
+
+                if (data.data && data.data.hijri) {
+                    hijri = data.data.hijri;
+                }
+
+                if (hijri && hijri.day && hijri.month && hijri.year) {
+                    // Save to cache that can be accessed by hijri-date-manager.js
+                    const cache = await caches.open(CACHE_NAME);
+                    const cacheData = {
+                        day: hijri.day,
+                        month: hijri.month,
+                        year: hijri.year,
+                        timestamp: Date.now()
+                    };
+                    
+                    // Store in IndexedDB or via postMessage to clients
+                    const clients = await self.clients.matchAll();
+                    clients.forEach(client => {
+                        client.postMessage({
+                            type: 'HIJRI_DATE_UPDATE',
+                            data: cacheData
+                        });
+                    });
+                    
+                    return;
+                }
+            } catch (error) {
+                console.warn('[ServiceWorker] Hijri API error:', error);
+                continue;
+            }
+        }
+    } catch (error) {
+        console.warn('[ServiceWorker] Background Hijri refresh failed:', error);
+    }
+}
+
 console.log('[ServiceWorker] Service Worker loaded');

@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Payment - KIUMA</title>
     <script>
         (function() {
@@ -177,49 +177,10 @@
                 <div id="paymentForm" style="display: none;">
                     <div class="form-group" id="paymentMethodsGroup">
                         <label class="form-label" style="margin-bottom: 12px; font-size: 18px; font-weight: 600;">Pay</label>
-                        <div id="pesapalBlock" style="border: 2px solid #0066B2; border-radius: 12px; padding: 18px; background: linear-gradient(135deg, #F5FAFF, #E3F2FD); margin-bottom: 20px;">
-                            <p style="margin:0 0 14px 0; font-size:13px; color:#333;">Pay securely with card or mobile money.</p>
-                            <!-- Amount inside box -->
-                            <div class="form-group" id="payBoxAmountGroup" style="margin-bottom:12px;">
-                                <label style="font-size:12px;">Amount (UGX)</label>
-                                <input type="number" class="form-input" id="amount" placeholder="Enter amount" min="1" style="width:100%; padding:10px; border:2px solid #e0e0e0; border-radius:8px; box-sizing:border-box;">
-                            </div>
-                            <!-- Donation type & reason (for Charity / Donate, shown by JS) -->
-                            <div class="form-group" id="payBoxDonationTypeGroup" style="margin-bottom:12px; display:none;">
-                                <label style="font-size:12px;">Donation type</label>
-                                <select class="form-input" id="donationType" onchange="handleDonationTypeChange(this.value)" style="width:100%; padding:10px; border:2px solid #e0e0e0; border-radius:8px; box-sizing:border-box;">
-                                    <option value="">Select donation type</option>
-                                    <option value="general">General Donation</option>
-                                    <option value="zakat">Zakat</option>
-                                    <option value="sadaqah">Sadaqah</option>
-                                    <option value="iftar">Iftar Sponsorship</option>
-                                    <option value="education">Education Fund</option>
-                                    <option value="mosque">Mosque Building Fund</option>
-                                    <option value="kizumu-tahfiz-visit">Kizumu Tahfiz Visit (Ongoing)</option>
-                                    <option value="tuition-brothers">Tuition Brothers & Sisters</option>
-                                    <option value="other">Other</option>
-                                </select>
-                            </div>
-                            <div class="form-group" id="payBoxReasonGroup" style="margin-bottom:12px; display:none;">
-                                <label style="font-size:12px;">Reason for donation</label>
-                                <textarea class="form-input" id="donationReason" rows="2" placeholder="Specify reason (optional)" style="width:100%; padding:10px; border:2px solid #e0e0e0; border-radius:8px; box-sizing:border-box;"></textarea>
-                            </div>
-                            <div class="form-group" style="margin-bottom:12px;">
-                                <label style="font-size:12px;">Your name <span style="color:#888; font-weight:normal;">(optional)</span></label>
-                                <input type="text" id="pesapalNamePay" placeholder="Auto-filled from account" style="width:100%; padding:10px; border:2px solid #e0e0e0; border-radius:8px; box-sizing:border-box;">
-                            </div>
-                            <div class="form-group" style="margin-bottom:12px;">
-                                <label style="font-size:12px;">Email <span style="color:#888; font-weight:normal;">(optional)</span></label>
-                                <input type="email" id="pesapalEmailPay" placeholder="your@email.com" style="width:100%; padding:10px; border:2px solid #e0e0e0; border-radius:8px; box-sizing:border-box;">
-                            </div>
-                            <div class="form-group" style="margin-bottom:14px;">
-                                <label style="font-size:12px;">Phone number <span style="color:#888; font-weight:normal;">(optional)</span></label>
-                                <input type="tel" id="pesapalPhonePay" placeholder="e.g. 256700000000 or 07XX XXX XXX" style="width:100%; padding:10px; border:2px solid #e0e0e0; border-radius:8px; box-sizing:border-box;">
-                                <p style="margin:6px 0 0 0; font-size:11px; color:#666;">Used to pre-fill your number when you confirm payment method on Pesapal.</p>
-                            </div>
-                            <button type="button" class="btn btn-primary" id="pesapalPayBtn" onclick="submitPesapalPay();" style="width:100%; background: linear-gradient(135deg, #1976D2, #1565C0); border: none; color: #fff;">
-                                <i class="fas fa-lock"></i> Pay
-                            </button>
+                        <div id="pesapalBlock" style="border: 2px solid #999; border-radius: 12px; padding: 18px; background: #f5f5f5; margin-bottom: 20px; text-align: center; opacity: 0.6;">
+                            <p style="margin: 0; font-size: 16px; font-weight: 600; color: #666;">
+                                <i class="fas fa-lock" style="margin-right: 8px;"></i>PESAPAL LOCKED
+                            </p>
                         </div>
                     </div>
 
@@ -236,8 +197,8 @@
                                 <div id="airtelPayPanel" class="pay-code-panel" style="max-height:0; overflow:hidden; transition: max-height 0.3s ease;">
                                     <div style="padding:12px 18px 16px; background:#fff; border-top:1px solid #eee;">
                                         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                                            <span id="airtelPayText" style="font-size:14px; color:#333;">KIMULI NAJIIBU (Amir Finance) - 0757 591 824</span>
-                                            <button type="button" onclick="copyPayCode('0757591824', 'airtelPayBtn')" id="airtelPayBtn" class="copy-pay-btn" style="padding:6px 12px; border-radius:8px; border:1px solid #1565C0; background:#E3F2FD; color:#1565C0; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap;"><i class="fas fa-copy"></i> Copy</button>
+                                            <span id="airtelPayText" style="font-size:14px; color:#333;">WASSWA SHARIF - 0757 093 120</span>
+                                            <button type="button" onclick="copyPayCode('0757093120', 'airtelPayBtn')" id="airtelPayBtn" class="copy-pay-btn" style="padding:6px 12px; border-radius:8px; border:1px solid #1565C0; background:#E3F2FD; color:#1565C0; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap;"><i class="fas fa-copy"></i> Copy</button>
                                         </div>
                                     </div>
                                 </div>
@@ -250,8 +211,8 @@
                                 <div id="mtnPayPanel" class="pay-code-panel" style="max-height:0; overflow:hidden; transition: max-height 0.3s ease;">
                                     <div style="padding:12px 18px 16px; background:#fff; border-top:1px solid #eee;">
                                         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                                            <span id="mtnPayText" style="font-size:14px; color:#333;">KIMULI NAJIIBU (Amir Finance) - 0757 591 824</span>
-                                            <button type="button" onclick="copyPayCode('0757591824', 'mtnPayBtn')" id="mtnPayBtn" class="copy-pay-btn" style="padding:6px 12px; border-radius:8px; border:1px solid #1565C0; background:#E3F2FD; color:#1565C0; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap;"><i class="fas fa-copy"></i> Copy</button>
+                                            <span id="mtnPayText" style="font-size:14px; color:#333;">WASSWA SHARIF - 0795 289 142</span>
+                                            <button type="button" onclick="copyPayCode('0795289142', 'mtnPayBtn')" id="mtnPayBtn" class="copy-pay-btn" style="padding:6px 12px; border-radius:8px; border:1px solid #1565C0; background:#E3F2FD; color:#1565C0; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap;"><i class="fas fa-copy"></i> Copy</button>
                                         </div>
                                     </div>
                                 </div>
@@ -346,44 +307,61 @@
         });
 
         function selectPaymentType(type) {
-            selectedPaymentType = type;
-            
-            // Update UI
-            document.querySelectorAll('.pay-card').forEach(item => {
-                item.classList.remove('active');
-            });
-            const sel = document.querySelector(`.pay-card[data-type="${type}"]`);
-            if (sel) sel.classList.add('active');
+             selectedPaymentType = type;
+             
+             // Update UI
+             document.querySelectorAll('.pay-card').forEach(item => {
+                 item.classList.remove('active');
+             });
+             const sel = document.querySelector(`.pay-card[data-type="${type}"]`);
+             if (sel) sel.classList.add('active');
+ 
+             // Show/hide sections
+             const membershipPlans = document.getElementById('membershipPlans');
+             const paymentForm = document.getElementById('paymentForm');
+ 
+             if (type === 'semester' || type === 'monthly') {
+                 membershipPlans.style.display = 'block';
+                 paymentForm.style.display = 'none';
+                 selectedPlan = null;
+                 // Update payment numbers for semester/monthly (WASSWA SHARIF)
+                 updatePaymentNumbers('semester_monthly');
+             } else if (type === 'zakat') {
+                 window.location.href = 'zakat-form.html';
+             } else {
+                 membershipPlans.style.display = 'none';
+                 paymentForm.style.display = 'block';
+                 var payBoxAmountGroup = document.getElementById('payBoxAmountGroup');
+                 var payBoxDonationTypeGroup = document.getElementById('payBoxDonationTypeGroup');
+                 var payBoxReasonGroup = document.getElementById('payBoxReasonGroup');
+                 var payUsingCodeGroup = document.getElementById('payUsingCodeGroup');
+                 if (payBoxAmountGroup) payBoxAmountGroup.style.display = 'block';
+                 if (type === 'charity' || type === 'donate') {
+                     if (payBoxDonationTypeGroup) payBoxDonationTypeGroup.style.display = 'block';
+                     if (payBoxReasonGroup) payBoxReasonGroup.style.display = 'block';
+                     if (payUsingCodeGroup) payUsingCodeGroup.style.display = 'block';
+                     // Update payment numbers for charity/donations (NASIFA NAMAWANDA)
+                     updatePaymentNumbers('charity_donation');
+                 } else {
+                     if (payBoxDonationTypeGroup) payBoxDonationTypeGroup.style.display = 'none';
+                     if (payBoxReasonGroup) payBoxReasonGroup.style.display = 'none';
+                     if (payUsingCodeGroup) payUsingCodeGroup.style.display = 'none';
+                 }
+             }
+         }
 
-            // Show/hide sections
-            const membershipPlans = document.getElementById('membershipPlans');
-            const paymentForm = document.getElementById('paymentForm');
-
-            if (type === 'semester' || type === 'monthly') {
-                membershipPlans.style.display = 'block';
-                paymentForm.style.display = 'none';
-                selectedPlan = null;
-            } else if (type === 'zakat') {
-                window.location.href = 'zakat-form.html';
-            } else {
-                membershipPlans.style.display = 'none';
-                paymentForm.style.display = 'block';
-                var payBoxAmountGroup = document.getElementById('payBoxAmountGroup');
-                var payBoxDonationTypeGroup = document.getElementById('payBoxDonationTypeGroup');
-                var payBoxReasonGroup = document.getElementById('payBoxReasonGroup');
-                var payUsingCodeGroup = document.getElementById('payUsingCodeGroup');
-                if (payBoxAmountGroup) payBoxAmountGroup.style.display = 'block';
-                if (type === 'charity' || type === 'donate') {
-                    if (payBoxDonationTypeGroup) payBoxDonationTypeGroup.style.display = 'block';
-                    if (payBoxReasonGroup) payBoxReasonGroup.style.display = 'block';
-                    if (payUsingCodeGroup) payUsingCodeGroup.style.display = 'block';
-                } else {
-                    if (payBoxDonationTypeGroup) payBoxDonationTypeGroup.style.display = 'none';
-                    if (payBoxReasonGroup) payBoxReasonGroup.style.display = 'none';
-                    if (payUsingCodeGroup) payUsingCodeGroup.style.display = 'none';
-                }
-            }
-        }
+         function updatePaymentNumbers(paymentCategory) {
+             // All payment types use WASSWA SHARIF's numbers
+             const airtelEl = document.getElementById('airtelPayText');
+             const mtnEl = document.getElementById('mtnPayText');
+             if (airtelEl) airtelEl.textContent = 'WASSWA SHARIF - 0757 093 120';
+             if (mtnEl) mtnEl.textContent = 'WASSWA SHARIF - 0795 289 142';
+             // Update copy buttons
+             const airtelBtn = document.getElementById('airtelPayBtn');
+             const mtnBtn = document.getElementById('mtnPayBtn');
+             if (airtelBtn) airtelBtn.setAttribute('onclick', "copyPayCode('0757093120', 'airtelPayBtn')");
+             if (mtnBtn) mtnBtn.setAttribute('onclick', "copyPayCode('0795289142', 'mtnPayBtn')");
+         }
 
         function selectPlan(planName, amount) {
             // Redirect to subscription form with plan details

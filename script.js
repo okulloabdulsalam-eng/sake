@@ -614,32 +614,49 @@ function cacheHijriDate(hijriDay, hijriMonth, hijriYear, gregorianDate) {
 
 // Get cached Hijri date and calculate current date from it
 function getCachedHijriDate() {
-    try {
-        const cached = localStorage.getItem('cachedHijriDate');
-        if (!cached) return null;
-        
-        const cacheData = JSON.parse(cached);
-        const cachedGregorian = new Date(cacheData.gregorianDate);
-        const now = new Date();
-        
-        // Calculate days since cached date
-        const msPerDay = 24 * 60 * 60 * 1000;
-        const daysDiff = Math.floor((now.getTime() - cachedGregorian.getTime()) / msPerDay);
-        
-        if (daysDiff === 0) {
-            // Same day, return cached
-            return {
-                day: cacheData.hijriDay,
-                month: cacheData.hijriMonth,
-                year: cacheData.hijriYear
-            };
-        }
+     try {
+         const cached = localStorage.getItem('cachedHijriDate');
+         if (!cached) return null;
+         
+         const cacheData = JSON.parse(cached);
+         const cachedGregorian = new Date(cacheData.gregorianDate);
+         const now = new Date();
+         
+         // Calculate days since cached date
+         const msPerDay = 24 * 60 * 60 * 1000;
+         const daysDiff = Math.floor((now.getTime() - cachedGregorian.getTime()) / msPerDay);
+         
+         // Always return cached value (same day or older)
+         // If offline, use cache offset; if online, API will refresh
+         if (daysDiff >= 0) {
+             // Hijri calendar increments by 1 every ~11 days (lunar month ≈ 29.5 days)
+             // For offline use: estimate offset per day (~0.03 days per Hijri day)
+             let day = cacheData.hijriDay + Math.max(0, Math.floor(daysDiff * 0.033));
+             let month = cacheData.hijriMonth;
+             let year = cacheData.hijriYear;
+             
+             // Simple month wrap-around (Hijri: 12 months, 29-30 days each)
+             if (day > 30) {
+                 day = day - 30;
+                 month = month + 1;
+                 if (month > 12) {
+                     month = 1;
+                     year = year + 1;
+                 }
+             }
+             
+             return {
+                 day: day,
+                 month: month,
+                 year: year
+             };
+         }
 
-        return null;
-    } catch (e) {
-        console.log('Cache read error:', e);
-        return null;
-    }
+         return null;
+     } catch (e) {
+         console.log('Cache read error:', e);
+         return null;
+     }
 }
 
 // For unclear Hijri dates (29th, 30th, 1st of a month), check Saudi moon sighting confirmation
@@ -1214,6 +1231,16 @@ try { initFastingReminderChecker(); } catch(e) { console.warn('initFastingRemind
 // Respects API rate limits: 200 requests per 15 minutes, 1000 per hour
 // This also checks for white days notifications
 setInterval(updateDates, 3600000); // 1 hour = 3600000ms
+
+// Hijri date auto-refresh when coming back online (silent background update)
+// Ensures always-accurate Hijri date without interrupting user
+window.addEventListener('online', function() {
+     try {
+         updateDates();
+     } catch(e) {
+         console.log('Hijri auto-refresh on online error:', e);
+     }
+});
 
 // User Account System
 var currentUser = null;
